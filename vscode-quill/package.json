@@ -1,8 +1,8 @@
 {
   "name": "quill-lang",
-  "displayName": "Quill Language",
+  "displayName": "Quill by TradeBuddy",
   "description": "Syntax highlighting and snippets for the Quill programming language",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "publisher": "tradebuddyhq",
   "repository": {
     "type": "git",
