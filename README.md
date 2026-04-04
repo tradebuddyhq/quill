@@ -95,13 +95,18 @@ mount Counter to "#app"
 **Language**
 - **English-like syntax** — `is`, `if/otherwise`, `for each`, `give back`
 - **Type annotations with enforcement** — `to add a as number -> number:` checked by `quill check`
-- **Pattern matching** — `match`/`when`/`otherwise` for clean branching
+- **Pattern matching** — `match`/`when`/`otherwise` for clean branching, type-based matching, guard clauses, exhaustive checking
 - **Algebraic data types** — `define Color: Red, Green, Blue` with variant constructors
+- **Traits** — `describe trait Printable:` with method signatures for interface contracts
+- **Generics with constraints** — `to sort items as list of T where T is Comparable`
+- **Destructuring** — `{name, age} is person`, `[first, ...rest] are items`, nested patterns
+- **Type narrowing** — `if x is text:` and the compiler knows `x` is text inside the block
 - **Pipe operator** — `value | transform | format` for function chaining
 - **Lambdas** — `with x: x * 2` arrow-style anonymous functions
 - **Classes with inheritance** — `describe Dog extends Animal:` with `my` keyword
 - **Try/catch** — `try:` / `if it fails err:` error handling
-- **Generics** — `list of number` type annotations
+- **Iterators & generators** — `yield`, `loop:` infinite loops, lazy evaluation chains
+- **Lazy evaluation** — `range(1, 1000000) | filter | map_list | take 10 | collect`
 - **Object literals** — `{name: "Alice", age: 30}`
 - **Spread operator** — `...items` for expanding lists
 - **String interpolation** — `"Hello {name}!"`
@@ -112,20 +117,33 @@ mount Counter to "#app"
 - **Union types** — `number | text` for values that can be multiple types
 - **Nullable types** — `?number` shorthand for `number | nothing`
 - **Reactive web framework** — Svelte-like `component`/`state`/`mount` with virtual DOM
+- **Full-stack in one file** — `server:`, `database:`, `component:` blocks in a single `.quill` file
 
 **Tooling**
 - **Type checker** — `quill check` catches type errors before you run
 - **Static analyzer** — detects unused variables, infinite loops, bad patterns
 - **Code formatter** — `quill fmt` for consistent style
-- **Built-in testing** — `test` and `expect` keywords
+- **Built-in testing** — `test` and `expect` keywords, `quill test --coverage` for coverage reports
 - **Docs generator** — `quill docs` generates styled HTML documentation
 - **Package manager** — `quill add express`, `quill remove express`
 - **Interactive REPL** — `quill repl`
+- **Dev server** — `quill serve` with hot reload and file-based routing
+- **Profiler** — `quill profile app.quill` for function timing reports
+- **Workspaces** — monorepo support via `[workspace]` in quill.toml
+- **Migration tool** — `quill fix --from v0.1 --to v0.3` for automated code migration
 - **Friendly error messages** — with source context and hints
 - **VS Code extension** — syntax highlighting, snippets, comment toggling
 - **LSP server** — `quill lsp` for editor integration (diagnostics, hover, autocomplete)
 - **Source maps** — `.map` files generated alongside JS for debugging
 - **Package registry** — `quill publish`, `quill search`, `quill install` with version resolution
+
+**Web Framework (SvelteKit-level)**
+- **File-based routing** — `pages/about.quill` maps to `/about`, `pages/blog/[id].quill` maps to `/blog/:id`
+- **SSR with hydration** — `to load request:` runs on server, `to render data:` hydrates on client
+- **Scoped styles** — `style:` block in components with auto-hashed CSS scoping
+- **Client-side routing** — `link to="/about" "About Us"` with pushState navigation
+- **Head management** — `head:` block for title/meta tags
+- **Form actions** — `form action=handler:` for server-side form handling
 
 **Build Targets**
 - **Node.js** — `quill build file.quill` (default)
@@ -153,6 +171,12 @@ mount Counter to "#app"
 | `quill remove package` | Remove a package |
 | `quill repl` | Start interactive mode |
 | `quill build file.quill --llvm` | Compile to LLVM IR / native binary |
+| `quill serve` | Start dev server with hot reload |
+| `quill profile file.quill` | Run profiler with function timing report |
+| `quill fix --from v0.1 --to v0.3` | Automated code migration between versions |
+| `quill test file.quill --coverage` | Run tests with coverage report |
+| `quill test --coverage-html` | Generate HTML coverage report |
+| `quill test --coverage-min 80` | Fail if coverage is below threshold |
 | `quill debug file.quill` | Launch step-through debugger |
 | `quill lsp` | Start LSP server for editors |
 | `quill publish` | Publish package to registry |
@@ -362,6 +386,197 @@ test "my test":
   expect result is 5
 ```
 
+### Traits
+```
+describe trait Printable:
+  to display -> text
+
+describe trait Serializable:
+  to toJSON -> text
+  to fromJSON data as text
+
+describe User implements Printable, Serializable:
+  name is ""
+  to display -> text:
+    give back my.name
+  to toJSON -> text:
+    give back "{\"name\": \"{my.name}\"}"
+  to fromJSON data as text:
+    say "parsing..."
+```
+
+### Generics with Constraints
+```
+to sort items as list of T where T is Comparable:
+  give back items | sort
+
+to first items as list of T -> T:
+  give back items[0]
+
+to merge a as list of T, b as list of T -> list of T:
+  give back concat(a, b)
+```
+
+### Destructuring
+```
+-- Object destructuring
+{name, age} is person
+{name, ...rest} is config
+
+-- List destructuring
+[first, second] are items
+[head, ...tail] are numbers
+
+-- Nested destructuring
+{address: {city, zip}} is user
+
+-- In function parameters
+to greet {name, age}:
+  say "{name} is {age} years old"
+```
+
+### Type Narrowing
+```
+to process value as number | text:
+  if value is text:
+    -- compiler knows value is text here
+    say upper(value)
+  otherwise:
+    -- compiler knows value is number here
+    say value + 1
+```
+
+### Iterators & Generators
+```
+-- Generator function (compiles to function*)
+to fibonacci:
+  a is 0
+  b is 1
+  loop:
+    yield a
+    temp is a
+    a is b
+    b is temp + b
+
+-- Lazy evaluation chains
+result is range(1, 1000000) | filter with n: n % 2 is 0 | map_list with n: n * n | take 10 | collect
+
+-- Full lazy API
+range(1, 100)
+  | filter with n: n % 3 is 0
+  | skip 5
+  | takeWhile with n: n is less than 50
+  | enumerate
+  | collect
+```
+
+### Pattern Matching (Complete)
+```
+-- Type-based matching
+match value:
+  when text t:
+    say "Got text: {t}"
+  when number n:
+    say "Got number: {n}"
+  when list l:
+    say "Got a list with {length(l)} items"
+  when nothing:
+    say "Got nothing"
+
+-- Guard clauses
+match age:
+  when n if n is less than 18:
+    say "Minor"
+  when n if n is less than 65:
+    say "Adult"
+  otherwise:
+    say "Senior"
+
+-- Exhaustive checking on algebraic types
+define Shape:
+  Circle of radius
+  Rectangle of width, height
+  Triangle of base, height
+
+match shape:
+  when Circle r:
+    say "Circle with radius {r}"
+  when Rectangle w, h:
+    say "Rectangle {w}x{h}"
+  -- compiler error: missing Triangle variant!
+```
+
+### Web Framework
+```
+-- File-based routing: pages/about.quill -> /about
+-- pages/blog/[id].quill -> /blog/:id
+
+-- Server-side rendering with hydration
+to load request:
+  users is await DB.find({})
+  give back {users: users}
+
+to render data:
+  h1 "Users"
+  for each user in data.users:
+    p "{user.name}"
+
+-- Scoped styles
+style:
+  h1:
+    color is "blue"
+    font-size is "2rem"
+
+-- Head management
+head:
+  title "My App"
+  meta name="description" content="A Quill app"
+
+-- Client-side routing
+link to="/about" "About Us"
+link to="/blog/{post.id}" "{post.title}"
+
+-- Form actions
+form action=handleSubmit:
+  input bind:value=email placeholder="Email"
+  button "Submit"
+```
+
+### Full-Stack in One File
+
+Write your entire app -- server, database, auth, and UI -- in a single `.quill` file. No config files, no `package.json`, no `node_modules`, no webpack. Just `quill run app.quill`.
+
+```
+server:
+    port is 3000
+    route get "/api/users":
+        users is await DB.find({})
+        respond with users
+
+database:
+    connect "sqlite://app.db"
+    model User:
+        name as text
+        email as text
+
+component App:
+    state:
+        users is []
+    to render:
+        h1 "My App"
+        for each user in users:
+            p "{user.name}"
+
+mount App to "#app"
+```
+
+Run it with one command:
+```bash
+quill run app.quill
+```
+
+That is it. Zero config. One file. Full-stack application.
+
 ## Ecosystem (Standard Library)
 
 Quill ships with high-level libraries for common backend tasks, all with English-like syntax.
@@ -529,6 +744,42 @@ REPL commands inside the debugger:
 | `list` | Show source around current line |
 | `quit` / `q` | Exit debugger |
 
+## Production Tooling
+
+### Test Coverage
+```bash
+quill test --coverage                # Print coverage summary
+quill test --coverage-html           # Generate HTML coverage report
+quill test --coverage-min 80         # Fail if coverage drops below 80%
+```
+
+### Profiler
+```bash
+quill profile app.quill
+```
+Outputs a function-level timing report showing where your program spends its time.
+
+### Workspaces
+Monorepo support via `[workspace]` in quill.toml:
+```toml
+[workspace]
+members = ["packages/core", "packages/web", "packages/cli"]
+```
+Run commands across all workspace members: `quill test --workspace`, `quill build --workspace`.
+
+### Migration Tool
+Automated code migration between Quill versions:
+```bash
+quill fix --from v0.1 --to v0.3
+```
+Rewrites deprecated syntax, renames changed functions, and updates import paths automatically.
+
+### Dev Server
+```bash
+quill serve
+```
+Starts a development server with hot reload, file-based routing, and SSR support. Perfect for web projects.
+
 ## Stability
 
 ### Rust-Style Error Messages
@@ -617,6 +868,8 @@ quill/
   repl/                Interactive REPL
   config/              Project configuration (quill.toml) handling
   errors/              Rust-style error messages with hints
+  server/              Dev server, file-based routing, SSR
+  tools/               Profiler, coverage, migration tool, workspaces
   tests/               Test suite and test runner
   examples/            Example programs
   site/                Website, docs, and playground
