@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Documentation - Quill</title>
-  <meta name="description" content="Quill programming language documentation. Learn how to write Quill programs.">
+  <meta name="description" content="Learn Quill, a programming language that reads like English. Documentation for complete beginners.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,54 +52,158 @@
     </aside>
 
     <main class="docs-content">
-      <h1>Quill Documentation</h1>
-      <p>Welcome to the Quill documentation. Quill is a programming language designed to be readable, friendly, and powerful. Code in Quill reads like English, making it easy to learn and a joy to write.</p>
 
-      <div class="callout callout-tip">
-        <strong>New to Quill?</strong> Start with the <a href="/docs/getting-started">Getting Started</a> guide, or jump straight into the <a href="/playground">Playground</a> to try it in your browser.
+      <!-- Welcome Header -->
+      <h1>Learn Quill</h1>
+      <p style="font-size: 1.2em; color: var(--text-secondary); margin-top: -8px;">A programming language you can read like plain English &mdash; no experience required.</p>
+
+      <!-- What is Quill? -->
+      <h2>What is Quill?</h2>
+      <p>Quill is a programming language designed for people who have never written code before. Instead of cryptic symbols and jargon, Quill uses everyday English words. You say <code>say</code> to print something, <code>is</code> to create a variable, and <code>to</code> to define a function. If you can read a sentence, you can read Quill code.</p>
+      <p>Under the hood, Quill translates your code into JavaScript and runs it &mdash; so you get the power of a real programming language with the readability of English.</p>
+
+      <!-- Quick Start -->
+      <div class="callout callout-tip" style="margin: 32px 0;">
+        <strong>Quick Start &mdash; your first program in 3 steps</strong>
+        <ol style="margin: 12px 0 0 0; padding-left: 20px;">
+          <li>
+            <strong>Install Quill:</strong>
+            <pre style="margin: 8px 0;"><code>npm install -g @tradebuddyhq/quill</code></pre>
+          </li>
+          <li>
+            <strong>Create a file called <code>hello.quill</code> with this content:</strong>
+            <pre style="margin: 8px 0;"><code><span class="kw">say</span> <span class="str">"Hello, World!"</span></code></pre>
+          </li>
+          <li>
+            <strong>Run it:</strong>
+            <pre style="margin: 8px 0;"><code>quill run hello.quill</code></pre>
+            <p style="margin: 4px 0 0 0;">You should see: <code>Hello, World!</code></p>
+          </li>
+        </ol>
       </div>
 
-      <h2>Documentation overview</h2>
+      <!-- Learning Path -->
+      <h2>Learning Path</h2>
+      <p>If you are brand new to programming, we recommend reading the documentation in this order:</p>
+      <ol>
+        <li>
+          <strong><a href="/docs/language">Step 1: Language Basics</a></strong>
+          &mdash; Learn how to create variables, write functions, use loops, and make decisions with <code>if</code>/<code>otherwise</code>. This is the foundation for everything else.
+        </li>
+        <li>
+          <strong><a href="/docs/stdlib">Step 2: Standard Library</a></strong>
+          &mdash; Discover the built-in functions that come with Quill: math, text manipulation, lists, file handling, and more. These are your everyday tools.
+        </li>
+        <li>
+          <strong><a href="/docs/tools">Step 3: Developer Tools</a></strong>
+          &mdash; Learn how to run, build, format, test, and check your programs using the Quill command-line tools.
+        </li>
+      </ol>
+      <p>Or, if you prefer to jump around, use the cards below to go straight to what interests you.</p>
+
+      <!-- Feature Cards Grid -->
+      <h2>Explore the Documentation</h2>
 
       <div class="features-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 24px;">
         <a href="/docs/getting-started" class="feature-card" style="text-decoration: none;">
           <h3>Getting Started</h3>
-          <p>Install Quill, write your first program, and learn the basics of running Quill code.</p>
+          <p>Install Quill on your computer, set up your editor, and run your very first program. The best place to begin.</p>
         </a>
         <a href="/docs/language" class="feature-card" style="text-decoration: none;">
-          <h3>Language Reference</h3>
-          <p>Complete guide to Quill syntax: variables, functions, control flow, operators, and more.</p>
+          <h3>Language Guide</h3>
+          <p>The complete guide to writing Quill code: variables, functions, loops, conditions, classes, and everything in between.</p>
         </a>
         <a href="/docs/stdlib" class="feature-card" style="text-decoration: none;">
           <h3>Standard Library</h3>
-          <p>Every built-in function documented with signatures, descriptions, and examples.</p>
+          <p>Every built-in function documented with clear descriptions and examples. Math, strings, lists, files, HTTP, and more.</p>
+        </a>
+        <a href="/docs/tools" class="feature-card" style="text-decoration: none;">
+          <h3>Tools and CLI</h3>
+          <p>How to use Quill's built-in tools: run, build, format, check, test, and manage packages &mdash; all from your terminal.</p>
         </a>
         <a href="/docs/testing" class="feature-card" style="text-decoration: none;">
-          <h3>Testing Guide</h3>
-          <p>Write and run tests using Quill's built-in <code>test</code> and <code>expect</code> keywords.</p>
+          <h3>Testing</h3>
+          <p>Write and run tests using Quill's built-in <code>test</code> and <code>expect</code> keywords to make sure your code works correctly.</p>
         </a>
         <a href="/docs/examples" class="feature-card" style="text-decoration: none;">
           <h3>Examples</h3>
-          <p>Complete programs that demonstrate Quill's features, from Hello World to text analyzers.</p>
-        </a>
-        <a href="/playground" class="feature-card" style="text-decoration: none;">
-          <h3>Playground</h3>
-          <p>Write and run Quill code right in your browser. No installation required.</p>
+          <p>Complete programs you can read, run, and learn from &mdash; from simple Hello World to real-world projects.</p>
         </a>
       </div>
 
-      <h2>Quick taste</h2>
-      <p>Here is a simple Quill program that shows off the language:</p>
-      <pre><code><span class="cmt">-- Define a function</span>
-<span class="kw">to</span> <span class="fn">greet</span> name:
-  <span class="kw">if</span> name <span class="kw">is</span> <span class="str">"World"</span>:
-    <span class="kw">say</span> <span class="str">"Hello, everyone!"</span>
-  <span class="kw">otherwise</span>:
-    <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+      <!-- Your First Program -->
+      <h2>Your First Program: a complete walkthrough</h2>
 
-friends <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"World"</span>]
+      <p>Let's walk through creating and running your very first Quill program from scratch. No prior experience needed.</p>
+
+      <p><strong>Step 1: Create a file.</strong></p>
+      <p>Open any text editor (Notepad, TextEdit, VS Code &mdash; anything works). Create a new file and save it as <code>hello.quill</code>. The <code>.quill</code> part at the end tells your computer this is a Quill program.</p>
+
+      <p><strong>Step 2: Write your code.</strong></p>
+      <p>Type the following line into your file:</p>
+      <pre><code><span class="kw">say</span> <span class="str">"Hello, World!"</span></code></pre>
+      <p>That is it &mdash; one line. The word <code>say</code> tells Quill to print something to the screen. The text in quotes is what gets printed.</p>
+
+      <p><strong>Step 3: Run it.</strong></p>
+      <p>Open your terminal (also called the command line or command prompt) and type:</p>
+      <pre><code>quill run hello.quill</code></pre>
+
+      <p><strong>Step 4: See the result.</strong></p>
+      <pre><code>Hello, World!</code></pre>
+      <p>That text appears in your terminal. Congratulations &mdash; you just ran your first program.</p>
+
+      <p><strong>What happens behind the scenes:</strong> When you type <code>quill run hello.quill</code>, Quill reads your file, translates the English-like code into JavaScript (a language computers understand natively), and then runs it. You never need to see or write JavaScript yourself &mdash; Quill handles all of that for you.</p>
+
+      <p><strong>What to do next:</strong> Try changing the text inside the quotes and running it again. Then move on to the <a href="/docs/language">Language Guide</a> to learn about variables, functions, and more.</p>
+
+      <!-- Quick Taste -->
+      <h2>A quick taste of Quill</h2>
+      <p>Here is a bigger example that shows off several features of the language: variables, functions, loops, lists, and pattern matching.</p>
+
+      <pre><code><span class="cmt">-- Variables: just use "is" to store a value</span>
+<span class="kw">name</span> is <span class="str">"Quill"</span>
+<span class="kw">version</span> is <span class="num">1</span>
+<span class="kw">say</span> <span class="str">"Welcome to {name} version {version}!"</span>
+
+<span class="cmt">-- Functions: use "to" to define reusable blocks of code</span>
+<span class="kw">to</span> <span class="fn">greet</span> person:
+  <span class="kw">say</span> <span class="str">"Hello, {person}!"</span>
+
+<span class="cmt">-- Lists: group values together with square brackets</span>
+friends <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Charlie"</span>]
+
+<span class="cmt">-- Loops: do something for each item in a list</span>
 <span class="kw">for each</span> friend <span class="kw">in</span> friends:
-  greet(friend)</code></pre>
+  greet(friend)
+
+<span class="cmt">-- Pattern matching: handle different cases cleanly</span>
+<span class="kw">to</span> <span class="fn">describe</span> age:
+  <span class="kw">match</span> age:
+    <span class="kw">when</span> <span class="num">0</span> <span class="kw">to</span> <span class="num">12</span>:
+      <span class="kw">give back</span> <span class="str">"child"</span>
+    <span class="kw">when</span> <span class="num">13</span> <span class="kw">to</span> <span class="num">17</span>:
+      <span class="kw">give back</span> <span class="str">"teenager"</span>
+    <span class="kw">when</span> <span class="num">18</span> <span class="kw">to</span> <span class="num">64</span>:
+      <span class="kw">give back</span> <span class="str">"adult"</span>
+    <span class="kw">otherwise</span>:
+      <span class="kw">give back</span> <span class="str">"senior"</span>
+
+<span class="cmt">-- Try it out</span>
+<span class="kw">say</span> describe(<span class="num">25</span>)
+<span class="kw">say</span> describe(<span class="num">8</span>)
+<span class="kw">say</span> describe(<span class="num">70</span>)</code></pre>
+
+      <p><strong>Output:</strong></p>
+      <pre><code>Welcome to Quill version 1!
+Hello, Alice!
+Hello, Bob!
+Hello, Charlie!
+adult
+child
+senior</code></pre>
+
+      <p>If that code made sense to you just by reading it, you are going to love Quill. Head over to the <a href="/docs/language">Language Guide</a> to learn each feature in detail.</p>
+
     </main>
   </div>
 

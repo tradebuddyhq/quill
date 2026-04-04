@@ -36,492 +36,801 @@
       </ul>
       <h4>Language</h4>
       <ul>
-        <li><a href="/docs/language">Language reference</a></li>
+        <li><a href="/docs/language">Language guide</a></li>
+      </ul>
+      <h4>Standard Library</h4>
+      <ul>
+        <li><a href="/docs/stdlib" class="active">Overview</a></li>
+        <li><a href="#lists">Working with lists</a></li>
+        <li><a href="#text">Working with text</a></li>
+        <li><a href="#math">Math &amp; numbers</a></li>
+        <li><a href="#objects">Objects &amp; data</a></li>
+        <li><a href="#type-checking">Type checking</a></li>
+        <li><a href="#files">Files &amp; folders</a></li>
+        <li><a href="#date-time">Date &amp; time</a></li>
+        <li><a href="#web-http">Web &amp; HTTP</a></li>
+        <li><a href="#crypto">Crypto &amp; encoding</a></li>
+        <li><a href="#patterns">Patterns &amp; RegExp</a></li>
+        <li><a href="#system">System &amp; environment</a></li>
+        <li><a href="#concurrency">Concurrency</a></li>
+        <li><a href="#templates">Templates</a></li>
+        <li><a href="#database">Database</a></li>
+        <li><a href="#recipes">Recipes</a></li>
       </ul>
       <h4>Reference</h4>
       <ul>
-        <li><a href="/docs/stdlib" class="active">Standard library</a></li>
-        <li><a href="#collections">Collections</a></li>
-        <li><a href="#strings-section">Strings</a></li>
-        <li><a href="#math">Math</a></li>
-        <li><a href="#conversion">Conversion</a></li>
-        <li><a href="#file-io">File I/O</a></li>
-        <li><a href="#date-time">Date &amp; time</a></li>
-        <li><a href="#serialization">Serialization</a></li>
-        <li><a href="#environment">Environment</a></li>
-        <li><a href="#process-shell">Process / Shell</a></li>
-        <li><a href="#database">Database (SQLite)</a></li>
-        <li><a href="#http-server">HTTP Server</a></li>
-        <li><a href="#template-engine">Template Engine</a></li>
-        <li><a href="#crypto-hashing">Crypto / Hashing</a></li>
-        <li><a href="#date-time-ext">Date / Time (Extended)</a></li>
-        <li><a href="#regexp">RegExp</a></li>
-        <li><a href="#encoding">Encoding</a></li>
-        <li><a href="#concurrency">Concurrency</a></li>
-        <li><a href="#type-checking">Type Checking</a></li>
-        <li><a href="#object-operations">Object Operations</a></li>
-        <li><a href="#string-operations">String Operations</a></li>
+        <li><a href="/docs/tools">Tools &amp; CLI</a></li>
         <li><a href="/docs/testing">Testing</a></li>
-        <li><a href="/docs/tools">Tools</a></li>
         <li><a href="/docs/examples">Examples</a></li>
       </ul>
     </aside>
 
     <main class="docs-content">
       <h1>Standard Library</h1>
-      <p>Quill comes with a rich set of built-in functions. No imports required -- they are available everywhere.</p>
+      <p>Quill comes with <strong>60+ built-in functions</strong> that are available everywhere &mdash; no imports needed. This page documents every function with plain English explanations and practical examples.</p>
 
-      <h2 id="collections">Collections</h2>
+      <div class="callout callout-info">
+        <strong>New to programming?</strong> Think of the standard library as a toolbox. Just like a carpenter has a hammer, saw, and measuring tape, Quill gives you ready-made tools for working with text, lists, numbers, files, and more. You don't need to build these tools yourself &mdash; they're already here for you.
+      </div>
 
-      <h3><code>length(x)</code></h3>
-      <p>Returns the length of a string or list.</p>
-      <pre><code><span class="kw">say</span> length(<span class="str">"hello"</span>)       <span class="cmt">-- 5</span>
-<span class="kw">say</span> length([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>])    <span class="cmt">-- 3</span></code></pre>
+      <!-- ============================================ -->
+      <!-- WORKING WITH LISTS                           -->
+      <!-- ============================================ -->
 
-      <h3><code>join(list, separator)</code></h3>
-      <p>Joins a list into a string with the given separator. Defaults to <code>", "</code>.</p>
+      <h2 id="lists">Working with Lists</h2>
+      <p>Lists are one of the most useful things in programming. A list is just a collection of items &mdash; like a shopping list, a list of names, or a list of scores. These functions help you create, search, filter, transform, and analyze lists.</p>
+
+      <h3><code>length(x)</code> &mdash; Count items</h3>
+      <p>Returns the number of items in a list (or characters in text). This is one of the most common functions you'll use.</p>
+      <pre><code><span class="cmt">-- How many items in my list?</span>
+fruits <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"cherry"</span>]
+<span class="kw">say</span> length(fruits)   <span class="cmt">-- 3</span>
+
+<span class="cmt">-- Also works on text</span>
+<span class="kw">say</span> length(<span class="str">"hello"</span>)   <span class="cmt">-- 5</span>
+
+<span class="cmt">-- Practical: check if a list is empty</span>
+<span class="kw">if</span> length(results) <span class="kw">is</span> <span class="num">0</span>:
+  <span class="kw">say</span> <span class="str">"No results found"</span></code></pre>
+
+      <h3><code>push(list, item)</code> &mdash; Add an item</h3>
+      <p>Adds an item to the end of a list. Like adding something to the bottom of your to-do list.</p>
+      <pre><code>tasks <span class="kw">are</span> [<span class="str">"buy milk"</span>, <span class="str">"walk dog"</span>]
+push(tasks, <span class="str">"call mom"</span>)
+<span class="kw">say</span> tasks   <span class="cmt">-- ["buy milk", "walk dog", "call mom"]</span></code></pre>
+
+      <h3><code>pop(list)</code> &mdash; Remove the last item</h3>
+      <p>Removes and returns the last item from a list.</p>
+      <pre><code>stack <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+last <span class="kw">is</span> pop(stack)
+<span class="kw">say</span> last    <span class="cmt">-- 3</span>
+<span class="kw">say</span> stack   <span class="cmt">-- [1, 2]</span></code></pre>
+
+      <h3><code>sort(list)</code> &mdash; Sort items</h3>
+      <p>Returns a new list with items sorted in order (smallest to largest for numbers, A-Z for text). The original list is not changed.</p>
+      <pre><code>scores <span class="kw">are</span> [<span class="num">85</span>, <span class="num">92</span>, <span class="num">71</span>, <span class="num">100</span>, <span class="num">63</span>]
+<span class="kw">say</span> sort(scores)   <span class="cmt">-- [63, 71, 85, 92, 100]</span>
+
+names <span class="kw">are</span> [<span class="str">"Charlie"</span>, <span class="str">"Alice"</span>, <span class="str">"Bob"</span>]
+<span class="kw">say</span> sort(names)   <span class="cmt">-- ["Alice", "Bob", "Charlie"]</span></code></pre>
+
+      <h3><code>reverse(list)</code> &mdash; Reverse order</h3>
+      <p>Returns a new list with items in the opposite order.</p>
+      <pre><code>countdown <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+<span class="kw">say</span> reverse(countdown)   <span class="cmt">-- [5, 4, 3, 2, 1]</span></code></pre>
+
+      <h3><code>unique(list)</code> &mdash; Remove duplicates</h3>
+      <p>Returns a new list with duplicate items removed. Like removing repeat entries from a guest list.</p>
+      <pre><code>tags <span class="kw">are</span> [<span class="str">"js"</span>, <span class="str">"python"</span>, <span class="str">"js"</span>, <span class="str">"go"</span>, <span class="str">"python"</span>]
+<span class="kw">say</span> unique(tags)   <span class="cmt">-- ["js", "python", "go"]</span></code></pre>
+
+      <h3><code>includes(list, item)</code> &mdash; Check if item exists</h3>
+      <p>Returns <code>yes</code> if the list contains the item, <code>no</code> otherwise. Like checking if a name is on a guest list.</p>
       <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
-<span class="kw">say</span> join(colors, <span class="str">" and "</span>)  <span class="cmt">-- red and green and blue</span>
-<span class="kw">say</span> join(colors)            <span class="cmt">-- red, green, blue</span></code></pre>
+<span class="kw">say</span> includes(colors, <span class="str">"green"</span>)    <span class="cmt">-- true</span>
+<span class="kw">say</span> includes(colors, <span class="str">"purple"</span>)   <span class="cmt">-- false</span></code></pre>
 
-      <h3><code>split(text, separator)</code></h3>
-      <p>Splits a string into a list by the separator.</p>
-      <pre><code>words <span class="kw">is</span> split(<span class="str">"hello world foo"</span>, <span class="str">" "</span>)
-<span class="kw">say</span> words   <span class="cmt">-- ["hello", "world", "foo"]</span></code></pre>
+      <h3><code>indexOf(list, item)</code> &mdash; Find position</h3>
+      <p>Returns the position (index) of an item in a list. Returns -1 if not found. Remember: positions start at 0, not 1.</p>
+      <pre><code>letters <span class="kw">are</span> [<span class="str">"a"</span>, <span class="str">"b"</span>, <span class="str">"c"</span>, <span class="str">"d"</span>]
+<span class="kw">say</span> indexOf(letters, <span class="str">"c"</span>)   <span class="cmt">-- 2 (third item, but index starts at 0)</span>
+<span class="kw">say</span> indexOf(letters, <span class="str">"z"</span>)   <span class="cmt">-- -1 (not found)</span></code></pre>
 
-      <h3><code>range(start, end)</code></h3>
-      <p>Returns a list of numbers from <code>start</code> (inclusive) to <code>end</code> (exclusive).</p>
-      <pre><code><span class="kw">say</span> range(<span class="num">1</span>, <span class="num">5</span>)   <span class="cmt">-- [1, 2, 3, 4]</span></code></pre>
+      <h3><code>slice(list, start, end)</code> &mdash; Get a portion</h3>
+      <p>Returns a portion of a list from <code>start</code> to <code>end</code> (not including end). Like cutting a section out of a list.</p>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>, <span class="num">40</span>, <span class="num">50</span>]
+<span class="kw">say</span> slice(numbers, <span class="num">1</span>, <span class="num">4</span>)   <span class="cmt">-- [20, 30, 40]</span>
+<span class="kw">say</span> slice(numbers, <span class="num">2</span>)       <span class="cmt">-- [30, 40, 50] (from index 2 to the end)</span></code></pre>
 
-      <h3><code>sort(list)</code></h3>
-      <p>Returns a new sorted list (ascending).</p>
-      <pre><code><span class="kw">say</span> sort([<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">5</span>])   <span class="cmt">-- [1, 1, 3, 4, 5]</span></code></pre>
+      <h3><code>concat(a, b)</code> &mdash; Combine two lists</h3>
+      <p>Joins two lists together into one new list.</p>
+      <pre><code>first <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>]
+second <span class="kw">are</span> [<span class="num">3</span>, <span class="num">4</span>]
+<span class="kw">say</span> concat(first, second)   <span class="cmt">-- [1, 2, 3, 4]</span></code></pre>
 
-      <h3><code>reverse(list)</code></h3>
-      <p>Returns a new list with elements in reverse order.</p>
-      <pre><code><span class="kw">say</span> reverse([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>])   <span class="cmt">-- [3, 2, 1]</span></code></pre>
+      <h3><code>flat(list)</code> &mdash; Flatten nested lists</h3>
+      <p>Takes a list of lists and flattens it into a single list.</p>
+      <pre><code>nested <span class="kw">are</span> [[<span class="num">1</span>, <span class="num">2</span>], [<span class="num">3</span>, <span class="num">4</span>], [<span class="num">5</span>]]
+<span class="kw">say</span> flat(nested)   <span class="cmt">-- [1, 2, 3, 4, 5]</span></code></pre>
 
-      <h3><code>unique(list)</code></h3>
-      <p>Returns a new list with duplicate elements removed.</p>
-      <pre><code><span class="kw">say</span> unique([<span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">3</span>])   <span class="cmt">-- [1, 2, 3]</span></code></pre>
+      <h3><code>range(start, end)</code> &mdash; Generate number sequences</h3>
+      <p>Creates a list of numbers from <code>start</code> up to (but not including) <code>end</code>. Very useful for generating sequences.</p>
+      <pre><code><span class="kw">say</span> range(<span class="num">1</span>, <span class="num">6</span>)    <span class="cmt">-- [1, 2, 3, 4, 5]</span>
+<span class="kw">say</span> range(<span class="num">0</span>, <span class="num">10</span>)   <span class="cmt">-- [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]</span></code></pre>
 
-      <h3><code>sum(list)</code></h3>
-      <p>Returns the sum of all numbers in a list.</p>
-      <pre><code><span class="kw">say</span> sum([<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>])   <span class="cmt">-- 60</span></code></pre>
+      <h3><code>zip(a, b)</code> &mdash; Pair up items</h3>
+      <p>Takes two lists and pairs them up into a list of pairs. Like matching students with their grades.</p>
+      <pre><code>names <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Charlie"</span>]
+scores <span class="kw">are</span> [<span class="num">95</span>, <span class="num">82</span>, <span class="num">91</span>]
+<span class="kw">say</span> zip(names, scores)
+<span class="cmt">-- [["Alice", 95], ["Bob", 82], ["Charlie", 91]]</span></code></pre>
 
-      <h3><code>smallest(list)</code></h3>
-      <p>Returns the smallest value.</p>
-      <pre><code><span class="kw">say</span> smallest([<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>])   <span class="cmt">-- 2</span></code></pre>
+      <h3><code>sum(list)</code> &mdash; Add up numbers</h3>
+      <p>Returns the total of all numbers in a list.</p>
+      <pre><code>prices <span class="kw">are</span> [<span class="num">9.99</span>, <span class="num">14.50</span>, <span class="num">3.25</span>]
+<span class="kw">say</span> sum(prices)   <span class="cmt">-- 27.74</span></code></pre>
 
-      <h3><code>largest(list)</code></h3>
-      <p>Returns the largest value.</p>
-      <pre><code><span class="kw">say</span> largest([<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>])   <span class="cmt">-- 8</span></code></pre>
+      <h3><code>smallest(list)</code> / <code>largest(list)</code> &mdash; Find extremes</h3>
+      <p>Find the smallest or largest value in a list of numbers.</p>
+      <pre><code>temps <span class="kw">are</span> [<span class="num">72</span>, <span class="num">68</span>, <span class="num">75</span>, <span class="num">61</span>, <span class="num">80</span>]
+<span class="kw">say</span> smallest(temps)   <span class="cmt">-- 61</span>
+<span class="kw">say</span> largest(temps)    <span class="cmt">-- 80</span></code></pre>
 
-      <h2 id="strings-section">Strings</h2>
+      <h3 id="filter-map"><code>filter(list, function)</code> &mdash; Keep matching items</h3>
+      <p>Creates a new list containing only the items that pass a test. Think of it like a sieve &mdash; only items that match your criteria get through.</p>
+      <pre><code><span class="cmt">-- Keep only even numbers</span>
+numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span>, <span class="num">8</span>]
+evens <span class="kw">is</span> filter(numbers, <span class="kw">with</span> n: n % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>)
+<span class="kw">say</span> evens   <span class="cmt">-- [2, 4, 6, 8]</span>
 
-      <h3><code>trim(text)</code></h3>
-      <p>Removes whitespace from both ends of a string.</p>
-      <pre><code><span class="kw">say</span> trim(<span class="str">"  hello  "</span>)   <span class="cmt">-- "hello"</span></code></pre>
+<span class="cmt">-- Keep only names that start with "A"</span>
+names <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Anna"</span>, <span class="str">"Charlie"</span>]
+aNames <span class="kw">is</span> filter(names, <span class="kw">with</span> n: startsWith(n, <span class="str">"A"</span>))
+<span class="kw">say</span> aNames   <span class="cmt">-- ["Alice", "Anna"]</span></code></pre>
 
-      <h3><code>upper(text)</code></h3>
-      <p>Converts a string to uppercase.</p>
-      <pre><code><span class="kw">say</span> upper(<span class="str">"hello"</span>)   <span class="cmt">-- "HELLO"</span></code></pre>
+      <h3><code>map_list(list, function)</code> &mdash; Transform every item</h3>
+      <p>Creates a new list by applying a function to every item. Like running each item through a machine that changes it.</p>
+      <pre><code><span class="cmt">-- Double every number</span>
+numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+doubled <span class="kw">is</span> map_list(numbers, <span class="kw">with</span> n: n * <span class="num">2</span>)
+<span class="kw">say</span> doubled   <span class="cmt">-- [2, 4, 6, 8, 10]</span>
 
-      <h3><code>lower(text)</code></h3>
-      <p>Converts a string to lowercase.</p>
-      <pre><code><span class="kw">say</span> lower(<span class="str">"HELLO"</span>)   <span class="cmt">-- "hello"</span></code></pre>
+<span class="cmt">-- Make all names uppercase</span>
+names <span class="kw">are</span> [<span class="str">"alice"</span>, <span class="str">"bob"</span>]
+<span class="kw">say</span> map_list(names, <span class="kw">with</span> n: upper(n))   <span class="cmt">-- ["ALICE", "BOB"]</span></code></pre>
 
-      <h3><code>replace_text(text, old, new)</code></h3>
-      <p>Replaces all occurrences of <code>old</code> with <code>new</code>.</p>
-      <pre><code><span class="kw">say</span> replace_text(<span class="str">"hello world"</span>, <span class="str">"world"</span>, <span class="str">"Quill"</span>)
-<span class="cmt">-- "hello Quill"</span></code></pre>
+      <h3><code>find(list, function)</code> &mdash; Find first match</h3>
+      <p>Returns the first item that passes a test. Returns <code>nothing</code> if no match is found.</p>
+      <pre><code>users <span class="kw">are</span> [
+  {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>},
+  {name: <span class="str">"Bob"</span>, age: <span class="num">17</span>},
+  {name: <span class="str">"Charlie"</span>, age: <span class="num">25</span>}
+]
+adult <span class="kw">is</span> find(users, <span class="kw">with</span> u: u.age <span class="kw">is greater than</span> <span class="num">18</span>)
+<span class="kw">say</span> adult.name   <span class="cmt">-- "Alice"</span></code></pre>
 
-      <h3><code>startsWith(text, prefix)</code></h3>
-      <p>Returns <code>yes</code> if the string starts with the given prefix.</p>
-      <pre><code><span class="kw">say</span> startsWith(<span class="str">"hello"</span>, <span class="str">"he"</span>)   <span class="cmt">-- true</span></code></pre>
+      <h3><code>every(list, function)</code> &mdash; Do ALL items match?</h3>
+      <p>Returns <code>yes</code> if every single item passes the test.</p>
+      <pre><code>ages <span class="kw">are</span> [<span class="num">25</span>, <span class="num">30</span>, <span class="num">18</span>, <span class="num">42</span>]
+allAdults <span class="kw">is</span> every(ages, <span class="kw">with</span> a: a <span class="kw">is greater than</span> <span class="num">17</span>)
+<span class="kw">say</span> allAdults   <span class="cmt">-- true</span></code></pre>
 
-      <h3><code>endsWith(text, suffix)</code></h3>
-      <p>Returns <code>yes</code> if the string ends with the given suffix.</p>
-      <pre><code><span class="kw">say</span> endsWith(<span class="str">"hello"</span>, <span class="str">"lo"</span>)   <span class="cmt">-- true</span></code></pre>
+      <h3><code>some(list, function)</code> &mdash; Does ANY item match?</h3>
+      <p>Returns <code>yes</code> if at least one item passes the test.</p>
+      <pre><code>scores <span class="kw">are</span> [<span class="num">45</span>, <span class="num">62</span>, <span class="num">38</span>, <span class="num">91</span>]
+anyPassing <span class="kw">is</span> some(scores, <span class="kw">with</span> s: s <span class="kw">is greater than</span> <span class="num">60</span>)
+<span class="kw">say</span> anyPassing   <span class="cmt">-- true</span></code></pre>
 
-      <h2 id="math">Math</h2>
+      <h3><code>reduce(list, function, initial)</code> &mdash; Combine into one value</h3>
+      <p>Takes a list and combines all items into a single value by applying a function repeatedly. This is like folding a list down into one result.</p>
+      <pre><code><span class="cmt">-- Sum all numbers (the long way)</span>
+numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+total <span class="kw">is</span> reduce(numbers, <span class="kw">with</span> a, b: a + b)
+<span class="kw">say</span> total   <span class="cmt">-- 15</span>
 
-      <h3><code>round(n)</code></h3>
-      <p>Rounds a number to the nearest integer.</p>
+<span class="cmt">-- Find the longest word</span>
+words <span class="kw">are</span> [<span class="str">"cat"</span>, <span class="str">"elephant"</span>, <span class="str">"dog"</span>]
+longest <span class="kw">is</span> reduce(words, <span class="kw">with</span> a, b: <span class="kw">if</span> length(a) <span class="kw">is greater than</span> length(b) <span class="kw">then</span> a <span class="kw">otherwise</span> b)
+</code></pre>
+
+      <h3><code>countWhere(list, function)</code> &mdash; Count matches</h3>
+      <p>Counts how many items pass a test.</p>
+      <pre><code>ages <span class="kw">are</span> [<span class="num">15</span>, <span class="num">22</span>, <span class="num">17</span>, <span class="num">30</span>, <span class="num">12</span>]
+adults <span class="kw">is</span> countWhere(ages, <span class="kw">with</span> a: a <span class="kw">is greater than</span> <span class="num">17</span>)
+<span class="kw">say</span> adults   <span class="cmt">-- 2</span></code></pre>
+
+      <h3><code>groupBy(list, function)</code> &mdash; Group items</h3>
+      <p>Splits a list into groups based on a function. Returns an object where keys are group names and values are lists.</p>
+      <pre><code>people <span class="kw">are</span> [
+  {name: <span class="str">"Alice"</span>, dept: <span class="str">"engineering"</span>},
+  {name: <span class="str">"Bob"</span>, dept: <span class="str">"design"</span>},
+  {name: <span class="str">"Charlie"</span>, dept: <span class="str">"engineering"</span>}
+]
+teams <span class="kw">is</span> groupBy(people, <span class="kw">with</span> p: p.dept)
+<span class="cmt">-- { engineering: [{...}, {...}], design: [{...}] }</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- WORKING WITH TEXT                             -->
+      <!-- ============================================ -->
+
+      <h2 id="text">Working with Text</h2>
+      <p>Text (also called "strings" in other languages) is everywhere in programming &mdash; names, messages, file contents, web pages. These functions help you search, transform, and manipulate text.</p>
+
+      <h3><code>trim(text)</code> &mdash; Remove extra spaces</h3>
+      <p>Removes spaces (and tabs, newlines) from the beginning and end of text. Very useful when processing user input.</p>
+      <pre><code>input <span class="kw">is</span> <span class="str">"  hello world  "</span>
+<span class="kw">say</span> trim(input)   <span class="cmt">-- "hello world"</span></code></pre>
+
+      <h3><code>upper(text)</code> / <code>lower(text)</code> &mdash; Change case</h3>
+      <p>Converts text to ALL UPPERCASE or all lowercase.</p>
+      <pre><code><span class="kw">say</span> upper(<span class="str">"hello"</span>)   <span class="cmt">-- "HELLO"</span>
+<span class="kw">say</span> lower(<span class="str">"HELLO"</span>)   <span class="cmt">-- "hello"</span>
+
+<span class="cmt">-- Useful for case-insensitive comparisons</span>
+<span class="kw">if</span> lower(answer) <span class="kw">is</span> <span class="str">"yes"</span>:
+  <span class="kw">say</span> <span class="str">"Confirmed!"</span></code></pre>
+
+      <h3><code>capitalize(text)</code> &mdash; Capitalize first letter</h3>
+      <p>Makes the first letter uppercase. Good for formatting names and titles.</p>
+      <pre><code><span class="kw">say</span> capitalize(<span class="str">"hello"</span>)   <span class="cmt">-- "Hello"</span>
+<span class="kw">say</span> capitalize(<span class="str">"alice"</span>)   <span class="cmt">-- "Alice"</span></code></pre>
+
+      <h3><code>replace_text(text, old, new)</code> &mdash; Find and replace</h3>
+      <p>Replaces all occurrences of <code>old</code> with <code>new</code> in the text.</p>
+      <pre><code>msg <span class="kw">is</span> <span class="str">"Hello, World! Hello, Everyone!"</span>
+<span class="kw">say</span> replace_text(msg, <span class="str">"Hello"</span>, <span class="str">"Hi"</span>)
+<span class="cmt">-- "Hi, World! Hi, Everyone!"</span></code></pre>
+
+      <h3><code>startsWith(text, prefix)</code> / <code>endsWith(text, suffix)</code></h3>
+      <p>Check if text begins or ends with a specific string. Returns <code>yes</code> or <code>no</code>.</p>
+      <pre><code>filename <span class="kw">is</span> <span class="str">"photo.jpg"</span>
+<span class="kw">say</span> endsWith(filename, <span class="str">".jpg"</span>)   <span class="cmt">-- true</span>
+<span class="kw">say</span> startsWith(filename, <span class="str">"doc"</span>)  <span class="cmt">-- false</span></code></pre>
+
+      <h3><code>split(text, separator)</code> &mdash; Break text apart</h3>
+      <p>Splits text into a list using the separator. Like cutting a sentence into individual words.</p>
+      <pre><code><span class="cmt">-- Split by comma</span>
+csv <span class="kw">is</span> <span class="str">"apple,banana,cherry"</span>
+fruits <span class="kw">is</span> split(csv, <span class="str">","</span>)
+<span class="kw">say</span> fruits   <span class="cmt">-- ["apple", "banana", "cherry"]</span>
+
+<span class="cmt">-- Split by space to get words</span>
+sentence <span class="kw">is</span> <span class="str">"the quick brown fox"</span>
+<span class="kw">say</span> split(sentence, <span class="str">" "</span>)   <span class="cmt">-- ["the", "quick", "brown", "fox"]</span></code></pre>
+
+      <h3><code>join(list, separator)</code> &mdash; Combine into text</h3>
+      <p>The opposite of <code>split</code> &mdash; joins a list of items into a single text string. Defaults to <code>", "</code> if no separator given.</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+<span class="kw">say</span> join(colors, <span class="str">" and "</span>)   <span class="cmt">-- "red and green and blue"</span>
+<span class="kw">say</span> join(colors)             <span class="cmt">-- "red, green, blue"</span></code></pre>
+
+      <h3><code>words(text)</code> &mdash; Split into words</h3>
+      <p>Splits text into a list of words (by whitespace). Handles multiple spaces gracefully.</p>
+      <pre><code><span class="kw">say</span> words(<span class="str">"hello  beautiful  world"</span>)
+<span class="cmt">-- ["hello", "beautiful", "world"]</span></code></pre>
+
+      <h3><code>lines(text)</code> &mdash; Split into lines</h3>
+      <p>Splits text into a list of lines.</p>
+      <pre><code>poem <span class="kw">is</span> <span class="str">"roses are red\nviolets are blue"</span>
+<span class="kw">say</span> lines(poem)   <span class="cmt">-- ["roses are red", "violets are blue"]</span></code></pre>
+
+      <h3><code>padStart(text, length, char)</code> / <code>padEnd(text, length, char)</code></h3>
+      <p>Pads text to a certain length by adding characters to the start or end. Great for formatting numbers and aligning output.</p>
+      <pre><code><span class="cmt">-- Pad a number with leading zeros</span>
+<span class="kw">say</span> padStart(<span class="str">"42"</span>, <span class="num">6</span>, <span class="str">"0"</span>)   <span class="cmt">-- "000042"</span>
+
+<span class="cmt">-- Pad the end with dots</span>
+<span class="kw">say</span> padEnd(<span class="str">"Loading"</span>, <span class="num">10</span>, <span class="str">"."</span>)   <span class="cmt">-- "Loading..."</span></code></pre>
+
+      <h3><code>repeat(text, count)</code> &mdash; Repeat text</h3>
+      <p>Repeats text a given number of times.</p>
+      <pre><code><span class="kw">say</span> repeat(<span class="str">"ha"</span>, <span class="num">3</span>)     <span class="cmt">-- "hahaha"</span>
+<span class="kw">say</span> repeat(<span class="str">"=-"</span>, <span class="num">20</span>)   <span class="cmt">-- a nice separator line</span></code></pre>
+
+      <h3><code>truncate(text, length)</code> &mdash; Shorten text</h3>
+      <p>Cuts text to a maximum length and adds <code>...</code> if it was shortened. Perfect for previews.</p>
+      <pre><code>title <span class="kw">is</span> <span class="str">"This is a very long article title that needs shortening"</span>
+<span class="kw">say</span> truncate(title, <span class="num">25</span>)   <span class="cmt">-- "This is a very long artic..."</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- MATH & NUMBERS                               -->
+      <!-- ============================================ -->
+
+      <h2 id="math">Math &amp; Numbers</h2>
+      <p>Functions for rounding, random numbers, and converting between types.</p>
+
+      <h3><code>round(n)</code> / <code>floor(n)</code> / <code>ceil(n)</code> &mdash; Rounding</h3>
+      <p><code>round</code> rounds to the nearest whole number. <code>floor</code> always rounds down. <code>ceil</code> always rounds up.</p>
       <pre><code><span class="kw">say</span> round(<span class="num">3.7</span>)   <span class="cmt">-- 4</span>
-<span class="kw">say</span> round(<span class="num">3.2</span>)   <span class="cmt">-- 3</span></code></pre>
+<span class="kw">say</span> round(<span class="num">3.2</span>)   <span class="cmt">-- 3</span>
+<span class="kw">say</span> floor(<span class="num">3.9</span>)   <span class="cmt">-- 3 (always rounds down)</span>
+<span class="kw">say</span> ceil(<span class="num">3.1</span>)    <span class="cmt">-- 4 (always rounds up)</span></code></pre>
 
-      <h3><code>floor(n)</code></h3>
-      <p>Rounds down to the nearest integer.</p>
-      <pre><code><span class="kw">say</span> floor(<span class="num">3.9</span>)   <span class="cmt">-- 3</span></code></pre>
+      <h3><code>abs(n)</code> &mdash; Absolute value</h3>
+      <p>Returns the positive version of a number. Removes the negative sign if present.</p>
+      <pre><code><span class="kw">say</span> abs(-<span class="num">5</span>)    <span class="cmt">-- 5</span>
+<span class="kw">say</span> abs(<span class="num">5</span>)     <span class="cmt">-- 5</span></code></pre>
 
-      <h3><code>ceil(n)</code></h3>
-      <p>Rounds up to the nearest integer.</p>
-      <pre><code><span class="kw">say</span> ceil(<span class="num">3.1</span>)   <span class="cmt">-- 4</span></code></pre>
+      <h3><code>random()</code> &mdash; Random decimal</h3>
+      <p>Returns a random number between 0 and 1.</p>
+      <pre><code><span class="kw">say</span> random()   <span class="cmt">-- 0.7234... (different each time)</span></code></pre>
 
-      <h3><code>abs(n)</code></h3>
-      <p>Returns the absolute value.</p>
-      <pre><code><span class="kw">say</span> abs(<span class="num">-5</span>)   <span class="cmt">-- 5</span></code></pre>
+      <h3><code>randomInt(min, max)</code> &mdash; Random whole number</h3>
+      <p>Returns a random whole number between <code>min</code> and <code>max</code> (inclusive). Like rolling dice.</p>
+      <pre><code><span class="cmt">-- Roll a 6-sided die</span>
+roll <span class="kw">is</span> randomInt(<span class="num">1</span>, <span class="num">6</span>)
+<span class="kw">say</span> <span class="str">"You rolled: "</span> + toText(roll)
 
-      <h3><code>random()</code></h3>
-      <p>Returns a random decimal between 0 (inclusive) and 1 (exclusive).</p>
-      <pre><code><span class="kw">say</span> random()   <span class="cmt">-- 0.7291...</span></code></pre>
+<span class="cmt">-- Pick a random card number</span>
+card <span class="kw">is</span> randomInt(<span class="num">1</span>, <span class="num">13</span>)</code></pre>
 
-      <h3><code>randomInt(min, max)</code></h3>
-      <p>Returns a random integer between <code>min</code> and <code>max</code> (inclusive).</p>
-      <pre><code><span class="kw">say</span> randomInt(<span class="num">1</span>, <span class="num">10</span>)   <span class="cmt">-- e.g., 7</span></code></pre>
+      <h3><code>toNumber(x)</code> / <code>toText(x)</code> &mdash; Convert types</h3>
+      <p>Convert between numbers and text. You'll use <code>toText</code> often when combining numbers with text in output.</p>
+      <pre><code><span class="kw">say</span> toNumber(<span class="str">"42"</span>)       <span class="cmt">-- 42 (now a number)</span>
+<span class="kw">say</span> toText(<span class="num">42</span>)           <span class="cmt">-- "42" (now text)</span>
+<span class="kw">say</span> <span class="str">"Score: "</span> + toText(<span class="num">100</span>)   <span class="cmt">-- "Score: 100"</span></code></pre>
 
-      <h2 id="conversion">Conversion</h2>
+      <h3><code>typeOf(x)</code> &mdash; Check what type something is</h3>
+      <p>Returns the type of a value as text: <code>"text"</code>, <code>"number"</code>, <code>"boolean"</code>, <code>"list"</code>, <code>"object"</code>, <code>"nothing"</code>, or <code>"function"</code>.</p>
+      <pre><code><span class="kw">say</span> typeOf(<span class="str">"hello"</span>)   <span class="cmt">-- "string"</span>
+<span class="kw">say</span> typeOf(<span class="num">42</span>)        <span class="cmt">-- "number"</span>
+<span class="kw">say</span> typeOf([<span class="num">1</span>,<span class="num">2</span>])    <span class="cmt">-- "list"</span>
+<span class="kw">say</span> typeOf(nothing)   <span class="cmt">-- "nothing"</span></code></pre>
 
-      <h3><code>toNumber(x)</code></h3>
-      <p>Converts a value to a number.</p>
-      <pre><code><span class="kw">say</span> toNumber(<span class="str">"42"</span>)   <span class="cmt">-- 42</span></code></pre>
+      <!-- ============================================ -->
+      <!-- OBJECTS & DATA                               -->
+      <!-- ============================================ -->
 
-      <h3><code>toText(x)</code></h3>
-      <p>Converts a value to text.</p>
-      <pre><code><span class="kw">say</span> toText(<span class="num">42</span>)   <span class="cmt">-- "42"</span></code></pre>
+      <h2 id="objects">Objects &amp; Data</h2>
+      <p>Objects are like labeled containers &mdash; they store values with names (keys). Think of an object as a form with labeled fields: name, age, email. These functions help you inspect, combine, and transform objects.</p>
 
-      <h3><code>typeOf(x)</code></h3>
-      <p>Returns the type of a value as text: <code>"number"</code>, <code>"string"</code>, <code>"boolean"</code>, <code>"list"</code>, or <code>"nothing"</code>.</p>
-      <pre><code><span class="kw">say</span> typeOf(<span class="num">42</span>)         <span class="cmt">-- "number"</span>
-<span class="kw">say</span> typeOf(<span class="str">"hello"</span>)    <span class="cmt">-- "string"</span>
-<span class="kw">say</span> typeOf([<span class="num">1</span>, <span class="num">2</span>])    <span class="cmt">-- "list"</span></code></pre>
+      <h3><code>keys(obj)</code> / <code>values(obj)</code> &mdash; Get keys or values</h3>
+      <p><code>keys</code> returns a list of all the field names. <code>values</code> returns a list of all the values.</p>
+      <pre><code>user <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>, city: <span class="str">"NYC"</span>}
+<span class="kw">say</span> keys(user)     <span class="cmt">-- ["name", "age", "city"]</span>
+<span class="kw">say</span> values(user)   <span class="cmt">-- ["Alice", 30, "NYC"]</span></code></pre>
 
-      <h2 id="file-io">File I/O</h2>
+      <h3><code>entries(obj)</code> &mdash; Get key-value pairs</h3>
+      <p>Returns a list of [key, value] pairs. Useful for looping through an object.</p>
+      <pre><code>config <span class="kw">is</span> {theme: <span class="str">"dark"</span>, lang: <span class="str">"en"</span>}
+<span class="kw">for each</span> pair <span class="kw">in</span> entries(config):
+  <span class="kw">say</span> pair[<span class="num">0</span>] + <span class="str">" = "</span> + pair[<span class="num">1</span>]
+<span class="cmt">-- "theme = dark"</span>
+<span class="cmt">-- "lang = en"</span></code></pre>
+
+      <h3><code>fromEntries(pairs)</code> &mdash; Build object from pairs</h3>
+      <p>The opposite of <code>entries</code> &mdash; creates an object from a list of [key, value] pairs.</p>
+      <pre><code>pairs <span class="kw">are</span> [[<span class="str">"name"</span>, <span class="str">"Bob"</span>], [<span class="str">"age"</span>, <span class="num">25</span>]]
+<span class="kw">say</span> fromEntries(pairs)   <span class="cmt">-- {name: "Bob", age: 25}</span></code></pre>
+
+      <h3><code>merge(obj1, obj2, ...)</code> &mdash; Combine objects</h3>
+      <p>Merges multiple objects into one. If the same key appears in multiple objects, the last one wins.</p>
+      <pre><code>defaults <span class="kw">is</span> {theme: <span class="str">"light"</span>, lang: <span class="str">"en"</span>, fontSize: <span class="num">14</span>}
+userPrefs <span class="kw">is</span> {theme: <span class="str">"dark"</span>, fontSize: <span class="num">18</span>}
+settings <span class="kw">is</span> merge(defaults, userPrefs)
+<span class="kw">say</span> settings
+<span class="cmt">-- {theme: "dark", lang: "en", fontSize: 18}</span></code></pre>
+
+      <h3><code>pick(obj, keys...)</code> &mdash; Select specific fields</h3>
+      <p>Creates a new object with only the fields you want. Like picking columns from a spreadsheet.</p>
+      <pre><code>user <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>, email: <span class="str">"alice@example.com"</span>, password: <span class="str">"secret"</span>}
+safe <span class="kw">is</span> pick(user, <span class="str">"name"</span>, <span class="str">"email"</span>)
+<span class="kw">say</span> safe   <span class="cmt">-- {name: "Alice", email: "alice@example.com"}</span></code></pre>
+
+      <h3><code>omit(obj, keys...)</code> &mdash; Remove specific fields</h3>
+      <p>The opposite of <code>pick</code> &mdash; creates a new object without the specified fields.</p>
+      <pre><code>safeUser <span class="kw">is</span> omit(user, <span class="str">"password"</span>)
+<span class="cmt">-- {name: "Alice", age: 30, email: "alice@example.com"}</span></code></pre>
+
+      <h3><code>hasKey(obj, key)</code> &mdash; Check if a field exists</h3>
+      <pre><code><span class="kw">say</span> hasKey(user, <span class="str">"name"</span>)     <span class="cmt">-- true</span>
+<span class="kw">say</span> hasKey(user, <span class="str">"phone"</span>)    <span class="cmt">-- false</span></code></pre>
+
+      <h3><code>deepCopy(x)</code> &mdash; Clone a value</h3>
+      <p>Creates a complete independent copy of an object or list. Changes to the copy won't affect the original.</p>
+      <pre><code>original <span class="kw">is</span> {scores: [<span class="num">90</span>, <span class="num">85</span>, <span class="num">92</span>]}
+copy <span class="kw">is</span> deepCopy(original)
+push(copy.scores, <span class="num">100</span>)
+<span class="kw">say</span> length(original.scores)   <span class="cmt">-- 3 (unchanged!)</span>
+<span class="kw">say</span> length(copy.scores)       <span class="cmt">-- 4</span></code></pre>
+
+      <h3><code>parseJSON(text)</code> / <code>toJSON(value)</code> &mdash; JSON conversion</h3>
+      <p>Convert between text (JSON format) and Quill values. JSON is a standard format for storing and exchanging data.</p>
+      <pre><code><span class="cmt">-- Text to object</span>
+data <span class="kw">is</span> parseJSON(<span class="str">"{\"name\": \"Alice\", \"age\": 30}"</span>)
+<span class="kw">say</span> data.name   <span class="cmt">-- "Alice"</span>
+
+<span class="cmt">-- Object to formatted text</span>
+<span class="kw">say</span> toJSON({name: <span class="str">"Bob"</span>, age: <span class="num">25</span>})</code></pre>
+
+      <!-- ============================================ -->
+      <!-- TYPE CHECKING                                -->
+      <!-- ============================================ -->
+
+      <h2 id="type-checking">Type Checking</h2>
+      <p>Sometimes you need to check what kind of value you're working with before doing something with it. These functions return <code>yes</code> or <code>no</code>.</p>
+
+      <h3><code>isText(x)</code> / <code>isNumber(x)</code> / <code>isList(x)</code> / <code>isObject(x)</code></h3>
+      <pre><code><span class="kw">say</span> isText(<span class="str">"hello"</span>)     <span class="cmt">-- true</span>
+<span class="kw">say</span> isNumber(<span class="num">42</span>)        <span class="cmt">-- true</span>
+<span class="kw">say</span> isList([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>])    <span class="cmt">-- true</span>
+<span class="kw">say</span> isObject({a: <span class="num">1</span>})    <span class="cmt">-- true</span>
+<span class="kw">say</span> isNumber(<span class="str">"42"</span>)      <span class="cmt">-- false (it's text, not a number!)</span></code></pre>
+
+      <h3><code>isNothing(x)</code> / <code>isFunction(x)</code></h3>
+      <pre><code><span class="kw">say</span> isNothing(nothing)   <span class="cmt">-- true</span>
+<span class="kw">say</span> isNothing(<span class="num">0</span>)         <span class="cmt">-- false (0 is a number, not nothing)</span>
+<span class="kw">say</span> isNothing(<span class="str">""</span>)        <span class="cmt">-- false (empty text is still text)</span></code></pre>
+
       <div class="callout callout-info">
-        File I/O functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+        <strong>Practical use:</strong> Type checking is great for writing functions that accept different kinds of input:
+        <pre><code><span class="kw">to</span> display value:
+  <span class="kw">if</span> isText(value):
+    <span class="kw">say</span> value
+  <span class="kw">otherwise if</span> isList(value):
+    <span class="kw">say</span> join(value, <span class="str">", "</span>)
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> toText(value)</code></pre>
       </div>
 
-      <h3><code>read(path)</code></h3>
-      <p>Reads the contents of a file as text.</p>
-      <pre><code>content <span class="kw">is</span> read(<span class="str">"data.txt"</span>)
-<span class="kw">say</span> content</code></pre>
+      <!-- ============================================ -->
+      <!-- FILES & FOLDERS                              -->
+      <!-- ============================================ -->
 
-      <h3><code>write(path, content)</code></h3>
-      <p>Writes text to a file, creating or overwriting it.</p>
-      <pre><code>write(<span class="str">"output.txt"</span>, <span class="str">"Hello, file!"</span>)</code></pre>
+      <h2 id="files">Files &amp; Folders</h2>
+      <p>Read, write, and manage files on your computer. These functions only work when running Quill with the CLI (<code>quill run</code>), not in the browser.</p>
 
-      <h3><code>append_file(path, content)</code></h3>
-      <p>Appends text to the end of a file.</p>
-      <pre><code>append_file(<span class="str">"log.txt"</span>, <span class="str">"New entry\n"</span>)</code></pre>
+      <h3><code>read(path)</code> / <code>write(path, content)</code> &mdash; Basic file I/O</h3>
+      <p>Read the entire contents of a file, or write content to a file (creates it if it doesn't exist, overwrites if it does).</p>
+      <pre><code><span class="cmt">-- Read a file</span>
+content <span class="kw">is</span> read(<span class="str">"notes.txt"</span>)
+<span class="kw">say</span> content
 
-      <h3><code>exists(path)</code></h3>
-      <p>Returns <code>yes</code> if a file exists at the given path.</p>
-      <pre><code><span class="kw">if</span> exists(<span class="str">"config.txt"</span>):
-  <span class="kw">say</span> <span class="str">"Config found"</span></code></pre>
+<span class="cmt">-- Write to a file</span>
+write(<span class="str">"output.txt"</span>, <span class="str">"Hello from Quill!"</span>)</code></pre>
 
-      <h2 id="date-time">Date &amp; time</h2>
+      <h3><code>append_file(path, content)</code> &mdash; Add to a file</h3>
+      <p>Adds content to the end of a file without erasing what's already there. Like adding a new entry to a log.</p>
+      <pre><code>append_file(<span class="str">"log.txt"</span>, <span class="str">"User logged in at "</span> + now())</code></pre>
 
-      <h3><code>now()</code></h3>
-      <p>Returns the current date and time as an ISO 8601 string.</p>
-      <pre><code><span class="kw">say</span> now()   <span class="cmt">-- "2026-04-04T12:34:56.789Z"</span></code></pre>
+      <h3><code>readJSON(path)</code> / <code>writeJSON(path, data)</code> &mdash; JSON files</h3>
+      <p>Read and write JSON files directly. Quill handles the parsing and formatting for you.</p>
+      <pre><code><span class="cmt">-- Read a config file</span>
+config <span class="kw">is</span> readJSON(<span class="str">"config.json"</span>)
+<span class="kw">say</span> config.name
 
-      <h3><code>today()</code></h3>
-      <p>Returns today's date as a string (<code>YYYY-MM-DD</code>).</p>
-      <pre><code><span class="kw">say</span> today()   <span class="cmt">-- "2026-04-04"</span></code></pre>
+<span class="cmt">-- Save data to a file</span>
+writeJSON(<span class="str">"users.json"</span>, [{name: <span class="str">"Alice"</span>}, {name: <span class="str">"Bob"</span>}])</code></pre>
 
-      <h2 id="serialization">Serialization</h2>
+      <h3><code>readLines(path)</code> / <code>writeLines(path, list)</code></h3>
+      <p>Read a file as a list of lines, or write a list of lines to a file.</p>
+      <pre><code>todos <span class="kw">is</span> readLines(<span class="str">"todo.txt"</span>)
+<span class="kw">for each</span> todo <span class="kw">in</span> todos:
+  <span class="kw">say</span> <span class="str">"- "</span> + todo</code></pre>
 
-      <h3><code>parseJSON(text)</code></h3>
-      <p>Parses a JSON string into a Quill value.</p>
-      <pre><code>data <span class="kw">is</span> parseJSON(<span class="str">'{"name": "Alice"}'</span>)
-<span class="kw">say</span> data.name   <span class="cmt">-- "Alice"</span></code></pre>
+      <h3><code>fileExists(path)</code> / <code>exists(path)</code> &mdash; Check if file exists</h3>
+      <pre><code><span class="kw">if</span> fileExists(<span class="str">"config.json"</span>):
+  config <span class="kw">is</span> readJSON(<span class="str">"config.json"</span>)
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"No config found, using defaults"</span></code></pre>
 
-      <h3><code>toJSON(value)</code></h3>
-      <p>Converts a value to a formatted JSON string.</p>
-      <pre><code>list <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
-<span class="kw">say</span> toJSON(list)</code></pre>
+      <h3><code>listFiles(dir)</code> / <code>listFilesDeep(dir)</code> &mdash; List files</h3>
+      <p><code>listFiles</code> lists files in a directory. <code>listFilesDeep</code> includes all subdirectories too.</p>
+      <pre><code>files <span class="kw">is</span> listFiles(<span class="str">"."</span>)
+<span class="kw">say</span> <span class="str">"Files in current folder: "</span> + join(files, <span class="str">", "</span>)</code></pre>
 
-      <h2 id="system">System</h2>
+      <h3><code>fileInfo(path)</code> &mdash; Get file details</h3>
+      <p>Returns an object with file size, modification date, and type.</p>
+      <pre><code>info <span class="kw">is</span> fileInfo(<span class="str">"photo.jpg"</span>)
+<span class="kw">say</span> <span class="str">"Size: "</span> + toText(info.size) + <span class="str">" bytes"</span>
+<span class="kw">say</span> <span class="str">"Modified: "</span> + info.modified</code></pre>
 
-      <h3><code>wait(ms)</code></h3>
-      <p>Pauses execution for the given number of milliseconds. CLI only.</p>
-      <pre><code>wait(<span class="num">1000</span>)   <span class="cmt">-- wait 1 second</span></code></pre>
+      <h3><code>copyFile(src, dest)</code> / <code>moveFile(src, dest)</code> / <code>deleteFile(path)</code></h3>
+      <pre><code>copyFile(<span class="str">"report.pdf"</span>, <span class="str">"backup/report.pdf"</span>)
+moveFile(<span class="str">"old.txt"</span>, <span class="str">"archive/old.txt"</span>)
+deleteFile(<span class="str">"temp.txt"</span>)</code></pre>
 
-      <h3><code>exit(code)</code></h3>
-      <p>Exits the program with the given exit code. CLI only.</p>
-      <pre><code>exit(<span class="num">0</span>)   <span class="cmt">-- exit successfully</span></code></pre>
+      <h3><code>makeDir(path)</code> &mdash; Create folders</h3>
+      <p>Creates a directory (and any parent directories that don't exist yet).</p>
+      <pre><code>makeDir(<span class="str">"output/reports/2026"</span>)</code></pre>
 
-      <h2 id="environment">Environment</h2>
-      <div class="callout callout-info">
-        Environment functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
-      </div>
+      <h3>Path helpers: <code>joinPath</code>, <code>fileName</code>, <code>fileExtension</code>, <code>parentDir</code></h3>
+      <pre><code><span class="kw">say</span> joinPath(<span class="str">"docs"</span>, <span class="str">"guide.txt"</span>)       <span class="cmt">-- "docs/guide.txt"</span>
+<span class="kw">say</span> fileName(<span class="str">"/home/user/photo.jpg"</span>)    <span class="cmt">-- "photo.jpg"</span>
+<span class="kw">say</span> fileExtension(<span class="str">"photo.jpg"</span>)          <span class="cmt">-- ".jpg"</span>
+<span class="kw">say</span> parentDir(<span class="str">"/home/user/photo.jpg"</span>)   <span class="cmt">-- "/home/user"</span>
+<span class="kw">say</span> currentDir()                          <span class="cmt">-- your current working directory</span>
+<span class="kw">say</span> homePath()                            <span class="cmt">-- your home folder path</span></code></pre>
 
-      <h3><code>env(key)</code></h3>
-      <p>Returns the value of an environment variable, or <code>nothing</code> if not set.</p>
-      <pre><code>token <span class="kw">is</span> env(<span class="str">"API_KEY"</span>)
-<span class="kw">say</span> token   <span class="cmt">-- value of $API_KEY</span></code></pre>
+      <!-- ============================================ -->
+      <!-- DATE & TIME                                  -->
+      <!-- ============================================ -->
 
-      <h3><code>setEnv(key, val)</code></h3>
-      <p>Sets an environment variable for the current process.</p>
-      <pre><code>setEnv(<span class="str">"MODE"</span>, <span class="str">"production"</span>)
-<span class="kw">say</span> env(<span class="str">"MODE"</span>)   <span class="cmt">-- "production"</span></code></pre>
+      <h2 id="date-time">Date &amp; Time</h2>
+      <p>Functions for working with dates, times, and timestamps.</p>
 
-      <h2 id="process-shell">Process / Shell</h2>
-      <div class="callout callout-info">
-        Process and shell functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
-      </div>
+      <h3><code>now()</code> / <code>today()</code> &mdash; Current date/time</h3>
+      <pre><code><span class="kw">say</span> now()     <span class="cmt">-- "2026-04-04T14:30:00.000Z" (full date and time)</span>
+<span class="kw">say</span> today()   <span class="cmt">-- "2026-04-04" (just the date)</span></code></pre>
 
-      <h3><code>args()</code></h3>
-      <p>Returns the list of command-line arguments passed to the script.</p>
-      <pre><code><span class="cmt">-- quill run script.ql -- hello world</span>
+      <h3><code>timestamp()</code> &mdash; Unix timestamp</h3>
+      <p>Returns the current time as milliseconds since January 1, 1970. Useful for measuring how long something takes.</p>
+      <pre><code>start <span class="kw">is</span> timestamp()
+<span class="cmt">-- ... do some work ...</span>
+elapsed <span class="kw">is</span> timestamp() - start
+<span class="kw">say</span> <span class="str">"Took "</span> + toText(elapsed) + <span class="str">" ms"</span></code></pre>
+
+      <h3><code>formatDate(date, format)</code> &mdash; Format a date</h3>
+      <p>Formats a date string using a pattern. Available placeholders: <code>YYYY</code> (year), <code>MM</code> (month), <code>DD</code> (day), <code>HH</code> (hour), <code>mm</code> (minute), <code>ss</code> (second).</p>
+      <pre><code><span class="kw">say</span> formatDate(now(), <span class="str">"YYYY-MM-DD"</span>)       <span class="cmt">-- "2026-04-04"</span>
+<span class="kw">say</span> formatDate(now(), <span class="str">"MM/DD/YYYY"</span>)       <span class="cmt">-- "04/04/2026"</span>
+<span class="kw">say</span> formatDate(now(), <span class="str">"HH:mm:ss"</span>)         <span class="cmt">-- "14:30:00"</span></code></pre>
+
+      <h3><code>addDays(date, days)</code> / <code>diffDays(date1, date2)</code></h3>
+      <pre><code><span class="cmt">-- What date is 7 days from now?</span>
+nextWeek <span class="kw">is</span> addDays(today(), <span class="num">7</span>)
+<span class="kw">say</span> nextWeek
+
+<span class="cmt">-- How many days between two dates?</span>
+<span class="kw">say</span> diffDays(<span class="str">"2026-01-01"</span>, <span class="str">"2026-04-04"</span>)   <span class="cmt">-- 93</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- WEB & HTTP                                   -->
+      <!-- ============================================ -->
+
+      <h2 id="web-http">Web &amp; HTTP</h2>
+      <p>Fetch data from the internet and build web servers.</p>
+
+      <h3><code>fetchJSON(url)</code> &mdash; Get data from an API</h3>
+      <p>Fetches data from a URL and automatically parses it as JSON. This is how you get data from web APIs.</p>
+      <pre><code>data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://api.example.com/users"</span>)
+<span class="kw">say</span> data</code></pre>
+
+      <h3><code>postJSON(url, body)</code> &mdash; Send data to an API</h3>
+      <pre><code>result <span class="kw">is</span> <span class="kw">await</span> postJSON(<span class="str">"https://api.example.com/users"</span>, {
+  name: <span class="str">"Alice"</span>,
+  email: <span class="str">"alice@example.com"</span>
+})</code></pre>
+
+      <h3><code>createServer()</code> &mdash; Build a web server</h3>
+      <p>Creates an HTTP server with routing. This is how you build web applications and APIs with Quill.</p>
+      <pre><code>server <span class="kw">is</span> createServer()
+
+server.get(<span class="str">"/"</span>, <span class="str">"Welcome to my site!"</span>)
+
+server.get(<span class="str">"/api/hello"</span>, {message: <span class="str">"Hello from Quill!"</span>})
+
+server.post(<span class="str">"/api/data"</span>, <span class="kw">with</span> req, res:
+  <span class="kw">say</span> <span class="str">"Got data!"</span>
+  <span class="kw">give back</span> {status: <span class="str">"ok"</span>}
+)
+
+server.listen(<span class="num">3000</span>)
+<span class="kw">say</span> <span class="str">"Server running on port 3000"</span></code></pre>
+
+      <h3><code>serveStatic(dir)</code> &mdash; Serve files</h3>
+      <p>Serves static files (HTML, CSS, images) from a directory.</p>
+      <pre><code>serveStatic(<span class="str">"./public"</span>)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- CRYPTO & ENCODING                            -->
+      <!-- ============================================ -->
+
+      <h2 id="crypto">Crypto &amp; Encoding</h2>
+      <p>Functions for hashing, generating unique IDs, and encoding/decoding data.</p>
+
+      <h3><code>hash(text, algorithm)</code> &mdash; Hash a string</h3>
+      <p>Creates a hash (fingerprint) of text. Useful for checksums and verification. Default algorithm is SHA-256.</p>
+      <pre><code><span class="kw">say</span> hash(<span class="str">"hello"</span>)              <span class="cmt">-- "2cf24dba..." (SHA-256)</span>
+<span class="kw">say</span> hash(<span class="str">"hello"</span>, <span class="str">"md5"</span>)    <span class="cmt">-- "5d41402a..." (MD5)</span></code></pre>
+
+      <h3><code>uuid()</code> &mdash; Generate unique ID</h3>
+      <p>Generates a random unique identifier. Perfect for giving each item a unique ID.</p>
+      <pre><code>id <span class="kw">is</span> uuid()
+<span class="kw">say</span> id   <span class="cmt">-- "550e8400-e29b-41d4-a716-446655440000"</span></code></pre>
+
+      <h3><code>encodeBase64(text)</code> / <code>decodeBase64(text)</code></h3>
+      <p>Encode text to Base64 format and back. Base64 is a way to represent binary data as text.</p>
+      <pre><code>encoded <span class="kw">is</span> encodeBase64(<span class="str">"Hello, World!"</span>)
+<span class="kw">say</span> encoded                      <span class="cmt">-- "SGVsbG8sIFdvcmxkIQ=="</span>
+<span class="kw">say</span> decodeBase64(encoded)       <span class="cmt">-- "Hello, World!"</span></code></pre>
+
+      <h3><code>encodeURL(text)</code> / <code>decodeURL(text)</code></h3>
+      <p>Encode and decode text for safe use in URLs.</p>
+      <pre><code><span class="kw">say</span> encodeURL(<span class="str">"hello world &amp; more"</span>)   <span class="cmt">-- "hello%20world%20%26%20more"</span>
+<span class="kw">say</span> decodeURL(<span class="str">"hello%20world"</span>)        <span class="cmt">-- "hello world"</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- PATTERNS & REGEXP                            -->
+      <!-- ============================================ -->
+
+      <h2 id="patterns">Patterns &amp; RegExp</h2>
+      <p>Search and replace using patterns (regular expressions). Patterns are like wildcards on steroids &mdash; they let you match complex text patterns.</p>
+
+      <h3><code>matches(text, pattern)</code> &mdash; Find all matches</h3>
+      <p>Returns a list of all parts of the text that match the pattern.</p>
+      <pre><code><span class="cmt">-- Find all numbers in text</span>
+<span class="kw">say</span> matches(<span class="str">"I have 3 cats and 2 dogs"</span>, <span class="str">"\\d+"</span>)
+<span class="cmt">-- ["3", "2"]</span>
+
+<span class="cmt">-- Find all email-like patterns</span>
+<span class="kw">say</span> matches(<span class="str">"Contact alice@test.com or bob@test.com"</span>, <span class="str">"\\w+@\\w+\\.\\w+"</span>)
+<span class="cmt">-- ["alice@test.com", "bob@test.com"]</span></code></pre>
+
+      <h3><code>matchesPattern(text, pattern)</code> &mdash; Test if text matches</h3>
+      <p>Returns <code>yes</code> or <code>no</code> based on whether the text matches the pattern.</p>
+      <pre><code><span class="kw">say</span> matchesPattern(<span class="str">"hello123"</span>, <span class="str">"\\d+"</span>)   <span class="cmt">-- true (contains digits)</span>
+<span class="kw">say</span> matchesPattern(<span class="str">"hello"</span>, <span class="str">"\\d+"</span>)      <span class="cmt">-- false (no digits)</span></code></pre>
+
+      <h3><code>replacePattern(text, pattern, replacement)</code></h3>
+      <p>Replaces all matches of a pattern with the replacement text.</p>
+      <pre><code><span class="cmt">-- Remove all digits</span>
+<span class="kw">say</span> replacePattern(<span class="str">"abc123def456"</span>, <span class="str">"\\d+"</span>, <span class="str">""</span>)
+<span class="cmt">-- "abcdef"</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- SYSTEM & ENVIRONMENT                         -->
+      <!-- ============================================ -->
+
+      <h2 id="system">System &amp; Environment</h2>
+      <p>Interact with the operating system, run commands, and access environment variables.</p>
+
+      <h3><code>env(key)</code> / <code>setEnv(key, value)</code> &mdash; Environment variables</h3>
+      <p>Read and set environment variables. These are settings stored by your operating system.</p>
+      <pre><code><span class="kw">say</span> env(<span class="str">"HOME"</span>)       <span class="cmt">-- "/Users/alice"</span>
+<span class="kw">say</span> env(<span class="str">"PATH"</span>)       <span class="cmt">-- your system PATH</span>
+setEnv(<span class="str">"MY_APP"</span>, <span class="str">"production"</span>)</code></pre>
+
+      <h3><code>args()</code> &mdash; Command-line arguments</h3>
+      <p>Returns a list of arguments passed to your program.</p>
+      <pre><code><span class="cmt">-- If you run: quill run app.quill hello world</span>
 <span class="kw">say</span> args()   <span class="cmt">-- ["hello", "world"]</span></code></pre>
 
-      <h3><code>run(cmd)</code></h3>
-      <p>Runs a shell command and returns its output as text.</p>
-      <pre><code>result <span class="kw">is</span> run(<span class="str">"ls -la"</span>)
-<span class="kw">say</span> result</code></pre>
+      <h3><code>run(command)</code> &mdash; Run a shell command</h3>
+      <p>Runs a command on your computer and returns the output as text.</p>
+      <pre><code><span class="kw">say</span> run(<span class="str">"date"</span>)           <span class="cmt">-- current date from the system</span>
+<span class="kw">say</span> run(<span class="str">"ls"</span>)             <span class="cmt">-- list files in current directory</span>
+<span class="kw">say</span> run(<span class="str">"whoami"</span>)         <span class="cmt">-- your username</span></code></pre>
 
-      <h3><code>runAsync(cmd)</code></h3>
-      <p>Runs a shell command asynchronously and returns a promise-like result.</p>
-      <pre><code>result <span class="kw">is</span> runAsync(<span class="str">"sleep 2 && echo done"</span>)
-<span class="kw">say</span> result</code></pre>
+      <h3><code>runAsync(command)</code> &mdash; Run command in background</h3>
+      <p>Like <code>run</code> but doesn't block your program while waiting.</p>
+      <pre><code>output <span class="kw">is</span> <span class="kw">await</span> runAsync(<span class="str">"curl https://api.example.com"</span>)
+<span class="kw">say</span> output</code></pre>
 
-      <h3><code>platform()</code></h3>
-      <p>Returns the current operating system platform (e.g. <code>"darwin"</code>, <code>"linux"</code>, <code>"win32"</code>).</p>
-      <pre><code><span class="kw">say</span> platform()   <span class="cmt">-- "darwin"</span></code></pre>
+      <h3><code>platform()</code> / <code>cpuCount()</code> / <code>memory()</code></h3>
+      <pre><code><span class="kw">say</span> platform()    <span class="cmt">-- "darwin" (macOS), "linux", or "win32"</span>
+<span class="kw">say</span> cpuCount()     <span class="cmt">-- 8</span>
+<span class="kw">say</span> memory()       <span class="cmt">-- {total: 17179869184, free: 5368709120}</span></code></pre>
 
-      <h3><code>cpuCount()</code></h3>
-      <p>Returns the number of CPU cores available.</p>
-      <pre><code><span class="kw">say</span> cpuCount()   <span class="cmt">-- 8</span></code></pre>
+      <h3><code>exit(code)</code> &mdash; Stop the program</h3>
+      <pre><code><span class="kw">if</span> somethingWrong:
+  <span class="kw">say</span> <span class="str">"Fatal error!"</span>
+  exit(<span class="num">1</span>)   <span class="cmt">-- exit with error code</span></code></pre>
 
-      <h3><code>memory()</code></h3>
-      <p>Returns the total system memory in bytes.</p>
-      <pre><code><span class="kw">say</span> memory()   <span class="cmt">-- 17179869184</span></code></pre>
+      <h3><code>wait(ms)</code> &mdash; Pause execution</h3>
+      <pre><code><span class="kw">say</span> <span class="str">"Starting..."</span>
+wait(<span class="num">2000</span>)   <span class="cmt">-- pause for 2 seconds</span>
+<span class="kw">say</span> <span class="str">"Done!"</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- CONCURRENCY                                  -->
+      <!-- ============================================ -->
+
+      <h2 id="concurrency">Concurrency</h2>
+      <p>Run multiple tasks at the same time for better performance.</p>
+
+      <h3><code>parallel(...functions)</code> &mdash; Run tasks simultaneously</h3>
+      <p>Runs multiple functions at the same time and waits for all of them to finish. Returns a list of results.</p>
+      <pre><code><span class="cmt">-- Fetch multiple URLs at once instead of one by one</span>
+results <span class="kw">is</span> <span class="kw">await</span> parallel(
+  <span class="kw">with</span>: fetchJSON(<span class="str">"https://api.example.com/users"</span>),
+  <span class="kw">with</span>: fetchJSON(<span class="str">"https://api.example.com/posts"</span>)
+)</code></pre>
+
+      <h3><code>race(...functions)</code> &mdash; First one wins</h3>
+      <p>Runs multiple functions and returns the result of whichever finishes first.</p>
+
+      <h3><code>delay(ms)</code> &mdash; Async pause</h3>
+      <p>Pauses for a number of milliseconds without blocking (unlike <code>wait</code>).</p>
+      <pre><code><span class="kw">await</span> delay(<span class="num">1000</span>)   <span class="cmt">-- wait 1 second</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- TEMPLATES                                    -->
+      <!-- ============================================ -->
+
+      <h2 id="templates">Templates</h2>
+
+      <h3><code>template(text, data)</code> &mdash; Fill in placeholders</h3>
+      <p>Replaces <code>{{key}}</code> placeholders in text with values from a data object. Great for generating emails, HTML, or any text with dynamic content.</p>
+      <pre><code>msg <span class="kw">is</span> template(<span class="str">"Hello, {{name}}! You have {{count}} messages."</span>, {
+  name: <span class="str">"Alice"</span>,
+  count: <span class="num">5</span>
+})
+<span class="kw">say</span> msg   <span class="cmt">-- "Hello, Alice! You have 5 messages."</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- DATABASE                                     -->
+      <!-- ============================================ -->
 
       <h2 id="database">Database (SQLite)</h2>
-      <div class="callout callout-info">
-        Database functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
-      </div>
+      <p>Store and query data using SQLite, a simple file-based database. Requires the <code>better-sqlite3</code> npm package (<code>quill add better-sqlite3</code>).</p>
 
-      <h3><code>openDB(path)</code></h3>
-      <p>Opens (or creates) a SQLite database at the given path and returns a database handle.</p>
-      <pre><code>db <span class="kw">is</span> openDB(<span class="str">"app.db"</span>)</code></pre>
+      <h3><code>openDB(path)</code> / <code>closeDB(db)</code></h3>
+      <pre><code>db <span class="kw">is</span> openDB(<span class="str">"mydata.db"</span>)
+<span class="cmt">-- ... use the database ...</span>
+closeDB(db)</code></pre>
 
-      <h3><code>query(db, sql, params)</code></h3>
-      <p>Executes a SQL query and returns the result rows as a list of objects.</p>
-      <pre><code>rows <span class="kw">is</span> query(db, <span class="str">"SELECT * FROM users WHERE age > ?"</span>, [<span class="num">18</span>])
-<span class="kw">say</span> rows</code></pre>
-
-      <h3><code>execute(db, sql, params)</code></h3>
-      <p>Executes a SQL statement (INSERT, UPDATE, DELETE, CREATE, etc.) and returns the result info.</p>
+      <h3><code>execute(db, sql, params)</code> &mdash; Run a command</h3>
       <pre><code>execute(db, <span class="str">"CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)"</span>, [])
 execute(db, <span class="str">"INSERT INTO users (name, age) VALUES (?, ?)"</span>, [<span class="str">"Alice"</span>, <span class="num">30</span>])</code></pre>
 
-      <h3><code>closeDB(db)</code></h3>
-      <p>Closes an open database connection.</p>
-      <pre><code>closeDB(db)</code></pre>
+      <h3><code>query(db, sql, params)</code> &mdash; Fetch data</h3>
+      <pre><code>users <span class="kw">is</span> query(db, <span class="str">"SELECT * FROM users WHERE age > ?"</span>, [<span class="num">18</span>])
+<span class="kw">for each</span> user <span class="kw">in</span> users:
+  <span class="kw">say</span> user.name + <span class="str">" is "</span> + toText(user.age)</code></pre>
 
-      <h2 id="http-server">HTTP Server</h2>
+      <!-- ============================================ -->
+      <!-- RECIPES                                      -->
+      <!-- ============================================ -->
+
+      <h2 id="recipes">Recipes</h2>
+      <p>Common tasks showing how to combine multiple functions together.</p>
+
       <div class="callout callout-info">
-        HTTP server functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+        <strong>Recipe: Process a list of names</strong>
+        <pre><code>names <span class="kw">are</span> [<span class="str">"  alice  "</span>, <span class="str">"BOB"</span>, <span class="str">"  Charlie "</span>]
+
+<span class="cmt">-- Clean up, capitalize, sort, and display</span>
+cleaned <span class="kw">is</span> names
+  | map_list(<span class="kw">with</span> n: trim(n))
+  | map_list(<span class="kw">with</span> n: capitalize(lower(n)))
+  | sort
+
+<span class="kw">say</span> join(cleaned, <span class="str">", "</span>)   <span class="cmt">-- "Alice, Bob, Charlie"</span></code></pre>
       </div>
 
-      <h3><code>serveStatic(dir)</code></h3>
-      <p>Serves static files from the given directory over HTTP.</p>
-      <pre><code>serveStatic(<span class="str">"./public"</span>)
-<span class="cmt">-- Now serving files from ./public</span></code></pre>
-
-      <h2 id="template-engine">Template Engine</h2>
-
-      <h3><code>template(str, data)</code></h3>
-      <p>Renders a template string with placeholders replaced by values from the data object. Placeholders use <code>{{key}}</code> syntax.</p>
-      <pre><code>result <span class="kw">is</span> template(<span class="str">"Hello, {{name}}!"</span>, { name: <span class="str">"Alice"</span> })
-<span class="kw">say</span> result   <span class="cmt">-- "Hello, Alice!"</span></code></pre>
-
-      <h2 id="crypto-hashing">Crypto / Hashing</h2>
-
-      <h3><code>hash(str, algo)</code></h3>
-      <p>Returns the hash of a string using the given algorithm (e.g. <code>"sha256"</code>, <code>"md5"</code>).</p>
-      <pre><code><span class="kw">say</span> hash(<span class="str">"hello"</span>, <span class="str">"sha256"</span>)
-<span class="cmt">-- "2cf24dba5fb0a30e26e83b2ac5b9e29e..."</span></code></pre>
-
-      <h3><code>uuid()</code></h3>
-      <p>Generates a random UUID (v4) string.</p>
-      <pre><code><span class="kw">say</span> uuid()   <span class="cmt">-- "550e8400-e29b-41d4-a716-446655440000"</span></code></pre>
-
-      <h2 id="date-time-ext">Date / Time (Extended)</h2>
-
-      <h3><code>timestamp()</code></h3>
-      <p>Returns the current Unix timestamp in milliseconds.</p>
-      <pre><code><span class="kw">say</span> timestamp()   <span class="cmt">-- 1712234096000</span></code></pre>
-
-      <h3><code>formatDate(date, fmt)</code></h3>
-      <p>Formats a date string according to the given format pattern.</p>
-      <pre><code><span class="kw">say</span> formatDate(<span class="str">"2026-04-04"</span>, <span class="str">"MM/DD/YYYY"</span>)
-<span class="cmt">-- "04/04/2026"</span></code></pre>
-
-      <h3><code>addDays(date, days)</code></h3>
-      <p>Returns a new date string with the given number of days added.</p>
-      <pre><code><span class="kw">say</span> addDays(<span class="str">"2026-04-04"</span>, <span class="num">7</span>)   <span class="cmt">-- "2026-04-11"</span></code></pre>
-
-      <h3><code>diffDays(a, b)</code></h3>
-      <p>Returns the number of days between two date strings.</p>
-      <pre><code><span class="kw">say</span> diffDays(<span class="str">"2026-04-01"</span>, <span class="str">"2026-04-04"</span>)   <span class="cmt">-- 3</span></code></pre>
-
-      <h2 id="regexp">RegExp</h2>
-
-      <h3><code>matches(str, pattern)</code></h3>
-      <p>Returns a list of all matches of the regex pattern in the string.</p>
-      <pre><code><span class="kw">say</span> matches(<span class="str">"abc 123 def 456"</span>, <span class="str">"\\d+"</span>)
-<span class="cmt">-- ["123", "456"]</span></code></pre>
-
-      <h3><code>test(str, pattern)</code></h3>
-      <p>Returns <code>yes</code> if the string matches the regex pattern.</p>
-      <pre><code><span class="kw">say</span> test(<span class="str">"hello123"</span>, <span class="str">"\\d+"</span>)   <span class="cmt">-- true</span></code></pre>
-
-      <h3><code>replacePattern(str, pattern, replacement)</code></h3>
-      <p>Replaces all occurrences of the regex pattern with the replacement string.</p>
-      <pre><code><span class="kw">say</span> replacePattern(<span class="str">"abc 123 def"</span>, <span class="str">"\\d+"</span>, <span class="str">"#"</span>)
-<span class="cmt">-- "abc # def"</span></code></pre>
-
-      <h2 id="encoding">Encoding</h2>
-
-      <h3><code>encodeBase64(str)</code></h3>
-      <p>Encodes a string to Base64.</p>
-      <pre><code><span class="kw">say</span> encodeBase64(<span class="str">"hello"</span>)   <span class="cmt">-- "aGVsbG8="</span></code></pre>
-
-      <h3><code>decodeBase64(str)</code></h3>
-      <p>Decodes a Base64 string back to plain text.</p>
-      <pre><code><span class="kw">say</span> decodeBase64(<span class="str">"aGVsbG8="</span>)   <span class="cmt">-- "hello"</span></code></pre>
-
-      <h3><code>encodeURL(str)</code></h3>
-      <p>Encodes a string for safe use in a URL.</p>
-      <pre><code><span class="kw">say</span> encodeURL(<span class="str">"hello world"</span>)   <span class="cmt">-- "hello%20world"</span></code></pre>
-
-      <h3><code>decodeURL(str)</code></h3>
-      <p>Decodes a URL-encoded string.</p>
-      <pre><code><span class="kw">say</span> decodeURL(<span class="str">"hello%20world"</span>)   <span class="cmt">-- "hello world"</span></code></pre>
-
-      <h2 id="concurrency">Concurrency</h2>
       <div class="callout callout-info">
-        Concurrency functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+        <strong>Recipe: Read and process a CSV file</strong>
+        <pre><code><span class="cmt">-- Read a CSV file and get the data</span>
+raw <span class="kw">is</span> read(<span class="str">"data.csv"</span>)
+rows <span class="kw">is</span> lines(raw)
+headers <span class="kw">is</span> split(rows[<span class="num">0</span>], <span class="str">","</span>)
+
+<span class="kw">say</span> <span class="str">"Columns: "</span> + join(headers, <span class="str">", "</span>)
+<span class="kw">say</span> <span class="str">"Total rows: "</span> + toText(length(rows) - <span class="num">1</span>)</code></pre>
       </div>
 
-      <h3><code>parallel(...fns)</code></h3>
-      <p>Runs multiple functions in parallel and returns a list of their results.</p>
-      <pre><code>results <span class="kw">is</span> parallel(
-  <span class="kw">fn</span>(): <span class="str">"a"</span>,
-  <span class="kw">fn</span>(): <span class="str">"b"</span>,
-  <span class="kw">fn</span>(): <span class="str">"c"</span>
+      <div class="callout callout-info">
+        <strong>Recipe: Simple REST API</strong>
+        <pre><code>users <span class="kw">are</span> []
+
+server <span class="kw">is</span> createServer()
+
+server.get(<span class="str">"/api/users"</span>, users)
+
+server.post(<span class="str">"/api/users"</span>, <span class="kw">with</span> req, res:
+  push(users, {id: uuid(), name: <span class="str">"New User"</span>})
+  <span class="kw">give back</span> {status: <span class="str">"created"</span>}
 )
-<span class="kw">say</span> results   <span class="cmt">-- ["a", "b", "c"]</span></code></pre>
 
-      <h3><code>race(...fns)</code></h3>
-      <p>Runs multiple functions in parallel and returns the result of the first one to finish.</p>
-      <pre><code>winner <span class="kw">is</span> race(
-  <span class="kw">fn</span>(): delay(<span class="num">100</span>) <span class="kw">then</span> <span class="str">"slow"</span>,
-  <span class="kw">fn</span>(): <span class="str">"fast"</span>
-)
-<span class="kw">say</span> winner   <span class="cmt">-- "fast"</span></code></pre>
+server.listen(<span class="num">3000</span>)
+<span class="kw">say</span> <span class="str">"API running on http://localhost:3000"</span></code></pre>
+      </div>
 
-      <h3><code>delay(ms)</code></h3>
-      <p>Returns a promise that resolves after the given number of milliseconds.</p>
-      <pre><code>delay(<span class="num">500</span>)   <span class="cmt">-- pause for 500ms</span></code></pre>
+      <div class="callout callout-info">
+        <strong>Recipe: File backup script</strong>
+        <pre><code><span class="cmt">-- Back up all .quill files to a backup folder</span>
+makeDir(<span class="str">"backup"</span>)
+files <span class="kw">is</span> listFiles(<span class="str">"."</span>)
+quillFiles <span class="kw">is</span> filter(files, <span class="kw">with</span> f: endsWith(f, <span class="str">".quill"</span>))
 
-      <h2 id="type-checking">Type Checking</h2>
+<span class="kw">for each</span> file <span class="kw">in</span> quillFiles:
+  copyFile(file, joinPath(<span class="str">"backup"</span>, file))
+  <span class="kw">say</span> <span class="str">"Backed up: "</span> + file
 
-      <h3><code>isText(x)</code></h3>
-      <p>Returns <code>yes</code> if <code>x</code> is a string.</p>
-      <pre><code><span class="kw">say</span> isText(<span class="str">"hi"</span>)   <span class="cmt">-- true</span>
-<span class="kw">say</span> isText(<span class="num">42</span>)     <span class="cmt">-- false</span></code></pre>
+<span class="kw">say</span> <span class="str">"Done! Backed up "</span> + toText(length(quillFiles)) + <span class="str">" files"</span></code></pre>
+      </div>
 
-      <h3><code>isNumber(x)</code></h3>
-      <p>Returns <code>yes</code> if <code>x</code> is a number.</p>
-      <pre><code><span class="kw">say</span> isNumber(<span class="num">42</span>)      <span class="cmt">-- true</span>
-<span class="kw">say</span> isNumber(<span class="str">"42"</span>)   <span class="cmt">-- false</span></code></pre>
-
-      <h3><code>isList(x)</code></h3>
-      <p>Returns <code>yes</code> if <code>x</code> is a list.</p>
-      <pre><code><span class="kw">say</span> isList([<span class="num">1</span>, <span class="num">2</span>])   <span class="cmt">-- true</span></code></pre>
-
-      <h3><code>isObject(x)</code></h3>
-      <p>Returns <code>yes</code> if <code>x</code> is an object.</p>
-      <pre><code><span class="kw">say</span> isObject({ a: <span class="num">1</span> })   <span class="cmt">-- true</span></code></pre>
-
-      <h3><code>isNothing(x)</code></h3>
-      <p>Returns <code>yes</code> if <code>x</code> is <code>nothing</code>.</p>
-      <pre><code><span class="kw">say</span> isNothing(nothing)   <span class="cmt">-- true</span>
-<span class="kw">say</span> isNothing(<span class="num">0</span>)         <span class="cmt">-- false</span></code></pre>
-
-      <h3><code>isFunction(x)</code></h3>
-      <p>Returns <code>yes</code> if <code>x</code> is a function.</p>
-      <pre><code>greet <span class="kw">is</span> <span class="kw">fn</span>(name): <span class="str">"hi "</span> + name
-<span class="kw">say</span> isFunction(greet)   <span class="cmt">-- true</span></code></pre>
-
-      <h2 id="object-operations">Object Operations</h2>
-
-      <h3><code>merge(...objs)</code></h3>
-      <p>Merges multiple objects into one. Later values override earlier ones.</p>
-      <pre><code>a <span class="kw">is</span> { x: <span class="num">1</span> }
-b <span class="kw">is</span> { y: <span class="num">2</span> }
-<span class="kw">say</span> merge(a, b)   <span class="cmt">-- { x: 1, y: 2 }</span></code></pre>
-
-      <h3><code>pick(obj, ...keys)</code></h3>
-      <p>Returns a new object containing only the specified keys.</p>
-      <pre><code>user <span class="kw">is</span> { name: <span class="str">"Alice"</span>, age: <span class="num">30</span>, email: <span class="str">"a@b.com"</span> }
-<span class="kw">say</span> pick(user, <span class="str">"name"</span>, <span class="str">"email"</span>)
-<span class="cmt">-- { name: "Alice", email: "a@b.com" }</span></code></pre>
-
-      <h3><code>omit(obj, ...keys)</code></h3>
-      <p>Returns a new object with the specified keys removed.</p>
-      <pre><code><span class="kw">say</span> omit(user, <span class="str">"email"</span>)
-<span class="cmt">-- { name: "Alice", age: 30 }</span></code></pre>
-
-      <h3><code>entries(obj)</code></h3>
-      <p>Returns a list of <code>[key, value]</code> pairs from an object.</p>
-      <pre><code><span class="kw">say</span> entries({ a: <span class="num">1</span>, b: <span class="num">2</span> })
-<span class="cmt">-- [["a", 1], ["b", 2]]</span></code></pre>
-
-      <h3><code>fromEntries(arr)</code></h3>
-      <p>Creates an object from a list of <code>[key, value]</code> pairs.</p>
-      <pre><code><span class="kw">say</span> fromEntries([[<span class="str">"a"</span>, <span class="num">1</span>], [<span class="str">"b"</span>, <span class="num">2</span>]])
-<span class="cmt">-- { a: 1, b: 2 }</span></code></pre>
-
-      <h3><code>hasKey(obj, key)</code></h3>
-      <p>Returns <code>yes</code> if the object has the given key.</p>
-      <pre><code><span class="kw">say</span> hasKey({ name: <span class="str">"Alice"</span> }, <span class="str">"name"</span>)   <span class="cmt">-- true</span>
-<span class="kw">say</span> hasKey({ name: <span class="str">"Alice"</span> }, <span class="str">"age"</span>)    <span class="cmt">-- false</span></code></pre>
-
-      <h3><code>deepCopy(x)</code></h3>
-      <p>Returns a deep copy of a value (objects and lists are fully cloned).</p>
-      <pre><code>original <span class="kw">is</span> { a: [<span class="num">1</span>, <span class="num">2</span>] }
-copy <span class="kw">is</span> deepCopy(original)
-<span class="cmt">-- modifying copy won't affect original</span></code></pre>
-
-      <h2 id="string-operations">String Operations</h2>
-
-      <h3><code>padStart(s, len, ch)</code></h3>
-      <p>Pads the start of a string with <code>ch</code> until it reaches the given length.</p>
-      <pre><code><span class="kw">say</span> padStart(<span class="str">"42"</span>, <span class="num">5</span>, <span class="str">"0"</span>)   <span class="cmt">-- "00042"</span></code></pre>
-
-      <h3><code>padEnd(s, len, ch)</code></h3>
-      <p>Pads the end of a string with <code>ch</code> until it reaches the given length.</p>
-      <pre><code><span class="kw">say</span> padEnd(<span class="str">"hi"</span>, <span class="num">5</span>, <span class="str">"."</span>)   <span class="cmt">-- "hi..."</span></code></pre>
-
-      <h3><code>repeat(s, n)</code></h3>
-      <p>Repeats a string <code>n</code> times.</p>
-      <pre><code><span class="kw">say</span> repeat(<span class="str">"ha"</span>, <span class="num">3</span>)   <span class="cmt">-- "hahaha"</span></code></pre>
-
-      <h3><code>contains(s, sub)</code></h3>
-      <p>Returns <code>yes</code> if the string contains the substring.</p>
-      <pre><code><span class="kw">say</span> contains(<span class="str">"hello world"</span>, <span class="str">"world"</span>)   <span class="cmt">-- true</span></code></pre>
-
-      <h3><code>capitalize(s)</code></h3>
-      <p>Capitalizes the first letter of a string.</p>
-      <pre><code><span class="kw">say</span> capitalize(<span class="str">"hello"</span>)   <span class="cmt">-- "Hello"</span></code></pre>
-
-      <h3><code>words(s)</code></h3>
-      <p>Splits a string into a list of words (by whitespace).</p>
-      <pre><code><span class="kw">say</span> words(<span class="str">"hello world foo"</span>)   <span class="cmt">-- ["hello", "world", "foo"]</span></code></pre>
-
-      <h3><code>lines(s)</code></h3>
-      <p>Splits a string into a list of lines.</p>
-      <pre><code><span class="kw">say</span> lines(<span class="str">"a\nb\nc"</span>)   <span class="cmt">-- ["a", "b", "c"]</span></code></pre>
-
-      <h3><code>truncate(s, len)</code></h3>
-      <p>Truncates a string to the given length, appending <code>...</code> if it was shortened.</p>
-      <pre><code><span class="kw">say</span> truncate(<span class="str">"hello world"</span>, <span class="num">8</span>)   <span class="cmt">-- "hello..."</span></code></pre>
     </main>
   </div>
 

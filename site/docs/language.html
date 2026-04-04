@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Language Reference - Quill</title>
-  <meta name="description" content="Complete guide to Quill syntax: variables, functions, control flow, operators, and more.">
+  <title>Learn Quill - A Beginner's Guide</title>
+  <meta name="description" content="A comprehensive beginner-friendly tutorial for the Quill programming language. No prior coding experience required.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,32 +33,45 @@
       <h4>Getting Started</h4>
       <ul>
         <li><a href="/docs/getting-started">Installation</a></li>
+        <li><a href="#what-is-quill">What is Quill?</a></li>
+        <li><a href="#first-program">Your first program</a></li>
       </ul>
-      <h4>Language</h4>
+      <h4>Language Basics</h4>
       <ul>
-        <li><a href="/docs/language" class="active">Language reference</a></li>
         <li><a href="#comments">Comments</a></li>
         <li><a href="#variables">Variables</a></li>
         <li><a href="#data-types">Data types</a></li>
         <li><a href="#operators">Operators</a></li>
-        <li><a href="#strings">Strings</a></li>
         <li><a href="#comparisons">Comparisons</a></li>
         <li><a href="#logic">Logic</a></li>
-        <li><a href="#control-flow">Control flow</a></li>
+        <li><a href="#output">Output</a></li>
+      </ul>
+      <h4>Control Flow</h4>
+      <ul>
+        <li><a href="#control-flow">If / Otherwise</a></li>
         <li><a href="#loops">Loops</a></li>
-        <li><a href="#break-continue">Break / Continue</a></li>
+        <li><a href="#pattern-matching">Pattern matching</a></li>
+      </ul>
+      <h4>Functions</h4>
+      <ul>
         <li><a href="#functions">Functions</a></li>
-        <li><a href="#lambdas">Lambdas</a></li>
+        <li><a href="#lambdas">Lambda functions</a></li>
         <li><a href="#type-annotations">Type annotations</a></li>
-        <li><a href="#classes">Classes</a></li>
+      </ul>
+      <h4>Data Structures</h4>
+      <ul>
         <li><a href="#lists">Lists</a></li>
         <li><a href="#objects">Object literals</a></li>
         <li><a href="#spread">Spread operator</a></li>
-        <li><a href="#try-catch">Try / Catch</a></li>
-        <li><a href="#imports">Imports</a></li>
-        <li><a href="#pattern-matching">Pattern matching</a></li>
+        <li><a href="#classes">Classes</a></li>
         <li><a href="#algebraic-types">Algebraic data types</a></li>
+      </ul>
+      <h4>Advanced</h4>
+      <ul>
         <li><a href="#pipe-operator">Pipe operator</a></li>
+        <li><a href="#try-catch">Error handling</a></li>
+        <li><a href="#imports">Imports</a></li>
+        <li><a href="#testing">Testing</a></li>
         <li><a href="#generics">Generics</a></li>
       </ul>
       <h4>Reference</h4>
@@ -71,293 +84,690 @@
     </aside>
 
     <main class="docs-content">
-      <h1>Language Reference</h1>
-      <p>A complete guide to everything you can write in Quill.</p>
+      <h1>Learn Quill -- A Beginner's Guide</h1>
+      <p>Welcome! This guide will teach you everything you need to start writing real programs in Quill. No prior programming experience is required -- we will explain every concept from the ground up.</p>
+
+      <!-- ============================================================ -->
+      <!-- GETTING STARTED                                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="what-is-quill">What is Quill?</h2>
+      <p>Quill is a programming language designed to read like plain English. Instead of cryptic symbols and jargon, Quill uses everyday words like <code>is</code>, <code>say</code>, <code>give back</code>, and <code>for each</code>. Under the hood, Quill compiles to JavaScript, which means your Quill programs can do anything JavaScript can -- build websites, create servers, automate tasks, and more.</p>
+
+      <p>Think of Quill as a translator: you write instructions in something close to English, and Quill converts them into code that your computer understands.</p>
+
+      <h2 id="first-program">Your first program</h2>
+      <p>Every programming journey begins with a "Hello, World!" program. In Quill, it is just one line:</p>
+      <pre><code><span class="kw">say</span> <span class="str">"Hello, World!"</span></code></pre>
+
+      <p>That is it! The word <code>say</code> tells Quill to print something to the screen, and <code>"Hello, World!"</code> is the text you want to display.</p>
+
+      <h3>How to run it</h3>
+      <p>1. Create a file called <code>hello.quill</code> and type the line above into it.</p>
+      <p>2. Open your terminal (command prompt) and run:</p>
+      <pre><code>quill run hello.quill</code></pre>
+      <p>3. You should see <code>Hello, World!</code> printed on the screen. Congratulations -- you just ran your first program!</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Change the text inside the quotes to your own name, like <code>say "Hello, my name is Alex!"</code>, and run it again.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- COMMENTS                                                      -->
+      <!-- ============================================================ -->
 
       <h2 id="comments">Comments</h2>
-      <p>Comments start with <code>--</code> and continue to the end of the line. They are ignored by the compiler.</p>
-      <pre><code><span class="cmt">-- This is a comment</span>
-name <span class="kw">is</span> <span class="str">"Alice"</span>  <span class="cmt">-- This is also a comment</span></code></pre>
+      <p><strong>What are comments?</strong> Comments are notes you write inside your code that the computer completely ignores. They exist solely for humans -- to explain what your code does, why you made a certain decision, or to leave a reminder for your future self.</p>
+
+      <p>Think of comments like sticky notes on a recipe. The oven does not read them, but they help you remember why you added extra garlic.</p>
+
+      <p>In Quill, comments start with two dashes (<code>--</code>) and continue to the end of the line:</p>
+      <pre><code><span class="cmt">-- This is a comment. Quill ignores this entire line.</span>
+<span class="kw">say</span> <span class="str">"Hello!"</span>  <span class="cmt">-- You can also put comments at the end of a line</span></code></pre>
+
+      <p><strong>Why use comments?</strong></p>
+      <ul>
+        <li>To explain complex logic so others (or future you) can understand it</li>
+        <li>To temporarily disable a line of code without deleting it</li>
+        <li>To leave TODO notes for things you want to fix later</li>
+      </ul>
+
+      <pre><code><span class="cmt">-- TODO: add error handling here later</span>
+<span class="cmt">-- Calculate the user's age from their birth year</span>
+age <span class="kw">is</span> <span class="num">2026</span> - birthYear</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> Good comments explain <em>why</em> you did something, not <em>what</em> the code does. The code itself shows the "what" -- your comments should add the "why."
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VARIABLES                                                     -->
+      <!-- ============================================================ -->
 
       <h2 id="variables">Variables</h2>
-      <p>Create variables with <code>is</code> (singular) or <code>are</code> (plural). Quill uses both for readability -- they work exactly the same way.</p>
+      <p><strong>What is a variable?</strong> A variable is like a labeled box where you store information. You give the box a name and put a value inside it. Later, you can look at what is inside the box, change its contents, or use it somewhere else in your program.</p>
+
+      <p>In Quill, you create a variable with the word <code>is</code>:</p>
       <pre><code>name <span class="kw">is</span> <span class="str">"Alice"</span>
 age <span class="kw">is</span> <span class="num">25</span>
-colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
 active <span class="kw">is</span> <span class="bool">yes</span></code></pre>
-      <p>Reassign variables by using <code>is</code> again:</p>
+
+      <p>Reading that out loud: "name is Alice, age is 25, active is yes." It reads like English!</p>
+
+      <h3>Using <code>are</code> for lists</h3>
+      <p>When your variable holds a collection of things (a list), you can use <code>are</code> instead of <code>is</code> for better readability. They work exactly the same way -- it is purely a style choice:</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+scores <span class="kw">are</span> [<span class="num">95</span>, <span class="num">87</span>, <span class="num">100</span>, <span class="num">72</span>]</code></pre>
+
+      <h3>Reassigning variables</h3>
+      <p>You can change the value inside a variable at any time by using <code>is</code> again:</p>
       <pre><code>count <span class="kw">is</span> <span class="num">0</span>
-count <span class="kw">is</span> count + <span class="num">1</span>  <span class="cmt">-- count is now 1</span></code></pre>
+<span class="kw">say</span> count        <span class="cmt">-- prints 0</span>
 
-      <h2 id="data-types">Data types</h2>
-      <table>
-        <tr><th>Type</th><th>Description</th><th>Example</th></tr>
-        <tr><td>Text</td><td>A string of characters</td><td><code>"Hello, World!"</code></td></tr>
-        <tr><td>Number</td><td>Integer or decimal</td><td><code>42</code>, <code>3.14</code></td></tr>
-        <tr><td>Boolean</td><td>True or false</td><td><code>yes</code>, <code>no</code>, <code>true</code>, <code>false</code></td></tr>
-        <tr><td>List</td><td>Ordered collection</td><td><code>[1, 2, 3]</code></td></tr>
-        <tr><td>Object</td><td>Key-value collection</td><td><code>{name: "Alice", age: 25}</code></td></tr>
-        <tr><td>Nothing</td><td>Absence of a value (null)</td><td><code>nothing</code></td></tr>
-      </table>
+count <span class="kw">is</span> count + <span class="num">1</span>
+<span class="kw">say</span> count        <span class="cmt">-- prints 1</span>
 
-      <h3 id="nothing">Nothing</h3>
-      <p><code>nothing</code> represents the absence of a value, similar to <code>null</code> in other languages. Functions that don't explicitly return a value give back <code>nothing</code>.</p>
+count <span class="kw">is</span> count + <span class="num">1</span>
+<span class="kw">say</span> count        <span class="cmt">-- prints 2</span></code></pre>
+
+      <p>Think of it like erasing the old label on your box and writing a new value inside.</p>
+
+      <h3>What kinds of values can go in a variable?</h3>
+      <p>Quill has six types of values (we will cover each in detail in the next section):</p>
+      <pre><code>greeting <span class="kw">is</span> <span class="str">"Hello there"</span>     <span class="cmt">-- Text (a string of characters)</span>
+temperature <span class="kw">is</span> <span class="num">72.5</span>           <span class="cmt">-- Number (whole or decimal)</span>
+isRaining <span class="kw">is</span> <span class="bool">no</span>               <span class="cmt">-- Boolean (yes or no)</span>
+fruits <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"pear"</span>]  <span class="cmt">-- List (an ordered collection)</span>
+person <span class="kw">is</span> {name: <span class="str">"Bob"</span>}       <span class="cmt">-- Object (a collection of named values)</span>
+result <span class="kw">is</span> <span class="kw">nothing</span>             <span class="cmt">-- Nothing (absence of a value)</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Common mistake:</strong> Variable names cannot contain spaces. Use <code>firstName</code> or <code>first_name</code> instead of <code>first name</code>.
+      </div>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Create variables for your own name, age, and favorite color, then use <code>say</code> to print each one.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- DATA TYPES                                                    -->
+      <!-- ============================================================ -->
+
+      <h2 id="data-types">Data Types in Depth</h2>
+      <p>Every value in Quill has a <strong>type</strong> -- it is a category that describes what kind of information the value holds. Understanding types will help you use them correctly.</p>
+
+      <h3>Text (Strings)</h3>
+      <p>Text is any sequence of characters wrapped in double quotes. Programmers often call these "strings" (as in, a string of characters).</p>
+      <pre><code>greeting <span class="kw">is</span> <span class="str">"Hello, World!"</span>
+empty <span class="kw">is</span> <span class="str">""</span>                      <span class="cmt">-- an empty string (no characters)</span>
+sentence <span class="kw">is</span> <span class="str">"I have 3 cats."</span>   <span class="cmt">-- numbers inside quotes are still text</span></code></pre>
+
+      <p><strong>String interpolation</strong> lets you embed variables and expressions inside a string using curly braces <code>{}</code>:</p>
+      <pre><code>name <span class="kw">is</span> <span class="str">"World"</span>
+<span class="kw">say</span> <span class="str">"Hello, {name}!"</span>          <span class="cmt">-- Hello, World!</span>
+<span class="kw">say</span> <span class="str">"2 + 2 = {2 + 2}"</span>          <span class="cmt">-- 2 + 2 = 4</span>
+<span class="kw">say</span> <span class="str">"Name length: {length(name)}"</span>  <span class="cmt">-- Name length: 5</span></code></pre>
+
+      <p><strong>Escape sequences</strong> let you include special characters:</p>
+      <ul>
+        <li><code>\"</code> -- a literal double quote inside a string</li>
+        <li><code>\\</code> -- a literal backslash</li>
+        <li><code>\n</code> -- a new line (moves to the next line)</li>
+        <li><code>\t</code> -- a tab (adds horizontal spacing)</li>
+      </ul>
+      <pre><code><span class="kw">say</span> <span class="str">"She said \"hello\" to me"</span>   <span class="cmt">-- She said "hello" to me</span>
+<span class="kw">say</span> <span class="str">"Line one\nLine two"</span>         <span class="cmt">-- prints on two separate lines</span></code></pre>
+
+      <h3>Numbers</h3>
+      <p>Numbers in Quill work like you would expect. They can be whole numbers (integers) or decimals:</p>
+      <pre><code>wholeNumber <span class="kw">is</span> <span class="num">42</span>
+decimal <span class="kw">is</span> <span class="num">3.14</span>
+negative <span class="kw">is</span> <span class="num">-10</span>
+zero <span class="kw">is</span> <span class="num">0</span></code></pre>
+
+      <p>You can do math with numbers (covered in the Operators section), and you can mix them into strings with interpolation:</p>
+      <pre><code>price <span class="kw">is</span> <span class="num">9.99</span>
+<span class="kw">say</span> <span class="str">"The total is ${price}"</span>  <span class="cmt">-- The total is $9.99</span></code></pre>
+
+      <h3>Booleans (Yes / No)</h3>
+      <p>A boolean is a value that is either true or false -- like a light switch that is either on or off. In Quill, you can write booleans as <code>yes</code>/<code>no</code> or <code>true</code>/<code>false</code>:</p>
+      <pre><code>isLoggedIn <span class="kw">is</span> <span class="bool">yes</span>
+hasPermission <span class="kw">is</span> <span class="bool">no</span>
+gameOver <span class="kw">is</span> <span class="bool">false</span>
+ready <span class="kw">is</span> <span class="bool">true</span></code></pre>
+
+      <p>Booleans are essential for making decisions in your code (which we will cover in the Control Flow section).</p>
+
+      <h3>Lists</h3>
+      <p>A list is an ordered collection of values, wrapped in square brackets and separated by commas. Think of it like a numbered shopping list:</p>
+      <pre><code>fruits <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"cherry"</span>]
+numbers <span class="kw">are</span> [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>]
+mixed <span class="kw">are</span> [<span class="str">"hello"</span>, <span class="num">42</span>, <span class="bool">yes</span>]     <span class="cmt">-- lists can hold different types</span>
+empty <span class="kw">are</span> []                          <span class="cmt">-- an empty list</span></code></pre>
+
+      <p>Access individual items by their position (index). Important: counting starts at 0, not 1:</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+<span class="kw">say</span> colors[<span class="num">0</span>]   <span class="cmt">-- red   (first item)</span>
+<span class="kw">say</span> colors[<span class="num">1</span>]   <span class="cmt">-- green (second item)</span>
+<span class="kw">say</span> colors[<span class="num">2</span>]   <span class="cmt">-- blue  (third item)</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Common mistake:</strong> Lists start counting at 0, not 1. The first item is at position <code>[0]</code>, the second at <code>[1]</code>, and so on. This catches almost every beginner off guard!
+      </div>
+
+      <h3>Objects</h3>
+      <p>An object is a collection of named values (called "properties"), wrapped in curly braces. Think of it like a contact card where each piece of info has a label:</p>
+      <pre><code>user <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>, active: <span class="bool">yes</span>}</code></pre>
+
+      <p>Access properties using a dot:</p>
+      <pre><code><span class="kw">say</span> user.name     <span class="cmt">-- Alice</span>
+<span class="kw">say</span> user.age      <span class="cmt">-- 30</span>
+<span class="kw">say</span> user.active   <span class="cmt">-- yes</span></code></pre>
+
+      <h3>Nothing</h3>
+      <p><code>nothing</code> represents the absence of a value. It is like an empty box -- the box exists, but there is nothing inside it. In other programming languages, this concept is called <code>null</code> or <code>nil</code>.</p>
       <pre><code>result <span class="kw">is</span> <span class="kw">nothing</span>
 
 <span class="kw">if</span> result <span class="kw">is</span> <span class="kw">nothing</span>:
   <span class="kw">say</span> <span class="str">"No result yet"</span></code></pre>
 
+      <p>Functions that do not explicitly return a value give back <code>nothing</code> automatically.</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Create a variable for each data type and use <code>say</code> to print them all. Try using string interpolation to build a sentence like <code>"My name is {name} and I am {age} years old."</code>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- OPERATORS                                                     -->
+      <!-- ============================================================ -->
+
       <h2 id="operators">Operators</h2>
+      <p><strong>What are operators?</strong> Operators are symbols that perform actions on values -- like the <code>+</code> sign on a calculator. They take one or more values and produce a result.</p>
+
       <h3>Math operators</h3>
+      <p>These work just like the math you already know:</p>
       <table>
-        <tr><th>Operator</th><th>Description</th><th>Example</th></tr>
-        <tr><td><code>+</code></td><td>Addition</td><td><code>2 + 3</code> gives <code>5</code></td></tr>
-        <tr><td><code>-</code></td><td>Subtraction</td><td><code>10 - 4</code> gives <code>6</code></td></tr>
-        <tr><td><code>*</code></td><td>Multiplication</td><td><code>3 * 7</code> gives <code>21</code></td></tr>
-        <tr><td><code>/</code></td><td>Division</td><td><code>15 / 4</code> gives <code>3.75</code></td></tr>
-        <tr><td><code>%</code></td><td>Modulo (remainder)</td><td><code>10 % 3</code> gives <code>1</code></td></tr>
+        <tr><th>Operator</th><th>What it does</th><th>Example</th><th>Result</th></tr>
+        <tr><td><code>+</code></td><td>Addition</td><td><code>2 + 3</code></td><td><code>5</code></td></tr>
+        <tr><td><code>-</code></td><td>Subtraction</td><td><code>10 - 4</code></td><td><code>6</code></td></tr>
+        <tr><td><code>*</code></td><td>Multiplication</td><td><code>3 * 7</code></td><td><code>21</code></td></tr>
+        <tr><td><code>/</code></td><td>Division</td><td><code>15 / 4</code></td><td><code>3.75</code></td></tr>
+        <tr><td><code>%</code></td><td>Modulo (remainder)</td><td><code>10 % 3</code></td><td><code>1</code></td></tr>
       </table>
 
-      <h3>Unary minus</h3>
-      <pre><code>x <span class="kw">is</span> <span class="num">-5</span>
-y <span class="kw">is</span> -x  <span class="cmt">-- y is 5</span></code></pre>
+      <p>Here is a practical example:</p>
+      <pre><code>price <span class="kw">is</span> <span class="num">29.99</span>
+quantity <span class="kw">is</span> <span class="num">3</span>
+subtotal <span class="kw">is</span> price * quantity
+tax <span class="kw">is</span> subtotal * <span class="num">0.08</span>
+total <span class="kw">is</span> subtotal + tax
+<span class="kw">say</span> <span class="str">"Your total is ${total}"</span>  <span class="cmt">-- Your total is $97.1676</span></code></pre>
 
-      <h2 id="strings">Strings &amp; interpolation</h2>
-      <p>Strings are wrapped in double quotes. Use <code>{expression}</code> inside strings to interpolate values:</p>
-      <pre><code>name <span class="kw">is</span> <span class="str">"World"</span>
-<span class="kw">say</span> <span class="str">"Hello, {name}!"</span>        <span class="cmt">-- Hello, World!</span>
-<span class="kw">say</span> <span class="str">"2 + 2 = {2 + 2}"</span>        <span class="cmt">-- 2 + 2 = 4</span>
-<span class="kw">say</span> <span class="str">"Length: {length(name)}"</span>  <span class="cmt">-- Length: 5</span></code></pre>
-      <p>Escape sequences: <code>\"</code> for a literal quote, <code>\\</code> for a backslash, <code>\n</code> for a newline, <code>\t</code> for a tab.</p>
+      <p><strong>What is modulo?</strong> The <code>%</code> operator gives you the <em>remainder</em> after division. For example, <code>10 % 3</code> is <code>1</code> because 10 divided by 3 is 3 with a remainder of 1. This is useful for checking if a number is even or odd:</p>
+      <pre><code>number <span class="kw">is</span> <span class="num">7</span>
+<span class="kw">if</span> number % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>:
+  <span class="kw">say</span> <span class="str">"Even"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Odd"</span>         <span class="cmt">-- prints "Odd"</span></code></pre>
+
+      <h3>Negative numbers</h3>
+      <pre><code>x <span class="kw">is</span> <span class="num">-5</span>
+y <span class="kw">is</span> -x   <span class="cmt">-- y is 5 (flips the sign)</span></code></pre>
+
+      <h3>String concatenation with <code>+</code></h3>
+      <p>The <code>+</code> operator also works with text. It joins (concatenates) two strings together:</p>
+      <pre><code>first <span class="kw">is</span> <span class="str">"Hello"</span>
+second <span class="kw">is</span> <span class="str">" World"</span>
+combined <span class="kw">is</span> first + second
+<span class="kw">say</span> combined   <span class="cmt">-- Hello World</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> For combining text and variables, string interpolation (<code>"Hello, {name}!"</code>) is usually cleaner than concatenation (<code>"Hello, " + name + "!"</code>).
+      </div>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Write a program that calculates the area of a rectangle. Create variables for <code>width</code> and <code>height</code>, multiply them, and print the result.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- COMPARISONS                                                   -->
+      <!-- ============================================================ -->
 
       <h2 id="comparisons">Comparisons</h2>
-      <p>Quill comparisons read like English:</p>
+      <p><strong>What are comparisons?</strong> Comparisons check the relationship between two values and give back a boolean (<code>yes</code> or <code>no</code>). They are how your program asks questions like "is the user old enough?" or "does this list contain the item?"</p>
+
+      <p>Quill comparisons read like English sentences:</p>
       <table>
-        <tr><th>Quill</th><th>Meaning</th><th>JavaScript equivalent</th></tr>
-        <tr><td><code>x is greater than y</code></td><td>x &gt; y</td><td><code>x > y</code></td></tr>
-        <tr><td><code>x is less than y</code></td><td>x &lt; y</td><td><code>x < y</code></td></tr>
-        <tr><td><code>x is equal to y</code></td><td>strict equality</td><td><code>x === y</code></td></tr>
-        <tr><td><code>x is y</code></td><td>strict equality (shorthand)</td><td><code>x === y</code></td></tr>
-        <tr><td><code>x is not y</code></td><td>not equal</td><td><code>x !== y</code></td></tr>
-        <tr><td><code>list contains x</code></td><td>membership test</td><td><code>list.includes(x)</code></td></tr>
+        <tr><th>Quill</th><th>What it means</th><th>Example</th></tr>
+        <tr><td><code>x is greater than y</code></td><td>Is x larger than y?</td><td><code>10 is greater than 5</code> gives <code>yes</code></td></tr>
+        <tr><td><code>x is less than y</code></td><td>Is x smaller than y?</td><td><code>3 is less than 7</code> gives <code>yes</code></td></tr>
+        <tr><td><code>x is equal to y</code></td><td>Are x and y the same?</td><td><code>5 is equal to 5</code> gives <code>yes</code></td></tr>
+        <tr><td><code>x is y</code></td><td>Shorthand for equal</td><td><code>name is "Alice"</code> gives <code>yes</code> if name is Alice</td></tr>
+        <tr><td><code>x is not y</code></td><td>Are x and y different?</td><td><code>5 is not 3</code> gives <code>yes</code></td></tr>
+        <tr><td><code>list contains x</code></td><td>Is x inside the list?</td><td><code>colors contains "red"</code></td></tr>
       </table>
 
+      <p>Here are several examples:</p>
       <pre><code>age <span class="kw">is</span> <span class="num">20</span>
 
 <span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span>:
-  <span class="kw">say</span> <span class="str">"Adult"</span>
+  <span class="kw">say</span> <span class="str">"You are an adult"</span>
 
 <span class="kw">if</span> age <span class="kw">is equal to</span> <span class="num">20</span>:
-  <span class="kw">say</span> <span class="str">"Twenty!"</span>
+  <span class="kw">say</span> <span class="str">"You are exactly 20"</span>
 
-colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"blue"</span>]
+<span class="kw">if</span> age <span class="kw">is not</span> <span class="num">21</span>:
+  <span class="kw">say</span> <span class="str">"You are not 21"</span></code></pre>
+
+      <h3>Using <code>contains</code></h3>
+      <p>The <code>contains</code> keyword checks whether a list includes a particular item, or whether a string includes a particular substring:</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"blue"</span>, <span class="str">"green"</span>]
+
 <span class="kw">if</span> colors <span class="kw">contains</span> <span class="str">"red"</span>:
-  <span class="kw">say</span> <span class="str">"Red is present"</span></code></pre>
+  <span class="kw">say</span> <span class="str">"Red is in the list!"</span>
 
-      <h2 id="logic">Logic operators</h2>
+<span class="kw">if</span> colors <span class="kw">contains</span> <span class="str">"purple"</span>:
+  <span class="kw">say</span> <span class="str">"This will not print"</span>
+
+message <span class="kw">is</span> <span class="str">"Hello, World!"</span>
+<span class="kw">if</span> message <span class="kw">contains</span> <span class="str">"World"</span>:
+  <span class="kw">say</span> <span class="str">"Found it!"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Create a list of your favorite foods and use <code>contains</code> to check if "pizza" is in the list. Print a different message depending on the result.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- LOGIC                                                         -->
+      <!-- ============================================================ -->
+
+      <h2 id="logic">Logic Operators</h2>
+      <p><strong>What are logic operators?</strong> Logic operators let you combine multiple conditions together. They answer questions like "is the user logged in AND an admin?" or "is it Saturday OR Sunday?"</p>
+
       <table>
-        <tr><th>Operator</th><th>Description</th></tr>
-        <tr><td><code>and</code></td><td>Both conditions must be true</td></tr>
-        <tr><td><code>or</code></td><td>At least one condition must be true</td></tr>
-        <tr><td><code>not</code></td><td>Negates a condition</td></tr>
+        <tr><th>Operator</th><th>What it means</th><th>Gives <code>yes</code> when...</th></tr>
+        <tr><td><code>and</code></td><td>Both must be true</td><td><code>yes and yes</code></td></tr>
+        <tr><td><code>or</code></td><td>At least one must be true</td><td><code>yes or no</code>, <code>no or yes</code>, <code>yes or yes</code></td></tr>
+        <tr><td><code>not</code></td><td>Flips the value</td><td><code>not no</code></td></tr>
       </table>
 
+      <p>Simple example:</p>
       <pre><code>age <span class="kw">is</span> <span class="num">25</span>
 name <span class="kw">is</span> <span class="str">"Alice"</span>
 
 <span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span> <span class="kw">and</span> name <span class="kw">is</span> <span class="str">"Alice"</span>:
-  <span class="kw">say</span> <span class="str">"Hello, adult Alice!"</span>
+  <span class="kw">say</span> <span class="str">"Hello, adult Alice!"</span></code></pre>
 
-<span class="kw">if</span> <span class="kw">not</span> age <span class="kw">is less than</span> <span class="num">18</span>:
-  <span class="kw">say</span> <span class="str">"Not a minor"</span></code></pre>
+      <p>Using <code>or</code>:</p>
+      <pre><code>day <span class="kw">is</span> <span class="str">"Saturday"</span>
 
-      <h2 id="control-flow">Control flow</h2>
-      <h3>If / otherwise</h3>
-      <p>Conditional execution. The body must be indented (2 spaces recommended).</p>
+<span class="kw">if</span> day <span class="kw">is</span> <span class="str">"Saturday"</span> <span class="kw">or</span> day <span class="kw">is</span> <span class="str">"Sunday"</span>:
+  <span class="kw">say</span> <span class="str">"It's the weekend!"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"It's a weekday."</span></code></pre>
+
+      <p>Using <code>not</code>:</p>
+      <pre><code>isLoggedIn <span class="kw">is</span> <span class="bool">no</span>
+
+<span class="kw">if</span> <span class="kw">not</span> isLoggedIn:
+  <span class="kw">say</span> <span class="str">"Please log in first."</span></code></pre>
+
+      <p><strong>Real-world example:</strong> Checking if someone can rent a car (must be at least 21 and have a license):</p>
+      <pre><code>age <span class="kw">is</span> <span class="num">23</span>
+hasLicense <span class="kw">is</span> <span class="bool">yes</span>
+
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">20</span> <span class="kw">and</span> hasLicense:
+  <span class="kw">say</span> <span class="str">"You can rent a car!"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Sorry, you cannot rent a car."</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> <code>and</code> is stricter than <code>or</code>. With <code>and</code>, ALL conditions must be true. With <code>or</code>, just ONE needs to be true.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- OUTPUT                                                        -->
+      <!-- ============================================================ -->
+
+      <h2 id="output">Output</h2>
+      <p><strong>What is output?</strong> Output is how your program communicates with the outside world -- specifically, by printing text to the screen. In Quill, you use the <code>say</code> keyword.</p>
+
+      <p>You can <code>say</code> anything -- text, numbers, variables, expressions, even entire lists:</p>
+      <pre><code><span class="kw">say</span> <span class="str">"Hello!"</span>             <span class="cmt">-- prints text</span>
+<span class="kw">say</span> <span class="num">42</span>                    <span class="cmt">-- prints a number</span>
+<span class="kw">say</span> <span class="num">2</span> + <span class="num">2</span>                 <span class="cmt">-- prints 4 (evaluates the expression first)</span>
+
+name <span class="kw">is</span> <span class="str">"Alice"</span>
+<span class="kw">say</span> name                  <span class="cmt">-- prints Alice</span>
+<span class="kw">say</span> <span class="str">"Hi, {name}!"</span>         <span class="cmt">-- prints Hi, Alice!</span>
+
+colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"blue"</span>]
+<span class="kw">say</span> colors                <span class="cmt">-- prints ["red", "blue"]</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- CONTROL FLOW                                                  -->
+      <!-- ============================================================ -->
+
+      <h2 id="control-flow">Control Flow -- if / otherwise</h2>
+      <p><strong>What is control flow?</strong> Control flow is how your program makes decisions. Without it, your code would run every line from top to bottom with no ability to react to different situations. With <code>if</code> and <code>otherwise</code>, your program can choose different paths based on conditions.</p>
+
+      <p>Think of it like a fork in the road: "IF it is raining, take an umbrella. OTHERWISE, wear sunglasses."</p>
+
+      <h3>Basic if</h3>
+      <p>The simplest form -- do something only when a condition is true:</p>
+      <pre><code>age <span class="kw">is</span> <span class="num">20</span>
+
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span>:
+  <span class="kw">say</span> <span class="str">"You are an adult"</span></code></pre>
+
+      <p>Notice the colon <code>:</code> at the end of the <code>if</code> line, and that the next line is indented (shifted to the right with spaces). This indentation tells Quill which code belongs inside the <code>if</code> block.</p>
+
+      <h3>if / otherwise</h3>
+      <p>When you want to do one thing if the condition is true and a different thing if it is false:</p>
+      <pre><code>temperature <span class="kw">is</span> <span class="num">35</span>
+
+<span class="kw">if</span> temperature <span class="kw">is greater than</span> <span class="num">30</span>:
+  <span class="kw">say</span> <span class="str">"It's hot outside!"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"It's not too hot."</span></code></pre>
+
+      <h3>Chained conditions: if / otherwise if / otherwise</h3>
+      <p>When you have more than two possibilities, chain them together:</p>
       <pre><code>temp <span class="kw">is</span> <span class="num">72</span>
 
 <span class="kw">if</span> temp <span class="kw">is greater than</span> <span class="num">80</span>:
   <span class="kw">say</span> <span class="str">"It's hot!"</span>
 <span class="kw">otherwise if</span> temp <span class="kw">is greater than</span> <span class="num">60</span>:
   <span class="kw">say</span> <span class="str">"It's nice"</span>
+<span class="kw">otherwise if</span> temp <span class="kw">is greater than</span> <span class="num">40</span>:
+  <span class="kw">say</span> <span class="str">"It's chilly"</span>
 <span class="kw">otherwise</span>:
-  <span class="kw">say</span> <span class="str">"It's cold"</span></code></pre>
+  <span class="kw">say</span> <span class="str">"It's cold!"</span></code></pre>
 
-      <h2 id="try-catch">Try / Catch</h2>
-      <p>Handle errors gracefully with <code>try</code> and <code>if it fails</code>. The error variable after <code>if it fails</code> captures the error message.</p>
-      <pre><code><span class="kw">try</span>:
-  result <span class="kw">is</span> riskyOperation()
-<span class="kw">if it fails</span> error:
-  <span class="kw">say</span> <span class="str">"Something went wrong: {error}"</span></code></pre>
-      <p>You can use try/catch around any block of code that might fail:</p>
-      <pre><code><span class="kw">try</span>:
-  data <span class="kw">is</span> readFile(<span class="str">"config.json"</span>)
-  <span class="kw">say</span> <span class="str">"Config loaded"</span>
-<span class="kw">if it fails</span> error:
-  <span class="kw">say</span> <span class="str">"Could not load config, using defaults"</span>
-  data <span class="kw">is</span> defaultConfig()</code></pre>
+      <p>Quill checks each condition from top to bottom and runs the first one that is true. If none are true, it runs the <code>otherwise</code> block.</p>
+
+      <h3>Nested ifs</h3>
+      <p>You can put an <code>if</code> inside another <code>if</code> for more complex logic:</p>
+      <pre><code>isLoggedIn <span class="kw">is</span> <span class="bool">yes</span>
+isAdmin <span class="kw">is</span> <span class="bool">no</span>
+
+<span class="kw">if</span> isLoggedIn:
+  <span class="kw">say</span> <span class="str">"Welcome back!"</span>
+  <span class="kw">if</span> isAdmin:
+    <span class="kw">say</span> <span class="str">"You have admin access."</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"You have regular access."</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Please log in."</span></code></pre>
+
+      <h3>Real-world example: grading system</h3>
+      <pre><code>score <span class="kw">is</span> <span class="num">85</span>
+
+<span class="kw">if</span> score <span class="kw">is greater than</span> <span class="num">89</span>:
+  <span class="kw">say</span> <span class="str">"Grade: A"</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">79</span>:
+  <span class="kw">say</span> <span class="str">"Grade: B"</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">69</span>:
+  <span class="kw">say</span> <span class="str">"Grade: C"</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">59</span>:
+  <span class="kw">say</span> <span class="str">"Grade: D"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Grade: F"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Common mistake:</strong> Forgetting the colon <code>:</code> at the end of the <code>if</code>, <code>otherwise if</code>, or <code>otherwise</code> line. Every condition line must end with a colon.
+      </div>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Write a program that checks a variable called <code>hour</code> (a number from 0 to 23) and prints "Good morning", "Good afternoon", or "Good evening" depending on the time of day.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- LOOPS                                                         -->
+      <!-- ============================================================ -->
 
       <h2 id="loops">Loops</h2>
-      <h3>For each</h3>
-      <p>Iterate over items in a list:</p>
+      <p><strong>What is a loop?</strong> A loop repeats a block of code multiple times. Instead of writing the same thing over and over, you tell the computer "do this for each item" or "keep doing this while some condition is true."</p>
+
+      <p>Think of it like a factory assembly line: the same action is performed on each item that comes down the belt.</p>
+
+      <h3>for each -- iterating over a list</h3>
+      <p>The <code>for each</code> loop goes through every item in a list, one at a time:</p>
       <pre><code>fruits <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"cherry"</span>]
 
 <span class="kw">for each</span> fruit <span class="kw">in</span> fruits:
   <span class="kw">say</span> <span class="str">"I like {fruit}"</span></code></pre>
+      <p>This prints:</p>
+      <pre><code><span class="cmt">-- I like apple</span>
+<span class="cmt">-- I like banana</span>
+<span class="cmt">-- I like cherry</span></code></pre>
 
-      <p>Use <code>range()</code> to loop over numbers:</p>
+      <p>The variable <code>fruit</code> automatically takes on the value of each item as the loop runs. You can name it anything you want.</p>
+
+      <p>Use <code>range()</code> to loop over a sequence of numbers:</p>
       <pre><code><span class="kw">for each</span> i <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">6</span>):
   <span class="kw">say</span> i   <span class="cmt">-- prints 1, 2, 3, 4, 5</span></code></pre>
 
-      <h3>While</h3>
-      <p>Repeat as long as a condition is true:</p>
+      <h3>while -- repeating until something changes</h3>
+      <p>A <code>while</code> loop keeps running as long as its condition is true:</p>
       <pre><code>count <span class="kw">is</span> <span class="num">0</span>
 
 <span class="kw">while</span> count <span class="kw">is less than</span> <span class="num">5</span>:
   <span class="kw">say</span> count
   count <span class="kw">is</span> count + <span class="num">1</span></code></pre>
+      <p>This prints <code>0, 1, 2, 3, 4</code> and then stops because <code>count</code> is no longer less than 5.</p>
 
-      <h3 id="break-continue">Break &amp; Continue</h3>
-      <p>Use <code>break</code> to exit a loop early, and <code>continue</code> to skip to the next iteration:</p>
-      <pre><code><span class="kw">for each</span> i <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">10</span>):
-  <span class="kw">if</span> i <span class="kw">is</span> <span class="num">5</span>:
-    <span class="kw">break</span>        <span class="cmt">-- stop the loop entirely</span>
-  <span class="kw">say</span> i          <span class="cmt">-- prints 1, 2, 3, 4</span></code></pre>
+      <h3>break -- stopping a loop early</h3>
+      <p>Sometimes you want to stop a loop before it finishes naturally. The <code>break</code> keyword exits the loop immediately:</p>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">3</span>, <span class="num">7</span>, <span class="num">2</span>, <span class="num">9</span>, <span class="num">1</span>, <span class="num">4</span>]
 
+<span class="kw">for each</span> n <span class="kw">in</span> numbers:
+  <span class="kw">if</span> n <span class="kw">is</span> <span class="num">9</span>:
+    <span class="kw">say</span> <span class="str">"Found 9!"</span>
+    <span class="kw">break</span>           <span class="cmt">-- stop searching, we found it</span>
+  <span class="kw">say</span> <span class="str">"Checking {n}..."</span></code></pre>
+
+      <h3>continue -- skipping an item</h3>
+      <p>The <code>continue</code> keyword skips the rest of the current iteration and jumps to the next one:</p>
       <pre><code><span class="kw">for each</span> i <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">6</span>):
   <span class="kw">if</span> i <span class="kw">is</span> <span class="num">3</span>:
-    <span class="kw">continue</span>     <span class="cmt">-- skip this iteration</span>
-  <span class="kw">say</span> i          <span class="cmt">-- prints 1, 2, 4, 5</span></code></pre>
+    <span class="kw">continue</span>       <span class="cmt">-- skip the number 3</span>
+  <span class="kw">say</span> i            <span class="cmt">-- prints 1, 2, 4, 5</span></code></pre>
+
+      <h3>Real-world example: finding a user</h3>
+      <pre><code>users <span class="kw">are</span> [
+  {name: <span class="str">"Alice"</span>, role: <span class="str">"admin"</span>},
+  {name: <span class="str">"Bob"</span>, role: <span class="str">"user"</span>},
+  {name: <span class="str">"Charlie"</span>, role: <span class="str">"user"</span>}
+]
+
+<span class="kw">for each</span> user <span class="kw">in</span> users:
+  <span class="kw">if</span> user.role <span class="kw">is</span> <span class="str">"admin"</span>:
+    <span class="kw">say</span> <span class="str">"Admin found: {user.name}"</span>
+    <span class="kw">break</span></code></pre>
+
+      <h3>Real-world example: summing numbers</h3>
+      <pre><code>prices <span class="kw">are</span> [<span class="num">9.99</span>, <span class="num">24.50</span>, <span class="num">3.75</span>, <span class="num">15.00</span>]
+total <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">for each</span> price <span class="kw">in</span> prices:
+  total <span class="kw">is</span> total + price
+
+<span class="kw">say</span> <span class="str">"Total: ${total}"</span>   <span class="cmt">-- Total: $53.24</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Common mistake: infinite loops.</strong> A <code>while</code> loop that never has its condition become false will run forever and freeze your program. Always make sure something inside the loop changes the condition. For example, forgetting <code>count is count + 1</code> inside a <code>while count is less than 5:</code> loop means <code>count</code> stays at 0 forever.
+      </div>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Create a list of numbers and write a loop that prints only the even ones. (Hint: use <code>%</code> and <code>continue</code>.)
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- FUNCTIONS                                                     -->
+      <!-- ============================================================ -->
 
       <h2 id="functions">Functions</h2>
-      <p>Define functions with <code>to</code>. Parameters are listed by name (no parentheses or commas needed in the definition).</p>
+      <p><strong>What is a function?</strong> A function is a reusable block of code that performs a specific task. Think of it like a recipe: you define it once with a name and instructions, then you can use (or "call") it whenever you need it.</p>
+
+      <p>Without functions, you would have to copy and paste the same code every time you wanted to use it. Functions let you write it once and reuse it everywhere.</p>
+
+      <h3>Defining a function</h3>
+      <p>In Quill, you define a function with the word <code>to</code>, followed by the function name and its parameters:</p>
       <pre><code><span class="kw">to</span> <span class="fn">greet</span> name:
-  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span></code></pre>
 
-greet(<span class="str">"Alice"</span>)   <span class="cmt">-- Hello, Alice!</span></code></pre>
+      <p>Read it like English: "To greet (someone by) name: say Hello, name!"</p>
 
-      <h3>Return values</h3>
-      <p>Use <code>give back</code> to return a value from a function:</p>
+      <h3>Calling a function</h3>
+      <p>To use a function you have defined, write its name followed by the values you want to pass in (called "arguments"), wrapped in parentheses:</p>
+      <pre><code>greet(<span class="str">"Alice"</span>)    <span class="cmt">-- Hello, Alice!</span>
+greet(<span class="str">"Bob"</span>)      <span class="cmt">-- Hello, Bob!</span>
+greet(<span class="str">"Charlie"</span>)  <span class="cmt">-- Hello, Charlie!</span></code></pre>
+
+      <p>See how we wrote the greeting logic once but used it three times with different names? That is the power of functions.</p>
+
+      <h3>Returning values with <code>give back</code></h3>
+      <p>Functions can calculate something and give the result back to you using <code>give back</code>:</p>
       <pre><code><span class="kw">to</span> <span class="fn">add</span> a b:
   <span class="kw">give back</span> a + b
 
 result <span class="kw">is</span> add(<span class="num">3</span>, <span class="num">4</span>)
 <span class="kw">say</span> result   <span class="cmt">-- 7</span></code></pre>
 
+      <p>The function <code>add</code> takes two numbers, adds them, and gives the result back. You can store that result in a variable or use it directly.</p>
+
       <h3>Multiple parameters</h3>
+      <p>Functions can accept any number of parameters, listed by name in the definition:</p>
       <pre><code><span class="kw">to</span> <span class="fn">fullName</span> first last:
   <span class="kw">give back</span> <span class="str">"{first} {last}"</span>
 
 <span class="kw">say</span> fullName(<span class="str">"John"</span>, <span class="str">"Doe"</span>)   <span class="cmt">-- John Doe</span></code></pre>
 
-      <h3 id="lambdas">Lambda / Arrow functions</h3>
-      <p>Create inline anonymous functions with <code>with</code>. These are useful for callbacks and short expressions:</p>
+      <h3>Functions with no parameters</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">sayHello</span>:
+  <span class="kw">say</span> <span class="str">"Hello, World!"</span>
+
+sayHello()   <span class="cmt">-- Hello, World!</span></code></pre>
+
+      <h3>Real-world example: a simple calculator</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">calculate</span> a operation b:
+  <span class="kw">if</span> operation <span class="kw">is</span> <span class="str">"add"</span>:
+    <span class="kw">give back</span> a + b
+  <span class="kw">otherwise if</span> operation <span class="kw">is</span> <span class="str">"subtract"</span>:
+    <span class="kw">give back</span> a - b
+  <span class="kw">otherwise if</span> operation <span class="kw">is</span> <span class="str">"multiply"</span>:
+    <span class="kw">give back</span> a * b
+  <span class="kw">otherwise if</span> operation <span class="kw">is</span> <span class="str">"divide"</span>:
+    <span class="kw">give back</span> a / b
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Unknown operation"</span>
+    <span class="kw">give back</span> <span class="kw">nothing</span>
+
+<span class="kw">say</span> calculate(<span class="num">10</span>, <span class="str">"add"</span>, <span class="num">5</span>)       <span class="cmt">-- 15</span>
+<span class="kw">say</span> calculate(<span class="num">20</span>, <span class="str">"divide"</span>, <span class="num">4</span>)    <span class="cmt">-- 5</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Common mistake:</strong> Forgetting to use <code>give back</code> in a function that should return a value. Without it, the function returns <code>nothing</code> by default.
+      </div>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Write a function called <code>isEven</code> that takes a number and gives back <code>yes</code> if the number is even, or <code>no</code> if it is odd.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- LAMBDA FUNCTIONS                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="lambdas">Lambda Functions</h2>
+      <p><strong>What is a lambda?</strong> A lambda is a small, anonymous (unnamed) function that you write in a single line. Think of it as a mini function -- a quick shortcut when you need a simple operation and do not want to define a whole named function.</p>
+
+      <p>In Quill, you create a lambda with the <code>with</code> keyword:</p>
       <pre><code>double <span class="kw">is</span> <span class="kw">with</span> x: x * <span class="num">2</span>
-<span class="kw">say</span> double(<span class="num">5</span>)   <span class="cmt">-- 10</span></code></pre>
-      <p>Lambdas can take multiple parameters:</p>
+<span class="kw">say</span> double(<span class="num">5</span>)   <span class="cmt">-- 10</span>
+<span class="kw">say</span> double(<span class="num">3</span>)   <span class="cmt">-- 6</span></code></pre>
+
+      <p>This is equivalent to writing a full function:</p>
+      <pre><code><span class="cmt">-- This does the same thing as the lambda above</span>
+<span class="kw">to</span> <span class="fn">double</span> x:
+  <span class="kw">give back</span> x * <span class="num">2</span></code></pre>
+
+      <h3>Multiple parameters</h3>
       <pre><code>add <span class="kw">is</span> <span class="kw">with</span> a, b: a + b
 <span class="kw">say</span> add(<span class="num">3</span>, <span class="num">4</span>)   <span class="cmt">-- 7</span></code></pre>
-      <p>They work well with list operations:</p>
-      <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
-doubled <span class="kw">is</span> map(numbers, <span class="kw">with</span> x: x * <span class="num">2</span>)
-<span class="kw">say</span> doubled   <span class="cmt">-- [2, 4, 6, 8, 10]</span></code></pre>
 
-      <h3 id="type-annotations">Type annotations</h3>
-      <p>Quill supports optional type annotations on function parameters and return types. Use <code>as</code> to annotate parameter types and <code>-></code> to specify the return type:</p>
+      <h3>Using lambdas with list operations</h3>
+      <p>Lambdas really shine when used with functions like <code>map</code>, <code>filter</code>, and <code>reduce</code> that transform lists:</p>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+
+<span class="cmt">-- Double every number</span>
+doubled <span class="kw">is</span> map(numbers, <span class="kw">with</span> x: x * <span class="num">2</span>)
+<span class="kw">say</span> doubled   <span class="cmt">-- [2, 4, 6, 8, 10]</span>
+
+<span class="cmt">-- Keep only even numbers</span>
+evens <span class="kw">is</span> filter(numbers, <span class="kw">with</span> x: x % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>)
+<span class="kw">say</span> evens   <span class="cmt">-- [2, 4]</span>
+
+<span class="cmt">-- Sum all numbers</span>
+total <span class="kw">is</span> reduce(numbers, <span class="kw">with</span> a, b: a + b, <span class="num">0</span>)
+<span class="kw">say</span> total   <span class="cmt">-- 15</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> Use lambdas for short, simple operations. If your logic is more than one line, use a regular function with <code>to</code> instead -- it will be easier to read.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- TYPE ANNOTATIONS                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="type-annotations">Type Annotations</h2>
+      <p><strong>What are type annotations?</strong> Type annotations are optional labels you add to your function parameters and return values to specify what kind of data they expect. They are like signs on the doors of a building: "Numbers Only" or "Text Required."</p>
+
+      <p>They do not change how your code runs, but they help catch mistakes early and serve as built-in documentation.</p>
+
+      <h3>Basic syntax</h3>
+      <p>Use <code>as</code> after a parameter name to declare its type, and <code>-&gt;</code> before the colon to declare the return type:</p>
       <pre><code><span class="kw">to</span> <span class="fn">add</span> a <span class="kw">as</span> number, b <span class="kw">as</span> number -> number:
   <span class="kw">give back</span> a + b</code></pre>
-      <p>Type annotations are optional and do not change runtime behavior. They serve as documentation and can be used by tooling:</p>
+
+      <p>This says: "The <code>add</code> function takes two numbers and gives back a number."</p>
+
+      <h3>More examples</h3>
       <pre><code><span class="kw">to</span> <span class="fn">greet</span> name <span class="kw">as</span> text -> text:
   <span class="kw">give back</span> <span class="str">"Hello, {name}!"</span>
 
 <span class="kw">to</span> <span class="fn">isAdult</span> age <span class="kw">as</span> number -> boolean:
   <span class="kw">give back</span> age <span class="kw">is greater than</span> <span class="num">17</span></code></pre>
 
-      <h2 id="classes">Classes</h2>
-      <p>Define classes with <code>describe</code>. Classes can have properties and methods:</p>
-      <pre><code><span class="kw">describe</span> <span class="fn">Animal</span>:
-  name <span class="kw">is</span> <span class="str">""</span>
-  sound <span class="kw">is</span> <span class="str">""</span>
+      <h3>Generic types with <code>of</code></h3>
+      <p>For lists, you can specify what type of items they contain using <code>of</code>:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">sum</span> items <span class="kw">as</span> list <span class="kw">of</span> number -> number:
+  total <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">for each</span> item <span class="kw">in</span> items:
+    total <span class="kw">is</span> total + item
+  <span class="kw">give back</span> total
 
-  <span class="kw">to</span> <span class="fn">speak</span>:
-    <span class="kw">say</span> <span class="str">"{name} says {sound}"</span></code></pre>
+<span class="kw">to</span> <span class="fn">first</span> items <span class="kw">as</span> list <span class="kw">of</span> text -> text:
+  <span class="kw">give back</span> items[<span class="num">0</span>]</code></pre>
 
-      <h3>Inheritance</h3>
-      <p>Use <code>extends</code> to create a class that inherits from another:</p>
-      <pre><code><span class="kw">describe</span> <span class="fn">Dog</span> <span class="kw">extends</span> <span class="fn">Animal</span>:
-  sound <span class="kw">is</span> <span class="str">"Woof"</span>
-
-  <span class="kw">to</span> <span class="fn">fetch</span> item:
-    <span class="kw">say</span> <span class="str">"{name} fetches the {item}!"</span></code></pre>
-      <p>The child class inherits all properties and methods from the parent and can override them or add new ones.</p>
-
-      <h2 id="lists">Lists</h2>
-      <p>Lists are ordered collections of values:</p>
-      <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
-mixed <span class="kw">are</span> [<span class="str">"hello"</span>, <span class="num">42</span>, <span class="bool">yes</span>]
-empty <span class="kw">are</span> []</code></pre>
-
-      <h3>Access by index</h3>
-      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
-<span class="kw">say</span> colors[<span class="num">0</span>]   <span class="cmt">-- red</span>
-<span class="kw">say</span> colors[<span class="num">2</span>]   <span class="cmt">-- blue</span></code></pre>
-
-      <h3>Dot access</h3>
-      <p>Use dot notation to access properties on objects:</p>
-      <pre><code><span class="kw">say</span> <span class="str">"hello"</span>.length   <span class="cmt">-- 5</span></code></pre>
-
-      <h2 id="objects">Object literals</h2>
-      <p>Create objects with curly braces and key-value pairs:</p>
-      <pre><code>person <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">25</span>, active: <span class="bool">yes</span>}
-
-<span class="kw">say</span> person.name    <span class="cmt">-- Alice</span>
-<span class="kw">say</span> person.age     <span class="cmt">-- 25</span></code></pre>
-      <p>Objects can be nested:</p>
-      <pre><code>config <span class="kw">is</span> {
-  host: <span class="str">"localhost"</span>,
-  port: <span class="num">3000</span>,
-  db: {
-    name: <span class="str">"myapp"</span>,
-    pool: <span class="num">5</span>
-  }
-}
-
-<span class="kw">say</span> config.db.name   <span class="cmt">-- myapp</span></code></pre>
-
-      <h3 id="spread">Spread operator</h3>
-      <p>Use <code>...</code> to spread a list into another list or into function arguments:</p>
-      <pre><code>first <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
-second <span class="kw">are</span> [<span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>]
-combined <span class="kw">are</span> [...first, ...second]
-<span class="kw">say</span> combined   <span class="cmt">-- [1, 2, 3, 4, 5, 6]</span></code></pre>
-      <p>The spread operator also works to merge objects:</p>
-      <pre><code>defaults <span class="kw">is</span> {color: <span class="str">"blue"</span>, size: <span class="num">10</span>}
-overrides <span class="kw">is</span> {size: <span class="num">20</span>, bold: <span class="bool">yes</span>}
-merged <span class="kw">is</span> {...defaults, ...overrides}
-<span class="kw">say</span> merged   <span class="cmt">-- {color: "blue", size: 20, bold: yes}</span></code></pre>
-
-      <h2 id="output">Output</h2>
-      <p>Use <code>say</code> to print values to the console:</p>
-      <pre><code><span class="kw">say</span> <span class="str">"Hello!"</span>
-<span class="kw">say</span> <span class="num">42</span>
-<span class="kw">say</span> <span class="num">2</span> + <span class="num">2</span></code></pre>
-
-      <h2 id="imports">Imports</h2>
-      <p>Import other Quill files with <code>use</code>:</p>
-      <pre><code><span class="kw">use</span> <span class="str">"helpers.quill"</span></code></pre>
-
-      <h3>Selective imports</h3>
-      <p>Use <code>from</code> to import only specific names from a file:</p>
-      <pre><code><span class="kw">from</span> <span class="str">"math.quill"</span> <span class="kw">use</span> add, subtract
-<span class="kw">from</span> <span class="str">"utils.quill"</span> <span class="kw">use</span> formatDate, parseJSON</code></pre>
-      <p>This brings only the listed definitions into scope, keeping your namespace clean.</p>
+      <h3>Checking types with <code>quill check</code></h3>
+      <p>Type annotations are optional and do not affect how your program runs. However, you can use the <code>quill check</code> command to analyze your code and catch potential type mismatches before you run it:</p>
+      <pre><code>quill check myprogram.quill</code></pre>
 
       <div class="callout callout-info">
-        Imports are resolved at compile time and bring definitions from the imported file into scope.
+        <strong>Tip:</strong> You do not need to add types everywhere. Start without them while learning, and add them later when you want more safety and documentation in larger programs.
       </div>
 
-      <h2 id="pattern-matching">Pattern matching</h2>
-      <p>Use <code>match</code>/<code>when</code> to branch on a value. Each <code>when</code> clause tests the value against a pattern, and <code>otherwise</code> acts as the default fallback.</p>
+      <!-- ============================================================ -->
+      <!-- PATTERN MATCHING                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="pattern-matching">Pattern Matching</h2>
+      <p><strong>What is pattern matching?</strong> Pattern matching is like a smart switch statement. Instead of writing a long chain of <code>if</code>/<code>otherwise if</code>, you say "match this value" and list the possible cases. It is cleaner and easier to read when you are comparing one value against many options.</p>
+
+      <p>Think of it like a vending machine: you insert a code, and the machine matches it to the right product.</p>
+
+      <h3>Basic syntax</h3>
       <pre><code>status <span class="kw">is</span> <span class="str">"active"</span>
 
 <span class="kw">match</span> status:
@@ -365,9 +775,12 @@ merged <span class="kw">is</span> {...defaults, ...overrides}
     <span class="kw">say</span> <span class="str">"User is active"</span>
   <span class="kw">when</span> <span class="str">"inactive"</span>:
     <span class="kw">say</span> <span class="str">"User is inactive"</span>
+  <span class="kw">when</span> <span class="str">"banned"</span>:
+    <span class="kw">say</span> <span class="str">"User is banned"</span>
   <span class="kw">otherwise</span>:
     <span class="kw">say</span> <span class="str">"Unknown status"</span></code></pre>
-      <p>Pattern matching works with any value type -- numbers, text, booleans, and more:</p>
+
+      <h3>Matching numbers</h3>
       <pre><code>code <span class="kw">is</span> <span class="num">404</span>
 
 <span class="kw">match</span> code:
@@ -379,52 +792,405 @@ merged <span class="kw">is</span> {...defaults, ...overrides}
     <span class="kw">say</span> <span class="str">"Server error"</span>
   <span class="kw">otherwise</span>:
     <span class="kw">say</span> <span class="str">"Unexpected code: {code}"</span></code></pre>
+
+      <h3>When to use match vs if/otherwise</h3>
+      <p>Use <code>match</code> when you are comparing <strong>one value</strong> against several specific options. Use <code>if</code>/<code>otherwise</code> when your conditions involve different variables, ranges, or complex expressions.</p>
+      <pre><code><span class="cmt">-- Good use of match: one value, many options</span>
+<span class="kw">match</span> dayOfWeek:
+  <span class="kw">when</span> <span class="str">"Monday"</span>:
+    <span class="kw">say</span> <span class="str">"Start of the work week"</span>
+  <span class="kw">when</span> <span class="str">"Friday"</span>:
+    <span class="kw">say</span> <span class="str">"Almost weekend!"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Just another day"</span>
+
+<span class="cmt">-- Better as if/otherwise: complex conditions</span>
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span> <span class="kw">and</span> hasLicense:
+  <span class="kw">say</span> <span class="str">"Can drive"</span></code></pre>
+
       <div class="callout callout-info">
-        The <code>otherwise</code> clause is optional but recommended to handle unexpected values.
+        <strong>Tip:</strong> The <code>otherwise</code> clause is optional but recommended. It catches any value you did not explicitly list, preventing unexpected behavior.
       </div>
 
-      <h2 id="algebraic-types">Algebraic data types</h2>
-      <p>Use <code>define</code> to declare algebraic data types (ADTs). These let you model data with distinct variants, similar to enums or tagged unions in other languages.</p>
+      <!-- ============================================================ -->
+      <!-- ERROR HANDLING                                                -->
+      <!-- ============================================================ -->
+
+      <h2 id="try-catch">Error Handling</h2>
+      <p><strong>What are errors?</strong> Errors happen when something goes wrong while your program is running -- like trying to read a file that does not exist, dividing by zero, or receiving unexpected data. Without error handling, your program would crash. With it, you can catch the problem and respond gracefully.</p>
+
+      <p>Think of it like a safety net under a tightrope walker. If they fall, the net catches them instead of letting disaster happen.</p>
+
+      <h3>Basic syntax: try / if it fails</h3>
+      <pre><code><span class="kw">try</span>:
+  result <span class="kw">is</span> riskyOperation()
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Something went wrong: {error}"</span></code></pre>
+
+      <p>The code inside <code>try:</code> runs normally. If anything inside it causes an error, Quill immediately jumps to the <code>if it fails</code> block. The variable after <code>if it fails</code> (here called <code>error</code>) holds the error message.</p>
+
+      <h3>Real-world example: loading a configuration file</h3>
+      <pre><code><span class="kw">try</span>:
+  data <span class="kw">is</span> readFile(<span class="str">"config.json"</span>)
+  <span class="kw">say</span> <span class="str">"Config loaded successfully"</span>
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Could not load config, using defaults"</span>
+  data <span class="kw">is</span> defaultConfig()</code></pre>
+
+      <h3>Real-world example: parsing user input</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">parseAge</span> input:
+  <span class="kw">try</span>:
+    age <span class="kw">is</span> toNumber(input)
+    <span class="kw">if</span> age <span class="kw">is less than</span> <span class="num">0</span>:
+      <span class="kw">say</span> <span class="str">"Age cannot be negative"</span>
+      <span class="kw">give back</span> <span class="kw">nothing</span>
+    <span class="kw">give back</span> age
+  <span class="kw">if it fails</span> err:
+    <span class="kw">say</span> <span class="str">"'{input}' is not a valid number"</span>
+    <span class="kw">give back</span> <span class="kw">nothing</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> Only wrap code in <code>try</code> if it might genuinely fail. Do not use it to hide bugs -- fix the bug instead.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CLASSES                                                       -->
+      <!-- ============================================================ -->
+
+      <h2 id="classes">Classes</h2>
+      <p><strong>What is a class?</strong> A class is a blueprint for creating things (called "objects" or "instances"). Imagine you are building houses: the blueprint (class) describes what every house looks like -- how many rooms, what color the door is, how to open it. Each actual house you build from that blueprint is an instance.</p>
+
+      <h3>Defining a class</h3>
+      <p>In Quill, you define a class with <code>describe</code>:</p>
+      <pre><code><span class="kw">describe</span> <span class="fn">Dog</span>:
+  name <span class="kw">is</span> <span class="str">""</span>
+  breed <span class="kw">is</span> <span class="str">""</span>
+  age <span class="kw">is</span> <span class="num">0</span>
+
+  <span class="kw">to</span> <span class="fn">bark</span>:
+    <span class="kw">say</span> <span class="str">"{my.name} says: Woof!"</span>
+
+  <span class="kw">to</span> <span class="fn">describe</span>:
+    <span class="kw">say</span> <span class="str">"{my.name} is a {my.age}-year-old {my.breed}"</span></code></pre>
+
+      <p>Notice the <code>my</code> keyword -- it refers to the specific instance's own properties. Think of it like saying "my own name" or "my own age."</p>
+
+      <h3>Creating instances</h3>
+      <p>Create a new instance of a class using <code>new</code>:</p>
+      <pre><code>rex <span class="kw">is</span> <span class="kw">new</span> Dog()
+rex.name <span class="kw">is</span> <span class="str">"Rex"</span>
+rex.breed <span class="kw">is</span> <span class="str">"German Shepherd"</span>
+rex.age <span class="kw">is</span> <span class="num">5</span>
+
+rex.bark()       <span class="cmt">-- Rex says: Woof!</span>
+rex.describe()   <span class="cmt">-- Rex is a 5-year-old German Shepherd</span></code></pre>
+
+      <h3>Inheritance</h3>
+      <p>A class can inherit (extend) another class, gaining all of its properties and methods. The child class can add new ones or override existing ones:</p>
+      <pre><code><span class="kw">describe</span> <span class="fn">Animal</span>:
+  name <span class="kw">is</span> <span class="str">""</span>
+  sound <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">to</span> <span class="fn">speak</span>:
+    <span class="kw">say</span> <span class="str">"{my.name} says {my.sound}"</span>
+
+<span class="kw">describe</span> <span class="fn">Cat</span> <span class="kw">extends</span> <span class="fn">Animal</span>:
+  sound <span class="kw">is</span> <span class="str">"Meow"</span>
+
+  <span class="kw">to</span> <span class="fn">purr</span>:
+    <span class="kw">say</span> <span class="str">"{my.name} purrs..."</span>
+
+kitty <span class="kw">is</span> <span class="kw">new</span> Cat()
+kitty.name <span class="kw">is</span> <span class="str">"Whiskers"</span>
+kitty.speak()   <span class="cmt">-- Whiskers says Meow</span>
+kitty.purr()    <span class="cmt">-- Whiskers purrs...</span></code></pre>
+
+      <h3>Real-world example: a game character</h3>
+      <pre><code><span class="kw">describe</span> <span class="fn">Character</span>:
+  name <span class="kw">is</span> <span class="str">"Hero"</span>
+  health <span class="kw">is</span> <span class="num">100</span>
+  attackPower <span class="kw">is</span> <span class="num">10</span>
+
+  <span class="kw">to</span> <span class="fn">attack</span> target:
+    <span class="kw">say</span> <span class="str">"{my.name} attacks {target.name} for {my.attackPower} damage!"</span>
+    target.health <span class="kw">is</span> target.health - my.attackPower
+
+  <span class="kw">to</span> <span class="fn">isAlive</span>:
+    <span class="kw">give back</span> my.health <span class="kw">is greater than</span> <span class="num">0</span>
+
+  <span class="kw">to</span> <span class="fn">status</span>:
+    <span class="kw">say</span> <span class="str">"{my.name}: {my.health} HP"</span>
+
+hero <span class="kw">is</span> <span class="kw">new</span> Character()
+hero.name <span class="kw">is</span> <span class="str">"Aria"</span>
+hero.attackPower <span class="kw">is</span> <span class="num">25</span>
+
+villain <span class="kw">is</span> <span class="kw">new</span> Character()
+villain.name <span class="kw">is</span> <span class="str">"Goblin"</span>
+villain.health <span class="kw">is</span> <span class="num">50</span>
+
+hero.attack(villain)    <span class="cmt">-- Aria attacks Goblin for 25 damage!</span>
+villain.status()        <span class="cmt">-- Goblin: 25 HP</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Common mistake:</strong> Forgetting to use <code>my.</code> when accessing a class's own properties inside its methods. Without <code>my.</code>, Quill looks for a regular variable instead of the instance's property.
+      </div>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Create a <code>BankAccount</code> class with a <code>balance</code> property and <code>deposit</code>/<code>withdraw</code> methods.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- ALGEBRAIC DATA TYPES                                          -->
+      <!-- ============================================================ -->
+
+      <h2 id="algebraic-types">Algebraic Data Types</h2>
+      <p><strong>What are algebraic data types?</strong> They let you define your own custom categories of data. Think of them like creating a custom label maker: you define a set of specific variants that a value can be, and nothing else.</p>
+
+      <p>For example, a traffic light can only be Red, Yellow, or Green -- never Purple. Algebraic data types let you express exactly that.</p>
+
       <h3>Simple variants (enumerations)</h3>
-      <p>Variants with no associated data work like enums:</p>
+      <p>The simplest form lists the possible values:</p>
       <pre><code><span class="kw">define</span> <span class="fn">Color</span>:
   Red
   Green
   Blue</code></pre>
+
+      <p>Now <code>Color</code> can only ever be <code>Red</code>, <code>Green</code>, or <code>Blue</code>.</p>
+
       <h3>Variants with data</h3>
-      <p>Use <code>of</code> to attach fields to a variant:</p>
+      <p>Some variants can carry additional information using <code>of</code>:</p>
       <pre><code><span class="kw">define</span> <span class="fn">Shape</span>:
   Circle <span class="kw">of</span> radius
-  Rectangle <span class="kw">of</span> width, height</code></pre>
-      <p>Algebraic types pair naturally with pattern matching:</p>
+  Rectangle <span class="kw">of</span> width, height
+  Triangle <span class="kw">of</span> base, height</code></pre>
+
+      <p>A <code>Shape</code> is always one of these three things, and each one carries exactly the data it needs.</p>
+
+      <h3>Using with pattern matching</h3>
+      <p>Algebraic types work naturally with <code>match</code>/<code>when</code>:</p>
       <pre><code><span class="kw">to</span> <span class="fn">area</span> shape:
   <span class="kw">match</span> shape:
     <span class="kw">when</span> Circle radius:
       <span class="kw">give back</span> <span class="num">3.14159</span> * radius * radius
     <span class="kw">when</span> Rectangle width height:
-      <span class="kw">give back</span> width * height</code></pre>
+      <span class="kw">give back</span> width * height
+    <span class="kw">when</span> Triangle base height:
+      <span class="kw">give back</span> <span class="num">0.5</span> * base * height
 
-      <h2 id="pipe-operator">Pipe operator</h2>
-      <p>The pipe operator <code>|</code> passes the result of one expression as the first argument to the next function. This lets you write left-to-right data transformation chains instead of nested calls.</p>
-      <pre><code>result <span class="kw">is</span> <span class="str">"hello"</span> | upper | trim</code></pre>
-      <p>The above is equivalent to <code>trim(upper("hello"))</code>, but reads in the order the operations happen.</p>
-      <p>Pipes work with functions that take additional arguments too -- the piped value becomes the first argument:</p>
-      <pre><code>result <span class="kw">is</span> text | replace_text(<span class="str">"old"</span>, <span class="str">"new"</span>)</code></pre>
-      <p>Chain as many steps as you need:</p>
+<span class="kw">say</span> area(Circle(<span class="num">5</span>))              <span class="cmt">-- 78.53975</span>
+<span class="kw">say</span> area(Rectangle(<span class="num">4</span>, <span class="num">6</span>))       <span class="cmt">-- 24</span></code></pre>
+
+      <h3>When to use <code>define</code> vs <code>describe</code></h3>
+      <p>Use <code>define</code> (algebraic types) when you have a fixed set of distinct categories, especially when different variants carry different data. Use <code>describe</code> (classes) when you need objects with shared behavior (methods), properties that change over time, and inheritance.</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Define a <code>Result</code> type with two variants: <code>Success of value</code> and <code>Error of message</code>. Write a function that returns one or the other and use <code>match</code> to handle both cases.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PIPE OPERATOR                                                 -->
+      <!-- ============================================================ -->
+
+      <h2 id="pipe-operator">Pipe Operator</h2>
+      <p><strong>What is the pipe operator?</strong> The pipe operator (<code>|</code>) lets you chain transformations together in a readable left-to-right sequence. Think of it like an assembly line in a factory: raw material goes in one end, gets transformed at each station, and the finished product comes out the other end.</p>
+
+      <h3>Basic usage</h3>
+      <p>Instead of nesting function calls inside each other (which reads inside-out), you can pipe values through functions:</p>
+      <pre><code><span class="cmt">-- Without pipes (nested, reads inside-out):</span>
+result <span class="kw">is</span> trim(upper(<span class="str">"  hello  "</span>))
+
+<span class="cmt">-- With pipes (reads left-to-right):</span>
+result <span class="kw">is</span> <span class="str">"  hello  "</span> | upper | trim</code></pre>
+
+      <p>Both produce the same result, but the pipe version reads in the order the operations happen: take the string, make it uppercase, then trim the whitespace.</p>
+
+      <h3>Pipes with arguments</h3>
+      <p>When a function takes extra arguments, the piped value becomes the first argument:</p>
+      <pre><code>result <span class="kw">is</span> <span class="str">"hello world"</span> | replace_text(<span class="str">"world"</span>, <span class="str">"Quill"</span>)
+<span class="kw">say</span> result   <span class="cmt">-- hello Quill</span></code></pre>
+
+      <h3>Chaining multiple steps</h3>
+      <p>You can chain as many pipes as you need. For readability, you can put each step on its own line:</p>
       <pre><code>output <span class="kw">is</span> rawInput
   | trim
   | lower
-  | replace_text(<span class="str">" "</span>, <span class="str">"-"</span>)</code></pre>
+  | replace_text(<span class="str">" "</span>, <span class="str">"-"</span>)
+
+<span class="cmt">-- If rawInput is "  Hello World  ", output is "hello-world"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> Pipes are especially useful for data processing tasks where you transform a value through several steps. If you find yourself writing deeply nested function calls, consider using pipes instead.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- OBJECT LITERALS                                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="objects">Object Literals</h2>
+      <p><strong>What is an object?</strong> An object is a way to group related pieces of information together using named labels (keys). Think of it like a contact card: instead of having separate variables for name, phone, and email, you bundle them into one object.</p>
+
+      <h3>Creating objects</h3>
+      <pre><code>person <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">25</span>, active: <span class="bool">yes</span>}
+
+<span class="kw">say</span> person.name    <span class="cmt">-- Alice</span>
+<span class="kw">say</span> person.age     <span class="cmt">-- 25</span></code></pre>
+
+      <h3>Multi-line objects</h3>
+      <p>For objects with many properties, spread them across multiple lines for readability:</p>
+      <pre><code>config <span class="kw">is</span> {
+  host: <span class="str">"localhost"</span>,
+  port: <span class="num">3000</span>,
+  debug: <span class="bool">yes</span>
+}</code></pre>
+
+      <h3>Nested objects</h3>
+      <p>Objects can contain other objects:</p>
+      <pre><code>app <span class="kw">is</span> {
+  name: <span class="str">"MyApp"</span>,
+  database: {
+    host: <span class="str">"localhost"</span>,
+    name: <span class="str">"mydb"</span>,
+    pool: <span class="num">5</span>
+  }
+}
+
+<span class="kw">say</span> app.database.host   <span class="cmt">-- localhost</span>
+<span class="kw">say</span> app.database.name   <span class="cmt">-- mydb</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- SPREAD OPERATOR                                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="spread">Spread Operator</h2>
+      <p><strong>What is the spread operator?</strong> The spread operator (<code>...</code>) "unpacks" a list or object, spreading its contents into another list or object. Think of it like pouring the contents of one box into another.</p>
+
+      <h3>Combining lists</h3>
+      <pre><code>first <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+second <span class="kw">are</span> [<span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>]
+combined <span class="kw">are</span> [...first, ...second]
+<span class="kw">say</span> combined   <span class="cmt">-- [1, 2, 3, 4, 5, 6]</span></code></pre>
+
+      <p>You can mix spread with individual items:</p>
+      <pre><code>middle <span class="kw">are</span> [<span class="num">3</span>, <span class="num">4</span>]
+full <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, ...middle, <span class="num">5</span>, <span class="num">6</span>]
+<span class="kw">say</span> full   <span class="cmt">-- [1, 2, 3, 4, 5, 6]</span></code></pre>
+
+      <h3>Merging objects</h3>
+      <p>Spread also works for combining objects. If both objects have the same key, the later one wins:</p>
+      <pre><code>defaults <span class="kw">is</span> {color: <span class="str">"blue"</span>, size: <span class="num">10</span>}
+overrides <span class="kw">is</span> {size: <span class="num">20</span>, bold: <span class="bool">yes</span>}
+merged <span class="kw">is</span> {...defaults, ...overrides}
+<span class="kw">say</span> merged   <span class="cmt">-- {color: "blue", size: 20, bold: yes}</span></code></pre>
+
+      <p>Notice that <code>size</code> is <code>20</code> (from overrides), not <code>10</code> (from defaults), because <code>overrides</code> was spread second.</p>
+
+      <!-- ============================================================ -->
+      <!-- LISTS (DETAILED)                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="lists">Lists (Detailed)</h2>
+      <p>We introduced lists earlier, but here is a deeper look at working with them.</p>
+
+      <h3>Creating lists</h3>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+mixed <span class="kw">are</span> [<span class="str">"hello"</span>, <span class="num">42</span>, <span class="bool">yes</span>]
+empty <span class="kw">are</span> []</code></pre>
+
+      <h3>Accessing items by index</h3>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+<span class="kw">say</span> colors[<span class="num">0</span>]   <span class="cmt">-- red   (first item)</span>
+<span class="kw">say</span> colors[<span class="num">1</span>]   <span class="cmt">-- green (second item)</span>
+<span class="kw">say</span> colors[<span class="num">2</span>]   <span class="cmt">-- blue  (third item)</span></code></pre>
+
+      <h3>Getting the length</h3>
+      <pre><code><span class="kw">say</span> length(colors)   <span class="cmt">-- 3</span></code></pre>
+
+      <h3>Iterating over a list</h3>
+      <pre><code>fruits <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"cherry"</span>]
+
+<span class="kw">for each</span> fruit <span class="kw">in</span> fruits:
+  <span class="kw">say</span> <span class="str">"I like {fruit}"</span></code></pre>
+
+      <h3>Using dot notation</h3>
+      <pre><code><span class="kw">say</span> <span class="str">"hello"</span>.length   <span class="cmt">-- 5</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- IMPORTS                                                       -->
+      <!-- ============================================================ -->
+
+      <h2 id="imports">Imports</h2>
+      <p><strong>What are imports?</strong> As your programs grow, you will want to split your code into multiple files and use code that other people have written. Imports let you bring code from other files into your current file.</p>
+
+      <h3>Importing your own Quill files</h3>
+      <p>If you have a file called <code>helpers.quill</code> with useful functions, you can import it:</p>
+      <pre><code><span class="kw">use</span> <span class="str">"helpers.quill"</span></code></pre>
+      <p>This brings all definitions from <code>helpers.quill</code> into your current file.</p>
+
+      <h3>Selective imports</h3>
+      <p>If you only need specific functions from a file, use <code>from</code>:</p>
+      <pre><code><span class="kw">from</span> <span class="str">"math.quill"</span> <span class="kw">use</span> add, subtract
+<span class="kw">from</span> <span class="str">"utils.quill"</span> <span class="kw">use</span> formatDate, parseJSON</code></pre>
+      <p>This keeps your namespace clean by only bringing in what you actually need.</p>
+
+      <h3>Importing npm packages</h3>
+      <p>Since Quill compiles to JavaScript, you can use packages from the npm ecosystem:</p>
+      <pre><code><span class="kw">use</span> <span class="str">"express"</span> <span class="kw">as</span> app
+<span class="kw">from</span> <span class="str">"express"</span> <span class="kw">use</span> Router, json</code></pre>
+
+      <div class="callout callout-info">
+        Imports are resolved at compile time and bring definitions from the imported file into scope.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- TESTING                                                       -->
+      <!-- ============================================================ -->
+
+      <h2 id="testing">Testing</h2>
+      <p><strong>Why does testing matter?</strong> Testing is how you make sure your code works correctly -- not just right now, but also after you make changes in the future. Think of tests like a checklist: "Does the add function still return 5 when I give it 2 and 3?"</p>
+
+      <h3>Writing tests</h3>
+      <p>In Quill, you write tests with the <code>test</code> keyword followed by a description:</p>
+      <pre><code><span class="kw">test</span> <span class="str">"addition works correctly"</span>:
+  result <span class="kw">is</span> add(<span class="num">2</span>, <span class="num">3</span>)
+  expect(result).toBe(<span class="num">5</span>)</code></pre>
+
+      <h3>Multiple tests</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">isEven</span> n:
+  <span class="kw">give back</span> n % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"isEven returns yes for even numbers"</span>:
+  expect(isEven(<span class="num">4</span>)).toBe(<span class="bool">yes</span>)
+  expect(isEven(<span class="num">0</span>)).toBe(<span class="bool">yes</span>)
+
+<span class="kw">test</span> <span class="str">"isEven returns no for odd numbers"</span>:
+  expect(isEven(<span class="num">3</span>)).toBe(<span class="bool">no</span>)
+  expect(isEven(<span class="num">7</span>)).toBe(<span class="bool">no</span>)</code></pre>
+
+      <h3>Running tests</h3>
+      <p>Run your tests from the terminal:</p>
+      <pre><code>quill test</code></pre>
+      <p>Quill will find all test blocks in your project and run them, reporting which ones passed and which ones failed.</p>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> Write tests as you build your program, not after. It is much easier to catch bugs early when you test each function right after writing it.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- GENERICS                                                      -->
+      <!-- ============================================================ -->
 
       <h2 id="generics">Generics</h2>
-      <p>Quill supports generic type annotations using <code>of</code> to parameterize collection types. This lets you express that a function works on a list of a specific type:</p>
+      <p><strong>What are generics?</strong> Generics let you write type annotations that work with any type of content. For example, instead of writing separate functions for "a list of numbers" and "a list of text," you can write one function that works with "a list of anything."</p>
+
+      <p>Use the <code>of</code> keyword to parameterize collection types:</p>
       <pre><code><span class="kw">to</span> <span class="fn">sum</span> items <span class="kw">as</span> list <span class="kw">of</span> number -> number:
   total <span class="kw">is</span> <span class="num">0</span>
   <span class="kw">for each</span> item <span class="kw">in</span> items:
     total <span class="kw">is</span> total + item
-  <span class="kw">give back</span> total</code></pre>
-      <p>Generic annotations work with any element type:</p>
-      <pre><code><span class="kw">to</span> <span class="fn">first</span> items <span class="kw">as</span> list <span class="kw">of</span> text -> text:
+  <span class="kw">give back</span> total
+
+<span class="kw">to</span> <span class="fn">first</span> items <span class="kw">as</span> list <span class="kw">of</span> text -> text:
   <span class="kw">give back</span> items[<span class="num">0</span>]
 
 <span class="kw">to</span> <span class="fn">hasAny</span> items <span class="kw">as</span> list <span class="kw">of</span> boolean -> boolean:
@@ -432,16 +1198,26 @@ merged <span class="kw">is</span> {...defaults, ...overrides}
     <span class="kw">if</span> item:
       <span class="kw">give back</span> <span class="bool">yes</span>
   <span class="kw">give back</span> <span class="bool">no</span></code></pre>
+
       <div class="callout callout-info">
         Like other type annotations in Quill, generics are optional and serve as documentation. They do not change runtime behavior.
       </div>
 
-      <h2>Next steps</h2>
+      <!-- ============================================================ -->
+      <!-- NEXT STEPS                                                    -->
+      <!-- ============================================================ -->
+
+      <h2 id="next-steps">Next Steps</h2>
+      <p>Congratulations! You have learned the fundamentals of Quill. Here is where to go from here:</p>
       <ul>
-        <li><a href="/docs/stdlib">Standard Library</a> -- built-in functions</li>
-        <li><a href="/docs/testing">Testing</a> -- write and run tests</li>
-        <li><a href="/docs/examples">Examples</a> -- complete programs</li>
+        <li><a href="/docs/stdlib">Standard Library</a> -- explore the built-in functions available to every Quill program</li>
+        <li><a href="/docs/testing">Testing</a> -- learn more about writing and running tests</li>
+        <li><a href="/docs/tools">Tools</a> -- discover the Quill CLI tools for formatting, checking, and building</li>
+        <li><a href="/docs/examples">Examples</a> -- see complete working programs to learn from</li>
       </ul>
+
+      <p>The best way to learn is to build something. Start small -- a calculator, a to-do list, a guessing game -- and gradually tackle bigger projects. Every expert was once a beginner. Happy coding!</p>
+
     </main>
   </div>
 

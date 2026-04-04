@@ -52,301 +52,875 @@
     </aside>
 
     <main class="docs-content">
-      <h1>Developer Tools</h1>
-      <p>Quill ships with built-in developer tools that help you write cleaner, more reliable code. No extra setup or plugins required.</p>
+      <h1>Developer Tools Guide</h1>
+      <p>Quill comes with a full set of built-in tools that help you write, run, check, format, test, and share your programs. You do not need to install anything extra &mdash; everything described on this page is included when you install Quill.</p>
 
-      <h2 id="formatter">Formatter (<code>quill fmt</code>)</h2>
-      <p>The Quill formatter automatically reformats your code to follow a consistent style. It fixes indentation, spacing, and layout while preserving your code's meaning.</p>
+      <p>This guide walks through every tool step by step. If you have never used a programming tool before, don't worry &mdash; each section explains what the tool does, why it exists, and exactly how to use it.</p>
 
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Format a file (overwrites in place)</span>
-quill fmt myprogram.quill</code></pre>
+      <div class="callout callout-tip">
+        <strong>How to read this guide:</strong> Each section follows the same pattern: what the tool does, when to use it, step-by-step instructions, an example you can try, and tips for getting the most out of it. You can read straight through or jump to the section you need.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- RUNNING PROGRAMS                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="run">Running Programs (<code>quill run</code>)</h2>
 
       <h3>What it does</h3>
+      <p><code>quill run</code> takes a Quill file you have written and executes it immediately. Think of it like pressing "play" on a video &mdash; your program runs from top to bottom, and you see the results in your terminal.</p>
+
+      <h3>When to use it</h3>
+      <p>Use <code>quill run</code> every time you want to try out your code. It is the single most common command you will use. Wrote a new feature? Run it. Fixed a bug? Run it. Just want to see what happens? Run it.</p>
+
+      <h3>What happens behind the scenes</h3>
+      <p>When you type <code>quill run hello.quill</code>, three things happen in order:</p>
+      <ol>
+        <li><strong>Translation</strong> &mdash; Quill reads your <code>.quill</code> file and translates the English-like code into JavaScript, a language that computers already know how to run.</li>
+        <li><strong>Execution</strong> &mdash; Quill hands that JavaScript to a runtime (by default, Node.js) which actually runs the instructions.</li>
+        <li><strong>Output</strong> &mdash; Anything your program prints (using <code>say</code>) appears in your terminal.</li>
+      </ol>
+      <p>You never see the JavaScript &mdash; it all happens automatically behind the scenes.</p>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Create a new file. You can use any text editor. Save it with the <code>.quill</code> extension.</p>
+      <pre><code><span class="cmt">-- hello.quill</span>
+<span class="kw">say</span> <span class="str">"Hello, World!"</span></code></pre>
+
+      <p><strong>Step 2:</strong> Open your terminal and navigate to the folder where you saved the file.</p>
+
+      <p><strong>Step 3:</strong> Run the program.</p>
+      <pre><code>quill run hello.quill</code></pre>
+
+      <p><strong>Step 4:</strong> See the output.</p>
+      <pre><code>Hello, World!</code></pre>
+
+      <h3>Example: input and output</h3>
+      <p>Here is a slightly bigger program and what it produces:</p>
+
+      <p><strong>Input file (greeting.quill):</strong></p>
+      <pre><code><span class="kw">name</span> is <span class="str">"Quill"</span>
+<span class="kw">version</span> is <span class="num">1</span>
+<span class="kw">say</span> <span class="str">"Welcome to {name} version {version}!"</span>
+<span class="kw">say</span> <span class="str">"Today is a great day to learn coding."</span></code></pre>
+
+      <p><strong>Command:</strong></p>
+      <pre><code>quill run greeting.quill</code></pre>
+
+      <p><strong>Output:</strong></p>
+      <pre><code>Welcome to Quill version 1!
+Today is a great day to learn coding.</code></pre>
+
+      <h3>Running with different runtimes</h3>
+      <p>By default, Quill uses Node.js to run your code. If you have other JavaScript runtimes installed (such as Deno or Bun), you can tell Quill to use them instead:</p>
+      <pre><code><span class="cmt">-- Run with Bun (faster startup)</span>
+quill run hello.quill --runtime bun
+
+<span class="cmt">-- Run with Deno</span>
+quill run hello.quill --runtime deno</code></pre>
+      <p>For most beginners, the default (Node.js) works perfectly. You only need to think about other runtimes if you have a specific reason to use them.</p>
+
+      <h3>Tips</h3>
       <ul>
-        <li>Normalizes indentation to 2 spaces</li>
-        <li>Adds blank lines between function definitions and block statements</li>
-        <li>Ensures consistent spacing around operators</li>
-        <li>Converts comparison operators back to English (<code>is greater than</code>, <code>is less than</code>)</li>
-        <li>Formats boolean values as <code>yes</code>/<code>no</code></li>
+        <li>If you get an error, read the message carefully &mdash; Quill tries to tell you exactly which line has a problem.</li>
+        <li>You can run the same file as many times as you like. Each run starts fresh.</li>
+        <li>Make sure your file ends in <code>.quill</code> &mdash; Quill will not recognize other file extensions.</li>
       </ul>
 
-      <h3>Example</h3>
-      <p>Before formatting:</p>
-      <pre><code>name is "Sarah"
-age   is 25
-if age is greater than 18:
-  say "adult"
-to add a b:
-  give back a+b</code></pre>
+      <!-- ============================================================ -->
+      <!-- BUILDING / COMPILING                                          -->
+      <!-- ============================================================ -->
 
-      <p>After <code>quill fmt</code>:</p>
-      <pre><code><span class="kw">name</span> is <span class="str">"Sarah"</span>
-<span class="kw">age</span> is <span class="num">25</span>
+      <h2 id="build">Building and Compiling (<code>quill build</code>)</h2>
 
-<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span>:
-  <span class="kw">say</span> <span class="str">"adult"</span>
+      <h3>What it does</h3>
+      <p><code>quill build</code> translates your Quill code into another format without running it. This is called "compiling." Instead of seeing output in your terminal, you get a new file that can be used somewhere else &mdash; in a web page, as a standalone app, or as a module for other programs.</p>
 
-<span class="kw">to</span> <span class="fn">add</span> a b:
-  <span class="kw">give back</span> a + b</code></pre>
-
-      <h2 id="analyzer">Static Analyzer (<code>quill check</code>)</h2>
-      <p>The static analyzer catches common mistakes and potential bugs without running your code. It reports errors, warnings, and helpful hints.</p>
-
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Check a file for issues</span>
-quill check myprogram.quill</code></pre>
-
-      <h3>What it checks</h3>
-
-      <div class="callout callout-tip">
-        <strong>Errors</strong> (will cause problems at runtime)
-      </div>
+      <h3>What is compiling?</h3>
+      <p>Imagine you wrote a letter in English and need to send it to someone who only reads French. A translator converts the letter into French for you. Compiling is the same idea: Quill translates your English-like code into a language that a specific platform understands.</p>
+      <p>Quill can compile to four different targets, depending on where you want your program to run:</p>
       <ul>
-        <li><strong>Wrong argument count</strong> &mdash; calling a function with too many or too few arguments</li>
-        <li><strong>Return outside function</strong> &mdash; using <code>give back</code> outside of a <code>to</code> block</li>
-        <li><strong>Empty import path</strong> &mdash; <code>use ""</code> with no path</li>
+        <li><strong>Node.js</strong> (default) &mdash; for running on your computer via Node</li>
+        <li><strong>Browser</strong> &mdash; for running inside a web page</li>
+        <li><strong>WASM</strong> &mdash; for running in any WebAssembly environment</li>
+        <li><strong>Standalone</strong> &mdash; for creating a self-contained program anyone can run</li>
       </ul>
 
-      <div class="callout callout-tip">
-        <strong>Warnings</strong> (probably not what you intended)
-      </div>
-      <ul>
-        <li><strong>Unused variables</strong> &mdash; defined but never read (prefix with <code>_</code> to suppress)</li>
-        <li><strong>Division by zero</strong> &mdash; dividing by a literal <code>0</code></li>
-        <li><strong>Self-comparison</strong> &mdash; comparing a variable to itself (<code>x is x</code>)</li>
-        <li><strong>Always-true/false conditions</strong> &mdash; <code>if yes:</code> or <code>if no:</code></li>
-        <li><strong>Infinite loops</strong> &mdash; <code>while yes:</code> with no exit</li>
-        <li><strong>Negative array index</strong> &mdash; JavaScript doesn't support Python-style <code>items[-1]</code></li>
-        <li><strong>Tests without expectations</strong> &mdash; a <code>test</code> block with no <code>expect</code></li>
-        <li><strong>Expect outside test</strong> &mdash; <code>expect</code> used without a <code>test</code> wrapper</li>
-        <li><strong>Duplicate properties/methods</strong> &mdash; same name defined twice in a class</li>
-      </ul>
+      <!-- Node.js target -->
+      <h3 id="build-node">Node.js target (default)</h3>
+      <p>This is the simplest option. It produces a plain JavaScript file that you can run with Node.js.</p>
 
-      <div class="callout callout-tip">
-        <strong>Info</strong> (style suggestions)
-      </div>
-      <ul>
-        <li><strong>Lowercase class names</strong> &mdash; <code>describe dog:</code> should be <code>describe Dog:</code></li>
-        <li><strong>Functions without return</strong> &mdash; might be missing a <code>give back</code></li>
-      </ul>
+      <p><strong>When to use it:</strong> When you want to save the compiled output, share it with someone who has Node.js, or include it in a larger JavaScript project.</p>
 
-      <h3>Example output</h3>
-      <pre><code>Found 3 issue(s) in program.quill:
+      <p><strong>Step 1:</strong> Build your file.</p>
+      <pre><code>quill build myprogram.quill</code></pre>
 
-  line 2 [warning]: variable "temp" is defined but never used
-    hint: prefix with _ to suppress this warning
-  line 8 [error]: add() expects 2 arguments but got 3
-  line 12 [warning]: division by zero</code></pre>
+      <p><strong>Step 2:</strong> This creates <code>myprogram.js</code> in the same folder.</p>
 
-      <h2 id="browser">Browser Mode (<code>--browser</code>)</h2>
-      <p>Quill can compile to browser-compatible JavaScript, giving you access to DOM manipulation, events, and local storage — all with readable English syntax.</p>
+      <p><strong>Step 3:</strong> You can run the result with Node.js directly.</p>
+      <pre><code>node myprogram.js</code></pre>
 
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Build for the browser</span>
-quill build app.quill --browser</code></pre>
-      <p>Then include the output <code>app.js</code> in a <code>&lt;script&gt;</code> tag in your HTML.</p>
+      <p><strong>Example:</strong></p>
+      <pre><code>$ quill build greeting.quill
+Compiled greeting.js
 
-      <h3>Browser functions</h3>
+$ node greeting.js
+Welcome to Quill version 1!</code></pre>
+
+      <!-- Browser target -->
+      <h3 id="build-browser">Browser target (<code>--browser</code>)</h3>
+      <p>This compiles your Quill code into JavaScript that works inside a web browser. It gives you access to special browser-only functions for building interactive web pages.</p>
+
+      <p><strong>When to use it:</strong> When you want to build a website or web app. If your program needs to show things on a web page, respond to button clicks, or save data in the browser, this is the target you want.</p>
+
+      <p><strong>Step 1:</strong> Write a Quill program that uses browser functions.</p>
+      <pre><code><span class="cmt">-- app.quill</span>
+<span class="kw">to</span> <span class="fn">setup</span>:
+  heading <span class="kw">is</span> select(<span class="str">"#title"</span>)
+  setText heading <span class="str">"Welcome to my app!"</span>
+
+onLoad setup</code></pre>
+
+      <p><strong>Step 2:</strong> Build for the browser.</p>
+      <pre><code>quill build app.quill --browser</code></pre>
+
+      <p><strong>Step 3:</strong> Include the output in an HTML file.</p>
+      <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h1 id="title"&gt;Loading...&lt;/h1&gt;
+  &lt;script src="app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+      <p><strong>Step 4:</strong> Open the HTML file in your browser. The heading will change to "Welcome to my app!"</p>
+
+      <h4>Browser functions: complete reference</h4>
+      <p>When you build with <code>--browser</code>, you get access to the following functions. These do not work in regular Node.js programs &mdash; they only work in the browser.</p>
+
       <table>
         <thead>
-          <tr><th>Function</th><th>Description</th></tr>
+          <tr><th>Category</th><th>Function</th><th>What it does</th><th>Example</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>select(selector)</code></td><td>Select a DOM element</td></tr>
-          <tr><td><code>selectAll(selector)</code></td><td>Select all matching elements</td></tr>
-          <tr><td><code>setText(el, text)</code></td><td>Set element text</td></tr>
-          <tr><td><code>setHTML(el, html)</code></td><td>Set element HTML</td></tr>
-          <tr><td><code>getValue(el)</code></td><td>Get input value</td></tr>
-          <tr><td><code>setValue(el, val)</code></td><td>Set input value</td></tr>
-          <tr><td><code>addClass(el, cls)</code></td><td>Add CSS class</td></tr>
-          <tr><td><code>removeClass(el, cls)</code></td><td>Remove CSS class</td></tr>
-          <tr><td><code>toggleClass(el, cls)</code></td><td>Toggle CSS class</td></tr>
-          <tr><td><code>hide(el)</code> / <code>show(el)</code></td><td>Hide/show element</td></tr>
-          <tr><td><code>onClick(el, fn)</code></td><td>Handle click events</td></tr>
-          <tr><td><code>onInput(el, fn)</code></td><td>Handle input changes</td></tr>
-          <tr><td><code>onKeyPress(el, fn)</code></td><td>Handle key presses</td></tr>
-          <tr><td><code>onLoad(fn)</code></td><td>Run when page loads</td></tr>
-          <tr><td><code>createElement(tag)</code></td><td>Create new element</td></tr>
-          <tr><td><code>append(parent, child)</code></td><td>Append child element</td></tr>
-          <tr><td><code>save(key, val)</code></td><td>Save to localStorage</td></tr>
-          <tr><td><code>load(key)</code></td><td>Load from localStorage</td></tr>
-          <tr><td><code>after(ms, fn)</code></td><td>Run after delay</td></tr>
-          <tr><td><code>every(ms, fn)</code></td><td>Run on interval</td></tr>
+          <tr>
+            <td rowspan="2"><strong>Finding elements</strong></td>
+            <td><code>select(selector)</code></td>
+            <td>Finds one element on the page by its CSS selector (like an ID or class name)</td>
+            <td><code>btn is select("#my-button")</code></td>
+          </tr>
+          <tr>
+            <td><code>selectAll(selector)</code></td>
+            <td>Finds all elements that match the selector and returns them as a list</td>
+            <td><code>items is selectAll(".item")</code></td>
+          </tr>
+          <tr>
+            <td rowspan="4"><strong>Changing content</strong></td>
+            <td><code>setText(el, text)</code></td>
+            <td>Changes the text inside an element</td>
+            <td><code>setText heading "Hello"</code></td>
+          </tr>
+          <tr>
+            <td><code>setHTML(el, html)</code></td>
+            <td>Changes the HTML inside an element (use with care)</td>
+            <td><code>setHTML box "&lt;b&gt;Bold&lt;/b&gt;"</code></td>
+          </tr>
+          <tr>
+            <td><code>getValue(el)</code></td>
+            <td>Gets the current value of an input field</td>
+            <td><code>name is getValue(input)</code></td>
+          </tr>
+          <tr>
+            <td><code>setValue(el, val)</code></td>
+            <td>Sets the value of an input field</td>
+            <td><code>setValue input ""</code></td>
+          </tr>
+          <tr>
+            <td rowspan="4"><strong>Styling</strong></td>
+            <td><code>addClass(el, cls)</code></td>
+            <td>Adds a CSS class to an element</td>
+            <td><code>addClass card "highlight"</code></td>
+          </tr>
+          <tr>
+            <td><code>removeClass(el, cls)</code></td>
+            <td>Removes a CSS class from an element</td>
+            <td><code>removeClass card "highlight"</code></td>
+          </tr>
+          <tr>
+            <td><code>toggleClass(el, cls)</code></td>
+            <td>Adds the class if missing, removes it if present</td>
+            <td><code>toggleClass menu "open"</code></td>
+          </tr>
+          <tr>
+            <td><code>hide(el)</code> / <code>show(el)</code></td>
+            <td>Hides or shows an element on the page</td>
+            <td><code>hide errorMsg</code></td>
+          </tr>
+          <tr>
+            <td rowspan="4"><strong>Events</strong></td>
+            <td><code>onClick(el, fn)</code></td>
+            <td>Runs a function when the element is clicked</td>
+            <td><code>onClick btn handleClick</code></td>
+          </tr>
+          <tr>
+            <td><code>onInput(el, fn)</code></td>
+            <td>Runs a function when the user types in an input field</td>
+            <td><code>onInput search filterList</code></td>
+          </tr>
+          <tr>
+            <td><code>onKeyPress(el, fn)</code></td>
+            <td>Runs a function when a key is pressed inside an element</td>
+            <td><code>onKeyPress input checkEnter</code></td>
+          </tr>
+          <tr>
+            <td><code>onLoad(fn)</code></td>
+            <td>Runs a function when the page finishes loading</td>
+            <td><code>onLoad setup</code></td>
+          </tr>
+          <tr>
+            <td rowspan="2"><strong>Creating elements</strong></td>
+            <td><code>createElement(tag)</code></td>
+            <td>Creates a brand new HTML element (like a paragraph, div, or list item)</td>
+            <td><code>li is createElement("li")</code></td>
+          </tr>
+          <tr>
+            <td><code>append(parent, child)</code></td>
+            <td>Adds a new child element inside a parent element</td>
+            <td><code>append list li</code></td>
+          </tr>
+          <tr>
+            <td rowspan="2"><strong>Storage</strong></td>
+            <td><code>save(key, val)</code></td>
+            <td>Saves a value to the browser's local storage (persists between visits)</td>
+            <td><code>save "username" name</code></td>
+          </tr>
+          <tr>
+            <td><code>load(key)</code></td>
+            <td>Loads a previously saved value from local storage</td>
+            <td><code>name is load("username")</code></td>
+          </tr>
+          <tr>
+            <td rowspan="2"><strong>Timing</strong></td>
+            <td><code>after(ms, fn)</code></td>
+            <td>Runs a function once after a delay (in milliseconds)</td>
+            <td><code>after 3000 hideMessage</code></td>
+          </tr>
+          <tr>
+            <td><code>every(ms, fn)</code></td>
+            <td>Runs a function repeatedly at a set interval</td>
+            <td><code>every 1000 updateClock</code></td>
+          </tr>
         </tbody>
       </table>
 
-      <h3>Example: Todo app</h3>
-      <pre><code><span class="cmt">-- Select elements</span>
+      <h4>Browser example: a simple todo app</h4>
+      <pre><code><span class="cmt">-- todo.quill: a complete todo list for the browser</span>
+
+<span class="cmt">-- Find the elements on the page</span>
 input <span class="kw">is</span> select(<span class="str">"#todo-input"</span>)
 button <span class="kw">is</span> select(<span class="str">"#add-btn"</span>)
 list <span class="kw">is</span> select(<span class="str">"#todo-list"</span>)
 
-<span class="cmt">-- Add a todo when button is clicked</span>
+<span class="cmt">-- This function runs when the user clicks the Add button</span>
 <span class="kw">to</span> <span class="fn">addTodo</span>:
   text <span class="kw">is</span> getValue(input)
-  li <span class="kw">is</span> createElement(<span class="str">"li"</span>)
-  setText li text
-  append list li
-  setValue input <span class="str">""</span>
+  <span class="kw">if</span> text <span class="kw">is not</span> <span class="str">""</span>:
+    li <span class="kw">is</span> createElement(<span class="str">"li"</span>)
+    setText li text
+    append list li
+    setValue input <span class="str">""</span>
 
+<span class="cmt">-- Connect the button to the function</span>
 onClick button addTodo</code></pre>
 
-      <h2 id="wasm">WASM Build (<code>--wasm</code>)</h2>
-      <p>Compile a Quill program as a WebAssembly-ready module. The output can be loaded in any WASM runtime or imported from JavaScript.</p>
+      <!-- WASM target -->
+      <h3 id="build-wasm">WASM target (<code>--wasm</code>)</h3>
 
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Build as a WASM module</span>
-quill build app.quill --wasm</code></pre>
-      <p>This produces a <code>.wasm</code> file that can be loaded in the browser or any WASM-compatible environment.</p>
+      <h4>What is WASM?</h4>
+      <p>WASM stands for WebAssembly. It is a special format that runs very fast in web browsers and other environments. Think of it as a universal language that almost any platform can run, similar to how PDF files can be opened by almost any computer.</p>
 
-      <h3>Example</h3>
+      <p><strong>When to use it:</strong> When you need your program to run as fast as possible in a browser, or when you want to use your Quill code inside another system that supports WebAssembly (like game engines or edge computing platforms).</p>
+
+      <p><strong>Step 1:</strong> Write your program.</p>
+      <pre><code><span class="cmt">-- math.quill</span>
+<span class="kw">to</span> <span class="fn">add</span> a b:
+  <span class="kw">give back</span> a + b
+
+<span class="kw">to</span> <span class="fn">multiply</span> a b:
+  <span class="kw">give back</span> a * b</code></pre>
+
+      <p><strong>Step 2:</strong> Build as WASM.</p>
+      <pre><code>quill build math.quill --wasm</code></pre>
+
+      <p><strong>Step 3:</strong> This produces a <code>math.wasm</code> file.</p>
       <pre><code>$ quill build math.quill --wasm
 Compiled math.wasm (WASM module)</code></pre>
 
-      <h2 id="standalone">Standalone Build (<code>--standalone</code>)</h2>
-      <p>Compile a Quill program as a standalone executable. The output is a self-contained binary that can be run without the Quill runtime or Node.js installed.</p>
+      <p>The <code>.wasm</code> file can be loaded from JavaScript in a browser or any WASM-compatible runtime.</p>
 
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Build as a standalone executable</span>
-quill build app.quill --standalone</code></pre>
-      <p>This produces a native executable you can distribute and run directly.</p>
+      <h4>Tips</h4>
+      <ul>
+        <li>WASM is an advanced feature. If you are just getting started, the default Node.js or browser targets are easier to work with.</li>
+        <li>WASM files are very small and load quickly, making them ideal for performance-sensitive applications.</li>
+      </ul>
 
-      <h3>Example</h3>
+      <!-- Standalone target -->
+      <h3 id="build-standalone">Standalone target (<code>--standalone</code>)</h3>
+
+      <h4>What it does</h4>
+      <p>This creates a single executable file &mdash; a program that anyone can run by double-clicking it or typing its name in a terminal. The person running it does not need Quill, Node.js, or anything else installed.</p>
+
+      <p><strong>When to use it:</strong> When you want to share your program with someone who is not a programmer, or when you want to deploy your program to a server without installing any extra tools.</p>
+
+      <p><strong>How it works:</strong> Quill compiles your code to JavaScript, then bundles it together with a tiny JavaScript runtime into a single binary. The result is a self-contained executable, just like any other app on your computer.</p>
+
+      <p><strong>Step 1:</strong> Build as standalone.</p>
+      <pre><code>quill build myapp.quill --standalone</code></pre>
+
+      <p><strong>Step 2:</strong> This creates an executable called <code>myapp</code> (or <code>myapp.exe</code> on Windows).</p>
+
+      <p><strong>Step 3:</strong> Run it directly.</p>
       <pre><code>$ quill build server.quill --standalone
 Compiled server (standalone executable)
 
 $ ./server
 Server running on port 3000</code></pre>
 
-      <h2 id="init">Project Init (<code>quill init</code>)</h2>
-      <p>Scaffolds a new Quill project in the current directory. It creates a <code>quill.json</code> manifest (with name, version, and an empty dependency list) and a starter <code>main.quill</code> file.</p>
-
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Create a new project in the current folder</span>
-quill init</code></pre>
-
-      <h3>What it creates</h3>
+      <h4>Tips</h4>
       <ul>
-        <li><code>quill.json</code> &mdash; project manifest with <code>name</code>, <code>version</code>, and <code>dependencies</code></li>
-        <li><code>main.quill</code> &mdash; minimal starter file you can run right away</li>
+        <li>Standalone executables are larger than regular <code>.js</code> files because they include the runtime. This is normal.</li>
+        <li>The executable is built for your current operating system. A standalone built on a Mac will not run on Windows, and vice versa.</li>
+        <li>This is a great way to distribute command-line tools or small utilities to non-programmers.</li>
       </ul>
 
-      <h3>Example</h3>
-      <pre><code>$ mkdir my-app && cd my-app
-$ quill init
-Created quill.json
-Created main.quill
+      <!-- ============================================================ -->
+      <!-- FORMATTER                                                     -->
+      <!-- ============================================================ -->
 
-$ quill run main.quill
+      <h2 id="formatter">Formatter (<code>quill fmt</code>)</h2>
+
+      <h3>What it does</h3>
+      <p>The formatter automatically cleans up your code's layout &mdash; fixing spacing, indentation, and line breaks &mdash; without changing what the code actually does. It is like a spell-checker, but for code style instead of spelling.</p>
+
+      <h3>Why consistent style matters</h3>
+      <p>When you work on code, especially with other people, inconsistent formatting makes code harder to read. One person might use 4 spaces for indentation, another might use 2. One might put blank lines everywhere, another might squash everything together. The formatter solves this by enforcing one consistent style automatically.</p>
+      <p>Even if you work alone, formatting your code makes it easier to spot mistakes and come back to your code later.</p>
+
+      <h3>What the formatter does specifically</h3>
+      <ul>
+        <li>Normalizes indentation to 2 spaces</li>
+        <li>Adds blank lines between function definitions and block statements for readability</li>
+        <li>Ensures consistent spacing around operators (like <code>+</code>, <code>-</code>, <code>*</code>)</li>
+        <li>Converts comparison operators back to English words (<code>is greater than</code>, <code>is less than</code>)</li>
+        <li>Formats boolean values as <code>yes</code> and <code>no</code></li>
+      </ul>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Write some code (it is okay if the formatting is messy).</p>
+      <p><strong>Step 2:</strong> Run the formatter on your file.</p>
+      <pre><code>quill fmt myprogram.quill</code></pre>
+      <p><strong>Step 3:</strong> Open the file again. It will be neatly formatted. The formatter edits the file in place, meaning it overwrites your original file with the cleaned-up version.</p>
+
+      <h3>Example: before and after</h3>
+      <p><strong>Before formatting:</strong></p>
+      <pre><code>name is "Sarah"
+age   is 25
+if age > 18:
+  say "adult"
+active is true
+to add a b:
+  give back a+b</code></pre>
+
+      <p><strong>After running <code>quill fmt</code>:</strong></p>
+      <pre><code><span class="kw">name</span> is <span class="str">"Sarah"</span>
+<span class="kw">age</span> is <span class="num">25</span>
+
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span>:
+  <span class="kw">say</span> <span class="str">"adult"</span>
+
+<span class="kw">active</span> is <span class="kw">yes</span>
+
+<span class="kw">to</span> <span class="fn">add</span> a b:
+  <span class="kw">give back</span> a + b</code></pre>
+
+      <p>Notice how the formatter added blank lines between sections, fixed the spacing around <code>+</code>, replaced <code>&gt;</code> with <code>is greater than</code>, and replaced <code>true</code> with <code>yes</code>.</p>
+
+      <h3>Tips and common workflows</h3>
+      <ul>
+        <li><strong>Format before sharing:</strong> Run <code>quill fmt</code> on your files before showing your code to someone else or submitting a project.</li>
+        <li><strong>Format often:</strong> There is no downside to formatting frequently. Many programmers format every time they save a file.</li>
+        <li><strong>It is safe:</strong> The formatter only changes how your code looks, never what it does. Your program will behave identically before and after formatting.</li>
+        <li><strong>Combine with check:</strong> A great habit is to run <code>quill fmt</code> first, then <code>quill check</code> to catch any real problems.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <!-- TYPE CHECKER & LINTER                                         -->
+      <!-- ============================================================ -->
+
+      <h2 id="analyzer">Type Checker and Linter (<code>quill check</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill check</code> reads your code and looks for problems <em>without actually running it</em>. This is called "static analysis" &mdash; it analyzes your code while it is sitting still (static), before you press play.</p>
+
+      <p>Think of it like a teacher reading your essay and marking potential problems before you submit it. The checker finds bugs, suspicious patterns, and style issues so you can fix them early.</p>
+
+      <h3>When to use it</h3>
+      <p>Use <code>quill check</code> before running your program, especially when:</p>
+      <ul>
+        <li>You have written a lot of new code and want a quick sanity check</li>
+        <li>Your program is crashing and you want to find the problem</li>
+        <li>You want to clean up your code and remove unused variables</li>
+      </ul>
+
+      <h3>Types of issues it catches</h3>
+
+      <div class="callout callout-tip">
+        <strong>Errors</strong> &mdash; Problems that will definitely cause your program to crash or behave incorrectly. Fix these first.
+      </div>
+      <ul>
+        <li><strong>Wrong argument count</strong> &mdash; You called a function with too many or too few values. For example, if <code>add</code> expects 2 numbers but you gave it 3.</li>
+        <li><strong>Return outside function</strong> &mdash; You used <code>give back</code> outside of a <code>to</code> block. <code>give back</code> only makes sense inside a function.</li>
+        <li><strong>Empty import path</strong> &mdash; You wrote <code>use ""</code> with no file path.</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <strong>Warnings</strong> &mdash; Things that probably are not what you intended. Your program might still run, but the result is likely wrong.
+      </div>
+      <ul>
+        <li><strong>Unused variables</strong> &mdash; You created a variable but never used it. This usually means you forgot to use it or made a typo. (Prefix with <code>_</code> to suppress, e.g., <code>_temp is 5</code>.)</li>
+        <li><strong>Division by zero</strong> &mdash; You are dividing by the number <code>0</code>, which is mathematically undefined.</li>
+        <li><strong>Self-comparison</strong> &mdash; You are comparing a variable to itself (<code>x is x</code>), which is always true and probably a mistake.</li>
+        <li><strong>Always-true or always-false conditions</strong> &mdash; Writing <code>if yes:</code> or <code>if no:</code> means the condition never changes, so the code either always runs or never runs.</li>
+        <li><strong>Infinite loops</strong> &mdash; A <code>while yes:</code> loop with no way to exit will make your program run forever.</li>
+        <li><strong>Negative array index</strong> &mdash; Using <code>items[-1]</code> does not work the way you might expect.</li>
+        <li><strong>Tests without expectations</strong> &mdash; A <code>test</code> block that never uses <code>expect</code> will always pass, which defeats the purpose of testing.</li>
+        <li><strong>Expect outside test</strong> &mdash; Using <code>expect</code> without wrapping it in a <code>test</code> block.</li>
+        <li><strong>Duplicate properties</strong> &mdash; Defining the same property or method name twice in a class.</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <strong>Info</strong> &mdash; Style suggestions that help your code follow best practices.
+      </div>
+      <ul>
+        <li><strong>Lowercase class names</strong> &mdash; Class names should start with a capital letter. Use <code>describe Dog:</code> instead of <code>describe dog:</code>.</li>
+        <li><strong>Functions without return</strong> &mdash; A function that never uses <code>give back</code> might be missing a return value.</li>
+      </ul>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Run the checker on your file.</p>
+      <pre><code>quill check myprogram.quill</code></pre>
+
+      <p><strong>Step 2:</strong> Read the output. Each issue tells you the line number, the severity (error, warning, or info), and a description of the problem.</p>
+
+      <p><strong>Step 3:</strong> Fix the issues in your code and run <code>quill check</code> again until no issues remain.</p>
+
+      <h3>Example output with explanations</h3>
+      <pre><code>Found 3 issue(s) in program.quill:
+
+  line 2 [warning]: variable "temp" is defined but never used
+    hint: prefix with _ to suppress this warning
+
+  line 8 [error]: add() expects 2 arguments but got 3
+
+  line 12 [warning]: division by zero</code></pre>
+
+      <p>Here is what each issue means and how to fix it:</p>
+      <ul>
+        <li><strong>Line 2:</strong> You created a variable called <code>temp</code> but never used it anywhere. Either use it, remove it, or rename it to <code>_temp</code> if you intentionally want to keep it unused.</li>
+        <li><strong>Line 8:</strong> You wrote something like <code>add(1, 2, 3)</code>, but your <code>add</code> function only accepts 2 arguments. Remove the extra argument.</li>
+        <li><strong>Line 12:</strong> You have something like <code>result is x / 0</code>. Dividing by zero is not allowed. Check your math.</li>
+      </ul>
+
+      <h3>Tips</h3>
+      <ul>
+        <li><strong>Run early, run often:</strong> The sooner you catch a bug, the easier it is to fix.</li>
+        <li><strong>Fix errors before warnings:</strong> Errors will crash your program. Warnings are less urgent but still worth fixing.</li>
+        <li><strong>A clean check does not mean zero bugs:</strong> The checker catches common problems, but it cannot find every possible bug. Always test your code too.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <!-- TESTING                                                       -->
+      <!-- ============================================================ -->
+
+      <h2 id="testing">Testing (<code>quill test</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill test</code> runs all the tests in your Quill files and tells you whether they passed or failed. Tests are small checks you write to make sure your code behaves correctly.</p>
+
+      <h3>When to use it</h3>
+      <p>Use testing whenever you want to make sure your code works as expected. This is especially useful when:</p>
+      <ul>
+        <li>You just wrote a new function and want to verify it works</li>
+        <li>You changed existing code and want to make sure you did not break anything</li>
+        <li>You are working on a project with many parts that need to work together</li>
+      </ul>
+
+      <h3>How to write tests</h3>
+      <p>Tests use two keywords: <code>test</code> to define a test, and <code>expect</code> to check a result.</p>
+
+      <pre><code><span class="cmt">-- Define a function</span>
+<span class="kw">to</span> <span class="fn">add</span> a b:
+  <span class="kw">give back</span> a + b
+
+<span class="cmt">-- Test that function</span>
+<span class="kw">test</span> <span class="str">"add works with positive numbers"</span>:
+  <span class="kw">expect</span> add(<span class="num">2</span>, <span class="num">3</span>) <span class="kw">to be</span> <span class="num">5</span>
+  <span class="kw">expect</span> add(<span class="num">10</span>, <span class="num">20</span>) <span class="kw">to be</span> <span class="num">30</span>
+
+<span class="kw">test</span> <span class="str">"add works with negative numbers"</span>:
+  <span class="kw">expect</span> add(<span class="num">-1</span>, <span class="num">1</span>) <span class="kw">to be</span> <span class="num">0</span>
+  <span class="kw">expect</span> add(<span class="num">-5</span>, <span class="num">-3</span>) <span class="kw">to be</span> <span class="num">-8</span></code></pre>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Write your functions and your tests in the same file (or in separate files).</p>
+
+      <p><strong>Step 2:</strong> Run the tests.</p>
+      <pre><code><span class="cmt">-- Test a single file</span>
+quill test math.quill
+
+<span class="cmt">-- Test multiple files</span>
+quill test math.quill strings.quill
+
+<span class="cmt">-- Test all .quill files in the current folder</span>
+quill test</code></pre>
+
+      <p><strong>Step 3:</strong> Read the results.</p>
+
+      <h3>Reading test output</h3>
+      <p>When all tests pass, you will see something like:</p>
+      <pre><code>Running tests...
+
+  PASS  add works with positive numbers
+  PASS  add works with negative numbers
+
+2 tests passed, 0 failed</code></pre>
+
+      <p>When a test fails, Quill tells you exactly what went wrong:</p>
+      <pre><code>Running tests...
+
+  PASS  add works with positive numbers
+  FAIL  add works with negative numbers
+        Expected -8 but got -2
+        at line 12 in math.quill
+
+1 test passed, 1 failed</code></pre>
+
+      <p>The "FAIL" line tells you:</p>
+      <ul>
+        <li>Which test failed ("add works with negative numbers")</li>
+        <li>What the expected result was (-8)</li>
+        <li>What the actual result was (-2)</li>
+        <li>Where in your code the failure happened (line 12)</li>
+      </ul>
+
+      <h3>Tips</h3>
+      <ul>
+        <li><strong>Give tests descriptive names:</strong> <code>"add works with negative numbers"</code> is much better than <code>"test 2"</code>.</li>
+        <li><strong>Test edge cases:</strong> What happens with zero? With negative numbers? With empty strings? These are the places bugs like to hide.</li>
+        <li><strong>Run tests after every change:</strong> This way you catch problems immediately instead of discovering them later.</li>
+        <li><strong>Each <code>expect</code> should check one thing:</strong> If a test has 10 expects and one fails, it is easier to find the problem when each expect checks a single behavior.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <!-- DOCUMENTATION GENERATOR                                       -->
+      <!-- ============================================================ -->
+
+      <h2 id="docs">Documentation Generator (<code>quill docs</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill docs</code> reads your Quill source file and creates a nicely formatted HTML page that lists all your functions, their parameters, and any comments you wrote to explain them. This is useful for sharing your code's documentation with others (or for your future self).</p>
+
+      <h3>When to use it</h3>
+      <p>Use <code>quill docs</code> when:</p>
+      <ul>
+        <li>You are building a library that other people will use</li>
+        <li>You want a quick reference for all the functions in a file</li>
+        <li>You want to publish documentation for a project</li>
+      </ul>
+
+      <h3>How to write doc comments</h3>
+      <p>Quill uses regular comments (lines starting with <code>--</code>) placed directly above a function as documentation. Write a short description of what the function does and what each parameter means.</p>
+
+      <pre><code><span class="cmt">-- Calculate the area of a rectangle.</span>
+<span class="cmt">-- width: the width of the rectangle</span>
+<span class="cmt">-- height: the height of the rectangle</span>
+<span class="kw">to</span> <span class="fn">area</span> width height:
+  <span class="kw">give back</span> width * height
+
+<span class="cmt">-- Greet someone by name.</span>
+<span class="cmt">-- name: the person's name</span>
+<span class="kw">to</span> <span class="fn">greet</span> name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span></code></pre>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Make sure your functions have comments above them.</p>
+
+      <p><strong>Step 2:</strong> Run the documentation generator.</p>
+      <pre><code>quill docs mylib.quill</code></pre>
+
+      <p><strong>Step 3:</strong> This produces an HTML file in the same directory.</p>
+      <pre><code>$ quill docs utils.quill
+Generated utils.html (3 functions documented)</code></pre>
+
+      <p><strong>Step 4:</strong> Open the generated HTML file in a browser to see your formatted documentation.</p>
+
+      <h3>Example: input and output</h3>
+      <p><strong>Input (shapes.quill):</strong></p>
+      <pre><code><span class="cmt">-- Calculate the area of a circle.</span>
+<span class="cmt">-- radius: the distance from center to edge</span>
+<span class="kw">to</span> <span class="fn">circleArea</span> radius:
+  <span class="kw">give back</span> <span class="num">3.14159</span> * radius * radius</code></pre>
+
+      <p><strong>Command:</strong></p>
+      <pre><code>$ quill docs shapes.quill
+Generated shapes.html (1 function documented)</code></pre>
+
+      <p><strong>Output (shapes.html) contains:</strong></p>
+      <ul>
+        <li>The function name: <code>circleArea</code></li>
+        <li>Its parameter: <code>radius</code> &mdash; "the distance from center to edge"</li>
+        <li>Its description: "Calculate the area of a circle."</li>
+      </ul>
+
+      <h3>Tips</h3>
+      <ul>
+        <li>Always write a comment above each function, even if it seems obvious. Your future self will thank you.</li>
+        <li>Keep descriptions short &mdash; one sentence is usually enough.</li>
+        <li>Document every parameter so readers know what values to pass in.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <!-- PACKAGE MANAGER                                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="packages">Package Manager (<code>quill init</code>, <code>quill add</code>, <code>quill remove</code>)</h2>
+
+      <h3>What it does</h3>
+      <p>The package manager helps you organize your Quill projects and use third-party libraries (pre-written code made by other people). It has three commands:</p>
+      <ul>
+        <li><code>quill init</code> &mdash; starts a new project</li>
+        <li><code>quill add</code> &mdash; installs a package (library) and adds it to your project</li>
+        <li><code>quill remove</code> &mdash; uninstalls a package from your project</li>
+      </ul>
+
+      <!-- quill init -->
+      <h3 id="init">Starting a new project (<code>quill init</code>)</h3>
+      <p>When you run <code>quill init</code>, Quill creates two files for you:</p>
+      <ul>
+        <li><code>quill.json</code> &mdash; A project file that stores your project's name, version, and a list of packages it depends on. Think of it as a recipe card that lists all the ingredients your project needs.</li>
+        <li><code>main.quill</code> &mdash; A starter file with a simple "Hello, Quill!" program you can run right away.</li>
+      </ul>
+
+      <p><strong>Step 1:</strong> Create a new folder for your project.</p>
+      <pre><code>mkdir my-app
+cd my-app</code></pre>
+
+      <p><strong>Step 2:</strong> Initialize the project.</p>
+      <pre><code>quill init</code></pre>
+
+      <p><strong>Step 3:</strong> See what was created.</p>
+      <pre><code>$ quill init
+Created quill.json
+Created main.quill</code></pre>
+
+      <p><strong>Step 4:</strong> Run the starter program.</p>
+      <pre><code>$ quill run main.quill
 Hello, Quill!</code></pre>
 
-      <h2 id="add">Add Package (<code>quill add</code>)</h2>
-      <p>Installs an npm package and records it in your project's <code>quill.json</code> dependencies. This lets you use third-party JavaScript libraries from Quill code.</p>
+      <h4>What quill.json looks like</h4>
+      <pre><code>{
+  "name": "my-app",
+  "version": "1.0.0",
+  "dependencies": {}
+}</code></pre>
+      <p>The <code>dependencies</code> section starts empty. When you add packages, they show up here.</p>
 
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Install a package</span>
-quill add lodash</code></pre>
+      <!-- quill add -->
+      <h3 id="add">Installing packages (<code>quill add</code>)</h3>
+      <p>Quill can use packages from npm (the world's largest collection of JavaScript libraries). This means you have access to hundreds of thousands of pre-built tools.</p>
 
-      <h3>Example</h3>
+      <p><strong>Step 1:</strong> Make sure you have a <code>quill.json</code> file (run <code>quill init</code> first if you do not).</p>
+
+      <p><strong>Step 2:</strong> Add a package by name.</p>
+      <pre><code>quill add chalk</code></pre>
+
+      <p><strong>Step 3:</strong> The package is downloaded and recorded in your <code>quill.json</code>.</p>
       <pre><code>$ quill add chalk
 Installing chalk...
 Added chalk@5.3.0 to dependencies</code></pre>
 
-      <h2 id="remove">Remove Package (<code>quill remove</code>)</h2>
-      <p>Uninstalls an npm package and removes it from <code>quill.json</code> dependencies.</p>
+      <p>Your <code>quill.json</code> now looks like this:</p>
+      <pre><code>{
+  "name": "my-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "chalk": "^5.3.0"
+  }
+}</code></pre>
 
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Remove a package</span>
-quill remove lodash</code></pre>
+      <!-- quill remove -->
+      <h3 id="remove">Removing packages (<code>quill remove</code>)</h3>
+      <p>If you no longer need a package, remove it to keep your project clean.</p>
 
-      <h3>Example</h3>
+      <p><strong>Step 1:</strong> Run the remove command with the package name.</p>
+      <pre><code>quill remove chalk</code></pre>
+
+      <p><strong>Step 2:</strong> The package is uninstalled and removed from <code>quill.json</code>.</p>
       <pre><code>$ quill remove chalk
 Removed chalk from dependencies</code></pre>
 
-      <h2 id="docs">Generate Docs (<code>quill docs</code>)</h2>
-      <p>Parses a Quill source file and generates an HTML documentation page listing all functions, parameters, and comments.</p>
+      <h3>Tips</h3>
+      <ul>
+        <li><strong>Always start with <code>quill init</code>:</strong> Creating a <code>quill.json</code> is the first step for any project that uses packages.</li>
+        <li><strong>Check npm for packages:</strong> Visit <a href="https://www.npmjs.com" target="_blank">npmjs.com</a> to browse available packages and find tools for your project.</li>
+        <li><strong>Keep dependencies minimal:</strong> Only install packages you actually need. Fewer dependencies means fewer things that can break.</li>
+        <li><strong>Commit your quill.json:</strong> If you use version control (like Git), always include <code>quill.json</code> so others can install the same packages.</li>
+      </ul>
 
-      <h3>Usage</h3>
-      <pre><code><span class="cmt">-- Generate docs for a file</span>
-quill docs mylib.quill</code></pre>
-      <p>This produces a <code>mylib.html</code> file in the current directory.</p>
+      <!-- ============================================================ -->
+      <!-- REPL                                                          -->
+      <!-- ============================================================ -->
 
-      <h3>Example</h3>
-      <pre><code>$ quill docs utils.quill
-Generated utils.html (3 functions documented)</code></pre>
+      <h2 id="repl">Interactive REPL (<code>quill repl</code>)</h2>
 
-      <h2 id="all-commands">All Commands</h2>
+      <h3>What is a REPL?</h3>
+      <p>REPL stands for <strong>R</strong>ead, <strong>E</strong>valuate, <strong>P</strong>rint, <strong>L</strong>oop. It is an interactive mode where you type one line of Quill code at a time, and Quill immediately shows you the result. Then it waits for your next line. It keeps going in a loop until you tell it to stop.</p>
+
+      <p>Think of it like a calculator: you type something in, press enter, and see the answer right away.</p>
+
+      <h3>When to use it</h3>
+      <ul>
+        <li><strong>Experimenting:</strong> Want to see what <code>3 + 4 * 2</code> evaluates to? Type it in the REPL and find out instantly.</li>
+        <li><strong>Learning:</strong> When you are learning a new concept, the REPL lets you try things without creating a file.</li>
+        <li><strong>Debugging:</strong> If you are not sure why a piece of code is not working, try it in the REPL to isolate the problem.</li>
+      </ul>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Start the REPL.</p>
+      <pre><code>quill repl</code></pre>
+
+      <p><strong>Step 2:</strong> You will see a prompt where you can type Quill code.</p>
+      <pre><code>Quill REPL (type "exit" to quit)
+> </code></pre>
+
+      <p><strong>Step 3:</strong> Type any Quill expression or statement and press Enter.</p>
+      <pre><code>> name is "World"
+> say "Hello, {name}!"
+Hello, World!
+> 10 + 20 * 3
+70
+> exit</code></pre>
+
+      <h3>Tips</h3>
+      <ul>
+        <li>The REPL remembers variables you defined earlier in the session. If you set <code>x is 5</code>, you can use <code>x</code> in later lines.</li>
+        <li>Type <code>exit</code> to leave the REPL and return to your normal terminal.</li>
+        <li>The REPL is great for quick experiments, but for anything longer than a few lines, use a <code>.quill</code> file instead.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <!-- ALL COMMANDS REFERENCE                                        -->
+      <!-- ============================================================ -->
+
+      <h2 id="all-commands">All Commands Reference</h2>
+      <p>Here is a complete table of every Quill command. Use this as a quick reference when you know what you want to do but cannot remember the exact command.</p>
+
       <table>
         <thead>
           <tr>
             <th>Command</th>
-            <th>Description</th>
+            <th>What it does</th>
+            <th>Example</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><code>quill run file.quill</code></td>
-            <td>Run a Quill program</td>
+            <td>Runs a Quill program and shows the output</td>
+            <td><code>quill run hello.quill</code></td>
           </tr>
           <tr>
             <td><code>quill build file.quill</code></td>
-            <td>Compile to JavaScript (Node.js)</td>
+            <td>Compiles to JavaScript (Node.js target)</td>
+            <td><code>quill build app.quill</code></td>
           </tr>
           <tr>
             <td><code>quill build file.quill --browser</code></td>
-            <td>Compile for the browser</td>
+            <td>Compiles for use in a web browser</td>
+            <td><code>quill build app.quill --browser</code></td>
           </tr>
           <tr>
             <td><code>quill build file.quill --wasm</code></td>
-            <td>Compile as WASM-ready module</td>
+            <td>Compiles as a WebAssembly module</td>
+            <td><code>quill build math.quill --wasm</code></td>
           </tr>
           <tr>
             <td><code>quill build file.quill --standalone</code></td>
-            <td>Compile as standalone executable</td>
-          </tr>
-          <tr>
-            <td><code>quill test [files...]</code></td>
-            <td>Run tests in Quill files</td>
+            <td>Creates a self-contained executable</td>
+            <td><code>quill build app.quill --standalone</code></td>
           </tr>
           <tr>
             <td><code>quill fmt file.quill</code></td>
-            <td>Format source code</td>
+            <td>Formats your code for consistent style</td>
+            <td><code>quill fmt main.quill</code></td>
           </tr>
           <tr>
             <td><code>quill check file.quill</code></td>
-            <td>Check for common issues</td>
+            <td>Checks for bugs and style issues without running</td>
+            <td><code>quill check main.quill</code></td>
           </tr>
           <tr>
-            <td><code>quill repl</code></td>
-            <td>Start interactive REPL</td>
+            <td><code>quill test</code></td>
+            <td>Runs all tests in the current directory</td>
+            <td><code>quill test</code></td>
           </tr>
           <tr>
-            <td><code>quill version</code></td>
-            <td>Show version number</td>
-          </tr>
-          <tr>
-            <td><code>quill help</code></td>
-            <td>Show help</td>
-          </tr>
-          <tr>
-            <td><code>quill init</code></td>
-            <td>Initialize a new Quill project</td>
-          </tr>
-          <tr>
-            <td><code>quill add &lt;package&gt;</code></td>
-            <td>Install a package and add to dependencies</td>
-          </tr>
-          <tr>
-            <td><code>quill remove &lt;package&gt;</code></td>
-            <td>Remove a package from dependencies</td>
+            <td><code>quill test file.quill</code></td>
+            <td>Runs tests in a specific file</td>
+            <td><code>quill test math.quill</code></td>
           </tr>
           <tr>
             <td><code>quill docs file.quill</code></td>
-            <td>Generate HTML documentation from source</td>
+            <td>Generates HTML documentation from your code</td>
+            <td><code>quill docs utils.quill</code></td>
+          </tr>
+          <tr>
+            <td><code>quill init</code></td>
+            <td>Creates a new project with quill.json and main.quill</td>
+            <td><code>quill init</code></td>
+          </tr>
+          <tr>
+            <td><code>quill add &lt;package&gt;</code></td>
+            <td>Installs a package and adds it to dependencies</td>
+            <td><code>quill add lodash</code></td>
+          </tr>
+          <tr>
+            <td><code>quill remove &lt;package&gt;</code></td>
+            <td>Uninstalls a package and removes it from dependencies</td>
+            <td><code>quill remove lodash</code></td>
+          </tr>
+          <tr>
+            <td><code>quill repl</code></td>
+            <td>Starts an interactive session for experimenting</td>
+            <td><code>quill repl</code></td>
+          </tr>
+          <tr>
+            <td><code>quill version</code></td>
+            <td>Shows which version of Quill you have installed</td>
+            <td><code>quill version</code></td>
+          </tr>
+          <tr>
+            <td><code>quill help</code></td>
+            <td>Shows a summary of all available commands</td>
+            <td><code>quill help</code></td>
           </tr>
         </tbody>
       </table>
+
+      <div class="callout callout-tip">
+        <strong>Not sure where to start?</strong> Try <code>quill run</code> to run your first program, then explore <code>quill fmt</code> and <code>quill check</code> as you write more code. The other tools become useful as your projects grow.
+      </div>
+
     </main>
   </div>
 
