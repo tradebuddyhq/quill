@@ -819,6 +819,93 @@ Hello, World!
       </ul>
 
       <!-- ============================================================ -->
+      <!-- LSP SERVER                                                    -->
+      <!-- ============================================================ -->
+
+      <h2 id="lsp">LSP Server (<code>quill lsp</code>)</h2>
+
+      <h3>What it does</h3>
+      <p>LSP stands for <strong>Language Server Protocol</strong>. It is a standard way for a programming language to talk to your code editor. When you start the Quill LSP server, your editor gains superpowers: it can highlight errors as you type, show documentation when you hover over a function, and suggest completions while you write.</p>
+
+      <h3>What it provides</h3>
+      <ul>
+        <li><strong>Real-time error highlighting</strong> &mdash; red underlines appear the moment you make a mistake, before you even save the file.</li>
+        <li><strong>Hover documentation</strong> &mdash; hover over any standard library function to see what it does, what arguments it takes, and what it returns.</li>
+        <li><strong>Autocomplete</strong> &mdash; start typing a function name or keyword and the editor suggests completions for you.</li>
+      </ul>
+
+      <h3>How to start</h3>
+      <pre><code>quill lsp</code></pre>
+      <p>You normally do not run this command yourself &mdash; your editor starts it automatically once configured.</p>
+
+      <h3>Using with VS Code</h3>
+      <p>Add the following to your VS Code <code>settings.json</code>:</p>
+      <pre><code>{
+  "quill.lsp.enabled": true,
+  "quill.lsp.path": "quill"
+}</code></pre>
+      <p>After reloading VS Code, open any <code>.quill</code> file and you will see errors, hover info, and completions immediately.</p>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> The LSP server works with any editor that supports the Language Server Protocol, including Neovim, Sublime Text, and Emacs. Check your editor's documentation for how to configure an external language server.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- LLVM / NATIVE COMPILATION                                     -->
+      <!-- ============================================================ -->
+
+      <h2 id="llvm">LLVM / Native Compilation (<code>quill build --llvm</code>)</h2>
+
+      <h3>What it does</h3>
+      <p>By default, Quill compiles your code to JavaScript. With the <code>--llvm</code> flag, Quill instead produces <strong>LLVM IR</strong> (Intermediate Representation) &mdash; a low-level format that can be compiled into a native binary that runs directly on your operating system, without needing Node.js at all.</p>
+
+      <h3>How to build</h3>
+      <pre><code>quill build app.quill --llvm</code></pre>
+      <p>This produces an <code>.ll</code> file containing the LLVM IR. If the LLVM tools <code>llc</code> and a C compiler (<code>cc</code>) are available on your system, Quill will automatically compile the IR into a native executable as well.</p>
+
+      <h3>When to use it</h3>
+      <ul>
+        <li><strong>Performance-critical code</strong> &mdash; native binaries start faster and can run computations more efficiently than JavaScript.</li>
+        <li><strong>Standalone distribution</strong> &mdash; ship a single binary to users without requiring them to install Node.js or Quill.</li>
+      </ul>
+
+      <div class="callout callout-info">
+        LLVM compilation is optional and requires the LLVM toolchain to be installed on your machine. If <code>llc</code> is not found, Quill will still produce the <code>.ll</code> file &mdash; you can compile it yourself later.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PACKAGE REGISTRY                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="registry">Package Registry</h2>
+
+      <h3>What it does</h3>
+      <p>The Quill package registry lets you share your own packages and use packages written by others. It works together with your project's <code>quill.json</code> file, which lists the packages your project depends on.</p>
+
+      <h3>Publishing a package</h3>
+      <p>To share your package with the world:</p>
+      <pre><code>quill publish</code></pre>
+      <p>This bundles your project and uploads it to the Quill package registry. Make sure your <code>quill.json</code> has a <code>name</code> and <code>version</code> field before publishing.</p>
+
+      <h3>Searching for packages</h3>
+      <pre><code>quill search &lt;query&gt;</code></pre>
+      <p>For example, <code>quill search http</code> will show all packages related to HTTP.</p>
+
+      <h3>Installing dependencies</h3>
+      <pre><code>quill install</code></pre>
+      <p>This reads your <code>quill.json</code>, resolves all listed dependencies, and downloads them into your project.</p>
+
+      <h3>Version bumping</h3>
+      <p>Before publishing a new version, bump the version number in <code>quill.json</code> with one command:</p>
+      <pre><code>quill bump patch   <span class="cmt">-- 1.0.0 -> 1.0.1</span>
+quill bump minor   <span class="cmt">-- 1.0.0 -> 1.1.0</span>
+quill bump major   <span class="cmt">-- 1.0.0 -> 2.0.0</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Use <code>quill add &lt;package&gt;</code> to install a single package and add it to your <code>quill.json</code> in one step. Use <code>quill install</code> when you clone an existing project and need to fetch all its dependencies.
+      </div>
+
+      <!-- ============================================================ -->
       <!-- ALL COMMANDS REFERENCE                                        -->
       <!-- ============================================================ -->
 
@@ -858,6 +945,11 @@ Hello, World!
             <td><code>quill build file.quill --standalone</code></td>
             <td>Creates a self-contained executable</td>
             <td><code>quill build app.quill --standalone</code></td>
+          </tr>
+          <tr>
+            <td><code>quill build file.quill --llvm</code></td>
+            <td>Compiles to LLVM IR (and optionally a native binary)</td>
+            <td><code>quill build app.quill --llvm</code></td>
           </tr>
           <tr>
             <td><code>quill fmt file.quill</code></td>
@@ -903,6 +995,31 @@ Hello, World!
             <td><code>quill repl</code></td>
             <td>Starts an interactive session for experimenting</td>
             <td><code>quill repl</code></td>
+          </tr>
+          <tr>
+            <td><code>quill lsp</code></td>
+            <td>Starts the Language Server Protocol server for editor integration</td>
+            <td><code>quill lsp</code></td>
+          </tr>
+          <tr>
+            <td><code>quill publish</code></td>
+            <td>Bundles and publishes your package to the registry</td>
+            <td><code>quill publish</code></td>
+          </tr>
+          <tr>
+            <td><code>quill search &lt;query&gt;</code></td>
+            <td>Searches the package registry for matching packages</td>
+            <td><code>quill search http</code></td>
+          </tr>
+          <tr>
+            <td><code>quill install</code></td>
+            <td>Resolves and installs all dependencies from quill.json</td>
+            <td><code>quill install</code></td>
+          </tr>
+          <tr>
+            <td><code>quill bump patch|minor|major</code></td>
+            <td>Bumps the version number in quill.json</td>
+            <td><code>quill bump minor</code></td>
           </tr>
           <tr>
             <td><code>quill version</code></td>

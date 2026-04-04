@@ -73,6 +73,9 @@
         <li><a href="#imports">Imports</a></li>
         <li><a href="#testing">Testing</a></li>
         <li><a href="#generics">Generics</a></li>
+        <li><a href="#reactive-components">Reactive components</a></li>
+        <li><a href="#union-nullable">Union &amp; nullable types</a></li>
+        <li><a href="#source-maps">Source maps</a></li>
       </ul>
       <h4>Reference</h4>
       <ul>
@@ -1201,6 +1204,110 @@ empty <span class="kw">are</span> []</code></pre>
 
       <div class="callout callout-info">
         Like other type annotations in Quill, generics are optional and serve as documentation. They do not change runtime behavior.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- REACTIVE WEB COMPONENTS                                       -->
+      <!-- ============================================================ -->
+
+      <h2 id="reactive-components">Reactive Web Components</h2>
+      <p>Quill includes a Svelte-inspired component system that lets you build interactive web interfaces directly in <code>.quill</code> files. Components combine state, logic, and a declarative HTML-like template into a single, readable unit.</p>
+
+      <h3>Core concepts</h3>
+      <ul>
+        <li><code><span class="kw">component</span> Name:</code> &mdash; defines a new component.</li>
+        <li><code><span class="kw">state</span> varName <span class="kw">is</span> value</code> &mdash; creates reactive state. When the value changes, the UI updates automatically.</li>
+        <li><code><span class="kw">to</span> render:</code> &mdash; defines the template using an HTML-like DSL.</li>
+        <li>Event handlers such as <code>onClick</code>, <code>onInput</code>, and <code>onChange</code> attach behavior to elements.</li>
+        <li><code>bind:value</code> &mdash; two-way binding between an input element and a state variable.</li>
+        <li><code><span class="kw">mount</span> ComponentName <span class="kw">to</span> <span class="str">"#selector"</span></code> &mdash; mounts the component to a DOM element.</li>
+      </ul>
+
+      <h3>Example: Counter</h3>
+      <pre><code><span class="kw">component</span> Counter:
+  <span class="kw">state</span> count <span class="kw">is</span> <span class="num">0</span>
+
+  <span class="kw">to</span> <span class="fn">increment</span>:
+    count <span class="kw">is</span> count + <span class="num">1</span>
+
+  <span class="kw">to</span> render:
+    h1 <span class="str">"Count: {count}"</span>
+    button onClick=increment <span class="str">"Add one"</span>
+
+<span class="kw">mount</span> Counter <span class="kw">to</span> <span class="str">"#app"</span></code></pre>
+
+      <h3>Example: Todo App</h3>
+      <pre><code><span class="kw">component</span> TodoApp:
+  <span class="kw">state</span> todos <span class="kw">is</span> []
+  <span class="kw">state</span> newTodo <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">to</span> <span class="fn">addTodo</span>:
+    <span class="kw">if</span> newTodo <span class="kw">is not</span> <span class="str">""</span>:
+      push(todos, {text: newTodo, done: <span class="bool">no</span>})
+      newTodo <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">to</span> render:
+    h1 <span class="str">"My Todos"</span>
+    input bind:value=newTodo placeholder=<span class="str">"Add a task..."</span>
+    button onClick=addTodo <span class="str">"Add"</span>
+    ul:
+      <span class="kw">for each</span> todo <span class="kw">in</span> todos:
+        li <span class="str">"{todo.text}"</span>
+
+<span class="kw">mount</span> TodoApp <span class="kw">to</span> <span class="str">"#app"</span></code></pre>
+
+      <h3>Building for the browser</h3>
+      <p>To compile a component file into a JavaScript bundle that runs in a browser, use the <code>--browser</code> flag:</p>
+      <pre><code>quill build app.quill --browser</code></pre>
+      <p>This produces an optimised <code>.js</code> file you can load in an HTML page with a <code>&lt;script&gt;</code> tag.</p>
+
+      <div class="callout callout-info">
+        Components are compiled away at build time &mdash; there is no virtual DOM or heavy runtime. The generated JavaScript updates only the parts of the page that actually changed.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- UNION & NULLABLE TYPES                                        -->
+      <!-- ============================================================ -->
+
+      <h2 id="union-nullable">Union &amp; Nullable Types</h2>
+      <p>Sometimes a value can be one of several types, or it might not exist at all. Quill supports <strong>union types</strong> and <strong>nullable types</strong> to express this clearly in your type annotations.</p>
+
+      <h3>Union types</h3>
+      <p>Use the pipe <code>|</code> character to say "this value can be one type <em>or</em> another":</p>
+      <pre><code><span class="kw">to</span> <span class="fn">format</span> value <span class="kw">as</span> number | text -> text:
+  <span class="kw">give back</span> toText(value)
+
+<span class="kw">say</span> format(<span class="num">42</span>)       <span class="cmt">-- "42"</span>
+<span class="kw">say</span> format(<span class="str">"hi"</span>)     <span class="cmt">-- "hi"</span></code></pre>
+
+      <h3>Nullable types</h3>
+      <p>Prefix a type with <code>?</code> to indicate the value might be <code>nothing</code>:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">findUser</span> id <span class="kw">as</span> number -> ?object:
+  <span class="kw">if</span> id <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">give back</span> nothing
+  <span class="kw">give back</span> {name: <span class="str">"Alice"</span>, id: id}</code></pre>
+
+      <h3>Static checking</h3>
+      <p>Run <code>quill check</code> to validate that union and nullable types are used consistently. The checker will warn you if you pass a <code>text</code> value to a function that only accepts <code>number</code>, or if you forget to handle a <code>nothing</code> case.</p>
+
+      <div class="callout callout-info">
+        Union and nullable annotations are optional, but they help catch mistakes early &mdash; especially in larger codebases.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SOURCE MAPS                                                   -->
+      <!-- ============================================================ -->
+
+      <h2 id="source-maps">Source Maps</h2>
+      <p>When Quill compiles your code to JavaScript, it also generates a <strong>source map</strong> file (<code>.js.map</code>) alongside the output. Source maps tell the browser how to translate the generated JavaScript back to your original <code>.quill</code> source.</p>
+
+      <p>This means you can open your browser's DevTools, set breakpoints, and step through your code while seeing the original Quill source &mdash; not the compiled JavaScript. No extra configuration is needed; modern browsers detect source maps automatically.</p>
+
+      <pre><code>quill build app.quill --browser
+<span class="cmt">-- produces app.js and app.js.map</span></code></pre>
+
+      <div class="callout callout-info">
+        Source maps are generated for all build targets (<code>--browser</code>, <code>--standalone</code>, etc.). You can disable them with the <code>--no-sourcemap</code> flag if you do not want to ship them in production.
       </div>
 
       <!-- ============================================================ -->

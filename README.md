@@ -72,6 +72,20 @@ test "math works":
   expect add(-1, 1) is 0
 ```
 
+```
+-- Reactive web components
+component Counter:
+  state count is 0
+  to increment:
+    count is count + 1
+  to render:
+    div:
+      h1: "Count: {count}"
+      button onClick increment: "+1"
+
+mount Counter to "#app"
+```
+
 ## Features
 
 **Language**
@@ -91,6 +105,9 @@ test "math works":
 - **60+ built-in functions** — `sort()`, `filter()`, `map_list()`, `hash()`, `uuid()`, and more
 - **Async/await** — `data is await fetchJSON("url")`
 - **Import system** — `use "express" as app` or `from "express" use Router, json`
+- **Union types** — `number | text` for values that can be multiple types
+- **Nullable types** — `?number` shorthand for `number | nothing`
+- **Reactive web framework** — Svelte-like `component`/`state`/`mount` with virtual DOM
 
 **Tooling**
 - **Type checker** — `quill check` catches type errors before you run
@@ -102,12 +119,16 @@ test "math works":
 - **Interactive REPL** — `quill repl`
 - **Friendly error messages** — with source context and hints
 - **VS Code extension** — syntax highlighting, snippets, comment toggling
+- **LSP server** — `quill lsp` for editor integration (diagnostics, hover, autocomplete)
+- **Source maps** — `.map` files generated alongside JS for debugging
+- **Package registry** — `quill publish`, `quill search`, `quill install` with version resolution
 
 **Build Targets**
 - **Node.js** — `quill build file.quill` (default)
 - **Browser** — `quill build file.quill --browser` with DOM APIs
 - **WASM** — `quill build file.quill --wasm` WASM-ready module
 - **Standalone** — `quill build file.quill --standalone` self-executing binary
+- **LLVM/Native** — `quill build file.quill --llvm` generates LLVM IR, compiles to native binary
 - **Single binary compiler** — no dependencies, runs on Node.js, Bun, or Deno
 
 ## Commands
@@ -127,6 +148,12 @@ test "math works":
 | `quill add package` | Install an npm package |
 | `quill remove package` | Remove a package |
 | `quill repl` | Start interactive mode |
+| `quill build file.quill --llvm` | Compile to LLVM IR / native binary |
+| `quill lsp` | Start LSP server for editors |
+| `quill publish` | Publish package to registry |
+| `quill search query` | Search the package registry |
+| `quill install` | Install all dependencies |
+| `quill bump patch` | Bump version in quill.json |
 | `quill help` | Show help |
 
 ## Language Reference
@@ -300,6 +327,29 @@ today()    now()    timestamp()    formatDate(d, "YYYY-MM-DD")
 env("HOME")    platform()    run("ls")    args()
 ```
 
+### Reactive Web Components
+```
+component Counter:
+  state count is 0
+  to increment:
+    count is count + 1
+  to render:
+    div:
+      h1: "Count: {count}"
+      button onClick increment: "+1"
+
+mount Counter to "#app"
+```
+
+### Union & Nullable Types
+```
+to process value as number | text -> text:
+  give back toText(value)
+
+to findUser id as number -> ?User:
+  give back nothing
+```
+
 ### Testing
 ```
 test "my test":
@@ -323,10 +373,12 @@ Then restart VS Code. Open any `.quill` file and you'll get highlighting, commen
 Quill compiles to JavaScript through a standard compiler pipeline:
 
 ```
-.quill source → Lexer → Parser → AST → JavaScript
+.quill source → Lexer → Parser → AST → JavaScript (default)
+                                      → LLVM IR → Native binary
+                                      → Browser JS + Virtual DOM
 ```
 
-The compiler is written in Go. Generated JS runs on any JavaScript runtime (Node.js, Bun, Deno).
+The compiler is written in Go. Generated JS runs on any JavaScript runtime (Node.js, Bun, Deno). The LLVM backend produces native binaries, and the browser target includes a virtual DOM for reactive components.
 
 ## Project Structure
 
@@ -341,6 +393,8 @@ quill/
   formatter/           Code formatter (quill fmt)
   analyzer/            Static analyzer (quill check)
   stdlib/              Standard library (60+ functions, Node + browser)
+  lsp/                 Language Server Protocol server
+  registry/            Package registry client & resolver
   repl/                Interactive REPL
   errors/              Friendly error messages
   examples/            Example programs
