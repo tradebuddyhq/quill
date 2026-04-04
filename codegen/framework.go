@@ -54,6 +54,25 @@ func (g *Generator) genComponent(s *ast.ComponentStatement, prefix string) strin
 	g.indent--
 	out.WriteString(fmt.Sprintf("%s},\n", inner))
 
+	// --- form actions ---
+	if len(s.Actions) > 0 {
+		out.WriteString(fmt.Sprintf("%sactions: {\n", inner))
+		g.indent++
+		actInner := strings.Repeat("  ", g.indent)
+		for _, action := range s.Actions {
+			out.WriteString(fmt.Sprintf("%s%s: function(__comp, __data) {\n", actInner, action.Name))
+			g.indent++
+			for _, stmt := range action.Body {
+				out.WriteString(g.genComponentStmt(stmt))
+				out.WriteString("\n")
+			}
+			g.indent--
+			out.WriteString(fmt.Sprintf("%s},\n", actInner))
+		}
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s},\n", inner))
+	}
+
 	// --- render ---
 	out.WriteString(fmt.Sprintf("%srender: function(__comp) {\n", inner))
 	g.indent++
@@ -61,7 +80,6 @@ func (g *Generator) genComponent(s *ast.ComponentStatement, prefix string) strin
 	if len(s.RenderBody) == 1 {
 		out.WriteString(fmt.Sprintf("%sreturn %s;\n", renderInner, g.genRenderElement(&s.RenderBody[0])))
 	} else if len(s.RenderBody) > 1 {
-		// Wrap multiple root elements in a fragment div
 		var children []string
 		for i := range s.RenderBody {
 			children = append(children, g.genRenderElement(&s.RenderBody[i]))
@@ -75,6 +93,23 @@ func (g *Generator) genComponent(s *ast.ComponentStatement, prefix string) strin
 
 	g.indent--
 	out.WriteString(fmt.Sprintf("%s};\n", prefix))
+
+	// --- scoped styles ---
+	if s.Styles != nil {
+		cssHash := ComponentHash(s.Name)
+		scopedCSS := GenerateScopedCSS(s.Styles, cssHash)
+		out.WriteString(fmt.Sprintf("%s// Scoped styles for %s\n", prefix, s.Name))
+		out.WriteString(fmt.Sprintf("%s(function() {\n", prefix))
+		out.WriteString(fmt.Sprintf("%s  var style = document.createElement('style');\n", prefix))
+		out.WriteString(fmt.Sprintf("%s  style.textContent = %q;\n", prefix, scopedCSS))
+		out.WriteString(fmt.Sprintf("%s  document.head.appendChild(style);\n", prefix))
+		out.WriteString(fmt.Sprintf("%s})();\n", prefix))
+	}
+
+	// --- head management ---
+	if s.Head != nil {
+		out.WriteString(GenerateHeadJS(s.Head))
+	}
 
 	return out.String()
 }
@@ -116,6 +151,27 @@ func (g *Generator) genRenderElement(el *ast.RenderElement) string {
 			g.genComponentExpr(el.Iterator.Iterable),
 			el.Iterator.Variable,
 			inner)
+	}
+
+	// Handle link element: generates <a> with client-side navigation
+	if el.Tag == "__link" {
+		to := `"/"`
+		if toExpr, ok := el.Props["to"]; ok {
+			to = g.genComponentExpr(toExpr)
+		}
+		var childCalls []string
+		for _, child := range el.Children {
+			if child.Text != nil {
+				childCalls = append(childCalls, g.genComponentExpr(child.Text))
+			} else if child.Element != nil {
+				childCalls = append(childCalls, g.genRenderElement(child.Element))
+			}
+		}
+		propsStr := fmt.Sprintf(`{href: %s, "data-quill-link": "true", onclick: function(e) { e.preventDefault(); if (typeof __quill_navigate === 'function') __quill_navigate(%s); }}`, to, to)
+		if len(childCalls) > 0 {
+			return fmt.Sprintf("h(\"a\", %s, %s)", propsStr, strings.Join(childCalls, ", "))
+		}
+		return fmt.Sprintf("h(\"a\", %s)", propsStr)
 	}
 
 	// Build props object

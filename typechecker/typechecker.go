@@ -45,18 +45,49 @@ func (d TypeDiagnostic) String() string {
 	return fmt.Sprintf("  line %d [type %s]: %s", d.Line, d.Severity, d.Message)
 }
 
+// TraitInfo stores information about a registered trait.
+type TraitInfo struct {
+	Name    string
+	Methods []TraitMethodSig
+}
+
+// TraitMethodSig represents a method signature in a trait.
+type TraitMethodSig struct {
+	Name       string
+	ParamTypes []Type
+	ReturnType Type
+}
+
+// EnumInfo stores information about a defined enum/algebraic type.
+type EnumInfo struct {
+	Name     string
+	Variants []string
+}
+
+// ClassInfo stores information about a described class.
+type ClassInfo struct {
+	Name    string
+	Methods map[string]FuncSig
+}
+
 // Checker performs type checking on Quill ASTs.
 type Checker struct {
 	diagnostics []TypeDiagnostic
-	variables   map[string]Type   // variable name -> type
+	variables   map[string]Type    // variable name -> type
 	functions   map[string]FuncSig // function name -> signature
-	types       map[string]bool   // defined type names (from describe/define)
+	types       map[string]bool    // defined type names (from describe/define)
+	traits      map[string]TraitInfo  // trait name -> trait info
+	enums       map[string]EnumInfo   // enum name -> enum info
+	classes     map[string]ClassInfo  // class name -> class info
+	narrowings  map[string]Type       // temporary type narrowings (for type narrowing in if blocks)
 }
 
 // FuncSig represents a function signature.
 type FuncSig struct {
 	Params     []Type
+	ParamTypes []string // for generic params
 	ReturnType Type
+	TypeParams []ast.TypeParam
 }
 
 // New creates a new type checker.
@@ -64,10 +95,14 @@ func New() *Checker {
 	return &Checker{
 		variables: make(map[string]Type),
 		functions: make(map[string]FuncSig),
-		types:     map[string]bool{
+		types: map[string]bool{
 			"text": true, "number": true, "boolean": true,
 			"list": true, "object": true, "nothing": true, "any": true,
 		},
+		traits:     make(map[string]TraitInfo),
+		enums:      make(map[string]EnumInfo),
+		classes:    make(map[string]ClassInfo),
+		narrowings: make(map[string]Type),
 	}
 }
 
@@ -97,12 +132,55 @@ func (c *Checker) Check(program *ast.Program) []TypeDiagnostic {
 
 		case *ast.DescribeStatement:
 			c.types[s.Name] = true
+			// Register class methods for trait checking
+			classInfo := ClassInfo{Name: s.Name, Methods: make(map[string]FuncSig)}
+			for _, method := range s.Methods {
+				sig := FuncSig{}
+				for i, _ := range method.Params {
+					t := Type{Name: "any"}
+					if i < len(method.ParamTypes) && method.ParamTypes[i] != "" {
+						t = parseType(method.ParamTypes[i])
+					}
+					sig.Params = append(sig.Params, t)
+				}
+				if method.ReturnType != "" {
+					sig.ReturnType = parseType(method.ReturnType)
+				} else {
+					sig.ReturnType = Type{Name: "any"}
+				}
+				classInfo.Methods[method.Name] = sig
+			}
+			c.classes[s.Name] = classInfo
 
 		case *ast.DefineStatement:
 			c.types[s.Name] = true
+			variants := []string{}
 			for _, v := range s.Variants {
 				c.types[v.Name] = true
+				variants = append(variants, v.Name)
 			}
+			c.enums[s.Name] = EnumInfo{Name: s.Name, Variants: variants}
+
+		case *ast.TraitDeclaration:
+			c.types[s.Name] = true
+			traitInfo := TraitInfo{Name: s.Name}
+			for _, m := range s.Methods {
+				methodSig := TraitMethodSig{Name: m.Name}
+				for _, p := range m.Params {
+					if p.TypeHint != "" {
+						methodSig.ParamTypes = append(methodSig.ParamTypes, parseType(p.TypeHint))
+					} else {
+						methodSig.ParamTypes = append(methodSig.ParamTypes, Type{Name: "any"})
+					}
+				}
+				if m.ReturnType != "" {
+					methodSig.ReturnType = parseType(m.ReturnType)
+				} else {
+					methodSig.ReturnType = Type{Name: "any"}
+				}
+				traitInfo.Methods = append(traitInfo.Methods, methodSig)
+			}
+			c.traits[s.Name] = traitInfo
 		}
 	}
 
@@ -136,6 +214,34 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 		if condType.Name != "boolean" && condType.Name != "any" {
 			c.addWarning(s.Line, fmt.Sprintf("condition should be boolean, got %s", condType))
 		}
+
+		// Type narrowing: if the condition is a type check, narrow the variable
+		if tc, ok := s.Condition.(*ast.TypeCheckExpr); ok {
+			if ident, ok := tc.Expr.(*ast.Identifier); ok {
+				// Save old type and apply narrowing
+				oldType, hadOld := c.variables[ident.Name]
+				c.narrowings[ident.Name] = Type{Name: tc.TypeName}
+				for _, stmt := range s.Body {
+					c.checkStmt(stmt)
+				}
+				// Restore
+				delete(c.narrowings, ident.Name)
+				if hadOld {
+					c.variables[ident.Name] = oldType
+				}
+				// Check else-ifs and else without narrowing
+				for _, elif := range s.ElseIfs {
+					for _, stmt := range elif.Body {
+						c.checkStmt(stmt)
+					}
+				}
+				for _, stmt := range s.Else {
+					c.checkStmt(stmt)
+				}
+				break
+			}
+		}
+
 		for _, stmt := range s.Body {
 			c.checkStmt(stmt)
 		}
@@ -211,15 +317,47 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 
 	case *ast.MatchStatement:
 		matchType := c.inferType(s.Value)
+		hasOtherwise := false
+		matchedVariants := make(map[string]bool)
+
 		for _, mc := range s.Cases {
-			if mc.Pattern != nil {
+			if mc.Pattern == nil {
+				hasOtherwise = true
+			} else {
 				patternType := c.inferType(mc.Pattern)
 				if !c.typeCompatible(matchType, patternType) && matchType.Name != "any" && patternType.Name != "any" {
 					c.addWarning(s.Line, fmt.Sprintf("match value is %s but case pattern is %s", matchType, patternType))
 				}
+				// Track matched variant names for exhaustiveness
+				if ident, ok := mc.Pattern.(*ast.Identifier); ok {
+					matchedVariants[ident.Name] = true
+				}
+				// Also check DotExpr like Shape.Circle
+				if dot, ok := mc.Pattern.(*ast.DotExpr); ok {
+					if ident, ok := dot.Object.(*ast.Identifier); ok {
+						matchedVariants[ident.Name+"."+dot.Field] = true
+						matchedVariants[dot.Field] = true
+					}
+				}
 			}
 			for _, stmt := range mc.Body {
 				c.checkStmt(stmt)
+			}
+		}
+
+		// Exhaustive match checking: if the match value is a known enum type
+		if !hasOtherwise {
+			// Try to find the enum type being matched
+			for enumName, enumInfo := range c.enums {
+				// Check if the match value is of this enum type
+				if matchType.Name == enumName || c.isEnumVariantMatch(s.Value, enumName) {
+					for _, variant := range enumInfo.Variants {
+						if !matchedVariants[variant] && !matchedVariants[enumName+"."+variant] {
+							c.addError(s.Line, fmt.Sprintf("Non-exhaustive match: missing variant '%s'", variant))
+						}
+					}
+					break
+				}
 			}
 		}
 
@@ -254,6 +392,12 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 			c.variables[s.Name] = inferredType
 		}
 
+	case *ast.TraitDeclaration:
+		// Already registered in first pass
+
+	case *ast.DestructureStatement:
+		c.inferType(s.Value)
+
 	case *ast.UseStatement:
 		// nothing to type check
 	case *ast.FromUseStatement:
@@ -265,6 +409,32 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 	case *ast.ContinueStatement:
 		// nothing to type check
 	}
+}
+
+// isEnumVariantMatch checks if an expression refers to a variant of the given enum.
+func (c *Checker) isEnumVariantMatch(expr ast.Expression, enumName string) bool {
+	if ident, ok := expr.(*ast.Identifier); ok {
+		if enumInfo, ok := c.enums[enumName]; ok {
+			for _, v := range enumInfo.Variants {
+				if ident.Name == v {
+					return true
+				}
+			}
+		}
+	}
+	// Check for enum.Variant dot expression
+	if dot, ok := expr.(*ast.DotExpr); ok {
+		if obj, ok := dot.Object.(*ast.Identifier); ok {
+			return obj.Name == enumName
+		}
+	}
+	// Check if the variable type matches the enum name
+	if ident, ok := expr.(*ast.Identifier); ok {
+		if t, ok := c.variables[ident.Name]; ok {
+			return t.Name == enumName
+		}
+	}
+	return false
 }
 
 // inferType infers the type of an expression.
@@ -279,10 +449,16 @@ func (c *Checker) inferType(expr ast.Expression) Type {
 	case *ast.NothingLiteral:
 		return Type{Name: "nothing"}
 	case *ast.Identifier:
+		// Check narrowings first (from type narrowing in if blocks)
+		if t, ok := c.narrowings[e.Name]; ok {
+			return t
+		}
 		if t, ok := c.variables[e.Name]; ok {
 			return t
 		}
 		return Type{Name: "any"}
+	case *ast.TypeCheckExpr:
+		return Type{Name: "boolean"}
 	case *ast.ListLiteral:
 		if len(e.Elements) > 0 {
 			firstType := c.inferType(e.Elements[0])
@@ -352,6 +528,12 @@ func (c *Checker) inferType(expr ast.Expression) Type {
 		}
 		return Type{Name: "any"}
 	case *ast.DotExpr:
+		// Check if this is an enum variant access like Shape.Circle
+		if ident, ok := e.Object.(*ast.Identifier); ok {
+			if _, ok := c.enums[ident.Name]; ok {
+				return Type{Name: ident.Name}
+			}
+		}
 		return Type{Name: "any"}
 	case *ast.IndexExpr:
 		objType := c.inferType(e.Object)

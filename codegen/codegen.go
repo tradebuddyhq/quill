@@ -62,6 +62,12 @@ func (g *Generator) Generate(program *ast.Program) string {
 		out.WriteString("\n")
 	}
 
+	// Include iterator runtime if generator/iterator features are used
+	if g.hasGenerators(program) || g.needsIteratorRuntime(userCodeStr) {
+		out.WriteString(stdlib.GetIteratorRuntime())
+		out.WriteString("\n")
+	}
+
 	// Include stdlib runtimes based on usage detection in user code
 	if g.usesIdentifier(userCodeStr, "Auth") {
 		out.WriteString(stdlib.GetAuthRuntime())
@@ -167,7 +173,21 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		body := g.genBlock(s.Body)
 		g.indent--
 		params := strings.Join(s.Params, ", ")
+		if g.bodyContainsYield(s.Body) {
+			return fmt.Sprintf("%sfunction* %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
+		}
 		return fmt.Sprintf("%sfunction %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
+
+	case *ast.YieldStatement:
+		g.addStmtMapping(s.Line)
+		return fmt.Sprintf("%syield %s;", prefix, g.genExpr(s.Value))
+
+	case *ast.LoopStatement:
+		g.addStmtMapping(s.Line)
+		g.indent++
+		body := g.genBlock(s.Body)
+		g.indent--
+		return fmt.Sprintf("%swhile (true) {\n%s%s}", prefix, body, prefix)
 
 	case *ast.ReturnStatement:
 		g.addStmtMapping(s.Line)
@@ -343,6 +363,29 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		g.addStmtMapping(s.Line)
 		return g.genSelectStmt(s, prefix)
 
+	case *ast.TraitDeclaration:
+		return g.genTrait(s, prefix)
+
+	case *ast.DestructureStatement:
+		return g.genDestructure(s, prefix)
+
+	case *ast.RespondStatement:
+		g.addStmtMapping(s.Line)
+		statusCode := s.StatusCode
+		if statusCode == 0 {
+			statusCode = 200
+		}
+		return fmt.Sprintf("%sres.writeHead(%d, {'Content-Type': 'application/json'}); res.end(JSON.stringify(%s));", prefix, statusCode, g.genExpr(s.Value))
+
+	case *ast.ServerBlockStatement:
+		return prefix + "/* server block — use 'quill run' for full-stack mode */"
+
+	case *ast.DatabaseBlockStatement:
+		return prefix + "/* database block — use 'quill run' for full-stack mode */"
+
+	case *ast.AuthBlockStatement:
+		return prefix + "/* auth block — use 'quill run' for full-stack mode */"
+
 	default:
 		return prefix + "/* unknown statement */"
 	}
@@ -383,27 +426,50 @@ func (g *Generator) genMatch(s *ast.MatchStatement, prefix string) string {
 	out.WriteString(fmt.Sprintf("%sconst %s = %s;\n", innerPrefix, matchVar, g.genExpr(s.Value)))
 
 	for i, c := range s.Cases {
-		g.indent++
-		body := g.genBlock(c.Body)
-		g.indent--
+		// Build body with possible binding prefix
+		var bodyStr string
+		if c.TypePattern != "" && c.Binding != "" {
+			// Inject binding variable at the top of the body
+			g.indent++
+			bindPrefix := strings.Repeat("  ", g.indent)
+			bodyStr = fmt.Sprintf("%slet %s = %s;\n", bindPrefix, c.Binding, matchVar)
+			bodyStr += g.genBlock(c.Body)
+			g.indent--
+		} else {
+			g.indent++
+			bodyStr = g.genBlock(c.Body)
+			g.indent--
+		}
 
-		if c.Pattern == nil {
+		if c.TypePattern != "" {
+			// Type-based pattern matching
+			condition := g.genTypeCondition(c.TypePattern, matchVar)
+			if c.Guard != nil {
+				condition = fmt.Sprintf("(%s && %s)", condition, g.genExpr(c.Guard))
+			}
+			if i == 0 {
+				out.WriteString(fmt.Sprintf("%sif %s {\n%s%s}", innerPrefix, condition, bodyStr, innerPrefix))
+			} else {
+				out.WriteString(fmt.Sprintf(" else if %s {\n%s%s}", condition, bodyStr, innerPrefix))
+			}
+		} else if c.Pattern == nil {
 			// otherwise case
 			if i == 0 {
-				out.WriteString(fmt.Sprintf("%sif (true) {\n%s%s}", innerPrefix, body, innerPrefix))
+				out.WriteString(fmt.Sprintf("%sif (true) {\n%s%s}", innerPrefix, bodyStr, innerPrefix))
 			} else {
-				out.WriteString(fmt.Sprintf(" else {\n%s%s}", body, innerPrefix))
+				out.WriteString(fmt.Sprintf(" else {\n%s%s}", bodyStr, innerPrefix))
 			}
 		} else {
+			// Value-based pattern
 			condition := fmt.Sprintf("(%s === %s)", matchVar, g.genExpr(c.Pattern))
 			if c.Guard != nil {
 				condition = fmt.Sprintf("(%s === %s && %s)", matchVar, g.genExpr(c.Pattern), g.genExpr(c.Guard))
 			}
 
 			if i == 0 {
-				out.WriteString(fmt.Sprintf("%sif %s {\n%s%s}", innerPrefix, condition, body, innerPrefix))
+				out.WriteString(fmt.Sprintf("%sif %s {\n%s%s}", innerPrefix, condition, bodyStr, innerPrefix))
 			} else {
-				out.WriteString(fmt.Sprintf(" else if %s {\n%s%s}", condition, body, innerPrefix))
+				out.WriteString(fmt.Sprintf(" else if %s {\n%s%s}", condition, bodyStr, innerPrefix))
 			}
 		}
 	}
@@ -590,6 +656,21 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 	case *ast.SpreadExpr:
 		return fmt.Sprintf("...%s", g.genExpr(e.Expr))
 
+	case *ast.TypeCheckExpr:
+		exprCode := g.genExpr(e.Expr)
+		switch e.TypeName {
+		case "text":
+			return fmt.Sprintf("(typeof %s === \"string\")", exprCode)
+		case "number":
+			return fmt.Sprintf("(typeof %s === \"number\")", exprCode)
+		case "boolean":
+			return fmt.Sprintf("(typeof %s === \"boolean\")", exprCode)
+		case "nothing":
+			return fmt.Sprintf("(%s === null || %s === undefined)", exprCode, exprCode)
+		default:
+			return fmt.Sprintf("(typeof %s === \"%s\")", exprCode, e.TypeName)
+		}
+
 	case *ast.PipeExpr:
 		// x | fn  becomes  fn(x)
 		// x | fn(a, b)  becomes  fn(x, a, b)
@@ -610,6 +691,77 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 
 	default:
 		return "undefined"
+	}
+}
+
+// --- Trait code generation ---
+
+func (g *Generator) genTrait(s *ast.TraitDeclaration, prefix string) string {
+	var out strings.Builder
+	out.WriteString(fmt.Sprintf("%s// Trait: %s\n", prefix, s.Name))
+	for _, m := range s.Methods {
+		params := make([]string, len(m.Params))
+		for i, p := range m.Params {
+			if p.TypeHint != "" {
+				params[i] = fmt.Sprintf("%s: %s", p.Name, p.TypeHint)
+			} else {
+				params[i] = p.Name
+			}
+		}
+		ret := ""
+		if m.ReturnType != "" {
+			ret = " -> " + m.ReturnType
+		}
+		out.WriteString(fmt.Sprintf("%s//   %s(%s)%s\n", prefix, m.Name, strings.Join(params, ", "), ret))
+	}
+	// Generate runtime __implements checker
+	out.WriteString(fmt.Sprintf("%sfunction __implements_%s(obj) {\n", prefix, s.Name))
+	for _, m := range s.Methods {
+		out.WriteString(fmt.Sprintf("%s  if (typeof obj.%s !== 'function') return false;\n", prefix, m.Name))
+	}
+	out.WriteString(fmt.Sprintf("%s  return true;\n", prefix))
+	out.WriteString(fmt.Sprintf("%s}\n", prefix))
+	return out.String()
+}
+
+// --- Destructuring code generation ---
+
+func (g *Generator) genDestructure(s *ast.DestructureStatement, prefix string) string {
+	patternCode := g.genPattern(s.Pattern)
+	valueCode := g.genExpr(s.Value)
+	return fmt.Sprintf("%sconst %s = %s;", prefix, patternCode, valueCode)
+}
+
+func (g *Generator) genPattern(p ast.DestructurePattern) string {
+	switch pat := p.(type) {
+	case *ast.ObjectPattern:
+		parts := []string{}
+		for _, f := range pat.Fields {
+			if f.Nested != nil {
+				parts = append(parts, fmt.Sprintf("%s: %s", f.Key, g.genPattern(f.Nested)))
+			} else {
+				parts = append(parts, f.Key)
+			}
+		}
+		if pat.Rest != "" {
+			parts = append(parts, "..."+pat.Rest)
+		}
+		return "{" + strings.Join(parts, ", ") + "}"
+	case *ast.ArrayPattern:
+		parts := []string{}
+		for _, e := range pat.Elements {
+			if e.Nested != nil {
+				parts = append(parts, g.genPattern(e.Nested))
+			} else {
+				parts = append(parts, e.Name)
+			}
+		}
+		if pat.Rest != "" {
+			parts = append(parts, "..."+pat.Rest)
+		}
+		return "[" + strings.Join(parts, ", ") + "]"
+	default:
+		return "/* unknown pattern */"
 	}
 }
 
@@ -881,6 +1033,94 @@ func (g *Generator) hasComponents(program *ast.Program) bool {
 			return true
 		}
 		if _, ok := stmt.(*ast.MountStatement); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// bodyContainsYield checks if a function body contains any yield statements (including nested in loops).
+func (g *Generator) bodyContainsYield(stmts []ast.Statement) bool {
+	for _, stmt := range stmts {
+		switch s := stmt.(type) {
+		case *ast.YieldStatement:
+			return true
+		case *ast.LoopStatement:
+			if g.bodyContainsYield(s.Body) {
+				return true
+			}
+		case *ast.IfStatement:
+			if g.bodyContainsYield(s.Body) {
+				return true
+			}
+			for _, elif := range s.ElseIfs {
+				if g.bodyContainsYield(elif.Body) {
+					return true
+				}
+			}
+			if g.bodyContainsYield(s.Else) {
+				return true
+			}
+		case *ast.WhileStatement:
+			if g.bodyContainsYield(s.Body) {
+				return true
+			}
+		case *ast.ForEachStatement:
+			if g.bodyContainsYield(s.Body) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// genTypeCondition generates a JavaScript type check condition for pattern matching.
+func (g *Generator) genTypeCondition(typeName string, matchVar string) string {
+	switch typeName {
+	case "text":
+		return fmt.Sprintf("(typeof %s === \"string\")", matchVar)
+	case "number":
+		return fmt.Sprintf("(typeof %s === \"number\")", matchVar)
+	case "boolean":
+		return fmt.Sprintf("(typeof %s === \"boolean\")", matchVar)
+	case "list":
+		return fmt.Sprintf("(Array.isArray(%s))", matchVar)
+	case "nothing":
+		return fmt.Sprintf("(%s == null)", matchVar)
+	default:
+		return fmt.Sprintf("(typeof %s === \"%s\")", matchVar, typeName)
+	}
+}
+
+// hasGenerators checks if the program uses generator/iterator features.
+func (g *Generator) hasGenerators(program *ast.Program) bool {
+	for _, stmt := range program.Statements {
+		if g.stmtUsesGenerators(stmt) {
+			return true
+		}
+	}
+	return false
+}
+
+// needsIteratorRuntime checks if generated code uses lazy iterator features.
+func (g *Generator) needsIteratorRuntime(code string) bool {
+	keywords := []string{"__quill_lazy", "__quill_range", "__QuillLazy", "collect()", ".filter(", ".take(", ".skip("}
+	for _, kw := range keywords {
+		if strings.Contains(code, kw) {
+			return true
+		}
+	}
+	return false
+}
+
+func (g *Generator) stmtUsesGenerators(stmt ast.Statement) bool {
+	switch s := stmt.(type) {
+	case *ast.YieldStatement:
+		return true
+	case *ast.LoopStatement:
+		return true
+	case *ast.FuncDefinition:
+		if g.bodyContainsYield(s.Body) {
 			return true
 		}
 	}

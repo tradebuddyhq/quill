@@ -64,6 +64,22 @@ var keywords = map[string]TokenType{
 	"component": TOKEN_COMPONENT,
 	"state":     TOKEN_STATE,
 	"mount":     TOKEN_MOUNT,
+	"link":      TOKEN_LINK,
+	"head":      TOKEN_HEAD,
+	"style":     TOKEN_STYLE,
+	"form":      TOKEN_FORM,
+	"redirect":  TOKEN_REDIRECT,
+	"load":      TOKEN_LOAD,
+	"trait":     TOKEN_TRAIT,
+	"where":     TOKEN_WHERE,
+	"using":     TOKEN_USING,
+	"self":      TOKEN_SELF,
+	"yield":     TOKEN_YIELD,
+	"loop":      TOKEN_LOOP,
+	"server":    TOKEN_SERVER,
+	"route":     TOKEN_ROUTE,
+	"database":  TOKEN_DATABASE,
+	"respond":   TOKEN_RESPOND,
 }
 
 type Lexer struct {

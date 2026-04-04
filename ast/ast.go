@@ -81,8 +81,9 @@ func (s *WhileStatement) stmtNode()        {}
 type FuncDefinition struct {
 	Name       string
 	Params     []string
-	ParamTypes []string // parallel to Params, empty string = no annotation
-	ReturnType string   // optional return type annotation
+	ParamTypes []string    // parallel to Params, empty string = no annotation
+	ReturnType string      // optional return type annotation
+	TypeParams []TypeParam // generic type parameters with optional constraints
 	Body       []Statement
 	Line       int
 }
@@ -375,9 +376,11 @@ func (s *FromUseStatement) stmtNode()        {}
 // --- Pattern Matching ---
 
 type MatchCase struct {
-	Pattern Expression // the value to match against (or nil for otherwise)
-	Guard   Expression // optional "if" guard condition
-	Body    []Statement
+	Pattern     Expression // the value to match against (or nil for otherwise)
+	Guard       Expression // optional "if" guard condition
+	TypePattern string     // type-based pattern: "text", "number", "list", "nothing"
+	Binding     string     // variable binding for type pattern
+	Body        []Statement
 }
 
 type MatchStatement struct {
@@ -435,12 +438,63 @@ func (s *TypedAssignStatement) stmtNode()        {}
 
 // --- Reactive UI Framework ---
 
+// CSSRule represents a single CSS rule in a scoped style block.
+type CSSRule struct {
+	Selector   string
+	Properties map[string]string
+}
+
+// StyleBlock represents scoped styles within a component.
+type StyleBlock struct {
+	Rules []CSSRule
+}
+
+// LoadFunction represents a server-side data loader in a component.
+type LoadFunction struct {
+	Param string // e.g. "request"
+	Body  []Statement
+}
+
+// FormAction represents a form action handler in a component.
+type FormAction struct {
+	Name  string
+	Param string
+	Body  []Statement
+}
+
+// HeadEntry represents a single element in a head block (title, meta, link).
+type HeadEntry struct {
+	Tag   string            // "title", "meta", "link"
+	Text  string            // for title text content
+	Attrs map[string]string // for meta/link attributes
+}
+
+// HeadBlock represents a head management block.
+type HeadBlock struct {
+	Entries []HeadEntry
+	Line    int
+}
+
+func (s *HeadBlock) nodeType() string { return "Head" }
+func (s *HeadBlock) stmtNode()       {}
+
+// LinkElement represents a client-side navigation link.
+type LinkElement struct {
+	To   string // path expression e.g. "/about" or "/blog/{post.id}"
+	Text Expression
+	Line int
+}
+
 // ComponentStatement represents a reactive UI component definition.
 type ComponentStatement struct {
 	Name       string
 	States     []StateDeclaration
 	Methods    []FuncDefinition
 	RenderBody []RenderElement
+	Styles     *StyleBlock
+	Loader     *LoadFunction
+	Actions    []FormAction
+	Head       *HeadBlock
 	Line       int
 }
 
@@ -573,3 +627,168 @@ type SelectCase struct {
 	Channel string
 	Body    []Statement
 }
+
+// --- Traits / Interfaces ---
+
+// TraitMethod represents a method signature in a trait declaration.
+type TraitMethod struct {
+	Name       string
+	Params     []TypedParam
+	ReturnType string
+}
+
+// TraitDeclaration represents a trait (interface) definition.
+type TraitDeclaration struct {
+	Name    string
+	Methods []TraitMethod
+	Line    int
+}
+
+func (s *TraitDeclaration) nodeType() string { return "Trait" }
+func (s *TraitDeclaration) stmtNode()        {}
+
+// --- Generic Type Parameters ---
+
+// TypeParam represents a generic type parameter with optional constraint.
+type TypeParam struct {
+	Name       string
+	Constraint string // optional trait name
+}
+
+// --- Destructuring ---
+
+// DestructurePattern is the interface for destructuring patterns.
+type DestructurePattern interface {
+	patternNode()
+}
+
+// ObjectPattern represents {name, age, ...rest} destructuring.
+type ObjectPattern struct {
+	Fields  []ObjectPatternField
+	Rest    string // optional rest variable name
+}
+
+func (p *ObjectPattern) patternNode() {}
+
+// ObjectPatternField represents a single field in an object destructuring.
+type ObjectPatternField struct {
+	Key      string             // the key name
+	Nested   DestructurePattern // optional nested pattern (for {user: {name}})
+}
+
+// ArrayPattern represents [first, second, ...rest] destructuring.
+type ArrayPattern struct {
+	Elements []ArrayPatternElement
+	Rest     string // optional rest variable name
+}
+
+func (p *ArrayPattern) patternNode() {}
+
+// ArrayPatternElement represents a single element in an array destructuring.
+type ArrayPatternElement struct {
+	Name   string             // variable name (empty if nested)
+	Nested DestructurePattern // optional nested pattern
+}
+
+// DestructureStatement represents a destructuring assignment.
+type DestructureStatement struct {
+	Pattern DestructurePattern
+	Value   Expression
+	Line    int
+}
+
+func (s *DestructureStatement) nodeType() string { return "Destructure" }
+func (s *DestructureStatement) stmtNode()        {}
+
+// --- Type Check Expression (for type narrowing) ---
+
+// TypeCheckExpr represents "x is text", "x is number" type checks.
+type TypeCheckExpr struct {
+	Expr     Expression
+	TypeName string // "text", "number", "nothing", "boolean"
+}
+
+func (e *TypeCheckExpr) nodeType() string { return "TypeCheck" }
+func (e *TypeCheckExpr) exprNode()        {}
+
+// --- Generators / Iterators ---
+
+// YieldStatement represents a yield expression inside a generator function.
+type YieldStatement struct {
+	Value Expression
+	Line  int
+}
+
+func (s *YieldStatement) nodeType() string { return "Yield" }
+func (s *YieldStatement) stmtNode()        {}
+
+// LoopStatement represents an infinite loop (loop:).
+type LoopStatement struct {
+	Body []Statement
+	Line int
+}
+
+func (s *LoopStatement) nodeType() string { return "Loop" }
+func (s *LoopStatement) stmtNode()        {}
+
+// --- Full-Stack App Blocks ---
+
+// RouteDefinition represents a route handler inside a server or auth block.
+type RouteDefinition struct {
+	Method string // get, post, put, delete
+	Path   string
+	Body   []Statement
+	Line   int
+}
+
+// ModelFieldDef represents a field in a model definition.
+type ModelFieldDef struct {
+	Name string
+	Type string
+}
+
+// ModelDef represents a model definition inside a database block.
+type ModelDef struct {
+	Name   string
+	Fields []ModelFieldDef
+}
+
+// ServerBlockStatement represents a server: top-level block.
+type ServerBlockStatement struct {
+	Port   int
+	Routes []RouteDefinition
+	Line   int
+}
+
+func (s *ServerBlockStatement) nodeType() string { return "ServerBlock" }
+func (s *ServerBlockStatement) stmtNode()        {}
+
+// DatabaseBlockStatement represents a database: top-level block.
+type DatabaseBlockStatement struct {
+	ConnectString string
+	Models        []ModelDef
+	Line          int
+}
+
+func (s *DatabaseBlockStatement) nodeType() string { return "DatabaseBlock" }
+func (s *DatabaseBlockStatement) stmtNode()        {}
+
+// AuthBlockStatement represents an auth: top-level block.
+type AuthBlockStatement struct {
+	Secret string
+	Routes []RouteDefinition
+	Line   int
+}
+
+func (s *AuthBlockStatement) nodeType() string { return "AuthBlock" }
+func (s *AuthBlockStatement) stmtNode()        {}
+
+// RespondStatement represents "respond with <expr> [status <code>]".
+type RespondStatement struct {
+	Value      Expression
+	StatusCode int // default 200
+	Line       int
+}
+
+func (s *RespondStatement) nodeType() string { return "Respond" }
+func (s *RespondStatement) stmtNode()        {}

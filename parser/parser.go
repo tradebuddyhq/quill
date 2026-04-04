@@ -98,10 +98,26 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseSend()
 	case p.check(lexer.TOKEN_SELECT):
 		return p.parseSelect()
+	case p.check(lexer.TOKEN_YIELD):
+		return p.parseYield()
+	case p.check(lexer.TOKEN_LOOP):
+		return p.parseLoop()
 	case p.check(lexer.TOKEN_COMPONENT):
 		return p.parseComponent()
 	case p.check(lexer.TOKEN_MOUNT):
 		return p.parseMount()
+	case p.check(lexer.TOKEN_LBRACE):
+		// Check if this is a destructuring: {name, age} is expr
+		if p.isObjectDestructure() {
+			return p.parseObjectDestructure()
+		}
+		return p.parseExprStatement()
+	case p.check(lexer.TOKEN_LBRACKET):
+		// Check if this is a destructuring: [first, second] are expr
+		if p.isArrayDestructure() {
+			return p.parseArrayDestructure()
+		}
+		return p.parseExprStatement()
 	case p.check(lexer.TOKEN_IDENT) && p.pos+3 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_DOT && p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT && (p.tokens[p.pos+3].Type == lexer.TOKEN_IS || p.tokens[p.pos+3].Type == lexer.TOKEN_ARE):
 		return p.parseDotAssignment()
 	case p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE):
@@ -226,6 +242,20 @@ func (p *Parser) parseFuncDef() *ast.FuncDefinition {
 		}
 	}
 
+	// Parse optional where clauses for generic constraints: "where T is Comparable"
+	// These come before the return type arrow
+	var typeParams []ast.TypeParam
+	for p.check(lexer.TOKEN_WHERE) {
+		p.advance() // consume "where"
+		typeParamName := p.expect(lexer.TOKEN_IDENT).Value
+		p.expect(lexer.TOKEN_IS)
+		constraintName := p.expect(lexer.TOKEN_IDENT).Value
+		typeParams = append(typeParams, ast.TypeParam{Name: typeParamName, Constraint: constraintName})
+		if p.check(lexer.TOKEN_COMMA) {
+			p.advance()
+		}
+	}
+
 	// Capture optional return type: "-> type"
 	returnType := ""
 	if p.check(lexer.TOKEN_ARROW) {
@@ -246,6 +276,7 @@ func (p *Parser) parseFuncDef() *ast.FuncDefinition {
 		Params:     params,
 		ParamTypes: paramTypes,
 		ReturnType: returnType,
+		TypeParams: typeParams,
 		Body:       body,
 		Line:       line,
 	}
@@ -292,9 +323,15 @@ func (p *Parser) parseExpect() *ast.ExpectStatement {
 	return &ast.ExpectStatement{Expr: expr, Line: line}
 }
 
-func (p *Parser) parseDescribe() *ast.DescribeStatement {
+func (p *Parser) parseDescribe() ast.Statement {
 	line := p.current().Line
 	p.advance() // consume "describe"
+
+	// Check if this is "describe trait"
+	if p.check(lexer.TOKEN_TRAIT) {
+		return p.parseTrait(line)
+	}
+
 	name := p.expect(lexer.TOKEN_IDENT)
 
 	// Check for "extends ParentClass"
@@ -385,6 +422,23 @@ func (p *Parser) parseContinue() *ast.ContinueStatement {
 	return &ast.ContinueStatement{Line: line}
 }
 
+func (p *Parser) parseYield() *ast.YieldStatement {
+	line := p.current().Line
+	p.advance() // consume "yield"
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.YieldStatement{Value: value, Line: line}
+}
+
+func (p *Parser) parseLoop() *ast.LoopStatement {
+	line := p.current().Line
+	p.advance() // consume "loop"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+	return &ast.LoopStatement{Body: body, Line: line}
+}
+
 func (p *Parser) parseMatch() *ast.MatchStatement {
 	line := p.current().Line
 	p.advance() // consume "match"
@@ -402,19 +456,56 @@ func (p *Parser) parseMatch() *ast.MatchStatement {
 
 		if p.check(lexer.TOKEN_WHEN) {
 			p.advance() // consume "when"
-			pattern := p.parseExpression()
 
-			// Optional guard: "if condition"
-			var guard ast.Expression
-			if p.check(lexer.TOKEN_IF) {
-				p.advance()
-				guard = p.parseExpression()
+			// Check for type-based pattern: when text t, when number n, when list l, when nothing
+			typePattern := ""
+			binding := ""
+			if p.check(lexer.TOKEN_NOTHING) {
+				typePattern = "nothing"
+				p.advance() // consume "nothing"
+				// nothing has no binding
+				// Optional guard
+				var guard ast.Expression
+				if p.check(lexer.TOKEN_IF) {
+					p.advance()
+					guard = p.parseExpression()
+				}
+				p.expect(lexer.TOKEN_COLON)
+				p.expect(lexer.TOKEN_NEWLINE)
+				body := p.parseBlock()
+				cases = append(cases, ast.MatchCase{TypePattern: typePattern, Guard: guard, Body: body})
+			} else if p.check(lexer.TOKEN_IDENT) && p.isTypeKeyword(p.current().Value) {
+				typePattern = p.advance().Value // consume the type name
+				// Optional binding variable
+				if p.check(lexer.TOKEN_IDENT) {
+					binding = p.advance().Value
+				}
+				// Optional guard
+				var guard ast.Expression
+				if p.check(lexer.TOKEN_IF) {
+					p.advance()
+					guard = p.parseExpression()
+				}
+				p.expect(lexer.TOKEN_COLON)
+				p.expect(lexer.TOKEN_NEWLINE)
+				body := p.parseBlock()
+				cases = append(cases, ast.MatchCase{TypePattern: typePattern, Binding: binding, Guard: guard, Body: body})
+			} else {
+				// Value-based pattern (existing behavior)
+				pattern := p.parseExpression()
+
+				// Check if this is a bare identifier binding with guard (when n if ...)
+				var guard ast.Expression
+				if p.check(lexer.TOKEN_IF) {
+					p.advance()
+					guard = p.parseExpression()
+				}
+
+				p.expect(lexer.TOKEN_COLON)
+				p.expect(lexer.TOKEN_NEWLINE)
+				body := p.parseBlock()
+				cases = append(cases, ast.MatchCase{Pattern: pattern, Guard: guard, Body: body})
 			}
-
-			p.expect(lexer.TOKEN_COLON)
-			p.expect(lexer.TOKEN_NEWLINE)
-			body := p.parseBlock()
-			cases = append(cases, ast.MatchCase{Pattern: pattern, Guard: guard, Body: body})
 		} else if p.check(lexer.TOKEN_OTHERWISE) {
 			p.advance() // consume "otherwise"
 			p.expect(lexer.TOKEN_COLON)
@@ -510,6 +601,10 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 	var states []ast.StateDeclaration
 	var methods []ast.FuncDefinition
 	var renderBody []ast.RenderElement
+	var styles *ast.StyleBlock
+	var loader *ast.LoadFunction
+	var actions []ast.FormAction
+	var head *ast.HeadBlock
 
 	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
 		p.skipNewlines()
@@ -518,16 +613,24 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 		}
 		if p.check(lexer.TOKEN_STATE) {
 			states = append(states, *p.parseStateDecl())
+		} else if p.check(lexer.TOKEN_STYLE) {
+			styles = p.parseStyleBlock()
+		} else if p.check(lexer.TOKEN_HEAD) {
+			head = p.parseHeadBlock()
 		} else if p.check(lexer.TOKEN_TO) {
-			// Check if this is a render method
 			if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Value == "render" {
 				renderBody = p.parseRenderMethod()
+			} else if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LOAD {
+				loader = p.parseLoadFunction()
 			} else {
 				method := p.parseFuncDef()
 				methods = append(methods, *method)
 			}
+		} else if p.check(lexer.TOKEN_FORM) {
+			action := p.parseFormAction()
+			actions = append(actions, action)
 		} else {
-			p.error("expected state, method (to), or render inside component block")
+			p.error("expected state, style, head, method (to), form, or render inside component block")
 		}
 	}
 	if p.check(lexer.TOKEN_DEDENT) {
@@ -539,8 +642,149 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 		States:     states,
 		Methods:    methods,
 		RenderBody: renderBody,
+		Styles:     styles,
+		Loader:     loader,
+		Actions:    actions,
+		Head:       head,
 		Line:       line,
 	}
+}
+
+func (p *Parser) parseStyleBlock() *ast.StyleBlock {
+	p.advance() // consume "style"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+	var rules []ast.CSSRule
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		rule := p.parseCSSRule()
+		rules = append(rules, rule)
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+	return &ast.StyleBlock{Rules: rules}
+}
+
+func (p *Parser) parseCSSRule() ast.CSSRule {
+	var selectorParts []string
+	for !p.check(lexer.TOKEN_COLON) && !p.check(lexer.TOKEN_NEWLINE) && !p.isAtEnd() {
+		tok := p.advance()
+		selectorParts = append(selectorParts, tok.Value)
+	}
+	selector := ""
+	for i, part := range selectorParts {
+		if i > 0 && part != ":" && selectorParts[i-1] != "." {
+			selector += " "
+		}
+		selector += part
+	}
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+	properties := make(map[string]string)
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		var propParts []string
+		for !p.check(lexer.TOKEN_IS) && !p.check(lexer.TOKEN_NEWLINE) && !p.isAtEnd() {
+			tok := p.advance()
+			propParts = append(propParts, tok.Value)
+		}
+		propName := ""
+		for i, part := range propParts {
+			if i > 0 {
+				propName += "-"
+			}
+			propName += part
+		}
+		if p.check(lexer.TOKEN_IS) {
+			p.advance()
+			val := p.expect(lexer.TOKEN_STRING)
+			properties[propName] = val.Value
+		}
+		p.consumeNewline()
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+	return ast.CSSRule{Selector: selector, Properties: properties}
+}
+
+func (p *Parser) parseLoadFunction() *ast.LoadFunction {
+	p.advance() // consume "to"
+	p.advance() // consume "load"
+	param := "request"
+	if p.check(lexer.TOKEN_IDENT) {
+		param = p.advance().Value
+	}
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+	return &ast.LoadFunction{Param: param, Body: body}
+}
+
+func (p *Parser) parseHeadBlock() *ast.HeadBlock {
+	line := p.current().Line
+	p.advance() // consume "head"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+	var entries []ast.HeadEntry
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		tagTok := p.expect(lexer.TOKEN_IDENT)
+		tag := tagTok.Value
+		entry := ast.HeadEntry{Tag: tag, Attrs: make(map[string]string)}
+		if tag == "title" {
+			text := p.expect(lexer.TOKEN_STRING)
+			entry.Text = text.Value
+		} else {
+			for p.check(lexer.TOKEN_IDENT) {
+				attrName := p.advance().Value
+				if p.check(lexer.TOKEN_STRING) {
+					attrVal := p.advance().Value
+					entry.Attrs[attrName] = attrVal
+				}
+			}
+		}
+		p.consumeNewline()
+		entries = append(entries, entry)
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+	return &ast.HeadBlock{Entries: entries, Line: line}
+}
+
+func (p *Parser) parseFormAction() ast.FormAction {
+	p.advance()                                      // consume "form"
+	p.expect(lexer.TOKEN_IDENT)                      // "action"
+	handlerName := p.expect(lexer.TOKEN_IDENT).Value // handler name
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+	var body []ast.Statement
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		body = append(body, p.parseStatement())
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+	return ast.FormAction{Name: handlerName, Body: body}
 }
 
 func (p *Parser) parseStateDecl() *ast.StateDeclaration {
@@ -576,6 +820,32 @@ func (p *Parser) parseRenderMethod() []ast.RenderElement {
 
 func (p *Parser) parseRenderElement() *ast.RenderElement {
 	line := p.current().Line
+
+	// Handle link element: link to="/path" "text"
+	if p.check(lexer.TOKEN_LINK) {
+		p.advance() // consume "link"
+		props := make(map[string]ast.Expression)
+		// Parse to="path"
+		if p.check(lexer.TOKEN_TO) {
+			p.advance() // consume "to"
+			if p.check(lexer.TOKEN_STRING) {
+				toVal := p.advance()
+				props["to"] = &ast.StringLiteral{Value: toVal.Value}
+			}
+		}
+		var children []ast.RenderNode
+		if p.check(lexer.TOKEN_STRING) {
+			text := p.advance()
+			children = append(children, ast.RenderNode{Text: &ast.StringLiteral{Value: text.Value}})
+		}
+		p.consumeNewline()
+		return &ast.RenderElement{
+			Tag:      "__link",
+			Props:    props,
+			Children: children,
+			Line:     line,
+		}
+	}
 
 	// Handle conditional: if condition:
 	if p.check(lexer.TOKEN_IF) {
@@ -814,6 +1084,211 @@ func (p *Parser) parseSelect() ast.Statement {
 	return &ast.SelectStatement{Cases: cases, AfterMs: afterMs, AfterBody: afterBody, Line: line}
 }
 
+// --- Trait parsing ---
+
+func (p *Parser) parseTrait(line int) *ast.TraitDeclaration {
+	p.advance() // consume "trait"
+	name := p.expect(lexer.TOKEN_IDENT)
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	var methods []ast.TraitMethod
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		if p.check(lexer.TOKEN_TO) {
+			p.advance() // consume "to"
+			methodName := p.expect(lexer.TOKEN_IDENT)
+			var params []ast.TypedParam
+			// Parse parameters until -> or : or newline
+			for p.check(lexer.TOKEN_IDENT) {
+				paramName := p.advance().Value
+				typeHint := ""
+				if p.check(lexer.TOKEN_AS) {
+					p.advance()
+					typeHint = p.advance().Value
+					if p.check(lexer.TOKEN_OF) {
+						p.advance()
+						typeHint = typeHint + " of " + p.advance().Value
+					}
+				}
+				params = append(params, ast.TypedParam{Name: paramName, TypeHint: typeHint})
+				if p.check(lexer.TOKEN_COMMA) {
+					p.advance()
+				}
+			}
+			returnType := ""
+			if p.check(lexer.TOKEN_ARROW) {
+				p.advance()
+				retTok := p.advance()
+				returnType = retTok.Value
+				if p.check(lexer.TOKEN_OF) {
+					p.advance()
+					returnType = returnType + " of " + p.advance().Value
+				}
+			}
+			methods = append(methods, ast.TraitMethod{
+				Name:       methodName.Value,
+				Params:     params,
+				ReturnType: returnType,
+			})
+			p.consumeNewline()
+		} else {
+			p.error("expected 'to' method signature inside trait block")
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return &ast.TraitDeclaration{Name: name.Value, Methods: methods, Line: line}
+}
+
+// --- Destructuring parsing ---
+
+func (p *Parser) isObjectDestructure() bool {
+	// Scan ahead from { ... } to see if it ends with "is" or "are"
+	depth := 0
+	saved := p.pos
+	for i := p.pos; i < len(p.tokens); i++ {
+		tok := p.tokens[i]
+		if tok.Type == lexer.TOKEN_LBRACE {
+			depth++
+		} else if tok.Type == lexer.TOKEN_RBRACE {
+			depth--
+			if depth == 0 {
+				// Check if next token is "is" or "are"
+				if i+1 < len(p.tokens) && (p.tokens[i+1].Type == lexer.TOKEN_IS || p.tokens[i+1].Type == lexer.TOKEN_ARE) {
+					return true
+				}
+				return false
+			}
+		} else if tok.Type == lexer.TOKEN_NEWLINE || tok.Type == lexer.TOKEN_EOF {
+			break
+		}
+	}
+	_ = saved
+	return false
+}
+
+func (p *Parser) isArrayDestructure() bool {
+	depth := 0
+	for i := p.pos; i < len(p.tokens); i++ {
+		tok := p.tokens[i]
+		if tok.Type == lexer.TOKEN_LBRACKET {
+			depth++
+		} else if tok.Type == lexer.TOKEN_RBRACKET {
+			depth--
+			if depth == 0 {
+				if i+1 < len(p.tokens) && (p.tokens[i+1].Type == lexer.TOKEN_IS || p.tokens[i+1].Type == lexer.TOKEN_ARE) {
+					return true
+				}
+				return false
+			}
+		} else if tok.Type == lexer.TOKEN_NEWLINE || tok.Type == lexer.TOKEN_EOF {
+			break
+		}
+	}
+	return false
+}
+
+func (p *Parser) parseObjectDestructure() *ast.DestructureStatement {
+	line := p.current().Line
+	pattern := p.parseObjectPattern()
+	p.advance() // consume "is" or "are"
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.DestructureStatement{Pattern: pattern, Value: value, Line: line}
+}
+
+func (p *Parser) parseObjectPattern() *ast.ObjectPattern {
+	p.advance() // consume "{"
+	var fields []ast.ObjectPatternField
+	rest := ""
+
+	for !p.check(lexer.TOKEN_RBRACE) && !p.isAtEnd() {
+		// Check for ...rest
+		if p.check(lexer.TOKEN_SPREAD) {
+			p.advance() // consume "..."
+			rest = p.expect(lexer.TOKEN_IDENT).Value
+			if p.check(lexer.TOKEN_COMMA) {
+				p.advance()
+			}
+			continue
+		}
+
+		key := p.expect(lexer.TOKEN_IDENT).Value
+
+		// Check for nested pattern: key: {nested} or key: [nested]
+		if p.check(lexer.TOKEN_COLON) {
+			p.advance() // consume ":"
+			if p.check(lexer.TOKEN_LBRACE) {
+				nested := p.parseObjectPattern()
+				fields = append(fields, ast.ObjectPatternField{Key: key, Nested: nested})
+			} else if p.check(lexer.TOKEN_LBRACKET) {
+				nested := p.parseArrayPattern()
+				fields = append(fields, ast.ObjectPatternField{Key: key, Nested: nested})
+			} else {
+				p.error("expected nested destructuring pattern after ':'")
+			}
+		} else {
+			fields = append(fields, ast.ObjectPatternField{Key: key})
+		}
+
+		if p.check(lexer.TOKEN_COMMA) {
+			p.advance()
+		}
+	}
+	p.expect(lexer.TOKEN_RBRACE)
+	return &ast.ObjectPattern{Fields: fields, Rest: rest}
+}
+
+func (p *Parser) parseArrayDestructure() *ast.DestructureStatement {
+	line := p.current().Line
+	pattern := p.parseArrayPattern()
+	p.advance() // consume "is" or "are"
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.DestructureStatement{Pattern: pattern, Value: value, Line: line}
+}
+
+func (p *Parser) parseArrayPattern() *ast.ArrayPattern {
+	p.advance() // consume "["
+	var elements []ast.ArrayPatternElement
+	rest := ""
+
+	for !p.check(lexer.TOKEN_RBRACKET) && !p.isAtEnd() {
+		if p.check(lexer.TOKEN_SPREAD) {
+			p.advance() // consume "..."
+			rest = p.expect(lexer.TOKEN_IDENT).Value
+			if p.check(lexer.TOKEN_COMMA) {
+				p.advance()
+			}
+			continue
+		}
+
+		if p.check(lexer.TOKEN_LBRACE) {
+			nested := p.parseObjectPattern()
+			elements = append(elements, ast.ArrayPatternElement{Nested: nested})
+		} else if p.check(lexer.TOKEN_LBRACKET) {
+			nested := p.parseArrayPattern()
+			elements = append(elements, ast.ArrayPatternElement{Nested: nested})
+		} else {
+			name := p.expect(lexer.TOKEN_IDENT).Value
+			elements = append(elements, ast.ArrayPatternElement{Name: name})
+		}
+
+		if p.check(lexer.TOKEN_COMMA) {
+			p.advance()
+		}
+	}
+	p.expect(lexer.TOKEN_RBRACKET)
+	return &ast.ArrayPattern{Elements: elements, Rest: rest}
+}
+
 func (p *Parser) parseBlock() []ast.Statement {
 	p.expect(lexer.TOKEN_INDENT)
 	stmts := []ast.Statement{}
@@ -927,6 +1402,15 @@ func (p *Parser) parseComparison() ast.Expression {
 			p.advance() // consume "not"
 			right := p.parseAddition()
 			return &ast.ComparisonExpr{Left: left, Operator: "!=", Right: right}
+		}
+
+		// Check for type check: "is text", "is number", "is nothing", "is boolean"
+		if p.check(lexer.TOKEN_IDENT) {
+			typeName := p.current().Value
+			if typeName == "text" || typeName == "number" || typeName == "boolean" || typeName == "nothing" {
+				p.advance()
+				return &ast.TypeCheckExpr{Expr: left, TypeName: typeName}
+			}
 		}
 
 		// "is <expr>" means equality
@@ -1168,6 +1652,223 @@ func (p *Parser) parseListLiteral() ast.Expression {
 
 // --- Helper methods ---
 
+// --- Full-stack block parsing ---
+
+func (p *Parser) peek() lexer.Token {
+	return p.current()
+}
+
+func (p *Parser) checkNextValue(types ...lexer.TokenType) bool {
+	if p.pos+1 >= len(p.tokens) {
+		return false
+	}
+	next := p.tokens[p.pos+1].Type
+	for _, t := range types {
+		if next == t {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *Parser) parseServerBlock() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "server"
+	p.expect(lexer.TOKEN_COLON)
+	p.consumeNewline()
+
+	server := &ast.ServerBlockStatement{
+		Port: 3000, // default
+		Line: line,
+	}
+
+	p.expect(lexer.TOKEN_INDENT)
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+
+		if p.check(lexer.TOKEN_PORT) || (p.check(lexer.TOKEN_IDENT) && p.current().Value == "port") {
+			p.advance() // consume "port"
+			p.expect(lexer.TOKEN_IS)
+			tok := p.expect(lexer.TOKEN_NUMBER)
+			port, _ := strconv.Atoi(tok.Value)
+			server.Port = port
+			p.consumeNewline()
+		} else if p.check(lexer.TOKEN_ROUTE) {
+			route := p.parseRouteDefinition()
+			server.Routes = append(server.Routes, route)
+		} else {
+			p.advance() // skip unknown
+			p.consumeNewline()
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return server
+}
+
+func (p *Parser) parseRouteDefinition() ast.RouteDefinition {
+	line := p.current().Line
+	p.advance() // consume "route"
+
+	// method: get, post, put, delete
+	method := p.current().Value
+	p.advance()
+
+	// path string
+	path := p.expect(lexer.TOKEN_STRING).Value
+
+	p.expect(lexer.TOKEN_COLON)
+	p.consumeNewline()
+
+	body := p.parseBlock()
+
+	return ast.RouteDefinition{
+		Method: method,
+		Path:   path,
+		Body:   body,
+		Line:   line,
+	}
+}
+
+func (p *Parser) parseDatabaseBlock() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "database"
+	p.expect(lexer.TOKEN_COLON)
+	p.consumeNewline()
+
+	db := &ast.DatabaseBlockStatement{
+		Line: line,
+	}
+
+	p.expect(lexer.TOKEN_INDENT)
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+
+		if p.check(lexer.TOKEN_CONNECT) || (p.check(lexer.TOKEN_IDENT) && p.current().Value == "connect") {
+			p.advance() // consume "connect"
+			db.ConnectString = p.expect(lexer.TOKEN_STRING).Value
+			p.consumeNewline()
+		} else if p.check(lexer.TOKEN_MODEL) || (p.check(lexer.TOKEN_IDENT) && p.current().Value == "model") {
+			model := p.parseModelDefinition()
+			db.Models = append(db.Models, model)
+		} else {
+			p.advance()
+			p.consumeNewline()
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return db
+}
+
+func (p *Parser) parseModelDefinition() ast.ModelDef {
+	p.advance() // consume "model"
+
+	name := p.expect(lexer.TOKEN_IDENT).Value
+	p.expect(lexer.TOKEN_COLON)
+	p.consumeNewline()
+
+	model := ast.ModelDef{Name: name}
+
+	p.expect(lexer.TOKEN_INDENT)
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+
+		fieldName := p.current().Value
+		p.advance() // field name
+		p.expect(lexer.TOKEN_AS)
+		fieldType := p.current().Value
+		p.advance() // type name
+		p.consumeNewline()
+
+		model.Fields = append(model.Fields, ast.ModelFieldDef{
+			Name: fieldName,
+			Type: fieldType,
+		})
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return model
+}
+
+func (p *Parser) parseAuthBlock() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "auth"
+	p.expect(lexer.TOKEN_COLON)
+	p.consumeNewline()
+
+	auth := &ast.AuthBlockStatement{
+		Line: line,
+	}
+
+	p.expect(lexer.TOKEN_INDENT)
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+
+		if p.check(lexer.TOKEN_IDENT) && p.current().Value == "secret" {
+			p.advance() // consume "secret"
+			p.expect(lexer.TOKEN_IS)
+			auth.Secret = p.expect(lexer.TOKEN_STRING).Value
+			p.consumeNewline()
+		} else if p.check(lexer.TOKEN_ROUTE) {
+			route := p.parseRouteDefinition()
+			auth.Routes = append(auth.Routes, route)
+		} else {
+			p.advance()
+			p.consumeNewline()
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return auth
+}
+
+func (p *Parser) parseRespond() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "respond"
+	p.expect(lexer.TOKEN_WITH)
+
+	value := p.parseExpression()
+
+	statusCode := 0
+	if p.check(lexer.TOKEN_STATUS) || (p.check(lexer.TOKEN_IDENT) && p.current().Value == "status") {
+		p.advance() // consume "status"
+		tok := p.expect(lexer.TOKEN_NUMBER)
+		code, _ := strconv.Atoi(tok.Value)
+		statusCode = code
+	}
+
+	p.consumeNewline()
+
+	return &ast.RespondStatement{
+		Value:      value,
+		StatusCode: statusCode,
+		Line:       line,
+	}
+}
+
+// --- Utility functions ---
+
 func (p *Parser) current() lexer.Token {
 	if p.pos >= len(p.tokens) {
 		return lexer.Token{Type: lexer.TOKEN_EOF, Value: "", Line: -1}
@@ -1228,3 +1929,14 @@ func (p *Parser) error(msg string) {
 		Message: msg,
 	})
 }
+
+// isTypeKeyword returns true if the identifier is a type name for pattern matching.
+func (p *Parser) isTypeKeyword(name string) bool {
+	switch name {
+	case "text", "number", "list", "boolean":
+		return true
+	}
+	return false
+}
+
+// (duplicate stubs removed - defined earlier in file)

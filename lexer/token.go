@@ -82,6 +82,32 @@ const (
 	TOKEN_COMPONENT
 	TOKEN_STATE
 	TOKEN_MOUNT
+	TOKEN_LINK
+	TOKEN_HEAD
+	TOKEN_STYLE
+	TOKEN_FORM
+	TOKEN_REDIRECT
+	TOKEN_LOAD
+
+	// Type system keywords
+	TOKEN_TRAIT
+	TOKEN_WHERE
+	TOKEN_USING
+	TOKEN_SELF
+
+	// Iterator/generator keywords
+	TOKEN_YIELD
+	TOKEN_LOOP
+
+	// Full-stack keywords
+	TOKEN_SERVER
+	TOKEN_ROUTE
+	TOKEN_DATABASE
+	TOKEN_RESPOND
+	TOKEN_STATUS
+	TOKEN_MODEL
+	TOKEN_CONNECT
+	TOKEN_PORT
 
 	// Operators
 	TOKEN_PLUS
@@ -168,6 +194,26 @@ var tokenNames = map[TokenType]string{
 	TOKEN_COMPONENT: "component",
 	TOKEN_STATE:     "state",
 	TOKEN_MOUNT:     "mount",
+	TOKEN_LINK:      "link",
+	TOKEN_HEAD:      "head",
+	TOKEN_STYLE:     "style",
+	TOKEN_FORM:      "form",
+	TOKEN_REDIRECT:  "redirect",
+	TOKEN_LOAD:      "load",
+	TOKEN_TRAIT:     "trait",
+	TOKEN_WHERE:     "where",
+	TOKEN_USING:     "using",
+	TOKEN_SELF:      "self",
+	TOKEN_YIELD:     "yield",
+	TOKEN_LOOP:      "loop",
+	TOKEN_SERVER:    "server",
+	TOKEN_ROUTE:     "route",
+	TOKEN_DATABASE:  "database",
+	TOKEN_RESPOND:   "respond",
+	TOKEN_STATUS:    "status",
+	TOKEN_MODEL:     "model",
+	TOKEN_CONNECT:   "connect",
+	TOKEN_PORT:      "port",
 	TOKEN_PLUS:      "+",
 	TOKEN_MINUS:     "-",
 	TOKEN_STAR:      "*",

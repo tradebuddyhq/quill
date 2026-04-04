@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"quill/analyzer"
+	"quill/ast"
 	"quill/codegen"
 	"quill/config"
 	"quill/debugger"
@@ -18,8 +19,12 @@ import (
 	"quill/parser"
 	"quill/registry"
 	"quill/repl"
+	"quill/server"
+	"quill/tools"
 	"quill/typechecker"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const version = "0.2.0"
@@ -37,7 +42,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Usage: quill run <file.quill>")
 			os.Exit(1)
 		}
-		runFile(os.Args[2])
+		runFileWithFullStack(os.Args[2])
 
 	case "build":
 		if len(os.Args) < 3 {
@@ -75,7 +80,18 @@ func main() {
 		lsp.Start()
 
 	case "test":
-		runTests(os.Args[2:])
+		runTestsCommand(os.Args[2:])
+
+	case "profile":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a file to profile")
+			fmt.Fprintln(os.Stderr, "Usage: quill profile <file.quill>")
+			os.Exit(1)
+		}
+		profileFile(os.Args[2])
+
+	case "fix":
+		runMigration(os.Args[2:])
 
 	case "fmt", "format":
 		if len(os.Args) < 3 {
@@ -142,6 +158,9 @@ func main() {
 		}
 		bumpVersion(os.Args[2])
 
+	case "serve":
+		serveApp()
+
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
 
@@ -151,7 +170,7 @@ func main() {
 	default:
 		// If it's a .quill file, run it directly
 		if filepath.Ext(os.Args[1]) == ".quill" {
-			runFile(os.Args[1])
+			runFileWithFullStack(os.Args[1])
 		} else {
 			fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
 			printUsage()
@@ -996,6 +1015,242 @@ func bumpVersion(bump string) {
 	fmt.Printf("✓ Bumped version: %s -> %s\n", oldVersion, meta.Version)
 }
 
+// --- Full-stack support ---
+
+func runFileWithFullStack(filename string) {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read %q\n", filename)
+		os.Exit(1)
+	}
+
+	l := lexer.New(string(source))
+	tokens, err := l.Tokenize()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	p := parser.New(tokens)
+	program, err := p.Parse()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Check if the program contains full-stack blocks
+	if hasFullStackBlocks(program) {
+		js := codegen.GenerateFullStackApp(program)
+		runJSCode(js)
+	} else {
+		// Normal run
+		g := codegen.New()
+		js := g.Generate(program)
+		runJSCode(js)
+	}
+}
+
+func hasFullStackBlocks(program *ast.Program) bool {
+	for _, stmt := range program.Statements {
+		switch stmt.(type) {
+		case *ast.ServerBlockStatement, *ast.DatabaseBlockStatement, *ast.AuthBlockStatement:
+			return true
+		}
+	}
+	return false
+}
+
+func runJSCode(js string) {
+	tmpFile, err := os.CreateTemp("", "quill-*.js")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not create temp file: %s\n", err)
+		os.Exit(1)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	tmpFile.WriteString(js)
+	tmpFile.Close()
+
+	runtime := findRuntime()
+	if runtime == "" {
+		fmt.Fprintln(os.Stderr, "Error: no JavaScript runtime found")
+		os.Exit(1)
+	}
+
+	cmd := exec.Command(runtime, tmpFile.Name())
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			os.Exit(exitErr.ExitCode())
+		}
+		os.Exit(1)
+	}
+}
+
+// --- Coverage support for tests ---
+
+func runTestsCommand(args []string) {
+	var coverageMode bool
+	var coverageHTML bool
+	var coverageMin float64
+	var testFiles []string
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--coverage":
+			coverageMode = true
+		case "--coverage-html":
+			coverageMode = true
+			coverageHTML = true
+		case "--coverage-min":
+			coverageMode = true
+			if i+1 < len(args) {
+				i++
+				val, err := strconv.ParseFloat(args[i], 64)
+				if err == nil {
+					coverageMin = val
+				}
+			}
+		default:
+			testFiles = append(testFiles, args[i])
+		}
+	}
+
+	if coverageMode {
+		runTestsWithCoverage(testFiles, coverageHTML, coverageMin)
+	} else {
+		runTests(testFiles)
+	}
+}
+
+func runTestsWithCoverage(files []string, htmlReport bool, minCoverage float64) {
+	if len(files) == 0 {
+		entries, _ := os.ReadDir(".")
+		for _, e := range entries {
+			if filepath.Ext(e.Name()) == ".quill" {
+				files = append(files, e.Name())
+			}
+		}
+	}
+
+	if len(files) == 0 {
+		fmt.Println("No .quill files found to test")
+		return
+	}
+
+	cov := tools.NewCoverageInstrumenter()
+
+	for _, f := range files {
+		fmt.Printf("\nTesting %s...\n", f)
+		js := compile(f)
+		instrumented := cov.Instrument(js, f)
+		instrumented += "\nconsole.log(`\\n${__test_passed} passed, ${__test_failed} failed`);\nif (__test_failed > 0) process.exit(1);\n"
+		runJS(instrumented)
+	}
+
+	fmt.Println()
+	fmt.Print(cov.GenerateReport())
+
+	if htmlReport {
+		html := cov.GenerateHTML()
+		outFile := "coverage.html"
+		if err := os.WriteFile(outFile, []byte(html), 0644); err == nil {
+			fmt.Printf("\nHTML report: %s\n", outFile)
+		}
+	}
+
+	if minCoverage > 0 {
+		if err := cov.CheckThreshold(minCoverage); err != nil {
+			fmt.Fprintf(os.Stderr, "\nError: %s\n", err)
+			os.Exit(1)
+		}
+	}
+}
+
+// --- Profiler ---
+
+func profileFile(filename string) {
+	js := compile(filename)
+
+	prof := tools.NewProfiler()
+	instrumented := prof.Instrument(js)
+
+	tmpFile, _ := os.CreateTemp("", "quill-profile-*.js")
+	tmpFile.WriteString(instrumented)
+	tmpFile.Close()
+	defer os.Remove(tmpFile.Name())
+
+	runtime := findRuntime()
+	if runtime == "" {
+		fmt.Fprintln(os.Stderr, "Error: no JavaScript runtime found")
+		os.Exit(1)
+	}
+
+	cmd := exec.Command(runtime, tmpFile.Name())
+	var output strings.Builder
+	cmd.Stdout = &output
+	cmd.Stderr = os.Stderr
+	cmd.Run()
+
+	// Print original output (minus profiling data)
+	outStr := output.String()
+	lines := strings.Split(outStr, "\n")
+	for _, line := range lines {
+		if !strings.Contains(line, "__PROFILE_DATA__") {
+			if line != "" {
+				fmt.Println(line)
+			}
+		}
+	}
+
+	entries := prof.ParseResults(outStr)
+	if len(entries) > 0 {
+		fmt.Println()
+		fmt.Print(prof.FormatReport(entries))
+	}
+}
+
+// --- Migration ---
+
+func runMigration(args []string) {
+	var fromVersion, toVersion string
+	var dryRun bool
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--from":
+			if i+1 < len(args) {
+				i++
+				fromVersion = args[i]
+			}
+		case "--to":
+			if i+1 < len(args) {
+				i++
+				toVersion = args[i]
+			}
+		case "--dry-run":
+			dryRun = true
+		}
+	}
+
+	if fromVersion == "" || toVersion == "" {
+		fmt.Fprintln(os.Stderr, "Usage: quill fix --from <version> --to <version> [--dry-run]")
+		os.Exit(1)
+	}
+
+	dir, _ := os.Getwd()
+	results, err := tools.MigrateDirectory(dir, fromVersion, toVersion, dryRun)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Print(tools.FormatMigrationReport(results, dryRun))
+}
+
 func printUsage() {
 	fmt.Println("Quill — code that reads like English")
 	fmt.Println()
@@ -1010,6 +1265,12 @@ func printUsage() {
 	fmt.Println("  quill repl                   Start interactive REPL")
 	fmt.Println("  quill lsp                    Start the LSP server (for editor integration)")
 	fmt.Println("  quill test [files...]        Run tests in .quill files")
+	fmt.Println("  quill test --coverage        Run tests with coverage report")
+	fmt.Println("  quill test --coverage-html   Run tests and generate HTML coverage report")
+	fmt.Println("  quill test --coverage-min N  Fail if coverage is below N%")
+	fmt.Println("  quill profile <file.quill>   Profile a Quill program")
+	fmt.Println("  quill fix --from v --to v    Migrate code between versions")
+	fmt.Println("  quill fix --dry-run          Preview migration changes")
 	fmt.Println("  quill fmt <file.quill>       Format a Quill file")
 	fmt.Println("  quill check <file.quill>     Check for common issues")
 	fmt.Println("  quill docs <file.quill>      Generate documentation")
@@ -1024,7 +1285,7 @@ func printUsage() {
 	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  quill run hello.quill")
+	fmt.Println("  quill run hello.quill            Run a program (auto-detects full-stack)")
 	fmt.Println("  quill debug hello.quill")
 	fmt.Println("  quill build script.quill")
 	fmt.Println("  quill repl")
@@ -1038,4 +1299,27 @@ func printUsage() {
 	fmt.Println("  quill publish")
 	fmt.Println("  quill search utils")
 	fmt.Println("  quill bump patch")
+	fmt.Println("  quill serve")
+}
+
+func serveApp() {
+	port := 3000
+	// Check for --port flag
+	for i, arg := range os.Args {
+		if arg == "--port" && i+1 < len(os.Args) {
+			if p, err := strconv.Atoi(os.Args[i+1]); err == nil {
+				port = p
+			}
+		}
+	}
+
+	srv := server.NewDevServer(port)
+
+	// Start file watcher in background
+	go srv.WatchAndReload(2 * time.Second)
+
+	if err := srv.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error starting server: %s\n", err)
+		os.Exit(1)
+	}
 }
