@@ -46,8 +46,15 @@
         <li><a href="#logic">Logic</a></li>
         <li><a href="#control-flow">Control flow</a></li>
         <li><a href="#loops">Loops</a></li>
+        <li><a href="#break-continue">Break / Continue</a></li>
         <li><a href="#functions">Functions</a></li>
+        <li><a href="#lambdas">Lambdas</a></li>
+        <li><a href="#type-annotations">Type annotations</a></li>
+        <li><a href="#classes">Classes</a></li>
         <li><a href="#lists">Lists</a></li>
+        <li><a href="#objects">Object literals</a></li>
+        <li><a href="#spread">Spread operator</a></li>
+        <li><a href="#try-catch">Try / Catch</a></li>
         <li><a href="#imports">Imports</a></li>
       </ul>
       <h4>Reference</h4>
@@ -85,7 +92,16 @@ count <span class="kw">is</span> count + <span class="num">1</span>  <span class
         <tr><td>Number</td><td>Integer or decimal</td><td><code>42</code>, <code>3.14</code></td></tr>
         <tr><td>Boolean</td><td>True or false</td><td><code>yes</code>, <code>no</code>, <code>true</code>, <code>false</code></td></tr>
         <tr><td>List</td><td>Ordered collection</td><td><code>[1, 2, 3]</code></td></tr>
+        <tr><td>Object</td><td>Key-value collection</td><td><code>{name: "Alice", age: 25}</code></td></tr>
+        <tr><td>Nothing</td><td>Absence of a value (null)</td><td><code>nothing</code></td></tr>
       </table>
+
+      <h3 id="nothing">Nothing</h3>
+      <p><code>nothing</code> represents the absence of a value, similar to <code>null</code> in other languages. Functions that don't explicitly return a value give back <code>nothing</code>.</p>
+      <pre><code>result <span class="kw">is</span> <span class="kw">nothing</span>
+
+<span class="kw">if</span> result <span class="kw">is</span> <span class="kw">nothing</span>:
+  <span class="kw">say</span> <span class="str">"No result yet"</span></code></pre>
 
       <h2 id="operators">Operators</h2>
       <h3>Math operators</h3>
@@ -163,6 +179,20 @@ name <span class="kw">is</span> <span class="str">"Alice"</span>
 <span class="kw">otherwise</span>:
   <span class="kw">say</span> <span class="str">"It's cold"</span></code></pre>
 
+      <h2 id="try-catch">Try / Catch</h2>
+      <p>Handle errors gracefully with <code>try</code> and <code>if it fails</code>. The error variable after <code>if it fails</code> captures the error message.</p>
+      <pre><code><span class="kw">try</span>:
+  result <span class="kw">is</span> riskyOperation()
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Something went wrong: {error}"</span></code></pre>
+      <p>You can use try/catch around any block of code that might fail:</p>
+      <pre><code><span class="kw">try</span>:
+  data <span class="kw">is</span> readFile(<span class="str">"config.json"</span>)
+  <span class="kw">say</span> <span class="str">"Config loaded"</span>
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Could not load config, using defaults"</span>
+  data <span class="kw">is</span> defaultConfig()</code></pre>
+
       <h2 id="loops">Loops</h2>
       <h3>For each</h3>
       <p>Iterate over items in a list:</p>
@@ -182,6 +212,18 @@ name <span class="kw">is</span> <span class="str">"Alice"</span>
 <span class="kw">while</span> count <span class="kw">is less than</span> <span class="num">5</span>:
   <span class="kw">say</span> count
   count <span class="kw">is</span> count + <span class="num">1</span></code></pre>
+
+      <h3 id="break-continue">Break &amp; Continue</h3>
+      <p>Use <code>break</code> to exit a loop early, and <code>continue</code> to skip to the next iteration:</p>
+      <pre><code><span class="kw">for each</span> i <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">10</span>):
+  <span class="kw">if</span> i <span class="kw">is</span> <span class="num">5</span>:
+    <span class="kw">break</span>        <span class="cmt">-- stop the loop entirely</span>
+  <span class="kw">say</span> i          <span class="cmt">-- prints 1, 2, 3, 4</span></code></pre>
+
+      <pre><code><span class="kw">for each</span> i <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">6</span>):
+  <span class="kw">if</span> i <span class="kw">is</span> <span class="num">3</span>:
+    <span class="kw">continue</span>     <span class="cmt">-- skip this iteration</span>
+  <span class="kw">say</span> i          <span class="cmt">-- prints 1, 2, 4, 5</span></code></pre>
 
       <h2 id="functions">Functions</h2>
       <p>Define functions with <code>to</code>. Parameters are listed by name (no parentheses or commas needed in the definition).</p>
@@ -204,6 +246,47 @@ result <span class="kw">is</span> add(<span class="num">3</span>, <span class="n
 
 <span class="kw">say</span> fullName(<span class="str">"John"</span>, <span class="str">"Doe"</span>)   <span class="cmt">-- John Doe</span></code></pre>
 
+      <h3 id="lambdas">Lambda / Arrow functions</h3>
+      <p>Create inline anonymous functions with <code>with</code>. These are useful for callbacks and short expressions:</p>
+      <pre><code>double <span class="kw">is</span> <span class="kw">with</span> x: x * <span class="num">2</span>
+<span class="kw">say</span> double(<span class="num">5</span>)   <span class="cmt">-- 10</span></code></pre>
+      <p>Lambdas can take multiple parameters:</p>
+      <pre><code>add <span class="kw">is</span> <span class="kw">with</span> a, b: a + b
+<span class="kw">say</span> add(<span class="num">3</span>, <span class="num">4</span>)   <span class="cmt">-- 7</span></code></pre>
+      <p>They work well with list operations:</p>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+doubled <span class="kw">is</span> map(numbers, <span class="kw">with</span> x: x * <span class="num">2</span>)
+<span class="kw">say</span> doubled   <span class="cmt">-- [2, 4, 6, 8, 10]</span></code></pre>
+
+      <h3 id="type-annotations">Type annotations</h3>
+      <p>Quill supports optional type annotations on function parameters and return types. Use <code>as</code> to annotate parameter types and <code>-></code> to specify the return type:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">add</span> a <span class="kw">as</span> number, b <span class="kw">as</span> number -> number:
+  <span class="kw">give back</span> a + b</code></pre>
+      <p>Type annotations are optional and do not change runtime behavior. They serve as documentation and can be used by tooling:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">greet</span> name <span class="kw">as</span> text -> text:
+  <span class="kw">give back</span> <span class="str">"Hello, {name}!"</span>
+
+<span class="kw">to</span> <span class="fn">isAdult</span> age <span class="kw">as</span> number -> boolean:
+  <span class="kw">give back</span> age <span class="kw">is greater than</span> <span class="num">17</span></code></pre>
+
+      <h2 id="classes">Classes</h2>
+      <p>Define classes with <code>describe</code>. Classes can have properties and methods:</p>
+      <pre><code><span class="kw">describe</span> <span class="fn">Animal</span>:
+  name <span class="kw">is</span> <span class="str">""</span>
+  sound <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">to</span> <span class="fn">speak</span>:
+    <span class="kw">say</span> <span class="str">"{name} says {sound}"</span></code></pre>
+
+      <h3>Inheritance</h3>
+      <p>Use <code>extends</code> to create a class that inherits from another:</p>
+      <pre><code><span class="kw">describe</span> <span class="fn">Dog</span> <span class="kw">extends</span> <span class="fn">Animal</span>:
+  sound <span class="kw">is</span> <span class="str">"Woof"</span>
+
+  <span class="kw">to</span> <span class="fn">fetch</span> item:
+    <span class="kw">say</span> <span class="str">"{name} fetches the {item}!"</span></code></pre>
+      <p>The child class inherits all properties and methods from the parent and can override them or add new ones.</p>
+
       <h2 id="lists">Lists</h2>
       <p>Lists are ordered collections of values:</p>
       <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
@@ -219,6 +302,36 @@ empty <span class="kw">are</span> []</code></pre>
       <p>Use dot notation to access properties on objects:</p>
       <pre><code><span class="kw">say</span> <span class="str">"hello"</span>.length   <span class="cmt">-- 5</span></code></pre>
 
+      <h2 id="objects">Object literals</h2>
+      <p>Create objects with curly braces and key-value pairs:</p>
+      <pre><code>person <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">25</span>, active: <span class="bool">yes</span>}
+
+<span class="kw">say</span> person.name    <span class="cmt">-- Alice</span>
+<span class="kw">say</span> person.age     <span class="cmt">-- 25</span></code></pre>
+      <p>Objects can be nested:</p>
+      <pre><code>config <span class="kw">is</span> {
+  host: <span class="str">"localhost"</span>,
+  port: <span class="num">3000</span>,
+  db: {
+    name: <span class="str">"myapp"</span>,
+    pool: <span class="num">5</span>
+  }
+}
+
+<span class="kw">say</span> config.db.name   <span class="cmt">-- myapp</span></code></pre>
+
+      <h3 id="spread">Spread operator</h3>
+      <p>Use <code>...</code> to spread a list into another list or into function arguments:</p>
+      <pre><code>first <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+second <span class="kw">are</span> [<span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>]
+combined <span class="kw">are</span> [...first, ...second]
+<span class="kw">say</span> combined   <span class="cmt">-- [1, 2, 3, 4, 5, 6]</span></code></pre>
+      <p>The spread operator also works to merge objects:</p>
+      <pre><code>defaults <span class="kw">is</span> {color: <span class="str">"blue"</span>, size: <span class="num">10</span>}
+overrides <span class="kw">is</span> {size: <span class="num">20</span>, bold: <span class="bool">yes</span>}
+merged <span class="kw">is</span> {...defaults, ...overrides}
+<span class="kw">say</span> merged   <span class="cmt">-- {color: "blue", size: 20, bold: yes}</span></code></pre>
+
       <h2 id="output">Output</h2>
       <p>Use <code>say</code> to print values to the console:</p>
       <pre><code><span class="kw">say</span> <span class="str">"Hello!"</span>
@@ -228,8 +341,15 @@ empty <span class="kw">are</span> []</code></pre>
       <h2 id="imports">Imports</h2>
       <p>Import other Quill files with <code>use</code>:</p>
       <pre><code><span class="kw">use</span> <span class="str">"helpers.quill"</span></code></pre>
+
+      <h3>Selective imports</h3>
+      <p>Use <code>from</code> to import only specific names from a file:</p>
+      <pre><code><span class="kw">from</span> <span class="str">"math.quill"</span> <span class="kw">use</span> add, subtract
+<span class="kw">from</span> <span class="str">"utils.quill"</span> <span class="kw">use</span> formatDate, parseJSON</code></pre>
+      <p>This brings only the listed definitions into scope, keeping your namespace clean.</p>
+
       <div class="callout callout-info">
-        Imports are resolved at compile time and bring all definitions from the imported file into scope.
+        Imports are resolved at compile time and bring definitions from the imported file into scope.
       </div>
 
       <h2>Next steps</h2>

@@ -236,6 +236,7 @@ func (e *IndexExpr) exprNode()        {}
 
 type DescribeStatement struct {
 	Name       string
+	Extends    string // parent class name (optional)
 	Properties []AssignStatement
 	Methods    []FuncDefinition
 	Line       int
@@ -268,3 +269,103 @@ type AwaitExpr struct {
 
 func (e *AwaitExpr) nodeType() string { return "Await" }
 func (e *AwaitExpr) exprNode()        {}
+
+// --- Try/Catch ---
+
+type TryCatchStatement struct {
+	TryBody   []Statement
+	ErrorVar  string
+	CatchBody []Statement
+	Line      int
+}
+
+func (s *TryCatchStatement) nodeType() string { return "TryCatch" }
+func (s *TryCatchStatement) stmtNode()        {}
+
+// --- Break/Continue ---
+
+type BreakStatement struct {
+	Line int
+}
+
+func (s *BreakStatement) nodeType() string { return "Break" }
+func (s *BreakStatement) stmtNode()        {}
+
+type ContinueStatement struct {
+	Line int
+}
+
+func (s *ContinueStatement) nodeType() string { return "Continue" }
+func (s *ContinueStatement) stmtNode()        {}
+
+// --- Nothing literal ---
+
+type NothingLiteral struct{}
+
+func (e *NothingLiteral) nodeType() string { return "Nothing" }
+func (e *NothingLiteral) exprNode()        {}
+
+// --- Object/Map literal ---
+
+type ObjectLiteral struct {
+	Keys   []string
+	Values []Expression
+}
+
+func (e *ObjectLiteral) nodeType() string { return "Object" }
+func (e *ObjectLiteral) exprNode()        {}
+
+// --- Lambda/Arrow function ---
+
+type LambdaExpr struct {
+	Params []string
+	Body   Expression
+}
+
+func (e *LambdaExpr) nodeType() string { return "Lambda" }
+func (e *LambdaExpr) exprNode()        {}
+
+// --- Spread expression ---
+
+type SpreadExpr struct {
+	Expr Expression
+}
+
+func (e *SpreadExpr) nodeType() string { return "Spread" }
+func (e *SpreadExpr) exprNode()        {}
+
+// --- Type annotation (optional, informational) ---
+
+type TypeAnnotation struct {
+	Name string // "text", "number", "list", "object", "boolean", custom
+}
+
+// --- Enhanced FuncDefinition with types and async ---
+
+type TypedParam struct {
+	Name     string
+	TypeHint string // optional type annotation
+}
+
+type FuncDefTyped struct {
+	Name       string
+	Params     []TypedParam
+	ReturnType string // optional
+	IsAsync    bool
+	Body       []Statement
+	Line       int
+}
+
+func (s *FuncDefTyped) nodeType() string { return "FuncDefTyped" }
+func (s *FuncDefTyped) stmtNode()        {}
+
+// --- From import ---
+
+type FromUseStatement struct {
+	Names []string
+	Path  string
+	Line  int
+}
+
+func (s *FromUseStatement) nodeType() string { return "FromUse" }
+func (s *FromUseStatement) stmtNode()        {}

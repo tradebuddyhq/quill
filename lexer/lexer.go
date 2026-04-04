@@ -39,6 +39,14 @@ var keywords = map[string]TokenType{
 	"my":        TOKEN_MY,
 	"await":     TOKEN_AWAIT,
 	"as":        TOKEN_AS,
+	"try":       TOKEN_TRY,
+	"fails":     TOKEN_FAILS,
+	"extends":   TOKEN_EXTENDS,
+	"from":      TOKEN_FROM,
+	"with":      TOKEN_WITH,
+	"nothing":   TOKEN_NOTHING,
+	"break":     TOKEN_BREAK,
+	"continue":  TOKEN_CONTINUE,
 }
 
 type Lexer struct {
@@ -129,8 +137,15 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 			l.addToken(TOKEN_MODULO, "%")
 			l.advance()
 		case ch == '.':
-			l.addToken(TOKEN_DOT, ".")
-			l.advance()
+			if l.pos+2 < len(l.source) && l.source[l.pos+1] == '.' && l.source[l.pos+2] == '.' {
+				l.addToken(TOKEN_SPREAD, "...")
+				l.advance()
+				l.advance()
+				l.advance()
+			} else {
+				l.addToken(TOKEN_DOT, ".")
+				l.advance()
+			}
 		case ch == ':':
 			l.addToken(TOKEN_COLON, ":")
 			l.advance()
@@ -150,7 +165,20 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 			l.addToken(TOKEN_RBRACKET, "]")
 			l.advance()
 		case ch == '-':
-			l.addToken(TOKEN_MINUS, "-")
+			if l.pos+1 < len(l.source) && l.source[l.pos+1] == '>' {
+				l.addToken(TOKEN_ARROW, "->")
+				l.advance()
+				l.advance()
+			} else {
+				l.addToken(TOKEN_MINUS, "-")
+				l.advance()
+			}
+
+		case ch == '{':
+			l.addToken(TOKEN_LBRACE, "{")
+			l.advance()
+		case ch == '}':
+			l.addToken(TOKEN_RBRACE, "}")
 			l.advance()
 
 		default:

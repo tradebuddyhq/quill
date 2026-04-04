@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,9 +12,10 @@ import (
 	"quill/lexer"
 	"quill/parser"
 	"quill/repl"
+	"strings"
 )
 
-const version = "0.1.0"
+const version = "0.2.0"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -65,6 +67,33 @@ func main() {
 			os.Exit(1)
 		}
 		checkFile(os.Args[2])
+
+	case "init":
+		initProject()
+
+	case "add":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a package name")
+			fmt.Fprintln(os.Stderr, "Usage: quill add <package>")
+			os.Exit(1)
+		}
+		addPackage(os.Args[2])
+
+	case "remove":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a package name")
+			fmt.Fprintln(os.Stderr, "Usage: quill remove <package>")
+			os.Exit(1)
+		}
+		removePackage(os.Args[2])
+
+	case "docs":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a file to generate docs for")
+			fmt.Fprintln(os.Stderr, "Usage: quill docs <file.quill>")
+			os.Exit(1)
+		}
+		generateDocs(os.Args[2])
 
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
@@ -296,19 +325,276 @@ func checkFile(filename string) {
 	}
 }
 
+func initProject() {
+	// Create quill.json
+	if _, err := os.Stat("quill.json"); err == nil {
+		fmt.Println("quill.json already exists")
+		return
+	}
+
+	// Get current directory name for project name
+	dir, _ := os.Getwd()
+	name := filepath.Base(dir)
+
+	config := map[string]interface{}{
+		"name":         name,
+		"version":      "0.1.0",
+		"description":  "",
+		"main":         "main.quill",
+		"dependencies": map[string]string{},
+	}
+
+	data, _ := json.MarshalIndent(config, "", "  ")
+	if err := os.WriteFile("quill.json", data, 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not create quill.json: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Create main.quill if it doesn't exist
+	if _, err := os.Stat("main.quill"); err != nil {
+		starter := "-- Welcome to Quill!\nsay \"Hello, World!\"\n"
+		os.WriteFile("main.quill", []byte(starter), 0644)
+	}
+
+	fmt.Println("✓ Initialized Quill project")
+	fmt.Println("  Created quill.json")
+	fmt.Println("  Run: quill run main.quill")
+}
+
+func addPackage(pkg string) {
+	// Read or create quill.json
+	var config map[string]interface{}
+
+	data, err := os.ReadFile("quill.json")
+	if err != nil {
+		// Create quill.json if it doesn't exist
+		initProject()
+		data, _ = os.ReadFile("quill.json")
+	}
+
+	json.Unmarshal(data, &config)
+
+	// Install with npm
+	fmt.Printf("Installing %s...\n", pkg)
+	cmd := exec.Command("npm", "install", pkg)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error installing %s: %s\n", pkg, err)
+		os.Exit(1)
+	}
+
+	// Update quill.json dependencies
+	deps, ok := config["dependencies"].(map[string]interface{})
+	if !ok {
+		deps = make(map[string]interface{})
+	}
+
+	// Read installed version from node_modules
+	pkgJsonPath := filepath.Join("node_modules", pkg, "package.json")
+	if pkgData, err := os.ReadFile(pkgJsonPath); err == nil {
+		var pkgInfo map[string]interface{}
+		json.Unmarshal(pkgData, &pkgInfo)
+		if v, ok := pkgInfo["version"].(string); ok {
+			deps[pkg] = "^" + v
+		}
+	} else {
+		deps[pkg] = "*"
+	}
+
+	config["dependencies"] = deps
+	outData, _ := json.MarshalIndent(config, "", "  ")
+	os.WriteFile("quill.json", outData, 0644)
+
+	fmt.Printf("✓ Added %s\n", pkg)
+}
+
+func removePackage(pkg string) {
+	data, err := os.ReadFile("quill.json")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error: no quill.json found. Run 'quill init' first.")
+		os.Exit(1)
+	}
+
+	var config map[string]interface{}
+	json.Unmarshal(data, &config)
+
+	deps, ok := config["dependencies"].(map[string]interface{})
+	if !ok {
+		fmt.Printf("Package %s is not installed\n", pkg)
+		return
+	}
+
+	delete(deps, pkg)
+	config["dependencies"] = deps
+
+	// Uninstall with npm
+	cmd := exec.Command("npm", "uninstall", pkg)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Run()
+
+	outData, _ := json.MarshalIndent(config, "", "  ")
+	os.WriteFile("quill.json", outData, 0644)
+
+	fmt.Printf("✓ Removed %s\n", pkg)
+}
+
+func generateDocs(filename string) {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read %q\n", filename)
+		os.Exit(1)
+	}
+
+	lines := strings.Split(string(source), "\n")
+
+	var out strings.Builder
+	out.WriteString("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n")
+	out.WriteString("  <meta charset=\"UTF-8\">\n")
+	out.WriteString("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n")
+	out.WriteString(fmt.Sprintf("  <title>Documentation - %s</title>\n", filename))
+	out.WriteString("  <style>\n")
+	out.WriteString("    body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; background: #0D1117; color: #E6EDF3; line-height: 1.7; }\n")
+	out.WriteString("    h1 { color: #1EB969; border-bottom: 2px solid #30363D; padding-bottom: 12px; }\n")
+	out.WriteString("    h2 { color: #E6EDF3; margin-top: 40px; }\n")
+	out.WriteString("    h3 { color: #8B949E; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }\n")
+	out.WriteString("    pre { background: #161B22; border: 1px solid #30363D; border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; }\n")
+	out.WriteString("    code { font-family: 'JetBrains Mono', monospace; background: rgba(30,185,105,0.1); padding: 2px 6px; border-radius: 4px; color: #1EB969; }\n")
+	out.WriteString("    .doc-comment { color: #8B949E; margin-bottom: 8px; font-style: italic; }\n")
+	out.WriteString("    .function { background: #161B22; border: 1px solid #30363D; border-radius: 8px; padding: 16px; margin: 16px 0; }\n")
+	out.WriteString("    .function h3 { margin-top: 0; color: #D2A8FF; }\n")
+	out.WriteString("    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; }\n")
+	out.WriteString("    .tag-fn { background: rgba(210,168,255,0.15); color: #D2A8FF; }\n")
+	out.WriteString("    .tag-var { background: rgba(30,185,105,0.15); color: #1EB969; }\n")
+	out.WriteString("    .tag-class { background: rgba(255,166,87,0.15); color: #FFA657; }\n")
+	out.WriteString("    footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #30363D; color: #6E7681; font-size: 13px; }\n")
+	out.WriteString("  </style>\n</head>\n<body>\n")
+	out.WriteString(fmt.Sprintf("<h1>📄 %s</h1>\n", filename))
+
+	var pendingComments []string
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// Collect comments
+		if strings.HasPrefix(trimmed, "-- ") {
+			pendingComments = append(pendingComments, strings.TrimPrefix(trimmed, "-- "))
+			continue
+		}
+
+		// Function definition
+		if strings.HasPrefix(trimmed, "to ") {
+			parts := strings.Fields(trimmed)
+			if len(parts) >= 2 {
+				fnName := parts[1]
+				params := []string{}
+				for _, p := range parts[2:] {
+					if p == "as" || p == "->" {
+						break
+					}
+					clean := strings.TrimSuffix(p, ":")
+					if clean != "" {
+						params = append(params, clean)
+					}
+				}
+
+				out.WriteString("<div class=\"function\">\n")
+				out.WriteString(fmt.Sprintf("  <span class=\"tag tag-fn\">function</span>\n"))
+				out.WriteString(fmt.Sprintf("  <h3>%s(%s)</h3>\n", fnName, strings.Join(params, ", ")))
+				if len(pendingComments) > 0 {
+					for _, c := range pendingComments {
+						out.WriteString(fmt.Sprintf("  <p class=\"doc-comment\">%s</p>\n", c))
+					}
+				}
+				out.WriteString(fmt.Sprintf("  <pre>%s</pre>\n", trimmed))
+				out.WriteString("</div>\n")
+				pendingComments = nil
+				continue
+			}
+		}
+
+		// Variable/constant
+		if strings.Contains(trimmed, " is ") || strings.Contains(trimmed, " are ") {
+			parts := strings.Fields(trimmed)
+			if len(parts) >= 3 && (parts[1] == "is" || parts[1] == "are") {
+				varName := parts[0]
+				out.WriteString("<div class=\"function\">\n")
+				out.WriteString(fmt.Sprintf("  <span class=\"tag tag-var\">variable</span>\n"))
+				out.WriteString(fmt.Sprintf("  <h3>%s</h3>\n", varName))
+				if len(pendingComments) > 0 {
+					for _, c := range pendingComments {
+						out.WriteString(fmt.Sprintf("  <p class=\"doc-comment\">%s</p>\n", c))
+					}
+				}
+				out.WriteString(fmt.Sprintf("  <pre>%s</pre>\n", trimmed))
+				out.WriteString("</div>\n")
+				pendingComments = nil
+				continue
+			}
+		}
+
+		// Class definition
+		if strings.HasPrefix(trimmed, "describe ") {
+			parts := strings.Fields(trimmed)
+			if len(parts) >= 2 {
+				className := parts[1]
+				out.WriteString("<div class=\"function\">\n")
+				out.WriteString(fmt.Sprintf("  <span class=\"tag tag-class\">class</span>\n"))
+				ext := ""
+				if len(parts) >= 4 && parts[2] == "extends" {
+					ext = " extends " + parts[3]
+				}
+				out.WriteString(fmt.Sprintf("  <h3>%s%s</h3>\n", className, ext))
+				if len(pendingComments) > 0 {
+					for _, c := range pendingComments {
+						out.WriteString(fmt.Sprintf("  <p class=\"doc-comment\">%s</p>\n", c))
+					}
+				}
+				out.WriteString(fmt.Sprintf("  <pre>%s</pre>\n", trimmed))
+				out.WriteString("</div>\n")
+				pendingComments = nil
+				continue
+			}
+		}
+
+		// Reset pending comments if we hit a non-doc line
+		if trimmed != "" && !strings.HasPrefix(trimmed, "--") {
+			pendingComments = nil
+		}
+	}
+
+	out.WriteString("<footer>Generated by <code>quill docs</code></footer>\n")
+	out.WriteString("</body>\n</html>\n")
+
+	// Write output
+	ext := filepath.Ext(filename)
+	outFile := filename[:len(filename)-len(ext)] + ".docs.html"
+	if err := os.WriteFile(outFile, []byte(out.String()), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing docs: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("✓ Generated documentation: %s\n", outFile)
+}
+
 func printUsage() {
 	fmt.Println("Quill — code that reads like English")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  quill run <file.quill>      Run a Quill program")
-	fmt.Println("  quill build <file.quill>    Compile to JavaScript (Node.js)")
-	fmt.Println("  quill build <file> --browser Compile for the browser")
-	fmt.Println("  quill repl                  Start interactive REPL")
-	fmt.Println("  quill test [files...]       Run tests in .quill files")
-	fmt.Println("  quill fmt <file.quill>      Format a Quill file")
-	fmt.Println("  quill check <file.quill>    Check for common issues")
-	fmt.Println("  quill version               Show version")
-	fmt.Println("  quill help                  Show this help")
+	fmt.Println("  quill run <file.quill>       Run a Quill program")
+	fmt.Println("  quill build <file.quill>     Compile to JavaScript (Node.js)")
+	fmt.Println("  quill build <file> --browser  Compile for the browser")
+	fmt.Println("  quill repl                   Start interactive REPL")
+	fmt.Println("  quill test [files...]        Run tests in .quill files")
+	fmt.Println("  quill fmt <file.quill>       Format a Quill file")
+	fmt.Println("  quill check <file.quill>     Check for common issues")
+	fmt.Println("  quill docs <file.quill>      Generate documentation")
+	fmt.Println("  quill init                   Initialize a new Quill project")
+	fmt.Println("  quill add <package>          Install an npm package")
+	fmt.Println("  quill remove <package>       Remove a package")
+	fmt.Println("  quill version                Show version")
+	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  quill run hello.quill")
@@ -317,4 +603,7 @@ func printUsage() {
 	fmt.Println("  quill test examples/test_example.quill")
 	fmt.Println("  quill fmt script.quill")
 	fmt.Println("  quill check script.quill")
+	fmt.Println("  quill docs api.quill")
+	fmt.Println("  quill init")
+	fmt.Println("  quill add express")
 }

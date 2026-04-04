@@ -82,4 +82,81 @@ const joinPath = (...parts) => require('path').join(...parts);
 const fileName = (p) => require('path').basename(p);
 const fileExtension = (p) => require('path').extname(p);
 const parentDir = (p) => require('path').dirname(p);
+
+// Environment
+const env = (key) => process.env[key] || '';
+const setEnv = (key, val) => { process.env[key] = val; };
+
+// Process & Shell
+const args = () => process.argv.slice(2);
+const run = (cmd) => { const { execSync } = require('child_process'); return execSync(cmd, { encoding: 'utf8' }).trim(); };
+const runAsync = async (cmd) => { const { exec } = require('child_process'); return new Promise((resolve, reject) => { exec(cmd, (err, stdout, stderr) => { if (err) reject(stderr || err.message); else resolve(stdout.trim()); }); }); };
+const platform = () => process.platform;
+const cpuCount = () => require('os').cpus().length;
+const memory = () => ({ total: require('os').totalmem(), free: require('os').freemem() });
+
+// Database (SQLite via better-sqlite3)
+const openDB = (path) => { try { const Database = require('better-sqlite3'); return new Database(path); } catch(e) { console.error('Install better-sqlite3: npm install better-sqlite3'); throw e; } };
+const query = (db, sql, params) => params ? db.prepare(sql).all(...(Array.isArray(params) ? params : [params])) : db.prepare(sql).all();
+const execute = (db, sql, params) => params ? db.prepare(sql).run(...(Array.isArray(params) ? params : [params])) : db.prepare(sql).run();
+const closeDB = (db) => db.close();
+
+// HTTP Server enhancements
+const serveStatic = (dir) => { const fs = require('fs'); const path = require('path'); const mimeTypes = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' }; return (req, res) => { const url = req.url === '/' ? '/index.html' : req.url.split('?')[0]; const filePath = path.join(dir, url); if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) { const ext = path.extname(filePath); res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' }); res.end(fs.readFileSync(filePath)); } else { res.writeHead(404); res.end('Not Found'); } }; };
+
+// Template engine
+const template = (str, data) => { return str.replace(/\{\{(\w+)\}\}/g, (match, key) => data[key] !== undefined ? data[key] : match); };
+
+// Crypto/Hashing
+const hash = (str, algo) => { const crypto = require('crypto'); return crypto.createHash(algo || 'sha256').update(str).digest('hex'); };
+const uuid = () => { const crypto = require('crypto'); return crypto.randomUUID(); };
+
+// Date/Time enhanced
+const timestamp = () => Date.now();
+const formatDate = (date, fmt) => { const d = new Date(date); const pad = (n) => String(n).padStart(2, '0'); return (fmt || 'YYYY-MM-DD').replace('YYYY', d.getFullYear()).replace('MM', pad(d.getMonth() + 1)).replace('DD', pad(d.getDate())).replace('HH', pad(d.getHours())).replace('mm', pad(d.getMinutes())).replace('ss', pad(d.getSeconds())); };
+const addDays = (date, days) => { const d = new Date(date); d.setDate(d.getDate() + days); return d.toISOString(); };
+const diffDays = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+
+// RegExp
+const matches = (str, pattern) => { const re = new RegExp(pattern, 'g'); const m = str.match(re); return m || []; };
+const matchesPattern = (str, pattern) => new RegExp(pattern).test(str);
+const replacePattern = (str, pattern, replacement) => str.replace(new RegExp(pattern, 'g'), replacement);
+
+// Encoding
+const encodeBase64 = (str) => Buffer.from(str).toString('base64');
+const decodeBase64 = (str) => Buffer.from(str, 'base64').toString('utf8');
+const encodeURL = (str) => encodeURIComponent(str);
+const decodeURL = (str) => decodeURIComponent(str);
+
+// Concurrency
+const parallel = async (...fns) => Promise.all(fns.map(fn => fn()));
+const race = async (...fns) => Promise.race(fns.map(fn => fn()));
+const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+// Type checking
+const isText = (x) => typeof x === 'string';
+const isNumber = (x) => typeof x === 'number' && !isNaN(x);
+const isList = (x) => Array.isArray(x);
+const isObject = (x) => typeof x === 'object' && x !== null && !Array.isArray(x);
+const isNothing = (x) => x === null || x === undefined;
+const isFunction = (x) => typeof x === 'function';
+
+// Object operations
+const merge = (...objs) => Object.assign({}, ...objs);
+const pick = (obj, ...keys) => keys.flat().reduce((o, k) => { if (k in obj) o[k] = obj[k]; return o; }, {});
+const omit = (obj, ...keys) => { const ks = keys.flat(); return Object.fromEntries(Object.entries(obj).filter(([k]) => !ks.includes(k))); };
+const entries = (obj) => Object.entries(obj);
+const fromEntries = (arr) => Object.fromEntries(arr);
+const hasKey = (obj, key) => key in obj;
+const deepCopy = (x) => JSON.parse(JSON.stringify(x));
+
+// String operations enhanced
+const padStart = (s, len, ch) => s.padStart(len, ch || ' ');
+const padEnd = (s, len, ch) => s.padEnd(len, ch || ' ');
+const repeat = (s, n) => s.repeat(n);
+const contains = (s, sub) => s.includes(sub);
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const words = (s) => s.trim().split(/\s+/);
+const lines = (s) => s.split('\n');
+const truncate = (s, len) => s.length > len ? s.slice(0, len) + '...' : s;
 `

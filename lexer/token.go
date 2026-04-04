@@ -48,6 +48,18 @@ const (
 	TOKEN_MY
 	TOKEN_AWAIT
 	TOKEN_AS
+	TOKEN_TRY
+	TOKEN_FAILS
+	TOKEN_EXTENDS
+	TOKEN_FROM
+	TOKEN_WITH
+	TOKEN_NOTHING
+	TOKEN_ARROW   // ->
+	TOKEN_LBRACE  // {
+	TOKEN_RBRACE  // }
+	TOKEN_SPREAD  // ...
+	TOKEN_BREAK
+	TOKEN_CONTINUE
 
 	// Operators
 	TOKEN_PLUS
@@ -104,6 +116,18 @@ var tokenNames = map[TokenType]string{
 	TOKEN_MY:        "my",
 	TOKEN_AWAIT:     "await",
 	TOKEN_AS:        "as",
+	TOKEN_TRY:       "try",
+	TOKEN_FAILS:     "fails",
+	TOKEN_EXTENDS:   "extends",
+	TOKEN_FROM:      "from",
+	TOKEN_WITH:      "with",
+	TOKEN_NOTHING:   "nothing",
+	TOKEN_ARROW:     "->",
+	TOKEN_LBRACE:    "{",
+	TOKEN_RBRACE:    "}",
+	TOKEN_SPREAD:    "...",
+	TOKEN_BREAK:     "break",
+	TOKEN_CONTINUE:  "continue",
 	TOKEN_PLUS:      "+",
 	TOKEN_MINUS:     "-",
 	TOKEN_STAR:      "*",

@@ -1,0 +1,242 @@
+-- Quill Language Showcase
+-- Demonstrates all major features of the Quill programming language
+
+-- ==========================================
+-- 1. Variables and Types
+-- ==========================================
+
+name is "Quill"
+version is 0.2
+active is yes
+items are [1, 2, 3, 4, 5]
+config is {host: "localhost", port: 3000, debug: yes}
+empty is nothing
+
+-- Optional type annotations (stripped at compile time)
+greeting is "Hello, World!"
+
+say "=== Variables ==="
+say name
+say toText(version)
+say toText(config.port)
+
+-- ==========================================
+-- 2. Functions with Type Annotations
+-- ==========================================
+
+say ""
+say "=== Functions ==="
+
+-- Basic function
+to greet person:
+  say "Hello, " + person + "!"
+
+greet("Alice")
+
+-- Typed function with return type
+to add a as number, b as number -> number:
+  give back a + b
+
+say "3 + 4 = " + toText(add(3, 4))
+
+-- ==========================================
+-- 3. Lambda / Arrow Functions
+-- ==========================================
+
+say ""
+say "=== Lambdas ==="
+
+numbers are [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+evens is filter(numbers, with x: x % 2 is 0)
+say "Evens: " + join(evens, ", ")
+
+squares is map_list(numbers, with x: x * x)
+say "Squares: " + join(squares, ", ")
+
+total is reduce(numbers, with a, b: a + b)
+say "Sum: " + toText(total)
+
+-- ==========================================
+-- 4. Control Flow
+-- ==========================================
+
+say ""
+say "=== Control Flow ==="
+
+score is 85
+if score is greater than 90:
+  say "Grade: A"
+otherwise if score is greater than 80:
+  say "Grade: B"
+otherwise if score is greater than 70:
+  say "Grade: C"
+otherwise:
+  say "Grade: F"
+
+-- While with break
+counter is 0
+while yes:
+  counter is counter + 1
+  if counter is 5:
+    break
+
+say "Counter stopped at: " + toText(counter)
+
+-- For each with continue
+say "Odd numbers:"
+for each n in numbers:
+  if n % 2 is 0:
+    continue
+  say "  " + toText(n)
+
+-- ==========================================
+-- 5. Error Handling (Try/Catch)
+-- ==========================================
+
+say ""
+say "=== Error Handling ==="
+
+try:
+  result is toNumber("not a number")
+  say "This won't print"
+if it fails err:
+  say "Caught error gracefully!"
+
+try:
+  value is add(10, 20)
+  say "10 + 20 = " + toText(value)
+if it fails err:
+  say "Something went wrong"
+
+-- ==========================================
+-- 6. Classes and Inheritance
+-- ==========================================
+
+say ""
+say "=== Classes ==="
+
+describe Animal:
+  name is "Unknown"
+  sound is "..."
+
+  to speak:
+    say my.name + " says " + my.sound
+
+describe Dog extends Animal:
+  sound is "Woof!"
+  breed is "Golden Retriever"
+
+  to fetch:
+    say my.name + " fetches the ball!"
+
+describe Cat extends Animal:
+  sound is "Meow!"
+
+  to purr:
+    say my.name + " purrs contentedly"
+
+dog is new Dog()
+dog.name is "Rex"
+dog.speak()
+dog.fetch()
+
+cat is new Cat()
+cat.name is "Whiskers"
+cat.speak()
+cat.purr()
+
+-- ==========================================
+-- 7. Object Operations
+-- ==========================================
+
+say ""
+say "=== Objects ==="
+
+user is {name: "Alice", age: 30, role: "developer"}
+say "Name: " + user.name
+say "Keys: " + join(keys(user), ", ")
+
+defaults is {theme: "dark", lang: "en"}
+settings is {theme: "light", fontSize: 14}
+merged is merge(defaults, settings)
+say "Theme: " + merged.theme
+
+-- ==========================================
+-- 8. String Operations
+-- ==========================================
+
+say ""
+say "=== Strings ==="
+
+text is "  hello, quill world!  "
+say "Trimmed: " + trim(text)
+say "Upper: " + upper("quill")
+say "Capitalized: " + capitalize("quill")
+say "Words: " + join(words(trim(text)), " | ")
+say "Padded: [" + padStart("42", 6, "0") + "]"
+say "Truncated: " + truncate("This is a very long string", 15)
+
+-- ==========================================
+-- 9. Type Checking
+-- ==========================================
+
+say ""
+say "=== Type Checking ==="
+
+say "isText(\"hi\"): " + toText(isText("hi"))
+say "isNumber(42): " + toText(isNumber(42))
+say "isList([1,2]): " + toText(isList([1, 2]))
+say "isObject(config): " + toText(isObject(config))
+say "isNothing(nothing): " + toText(isNothing(nothing))
+
+-- ==========================================
+-- 10. Date & Time
+-- ==========================================
+
+say ""
+say "=== Date & Time ==="
+
+say "Now: " + now()
+say "Today: " + today()
+say "Formatted: " + formatDate(now(), "YYYY-MM-DD")
+say "Timestamp: " + toText(timestamp())
+
+-- ==========================================
+-- 11. Encoding
+-- ==========================================
+
+say ""
+say "=== Encoding ==="
+
+encoded is encodeBase64("Quill is awesome!")
+say "Base64: " + encoded
+say "Decoded: " + decodeBase64(encoded)
+
+-- ==========================================
+-- 12. Pattern Matching (RegExp)
+-- ==========================================
+
+say ""
+say "=== Patterns ==="
+
+email is "user@example.com"
+hasAt is email contains "@"
+say "Has @: " + toText(hasAt)
+
+csv is "apple,banana,cherry"
+fruits is split(csv, ",")
+say "Fruits: " + join(fruits, " | ")
+
+-- ==========================================
+-- 13. Crypto
+-- ==========================================
+
+say ""
+say "=== Crypto ==="
+
+say "UUID: " + uuid()
+say "SHA256: " + hash("hello")
+
+say ""
+say "✓ All features demonstrated!"

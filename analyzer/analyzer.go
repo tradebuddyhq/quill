@@ -235,6 +235,33 @@ func (a *Analyzer) analyzeStmt(stmt ast.Statement) {
 
 	case *ast.DotAssignStatement:
 		a.analyzeExpr(s.Value, s.Line)
+
+	case *ast.TryCatchStatement:
+		for _, stmt := range s.TryBody {
+			a.analyzeStmt(stmt)
+		}
+		if s.ErrorVar != "" {
+			a.defined[s.ErrorVar] = s.Line
+			a.used[s.ErrorVar] = true
+		}
+		for _, stmt := range s.CatchBody {
+			a.analyzeStmt(stmt)
+		}
+
+	case *ast.BreakStatement:
+		// Could check if we're inside a loop
+
+	case *ast.ContinueStatement:
+		// Could check if we're inside a loop
+
+	case *ast.FromUseStatement:
+		if s.Path == "" {
+			a.addDiagnostic(s.Line, Error, "empty import path", "")
+		}
+		for _, name := range s.Names {
+			a.defined[name] = s.Line
+			a.used[name] = true
+		}
 	}
 }
 
@@ -320,6 +347,20 @@ func (a *Analyzer) analyzeExpr(expr ast.Expression, line int) {
 
 	case *ast.AwaitExpr:
 		a.analyzeExpr(e.Expr, line)
+
+	case *ast.ObjectLiteral:
+		for _, val := range e.Values {
+			a.analyzeExpr(val, line)
+		}
+
+	case *ast.LambdaExpr:
+		a.analyzeExpr(e.Body, line)
+
+	case *ast.SpreadExpr:
+		a.analyzeExpr(e.Expr, line)
+
+	case *ast.NothingLiteral:
+		// nothing to analyze
 	}
 }
 
@@ -337,7 +378,26 @@ func (a *Analyzer) checkAlwaysTrueCondition(expr ast.Expression, line int) {
 func (a *Analyzer) checkInfiniteLoop(s *ast.WhileStatement) {
 	// Check if condition is a literal true
 	if b, ok := s.Condition.(*ast.BoolLiteral); ok && b.Value {
-		a.addDiagnostic(s.Line, Warning, "infinite loop — condition is always true", "make sure you have a way to exit")
+		// Check if body contains a break
+		hasBreak := false
+		for _, stmt := range s.Body {
+			if _, ok := stmt.(*ast.BreakStatement); ok {
+				hasBreak = true
+				break
+			}
+			// Check inside if blocks
+			if ifStmt, ok := stmt.(*ast.IfStatement); ok {
+				for _, bodyStmt := range ifStmt.Body {
+					if _, ok := bodyStmt.(*ast.BreakStatement); ok {
+						hasBreak = true
+						break
+					}
+				}
+			}
+		}
+		if !hasBreak {
+			a.addDiagnostic(s.Line, Warning, "infinite loop — condition is always true", "make sure you have a way to exit")
+		}
 	}
 }
 

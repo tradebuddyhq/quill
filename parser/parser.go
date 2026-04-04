@@ -73,6 +73,14 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseExpect()
 	case p.check(lexer.TOKEN_DESCRIBE):
 		return p.parseDescribe()
+	case p.check(lexer.TOKEN_TRY):
+		return p.parseTryCatch()
+	case p.check(lexer.TOKEN_BREAK):
+		return p.parseBreak()
+	case p.check(lexer.TOKEN_CONTINUE):
+		return p.parseContinue()
+	case p.check(lexer.TOKEN_FROM):
+		return p.parseFromUse()
 	case p.check(lexer.TOKEN_IDENT) && p.pos+3 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_DOT && p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT && (p.tokens[p.pos+3].Type == lexer.TOKEN_IS || p.tokens[p.pos+3].Type == lexer.TOKEN_ARE):
 		return p.parseDotAssignment()
 	case p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE):
@@ -178,6 +186,21 @@ func (p *Parser) parseFuncDef() *ast.FuncDefinition {
 	params := []string{}
 	for p.check(lexer.TOKEN_IDENT) {
 		params = append(params, p.advance().Value)
+		// Skip optional type annotation: "as type"
+		if p.check(lexer.TOKEN_AS) {
+			p.advance() // consume "as"
+			p.advance() // consume the type name
+		}
+		// Skip comma between params
+		if p.check(lexer.TOKEN_COMMA) {
+			p.advance()
+		}
+	}
+
+	// Skip optional return type: "-> type"
+	if p.check(lexer.TOKEN_ARROW) {
+		p.advance() // consume "->"
+		p.advance() // consume the return type name
 	}
 
 	p.expect(lexer.TOKEN_COLON)
@@ -237,6 +260,15 @@ func (p *Parser) parseDescribe() *ast.DescribeStatement {
 	line := p.current().Line
 	p.advance() // consume "describe"
 	name := p.expect(lexer.TOKEN_IDENT)
+
+	// Check for "extends ParentClass"
+	extends := ""
+	if p.check(lexer.TOKEN_EXTENDS) {
+		p.advance() // consume "extends"
+		parentTok := p.expect(lexer.TOKEN_IDENT)
+		extends = parentTok.Value
+	}
+
 	p.expect(lexer.TOKEN_COLON)
 	p.expect(lexer.TOKEN_NEWLINE)
 	p.expect(lexer.TOKEN_INDENT)
@@ -263,7 +295,75 @@ func (p *Parser) parseDescribe() *ast.DescribeStatement {
 		p.advance()
 	}
 
-	return &ast.DescribeStatement{Name: name.Value, Properties: props, Methods: methods, Line: line}
+	return &ast.DescribeStatement{Name: name.Value, Extends: extends, Properties: props, Methods: methods, Line: line}
+}
+
+func (p *Parser) parseTryCatch() *ast.TryCatchStatement {
+	line := p.current().Line
+	p.advance() // consume "try"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	tryBody := p.parseBlock()
+
+	// Expect "if it fails" or "if it fails error:"
+	var errorVar string
+	var catchBody []ast.Statement
+
+	if p.check(lexer.TOKEN_IF) {
+		p.advance() // consume "if"
+		// expect "it"
+		p.expect(lexer.TOKEN_IDENT) // "it"
+		p.expect(lexer.TOKEN_FAILS) // "fails"
+
+		// Optional error variable name
+		if p.check(lexer.TOKEN_IDENT) {
+			errorVar = p.advance().Value
+		} else {
+			errorVar = "error"
+		}
+
+		p.expect(lexer.TOKEN_COLON)
+		p.expect(lexer.TOKEN_NEWLINE)
+		catchBody = p.parseBlock()
+	}
+
+	return &ast.TryCatchStatement{
+		TryBody:   tryBody,
+		ErrorVar:  errorVar,
+		CatchBody: catchBody,
+		Line:      line,
+	}
+}
+
+func (p *Parser) parseBreak() *ast.BreakStatement {
+	line := p.current().Line
+	p.advance() // consume "break"
+	p.consumeNewline()
+	return &ast.BreakStatement{Line: line}
+}
+
+func (p *Parser) parseContinue() *ast.ContinueStatement {
+	line := p.current().Line
+	p.advance() // consume "continue"
+	p.consumeNewline()
+	return &ast.ContinueStatement{Line: line}
+}
+
+func (p *Parser) parseFromUse() *ast.FromUseStatement {
+	line := p.current().Line
+	p.advance() // consume "from"
+	path := p.expect(lexer.TOKEN_STRING)
+	p.expect(lexer.TOKEN_USE) // "use"
+
+	names := []string{}
+	names = append(names, p.expect(lexer.TOKEN_IDENT).Value)
+	for p.check(lexer.TOKEN_COMMA) {
+		p.advance()
+		names = append(names, p.expect(lexer.TOKEN_IDENT).Value)
+	}
+
+	p.consumeNewline()
+	return &ast.FromUseStatement{Names: names, Path: path.Value, Line: line}
 }
 
 func (p *Parser) parseDotAssignment() ast.Statement {
@@ -498,6 +598,21 @@ func (p *Parser) parsePrimary() ast.Expression {
 		p.advance()
 		return &ast.Identifier{Name: tok.Value}
 
+	case lexer.TOKEN_NOTHING:
+		p.advance()
+		return &ast.NothingLiteral{}
+
+	case lexer.TOKEN_WITH:
+		return p.parseLambda()
+
+	case lexer.TOKEN_LBRACE:
+		return p.parseObjectLiteral()
+
+	case lexer.TOKEN_SPREAD:
+		p.advance() // consume "..."
+		expr := p.parseUnary()
+		return &ast.SpreadExpr{Expr: expr}
+
 	case lexer.TOKEN_NEW:
 		p.advance() // consume "new"
 		className := p.expect(lexer.TOKEN_IDENT)
@@ -534,6 +649,51 @@ func (p *Parser) parsePrimary() ast.Expression {
 		p.error(fmt.Sprintf("I didn't expect %q here", tok.Value))
 		return nil
 	}
+}
+
+func (p *Parser) parseLambda() ast.Expression {
+	p.advance() // consume "with"
+	params := []string{}
+
+	// Parse params until we hit ":"
+	for p.check(lexer.TOKEN_IDENT) {
+		params = append(params, p.advance().Value)
+		if p.check(lexer.TOKEN_COMMA) {
+			p.advance()
+		}
+	}
+
+	p.expect(lexer.TOKEN_COLON)
+	body := p.parseExpression()
+	return &ast.LambdaExpr{Params: params, Body: body}
+}
+
+func (p *Parser) parseObjectLiteral() ast.Expression {
+	p.advance() // consume "{"
+	keys := []string{}
+	values := []ast.Expression{}
+
+	if !p.check(lexer.TOKEN_RBRACE) {
+		// First key: value pair
+		key := p.expect(lexer.TOKEN_IDENT)
+		keys = append(keys, key.Value)
+		p.expect(lexer.TOKEN_COLON)
+		values = append(values, p.parseExpression())
+
+		for p.check(lexer.TOKEN_COMMA) {
+			p.advance()
+			if p.check(lexer.TOKEN_RBRACE) {
+				break // trailing comma
+			}
+			key = p.expect(lexer.TOKEN_IDENT)
+			keys = append(keys, key.Value)
+			p.expect(lexer.TOKEN_COLON)
+			values = append(values, p.parseExpression())
+		}
+	}
+
+	p.expect(lexer.TOKEN_RBRACE)
+	return &ast.ObjectLiteral{Keys: keys, Values: values}
 }
 
 func (p *Parser) parseListLiteral() ast.Expression {

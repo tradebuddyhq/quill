@@ -52,7 +52,8 @@ func (f *Formatter) Format(program *ast.Program) string {
 func isBlockStatement(stmt ast.Statement) bool {
 	switch stmt.(type) {
 	case *ast.IfStatement, *ast.ForEachStatement, *ast.WhileStatement,
-		*ast.FuncDefinition, *ast.DescribeStatement, *ast.TestBlock:
+		*ast.FuncDefinition, *ast.DescribeStatement, *ast.TestBlock,
+		*ast.TryCatchStatement:
 		return true
 	}
 	return false
@@ -106,7 +107,11 @@ func (f *Formatter) formatStmt(stmt ast.Statement) {
 		f.output.WriteString(fmt.Sprintf("%s%s.%s is %s", f.prefix(), s.Object, s.Field, f.formatExpr(s.Value)))
 
 	case *ast.DescribeStatement:
-		f.output.WriteString(fmt.Sprintf("%sdescribe %s:", f.prefix(), s.Name))
+		if s.Extends != "" {
+			f.output.WriteString(fmt.Sprintf("%sdescribe %s extends %s:", f.prefix(), s.Name, s.Extends))
+		} else {
+			f.output.WriteString(fmt.Sprintf("%sdescribe %s:", f.prefix(), s.Name))
+		}
 		f.indent++
 		for _, prop := range s.Properties {
 			f.output.WriteString("\n")
@@ -132,6 +137,28 @@ func (f *Formatter) formatStmt(stmt ast.Statement) {
 
 	case *ast.ExpectStatement:
 		f.output.WriteString(fmt.Sprintf("%sexpect %s", f.prefix(), f.formatExpr(s.Expr)))
+
+	case *ast.TryCatchStatement:
+		f.output.WriteString(fmt.Sprintf("%stry:", f.prefix()))
+		f.formatBlock(s.TryBody)
+		if len(s.CatchBody) > 0 {
+			errVar := s.ErrorVar
+			if errVar == "" {
+				errVar = "error"
+			}
+			f.output.WriteString("\n")
+			f.output.WriteString(fmt.Sprintf("%sif it fails %s:", f.prefix(), errVar))
+			f.formatBlock(s.CatchBody)
+		}
+
+	case *ast.BreakStatement:
+		f.output.WriteString(fmt.Sprintf("%sbreak", f.prefix()))
+
+	case *ast.ContinueStatement:
+		f.output.WriteString(fmt.Sprintf("%scontinue", f.prefix()))
+
+	case *ast.FromUseStatement:
+		f.output.WriteString(fmt.Sprintf("%sfrom \"%s\" use %s", f.prefix(), s.Path, strings.Join(s.Names, ", ")))
 
 	default:
 		f.output.WriteString(f.prefix() + "-- unknown statement")
@@ -235,6 +262,25 @@ func (f *Formatter) formatExpr(expr ast.Expression) string {
 
 	case *ast.AwaitExpr:
 		return fmt.Sprintf("await %s", f.formatExpr(e.Expr))
+
+	case *ast.NothingLiteral:
+		return "nothing"
+
+	case *ast.ObjectLiteral:
+		if len(e.Keys) == 0 {
+			return "{}"
+		}
+		pairs := make([]string, len(e.Keys))
+		for i, key := range e.Keys {
+			pairs[i] = fmt.Sprintf("%s: %s", key, f.formatExpr(e.Values[i]))
+		}
+		return "{" + strings.Join(pairs, ", ") + "}"
+
+	case *ast.LambdaExpr:
+		return fmt.Sprintf("with %s: %s", strings.Join(e.Params, ", "), f.formatExpr(e.Body))
+
+	case *ast.SpreadExpr:
+		return fmt.Sprintf("...%s", f.formatExpr(e.Expr))
 
 	default:
 		return "???"

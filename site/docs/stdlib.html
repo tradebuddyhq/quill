@@ -48,6 +48,19 @@
         <li><a href="#file-io">File I/O</a></li>
         <li><a href="#date-time">Date &amp; time</a></li>
         <li><a href="#serialization">Serialization</a></li>
+        <li><a href="#environment">Environment</a></li>
+        <li><a href="#process-shell">Process / Shell</a></li>
+        <li><a href="#database">Database (SQLite)</a></li>
+        <li><a href="#http-server">HTTP Server</a></li>
+        <li><a href="#template-engine">Template Engine</a></li>
+        <li><a href="#crypto-hashing">Crypto / Hashing</a></li>
+        <li><a href="#date-time-ext">Date / Time (Extended)</a></li>
+        <li><a href="#regexp">RegExp</a></li>
+        <li><a href="#encoding">Encoding</a></li>
+        <li><a href="#concurrency">Concurrency</a></li>
+        <li><a href="#type-checking">Type Checking</a></li>
+        <li><a href="#object-operations">Object Operations</a></li>
+        <li><a href="#string-operations">String Operations</a></li>
         <li><a href="testing.html">Testing</a></li>
         <li><a href="tools.html">Tools</a></li>
         <li><a href="examples.html">Examples</a></li>
@@ -228,6 +241,287 @@
       <h3><code>exit(code)</code></h3>
       <p>Exits the program with the given exit code. CLI only.</p>
       <pre><code>exit(<span class="num">0</span>)   <span class="cmt">-- exit successfully</span></code></pre>
+
+      <h2 id="environment">Environment</h2>
+      <div class="callout callout-info">
+        Environment functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+      </div>
+
+      <h3><code>env(key)</code></h3>
+      <p>Returns the value of an environment variable, or <code>nothing</code> if not set.</p>
+      <pre><code>token <span class="kw">is</span> env(<span class="str">"API_KEY"</span>)
+<span class="kw">say</span> token   <span class="cmt">-- value of $API_KEY</span></code></pre>
+
+      <h3><code>setEnv(key, val)</code></h3>
+      <p>Sets an environment variable for the current process.</p>
+      <pre><code>setEnv(<span class="str">"MODE"</span>, <span class="str">"production"</span>)
+<span class="kw">say</span> env(<span class="str">"MODE"</span>)   <span class="cmt">-- "production"</span></code></pre>
+
+      <h2 id="process-shell">Process / Shell</h2>
+      <div class="callout callout-info">
+        Process and shell functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+      </div>
+
+      <h3><code>args()</code></h3>
+      <p>Returns the list of command-line arguments passed to the script.</p>
+      <pre><code><span class="cmt">-- quill run script.ql -- hello world</span>
+<span class="kw">say</span> args()   <span class="cmt">-- ["hello", "world"]</span></code></pre>
+
+      <h3><code>run(cmd)</code></h3>
+      <p>Runs a shell command and returns its output as text.</p>
+      <pre><code>result <span class="kw">is</span> run(<span class="str">"ls -la"</span>)
+<span class="kw">say</span> result</code></pre>
+
+      <h3><code>runAsync(cmd)</code></h3>
+      <p>Runs a shell command asynchronously and returns a promise-like result.</p>
+      <pre><code>result <span class="kw">is</span> runAsync(<span class="str">"sleep 2 && echo done"</span>)
+<span class="kw">say</span> result</code></pre>
+
+      <h3><code>platform()</code></h3>
+      <p>Returns the current operating system platform (e.g. <code>"darwin"</code>, <code>"linux"</code>, <code>"win32"</code>).</p>
+      <pre><code><span class="kw">say</span> platform()   <span class="cmt">-- "darwin"</span></code></pre>
+
+      <h3><code>cpuCount()</code></h3>
+      <p>Returns the number of CPU cores available.</p>
+      <pre><code><span class="kw">say</span> cpuCount()   <span class="cmt">-- 8</span></code></pre>
+
+      <h3><code>memory()</code></h3>
+      <p>Returns the total system memory in bytes.</p>
+      <pre><code><span class="kw">say</span> memory()   <span class="cmt">-- 17179869184</span></code></pre>
+
+      <h2 id="database">Database (SQLite)</h2>
+      <div class="callout callout-info">
+        Database functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+      </div>
+
+      <h3><code>openDB(path)</code></h3>
+      <p>Opens (or creates) a SQLite database at the given path and returns a database handle.</p>
+      <pre><code>db <span class="kw">is</span> openDB(<span class="str">"app.db"</span>)</code></pre>
+
+      <h3><code>query(db, sql, params)</code></h3>
+      <p>Executes a SQL query and returns the result rows as a list of objects.</p>
+      <pre><code>rows <span class="kw">is</span> query(db, <span class="str">"SELECT * FROM users WHERE age > ?"</span>, [<span class="num">18</span>])
+<span class="kw">say</span> rows</code></pre>
+
+      <h3><code>execute(db, sql, params)</code></h3>
+      <p>Executes a SQL statement (INSERT, UPDATE, DELETE, CREATE, etc.) and returns the result info.</p>
+      <pre><code>execute(db, <span class="str">"CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER)"</span>, [])
+execute(db, <span class="str">"INSERT INTO users (name, age) VALUES (?, ?)"</span>, [<span class="str">"Alice"</span>, <span class="num">30</span>])</code></pre>
+
+      <h3><code>closeDB(db)</code></h3>
+      <p>Closes an open database connection.</p>
+      <pre><code>closeDB(db)</code></pre>
+
+      <h2 id="http-server">HTTP Server</h2>
+      <div class="callout callout-info">
+        HTTP server functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+      </div>
+
+      <h3><code>serveStatic(dir)</code></h3>
+      <p>Serves static files from the given directory over HTTP.</p>
+      <pre><code>serveStatic(<span class="str">"./public"</span>)
+<span class="cmt">-- Now serving files from ./public</span></code></pre>
+
+      <h2 id="template-engine">Template Engine</h2>
+
+      <h3><code>template(str, data)</code></h3>
+      <p>Renders a template string with placeholders replaced by values from the data object. Placeholders use <code>{{key}}</code> syntax.</p>
+      <pre><code>result <span class="kw">is</span> template(<span class="str">"Hello, {{name}}!"</span>, { name: <span class="str">"Alice"</span> })
+<span class="kw">say</span> result   <span class="cmt">-- "Hello, Alice!"</span></code></pre>
+
+      <h2 id="crypto-hashing">Crypto / Hashing</h2>
+
+      <h3><code>hash(str, algo)</code></h3>
+      <p>Returns the hash of a string using the given algorithm (e.g. <code>"sha256"</code>, <code>"md5"</code>).</p>
+      <pre><code><span class="kw">say</span> hash(<span class="str">"hello"</span>, <span class="str">"sha256"</span>)
+<span class="cmt">-- "2cf24dba5fb0a30e26e83b2ac5b9e29e..."</span></code></pre>
+
+      <h3><code>uuid()</code></h3>
+      <p>Generates a random UUID (v4) string.</p>
+      <pre><code><span class="kw">say</span> uuid()   <span class="cmt">-- "550e8400-e29b-41d4-a716-446655440000"</span></code></pre>
+
+      <h2 id="date-time-ext">Date / Time (Extended)</h2>
+
+      <h3><code>timestamp()</code></h3>
+      <p>Returns the current Unix timestamp in milliseconds.</p>
+      <pre><code><span class="kw">say</span> timestamp()   <span class="cmt">-- 1712234096000</span></code></pre>
+
+      <h3><code>formatDate(date, fmt)</code></h3>
+      <p>Formats a date string according to the given format pattern.</p>
+      <pre><code><span class="kw">say</span> formatDate(<span class="str">"2026-04-04"</span>, <span class="str">"MM/DD/YYYY"</span>)
+<span class="cmt">-- "04/04/2026"</span></code></pre>
+
+      <h3><code>addDays(date, days)</code></h3>
+      <p>Returns a new date string with the given number of days added.</p>
+      <pre><code><span class="kw">say</span> addDays(<span class="str">"2026-04-04"</span>, <span class="num">7</span>)   <span class="cmt">-- "2026-04-11"</span></code></pre>
+
+      <h3><code>diffDays(a, b)</code></h3>
+      <p>Returns the number of days between two date strings.</p>
+      <pre><code><span class="kw">say</span> diffDays(<span class="str">"2026-04-01"</span>, <span class="str">"2026-04-04"</span>)   <span class="cmt">-- 3</span></code></pre>
+
+      <h2 id="regexp">RegExp</h2>
+
+      <h3><code>matches(str, pattern)</code></h3>
+      <p>Returns a list of all matches of the regex pattern in the string.</p>
+      <pre><code><span class="kw">say</span> matches(<span class="str">"abc 123 def 456"</span>, <span class="str">"\\d+"</span>)
+<span class="cmt">-- ["123", "456"]</span></code></pre>
+
+      <h3><code>test(str, pattern)</code></h3>
+      <p>Returns <code>yes</code> if the string matches the regex pattern.</p>
+      <pre><code><span class="kw">say</span> test(<span class="str">"hello123"</span>, <span class="str">"\\d+"</span>)   <span class="cmt">-- true</span></code></pre>
+
+      <h3><code>replacePattern(str, pattern, replacement)</code></h3>
+      <p>Replaces all occurrences of the regex pattern with the replacement string.</p>
+      <pre><code><span class="kw">say</span> replacePattern(<span class="str">"abc 123 def"</span>, <span class="str">"\\d+"</span>, <span class="str">"#"</span>)
+<span class="cmt">-- "abc # def"</span></code></pre>
+
+      <h2 id="encoding">Encoding</h2>
+
+      <h3><code>encodeBase64(str)</code></h3>
+      <p>Encodes a string to Base64.</p>
+      <pre><code><span class="kw">say</span> encodeBase64(<span class="str">"hello"</span>)   <span class="cmt">-- "aGVsbG8="</span></code></pre>
+
+      <h3><code>decodeBase64(str)</code></h3>
+      <p>Decodes a Base64 string back to plain text.</p>
+      <pre><code><span class="kw">say</span> decodeBase64(<span class="str">"aGVsbG8="</span>)   <span class="cmt">-- "hello"</span></code></pre>
+
+      <h3><code>encodeURL(str)</code></h3>
+      <p>Encodes a string for safe use in a URL.</p>
+      <pre><code><span class="kw">say</span> encodeURL(<span class="str">"hello world"</span>)   <span class="cmt">-- "hello%20world"</span></code></pre>
+
+      <h3><code>decodeURL(str)</code></h3>
+      <p>Decodes a URL-encoded string.</p>
+      <pre><code><span class="kw">say</span> decodeURL(<span class="str">"hello%20world"</span>)   <span class="cmt">-- "hello world"</span></code></pre>
+
+      <h2 id="concurrency">Concurrency</h2>
+      <div class="callout callout-info">
+        Concurrency functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+      </div>
+
+      <h3><code>parallel(...fns)</code></h3>
+      <p>Runs multiple functions in parallel and returns a list of their results.</p>
+      <pre><code>results <span class="kw">is</span> parallel(
+  <span class="kw">fn</span>(): <span class="str">"a"</span>,
+  <span class="kw">fn</span>(): <span class="str">"b"</span>,
+  <span class="kw">fn</span>(): <span class="str">"c"</span>
+)
+<span class="kw">say</span> results   <span class="cmt">-- ["a", "b", "c"]</span></code></pre>
+
+      <h3><code>race(...fns)</code></h3>
+      <p>Runs multiple functions in parallel and returns the result of the first one to finish.</p>
+      <pre><code>winner <span class="kw">is</span> race(
+  <span class="kw">fn</span>(): delay(<span class="num">100</span>) <span class="kw">then</span> <span class="str">"slow"</span>,
+  <span class="kw">fn</span>(): <span class="str">"fast"</span>
+)
+<span class="kw">say</span> winner   <span class="cmt">-- "fast"</span></code></pre>
+
+      <h3><code>delay(ms)</code></h3>
+      <p>Returns a promise that resolves after the given number of milliseconds.</p>
+      <pre><code>delay(<span class="num">500</span>)   <span class="cmt">-- pause for 500ms</span></code></pre>
+
+      <h2 id="type-checking">Type Checking</h2>
+
+      <h3><code>isText(x)</code></h3>
+      <p>Returns <code>yes</code> if <code>x</code> is a string.</p>
+      <pre><code><span class="kw">say</span> isText(<span class="str">"hi"</span>)   <span class="cmt">-- true</span>
+<span class="kw">say</span> isText(<span class="num">42</span>)     <span class="cmt">-- false</span></code></pre>
+
+      <h3><code>isNumber(x)</code></h3>
+      <p>Returns <code>yes</code> if <code>x</code> is a number.</p>
+      <pre><code><span class="kw">say</span> isNumber(<span class="num">42</span>)      <span class="cmt">-- true</span>
+<span class="kw">say</span> isNumber(<span class="str">"42"</span>)   <span class="cmt">-- false</span></code></pre>
+
+      <h3><code>isList(x)</code></h3>
+      <p>Returns <code>yes</code> if <code>x</code> is a list.</p>
+      <pre><code><span class="kw">say</span> isList([<span class="num">1</span>, <span class="num">2</span>])   <span class="cmt">-- true</span></code></pre>
+
+      <h3><code>isObject(x)</code></h3>
+      <p>Returns <code>yes</code> if <code>x</code> is an object.</p>
+      <pre><code><span class="kw">say</span> isObject({ a: <span class="num">1</span> })   <span class="cmt">-- true</span></code></pre>
+
+      <h3><code>isNothing(x)</code></h3>
+      <p>Returns <code>yes</code> if <code>x</code> is <code>nothing</code>.</p>
+      <pre><code><span class="kw">say</span> isNothing(nothing)   <span class="cmt">-- true</span>
+<span class="kw">say</span> isNothing(<span class="num">0</span>)         <span class="cmt">-- false</span></code></pre>
+
+      <h3><code>isFunction(x)</code></h3>
+      <p>Returns <code>yes</code> if <code>x</code> is a function.</p>
+      <pre><code>greet <span class="kw">is</span> <span class="kw">fn</span>(name): <span class="str">"hi "</span> + name
+<span class="kw">say</span> isFunction(greet)   <span class="cmt">-- true</span></code></pre>
+
+      <h2 id="object-operations">Object Operations</h2>
+
+      <h3><code>merge(...objs)</code></h3>
+      <p>Merges multiple objects into one. Later values override earlier ones.</p>
+      <pre><code>a <span class="kw">is</span> { x: <span class="num">1</span> }
+b <span class="kw">is</span> { y: <span class="num">2</span> }
+<span class="kw">say</span> merge(a, b)   <span class="cmt">-- { x: 1, y: 2 }</span></code></pre>
+
+      <h3><code>pick(obj, ...keys)</code></h3>
+      <p>Returns a new object containing only the specified keys.</p>
+      <pre><code>user <span class="kw">is</span> { name: <span class="str">"Alice"</span>, age: <span class="num">30</span>, email: <span class="str">"a@b.com"</span> }
+<span class="kw">say</span> pick(user, <span class="str">"name"</span>, <span class="str">"email"</span>)
+<span class="cmt">-- { name: "Alice", email: "a@b.com" }</span></code></pre>
+
+      <h3><code>omit(obj, ...keys)</code></h3>
+      <p>Returns a new object with the specified keys removed.</p>
+      <pre><code><span class="kw">say</span> omit(user, <span class="str">"email"</span>)
+<span class="cmt">-- { name: "Alice", age: 30 }</span></code></pre>
+
+      <h3><code>entries(obj)</code></h3>
+      <p>Returns a list of <code>[key, value]</code> pairs from an object.</p>
+      <pre><code><span class="kw">say</span> entries({ a: <span class="num">1</span>, b: <span class="num">2</span> })
+<span class="cmt">-- [["a", 1], ["b", 2]]</span></code></pre>
+
+      <h3><code>fromEntries(arr)</code></h3>
+      <p>Creates an object from a list of <code>[key, value]</code> pairs.</p>
+      <pre><code><span class="kw">say</span> fromEntries([[<span class="str">"a"</span>, <span class="num">1</span>], [<span class="str">"b"</span>, <span class="num">2</span>]])
+<span class="cmt">-- { a: 1, b: 2 }</span></code></pre>
+
+      <h3><code>hasKey(obj, key)</code></h3>
+      <p>Returns <code>yes</code> if the object has the given key.</p>
+      <pre><code><span class="kw">say</span> hasKey({ name: <span class="str">"Alice"</span> }, <span class="str">"name"</span>)   <span class="cmt">-- true</span>
+<span class="kw">say</span> hasKey({ name: <span class="str">"Alice"</span> }, <span class="str">"age"</span>)    <span class="cmt">-- false</span></code></pre>
+
+      <h3><code>deepCopy(x)</code></h3>
+      <p>Returns a deep copy of a value (objects and lists are fully cloned).</p>
+      <pre><code>original <span class="kw">is</span> { a: [<span class="num">1</span>, <span class="num">2</span>] }
+copy <span class="kw">is</span> deepCopy(original)
+<span class="cmt">-- modifying copy won't affect original</span></code></pre>
+
+      <h2 id="string-operations">String Operations</h2>
+
+      <h3><code>padStart(s, len, ch)</code></h3>
+      <p>Pads the start of a string with <code>ch</code> until it reaches the given length.</p>
+      <pre><code><span class="kw">say</span> padStart(<span class="str">"42"</span>, <span class="num">5</span>, <span class="str">"0"</span>)   <span class="cmt">-- "00042"</span></code></pre>
+
+      <h3><code>padEnd(s, len, ch)</code></h3>
+      <p>Pads the end of a string with <code>ch</code> until it reaches the given length.</p>
+      <pre><code><span class="kw">say</span> padEnd(<span class="str">"hi"</span>, <span class="num">5</span>, <span class="str">"."</span>)   <span class="cmt">-- "hi..."</span></code></pre>
+
+      <h3><code>repeat(s, n)</code></h3>
+      <p>Repeats a string <code>n</code> times.</p>
+      <pre><code><span class="kw">say</span> repeat(<span class="str">"ha"</span>, <span class="num">3</span>)   <span class="cmt">-- "hahaha"</span></code></pre>
+
+      <h3><code>contains(s, sub)</code></h3>
+      <p>Returns <code>yes</code> if the string contains the substring.</p>
+      <pre><code><span class="kw">say</span> contains(<span class="str">"hello world"</span>, <span class="str">"world"</span>)   <span class="cmt">-- true</span></code></pre>
+
+      <h3><code>capitalize(s)</code></h3>
+      <p>Capitalizes the first letter of a string.</p>
+      <pre><code><span class="kw">say</span> capitalize(<span class="str">"hello"</span>)   <span class="cmt">-- "Hello"</span></code></pre>
+
+      <h3><code>words(s)</code></h3>
+      <p>Splits a string into a list of words (by whitespace).</p>
+      <pre><code><span class="kw">say</span> words(<span class="str">"hello world foo"</span>)   <span class="cmt">-- ["hello", "world", "foo"]</span></code></pre>
+
+      <h3><code>lines(s)</code></h3>
+      <p>Splits a string into a list of lines.</p>
+      <pre><code><span class="kw">say</span> lines(<span class="str">"a\nb\nc"</span>)   <span class="cmt">-- ["a", "b", "c"]</span></code></pre>
+
+      <h3><code>truncate(s, len)</code></h3>
+      <p>Truncates a string to the given length, appending <code>...</code> if it was shortened.</p>
+      <pre><code><span class="kw">say</span> truncate(<span class="str">"hello world"</span>, <span class="num">8</span>)   <span class="cmt">-- "hello..."</span></code></pre>
     </main>
   </div>
 

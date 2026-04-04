@@ -480,3 +480,205 @@ func TestGenerateModulo(t *testing.T) {
 		t.Errorf("expected modulo operator, got:\n%s", output)
 	}
 }
+
+// --- New Feature Tests ---
+
+func TestGenerateTryCatch(t *testing.T) {
+	src := "try:\n  say \"hello\"\nif it fails err:\n  say err\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "try {") {
+		t.Errorf("expected try block, got:\n%s", output)
+	}
+	if !strings.Contains(output, "catch (err)") {
+		t.Errorf("expected catch with err variable, got:\n%s", output)
+	}
+}
+
+func TestGenerateBreak(t *testing.T) {
+	src := "while yes:\n  break\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "break;") {
+		t.Errorf("expected break statement, got:\n%s", output)
+	}
+}
+
+func TestGenerateContinue(t *testing.T) {
+	src := "for each x in items:\n  continue\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "continue;") {
+		t.Errorf("expected continue statement, got:\n%s", output)
+	}
+}
+
+func TestGenerateObjectLiteral(t *testing.T) {
+	src := `config is {name: "test", value: 42}`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "name:") && !strings.Contains(output, "value:") {
+		t.Errorf("expected object literal, got:\n%s", output)
+	}
+}
+
+func TestGenerateEmptyObject(t *testing.T) {
+	src := "obj is {}"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "{}") {
+		t.Errorf("expected empty object, got:\n%s", output)
+	}
+}
+
+func TestGenerateNothing(t *testing.T) {
+	src := "x is nothing"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "null") {
+		t.Errorf("expected null for nothing, got:\n%s", output)
+	}
+}
+
+func TestGenerateLambda(t *testing.T) {
+	src := "doubled is map_list(nums, with x: x * 2)"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "=>") {
+		t.Errorf("expected arrow function, got:\n%s", output)
+	}
+	if !strings.Contains(output, "(x) =>") {
+		t.Errorf("expected (x) => syntax, got:\n%s", output)
+	}
+}
+
+func TestGenerateMultiParamLambda(t *testing.T) {
+	src := "result is reduce(nums, with a, b: a + b)"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "(a, b) =>") {
+		t.Errorf("expected (a, b) => syntax, got:\n%s", output)
+	}
+}
+
+func TestGenerateTypeAnnotations(t *testing.T) {
+	src := "to add a as number, b as number -> number:\n  give back a + b\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Type annotations should be stripped
+	if !strings.Contains(output, "function add(a, b)") {
+		t.Errorf("expected function with params (types stripped), got:\n%s", output)
+	}
+}
+
+func TestGenerateClassExtends(t *testing.T) {
+	src := "describe Dog extends Animal:\n  breed is \"mixed\"\n  to bark:\n    say \"woof\"\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "class Dog extends Animal") {
+		t.Errorf("expected extends in class, got:\n%s", output)
+	}
+	if !strings.Contains(output, "super()") {
+		t.Errorf("expected super() call, got:\n%s", output)
+	}
+}
+
+func TestGenerateFromUse(t *testing.T) {
+	src := `from "express" use Router, json`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "const { Router, json } = require") {
+		t.Errorf("expected destructured require, got:\n%s", output)
+	}
+}
+
+func TestGenerateArrow(t *testing.T) {
+	// Test that -> doesn't interfere with minus
+	src := "x is 5 - 3"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "5 - 3") {
+		t.Errorf("expected subtraction, got:\n%s", output)
+	}
+}
+
+func TestGenerateSpread(t *testing.T) {
+	src := "all is concat([1, 2], ...rest)"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "...rest") {
+		t.Errorf("expected spread operator, got:\n%s", output)
+	}
+}
+
+func TestGenerateComplexNewFeatures(t *testing.T) {
+	src := `
+config is {debug: yes, name: "app"}
+
+to processItems items as list -> list:
+  results are []
+  for each item in items:
+    if item is nothing:
+      continue
+    push(results, item)
+  give back results
+
+describe HTTPServer extends Server:
+  port is 3000
+  to start:
+    say "Starting on port " + toText(my.port)
+
+try:
+  data is processItems([1, nothing, 3])
+  say toText(data)
+if it fails error:
+  say "Error: " + error
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		"debug:",
+		"null",
+		"function processItems(items)",
+		"continue;",
+		"class HTTPServer extends Server",
+		"super()",
+		"try {",
+		"catch (error)",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}

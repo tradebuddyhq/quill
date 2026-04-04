@@ -111,11 +111,21 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.DescribeStatement:
 		var dout strings.Builder
-		dout.WriteString(fmt.Sprintf("%sclass %s {\n", prefix, s.Name))
+		if s.Extends != "" {
+			dout.WriteString(fmt.Sprintf("%sclass %s extends %s {\n", prefix, s.Name, s.Extends))
+		} else {
+			dout.WriteString(fmt.Sprintf("%sclass %s {\n", prefix, s.Name))
+		}
 		g.indent++
 		innerPrefix := strings.Repeat("  ", g.indent)
 		// Constructor
 		dout.WriteString(fmt.Sprintf("%sconstructor() {\n", innerPrefix))
+		if s.Extends != "" {
+			g.indent++
+			superPrefix := strings.Repeat("  ", g.indent)
+			dout.WriteString(fmt.Sprintf("%ssuper();\n", superPrefix))
+			g.indent--
+		}
 		g.indent++
 		propPrefix := strings.Repeat("  ", g.indent)
 		for _, prop := range s.Properties {
@@ -180,6 +190,43 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 	case *ast.ExpectStatement:
 		exprStr := g.genExpr(s.Expr)
 		return fmt.Sprintf(`%sif (!(%s)) throw new Error("Expected %s to be true");`, prefix, exprStr, escapeJS(exprStr))
+
+	case *ast.TryCatchStatement:
+		g.indent++
+		tryBody := g.genBlock(s.TryBody)
+		g.indent--
+		g.indent++
+		catchBody := g.genBlock(s.CatchBody)
+		g.indent--
+		errorVar := s.ErrorVar
+		if errorVar == "" {
+			errorVar = "error"
+		}
+		return fmt.Sprintf("%stry {\n%s%s} catch (%s) {\n%s%s}", prefix, tryBody, prefix, errorVar, catchBody, prefix)
+
+	case *ast.BreakStatement:
+		return fmt.Sprintf("%sbreak;", prefix)
+
+	case *ast.ContinueStatement:
+		return fmt.Sprintf("%scontinue;", prefix)
+
+	case *ast.FromUseStatement:
+		names := strings.Join(s.Names, ", ")
+		if strings.HasSuffix(s.Path, ".quill") {
+			imported, err := os.ReadFile(s.Path)
+			if err != nil {
+				return fmt.Sprintf("%s// Error: could not import %q", prefix, s.Path)
+			}
+			l := lexer.New(string(imported))
+			tokens, _ := l.Tokenize()
+			pr := parser.New(tokens)
+			prog, _ := pr.Parse()
+			importGen := New()
+			importGen.indent = g.indent
+			code := importGen.GenerateBody(prog)
+			return fmt.Sprintf("%s// imported from %q\n%s", prefix, s.Path, code)
+		}
+		return fmt.Sprintf("%sconst { %s } = require(\"%s\");", prefix, names, s.Path)
 
 	default:
 		return prefix + "/* unknown statement */"
@@ -311,6 +358,30 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 
 	case *ast.AwaitExpr:
 		return fmt.Sprintf("await %s", g.genExpr(e.Expr))
+
+	case *ast.NothingLiteral:
+		return "null"
+
+	case *ast.ObjectLiteral:
+		if len(e.Keys) == 0 {
+			return "{}"
+		}
+		pairs := make([]string, len(e.Keys))
+		for i, key := range e.Keys {
+			pairs[i] = fmt.Sprintf("%s: %s", key, g.genExpr(e.Values[i]))
+		}
+		return "{ " + strings.Join(pairs, ", ") + " }"
+
+	case *ast.LambdaExpr:
+		params := strings.Join(e.Params, ", ")
+		body := g.genExpr(e.Body)
+		if len(e.Params) == 1 {
+			return fmt.Sprintf("(%s) => %s", params, body)
+		}
+		return fmt.Sprintf("(%s) => %s", params, body)
+
+	case *ast.SpreadExpr:
+		return fmt.Sprintf("...%s", g.genExpr(e.Expr))
 
 	default:
 		return "undefined"

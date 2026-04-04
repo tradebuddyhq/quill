@@ -121,4 +121,61 @@ const concat = (a, b) => [...a, ...b];
 const zip = (a, b) => a.map((x, i) => [x, b[i]]);
 const countWhere = (arr, fn) => arr.filter(fn).length;
 const groupBy = (arr, fn) => arr.reduce((acc, item) => { const key = fn(item); (acc[key] = acc[key] || []).push(item); return acc; }, {});
+
+// Type checking
+const isText = (x) => typeof x === 'string';
+const isNumber = (x) => typeof x === 'number' && !isNaN(x);
+const isList = (x) => Array.isArray(x);
+const isObject = (x) => typeof x === 'object' && x !== null && !Array.isArray(x);
+const isNothing = (x) => x === null || x === undefined;
+const isFunction = (x) => typeof x === 'function';
+
+// Object operations
+const merge = (...objs) => Object.assign({}, ...objs);
+const pick = (obj, ...keys) => keys.flat().reduce((o, k) => { if (k in obj) o[k] = obj[k]; return o; }, {});
+const omit = (obj, ...keys) => { const ks = keys.flat(); return Object.fromEntries(Object.entries(obj).filter(([k]) => !ks.includes(k))); };
+const entries = (obj) => Object.entries(obj);
+const fromEntries = (arr) => Object.fromEntries(arr);
+const hasKey = (obj, key) => key in obj;
+const deepCopy = (x) => JSON.parse(JSON.stringify(x));
+
+// String operations enhanced
+const padStart = (s, len, ch) => s.padStart(len, ch || ' ');
+const padEnd = (s, len, ch) => s.padEnd(len, ch || ' ');
+const repeat = (s, n) => s.repeat(n);
+const contains = (s, sub) => s.includes(sub);
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const words = (s) => s.trim().split(/\s+/);
+const lines = (s) => s.split('\n');
+const truncate = (s, len) => s.length > len ? s.slice(0, len) + '...' : s;
+
+// Date/Time enhanced
+const timestamp = () => Date.now();
+const formatDate = (date, fmt) => { const d = new Date(date); const pad = (n) => String(n).padStart(2, '0'); return (fmt || 'YYYY-MM-DD').replace('YYYY', d.getFullYear()).replace('MM', pad(d.getMonth() + 1)).replace('DD', pad(d.getDate())).replace('HH', pad(d.getHours())).replace('mm', pad(d.getMinutes())).replace('ss', pad(d.getSeconds())); };
+const addDays = (date, days) => { const d = new Date(date); d.setDate(d.getDate() + days); return d.toISOString(); };
+const diffDays = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+
+// RegExp
+const matches = (str, pattern) => { const re = new RegExp(pattern, 'g'); const m = str.match(re); return m || []; };
+const replacePattern = (str, pattern, replacement) => str.replace(new RegExp(pattern, 'g'), replacement);
+
+// Encoding
+const encodeBase64 = (str) => btoa(str);
+const decodeBase64 = (str) => atob(str);
+const encodeURL = (str) => encodeURIComponent(str);
+const decodeURL = (str) => decodeURIComponent(str);
+
+// Concurrency
+const parallel = async (...fns) => Promise.all(fns.map(fn => fn()));
+const race = async (...fns) => Promise.race(fns.map(fn => fn()));
+const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+// Template engine
+const template = (str, data) => { return str.replace(/\{\{(\w+)\}\}/g, (match, key) => data[key] !== undefined ? data[key] : match); };
+
+// UUID (browser-safe)
+const uuid = () => { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); }); };
+
+// Hash (browser-safe, simple)
+const hash = async (str) => { const encoder = new TextEncoder(); const data = encoder.encode(str); const hashBuffer = await crypto.subtle.digest('SHA-256', data); return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join(''); };
 `

@@ -192,6 +192,63 @@ list <span class="kw">is</span> select(<span class="str">"#todo-list"</span>)
 
 onClick button addTodo</code></pre>
 
+      <h2 id="init">Project Init (<code>quill init</code>)</h2>
+      <p>Scaffolds a new Quill project in the current directory. It creates a <code>quill.json</code> manifest (with name, version, and an empty dependency list) and a starter <code>main.quill</code> file.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Create a new project in the current folder</span>
+quill init</code></pre>
+
+      <h3>What it creates</h3>
+      <ul>
+        <li><code>quill.json</code> &mdash; project manifest with <code>name</code>, <code>version</code>, and <code>dependencies</code></li>
+        <li><code>main.quill</code> &mdash; minimal starter file you can run right away</li>
+      </ul>
+
+      <h3>Example</h3>
+      <pre><code>$ mkdir my-app && cd my-app
+$ quill init
+Created quill.json
+Created main.quill
+
+$ quill run main.quill
+Hello, Quill!</code></pre>
+
+      <h2 id="add">Add Package (<code>quill add</code>)</h2>
+      <p>Installs an npm package and records it in your project's <code>quill.json</code> dependencies. This lets you use third-party JavaScript libraries from Quill code.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Install a package</span>
+quill add lodash</code></pre>
+
+      <h3>Example</h3>
+      <pre><code>$ quill add chalk
+Installing chalk...
+Added chalk@5.3.0 to dependencies</code></pre>
+
+      <h2 id="remove">Remove Package (<code>quill remove</code>)</h2>
+      <p>Uninstalls an npm package and removes it from <code>quill.json</code> dependencies.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Remove a package</span>
+quill remove lodash</code></pre>
+
+      <h3>Example</h3>
+      <pre><code>$ quill remove chalk
+Removed chalk from dependencies</code></pre>
+
+      <h2 id="docs">Generate Docs (<code>quill docs</code>)</h2>
+      <p>Parses a Quill source file and generates an HTML documentation page listing all functions, parameters, and comments.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Generate docs for a file</span>
+quill docs mylib.quill</code></pre>
+      <p>This produces a <code>mylib.html</code> file in the current directory.</p>
+
+      <h3>Example</h3>
+      <pre><code>$ quill docs utils.quill
+Generated utils.html (3 functions documented)</code></pre>
+
       <h2 id="all-commands">All Commands</h2>
       <table>
         <thead>
@@ -236,6 +293,22 @@ onClick button addTodo</code></pre>
           <tr>
             <td><code>quill help</code></td>
             <td>Show help</td>
+          </tr>
+          <tr>
+            <td><code>quill init</code></td>
+            <td>Initialize a new Quill project</td>
+          </tr>
+          <tr>
+            <td><code>quill add &lt;package&gt;</code></td>
+            <td>Install a package and add to dependencies</td>
+          </tr>
+          <tr>
+            <td><code>quill remove &lt;package&gt;</code></td>
+            <td>Remove a package from dependencies</td>
+          </tr>
+          <tr>
+            <td><code>quill docs file.quill</code></td>
+            <td>Generate HTML documentation from source</td>
           </tr>
         </tbody>
       </table>
