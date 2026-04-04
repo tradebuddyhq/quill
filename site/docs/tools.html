@@ -1009,6 +1009,93 @@ Program finished.</code></pre>
       </div>
 
       <!-- ============================================================ -->
+      <!-- TEST COVERAGE                                                 -->
+      <!-- ============================================================ -->
+
+      <h2 id="test-coverage">Test Coverage</h2>
+
+      <h3>What it does</h3>
+      <p>Test coverage shows you how much of your code is actually tested. It highlights which lines, functions, and branches your tests exercise, and which ones they miss. This helps you find blind spots and write more thorough tests.</p>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Print a coverage summary:</strong></p>
+      <pre><code>quill test --coverage</code></pre>
+      <p>This runs all your tests and prints a table showing the percentage of lines covered in each file.</p>
+
+      <p><strong>Generate an HTML report:</strong></p>
+      <pre><code>quill test --coverage-html</code></pre>
+      <p>This creates a <code>coverage/</code> folder with a browsable HTML report. Open <code>coverage/index.html</code> in your browser to see exactly which lines are covered (green) and which are not (red).</p>
+
+      <p><strong>Enforce a minimum threshold:</strong></p>
+      <pre><code>quill test --coverage-min 80</code></pre>
+      <p>If overall coverage drops below 80%, the command exits with an error. This is useful in CI pipelines to prevent coverage from slipping.</p>
+
+      <!-- ============================================================ -->
+      <!-- PROFILER                                                      -->
+      <!-- ============================================================ -->
+
+      <h2 id="profiler">Profiler (<code>quill profile</code>)</h2>
+
+      <h3>What it does</h3>
+      <p>The profiler runs your program and measures how long each function takes. When it finishes, it prints a timing report sorted by total time. This helps you find slow spots in your code so you know where to focus optimization efforts.</p>
+
+      <h3>Step-by-step usage</h3>
+      <pre><code>quill profile app.quill</code></pre>
+      <p>You will see output like this:</p>
+      <pre><code>Function          Calls   Total (ms)   Avg (ms)
+------------------------------------------------------
+fetchUsers        12      842.3        70.2
+processData       12      231.5        19.3
+renderPage        12      45.1         3.8
+main              1       1120.4       1120.4</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Profile with realistic data. A function might be fast with 10 items but slow with 10,000. Test with production-like inputs.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- WORKSPACES                                                    -->
+      <!-- ============================================================ -->
+
+      <h2 id="workspaces">Workspaces</h2>
+
+      <h3>What they do</h3>
+      <p>Workspaces let you manage multiple related packages in a single repository (a "monorepo"). Instead of maintaining separate repos for your core library, web app, and CLI tool, you keep them all together and share code between them.</p>
+
+      <h3>Setting up a workspace</h3>
+      <p>Add a <code>[workspace]</code> section to your root <code>quill.toml</code>:</p>
+      <pre><code>[workspace]
+members = ["packages/core", "packages/web", "packages/cli"]</code></pre>
+
+      <p>Each member directory has its own <code>quill.toml</code> and source files. Commands like <code>quill test</code> and <code>quill build</code> can run across all members at once:</p>
+      <pre><code><span class="cmt">-- Test everything in the workspace</span>
+quill test --workspace
+
+<span class="cmt">-- Build everything</span>
+quill build --workspace</code></pre>
+
+      <!-- ============================================================ -->
+      <!-- MIGRATION TOOL                                                -->
+      <!-- ============================================================ -->
+
+      <h2 id="migration">Migration Tool (<code>quill fix</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill fix</code> automatically rewrites your code when you upgrade to a newer version of Quill. If function names changed, syntax was updated, or import paths moved, the migration tool handles it for you.</p>
+
+      <h3>Step-by-step usage</h3>
+      <pre><code>quill fix --from v0.1 --to v0.3</code></pre>
+      <p>This scans all <code>.quill</code> files in your project and applies the necessary transformations. It shows a summary of changes made:</p>
+      <pre><code>Fixed 3 files:
+  src/main.quill     - renamed map() to map_list() (2 occurrences)
+  src/utils.quill    - updated import path "helpers" to "stdlib/helpers"
+  src/app.quill      - replaced deprecated `catch:` with `if it fails:`</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Always commit your code before running <code>quill fix</code>, so you can review the changes and revert if needed.
+      </div>
+
+      <!-- ============================================================ -->
       <!-- PROJECT CONFIG                                                -->
       <!-- ============================================================ -->
 
@@ -1266,6 +1353,36 @@ jobs:
             <td><code>quill version</code></td>
             <td>Shows which version of Quill you have installed</td>
             <td><code>quill version</code></td>
+          </tr>
+          <tr>
+            <td><code>quill serve</code></td>
+            <td>Starts a dev server with hot reload and file-based routing</td>
+            <td><code>quill serve</code></td>
+          </tr>
+          <tr>
+            <td><code>quill profile file.quill</code></td>
+            <td>Runs the profiler and prints a function timing report</td>
+            <td><code>quill profile app.quill</code></td>
+          </tr>
+          <tr>
+            <td><code>quill test --coverage</code></td>
+            <td>Runs tests and prints a coverage summary</td>
+            <td><code>quill test --coverage</code></td>
+          </tr>
+          <tr>
+            <td><code>quill test --coverage-html</code></td>
+            <td>Generates an HTML coverage report</td>
+            <td><code>quill test --coverage-html</code></td>
+          </tr>
+          <tr>
+            <td><code>quill test --coverage-min N</code></td>
+            <td>Fails if coverage drops below N percent</td>
+            <td><code>quill test --coverage-min 80</code></td>
+          </tr>
+          <tr>
+            <td><code>quill fix --from X --to Y</code></td>
+            <td>Automated code migration between Quill versions</td>
+            <td><code>quill fix --from v0.1 --to v0.3</code></td>
           </tr>
           <tr>
             <td><code>quill help</code></td>

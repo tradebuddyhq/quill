@@ -59,6 +59,7 @@
         <li><a href="#concurrency">Concurrency</a></li>
         <li><a href="#templates">Templates</a></li>
         <li><a href="#database">Database</a></li>
+        <li><a href="#iterators">Iterators &amp; lazy evaluation</a></li>
         <li><a href="#recipes">Recipes</a></li>
       </ul>
       <h4>Ecosystem Packages</h4>
@@ -779,6 +780,107 @@ execute(db, <span class="str">"INSERT INTO users (name, age) VALUES (?, ?)"</spa
       <pre><code>users <span class="kw">is</span> query(db, <span class="str">"SELECT * FROM users WHERE age > ?"</span>, [<span class="num">18</span>])
 <span class="kw">for each</span> user <span class="kw">in</span> users:
   <span class="kw">say</span> user.name + <span class="str">" is "</span> + toText(user.age)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- ITERATORS & LAZY EVALUATION                  -->
+      <!-- ============================================ -->
+
+      <h2 id="iterators">Iterators &amp; Lazy Evaluation</h2>
+      <p>Quill includes a lazy evaluation system that lets you process large (even infinite) data sets efficiently. Values are only computed when they are actually needed. All of these methods are available on lazy iterators created by generators or the <code>range()</code> function.</p>
+
+      <h3>Creating iterators</h3>
+      <pre><code><span class="cmt">-- range() creates a lazy iterator</span>
+nums <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">1000000</span>)
+
+<span class="cmt">-- Generator functions create lazy iterators</span>
+<span class="kw">to</span> <span class="fn">fibonacci</span>:
+  a <span class="kw">is</span> <span class="num">0</span>
+  b <span class="kw">is</span> <span class="num">1</span>
+  <span class="kw">loop</span>:
+    <span class="kw">yield</span> a
+    temp <span class="kw">is</span> a
+    a <span class="kw">is</span> b
+    b <span class="kw">is</span> temp + b</code></pre>
+
+      <h3><code>filter</code> &mdash; Keep items that match a condition</h3>
+      <p>Returns a new lazy iterator that only includes items where the function returns <code>yes</code>.</p>
+      <pre><code>evens <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">100</span>) | filter <span class="kw">with</span> n: n % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span></code></pre>
+
+      <h3><code>map_list</code> &mdash; Transform each item</h3>
+      <p>Returns a new lazy iterator where each item has been transformed by the function.</p>
+      <pre><code>squares <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">10</span>) | map_list <span class="kw">with</span> n: n * n</code></pre>
+
+      <h3><code>take n</code> &mdash; Keep only the first <em>n</em> items</h3>
+      <pre><code>first5 <span class="kw">is</span> fibonacci() | take <span class="num">5</span> | collect
+<span class="kw">say</span> first5   <span class="cmt">-- [0, 1, 1, 2, 3]</span></code></pre>
+
+      <h3><code>skip n</code> &mdash; Skip the first <em>n</em> items</h3>
+      <pre><code>result <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">20</span>) | skip <span class="num">5</span> | take <span class="num">3</span> | collect
+<span class="kw">say</span> result   <span class="cmt">-- [6, 7, 8]</span></code></pre>
+
+      <h3><code>takeWhile</code> &mdash; Keep items while a condition holds</h3>
+      <pre><code>result <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">100</span>) | takeWhile <span class="kw">with</span> n: n <span class="kw">is less than</span> <span class="num">10</span> | collect
+<span class="kw">say</span> result   <span class="cmt">-- [1, 2, 3, 4, 5, 6, 7, 8, 9]</span></code></pre>
+
+      <h3><code>skipWhile</code> &mdash; Skip items while a condition holds</h3>
+      <pre><code>result <span class="kw">is</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">10</span>, <span class="num">2</span>] | skipWhile <span class="kw">with</span> n: n <span class="kw">is less than</span> <span class="num">5</span> | collect
+<span class="kw">say</span> result   <span class="cmt">-- [10, 2]</span></code></pre>
+
+      <h3><code>zip</code> &mdash; Combine two iterators into pairs</h3>
+      <pre><code>names <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Charlie"</span>]
+scores <span class="kw">are</span> [<span class="num">95</span>, <span class="num">87</span>, <span class="num">92</span>]
+pairs <span class="kw">is</span> zip(names, scores) | collect
+<span class="kw">say</span> pairs   <span class="cmt">-- [["Alice", 95], ["Bob", 87], ["Charlie", 92]]</span></code></pre>
+
+      <h3><code>enumerate</code> &mdash; Add an index to each item</h3>
+      <pre><code>items <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"cherry"</span>]
+result <span class="kw">is</span> items | enumerate | collect
+<span class="kw">say</span> result   <span class="cmt">-- [[0, "apple"], [1, "banana"], [2, "cherry"]]</span></code></pre>
+
+      <h3><code>flatten</code> &mdash; Flatten nested iterators</h3>
+      <pre><code>nested <span class="kw">are</span> [[<span class="num">1</span>, <span class="num">2</span>], [<span class="num">3</span>, <span class="num">4</span>], [<span class="num">5</span>]]
+result <span class="kw">is</span> nested | flatten | collect
+<span class="kw">say</span> result   <span class="cmt">-- [1, 2, 3, 4, 5]</span></code></pre>
+
+      <h3><code>collect</code> &mdash; Gather all items into a list</h3>
+      <p>This is a terminal operation. It consumes the lazy iterator and produces a concrete list.</p>
+      <pre><code>result <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">5</span>) | collect
+<span class="kw">say</span> result   <span class="cmt">-- [1, 2, 3, 4, 5]</span></code></pre>
+
+      <h3><code>reduce</code> &mdash; Combine all items into one value</h3>
+      <pre><code>total <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">10</span>) | reduce <span class="kw">with</span> a, b: a + b
+<span class="kw">say</span> total   <span class="cmt">-- 55</span></code></pre>
+
+      <h3><code>first</code> &mdash; Get the first item</h3>
+      <pre><code>result <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">1000000</span>) | filter <span class="kw">with</span> n: n % <span class="num">7</span> <span class="kw">is</span> <span class="num">0</span> | first
+<span class="kw">say</span> result   <span class="cmt">-- 7</span></code></pre>
+
+      <h3><code>last</code> &mdash; Get the last item</h3>
+      <pre><code>result <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">10</span>) | last
+<span class="kw">say</span> result   <span class="cmt">-- 10</span></code></pre>
+
+      <h3><code>any</code> &mdash; True if any item matches</h3>
+      <pre><code>hasNegative <span class="kw">is</span> [<span class="num">1</span>, <span class="num">-3</span>, <span class="num">5</span>] | any <span class="kw">with</span> n: n <span class="kw">is less than</span> <span class="num">0</span>
+<span class="kw">say</span> hasNegative   <span class="cmt">-- yes</span></code></pre>
+
+      <h3><code>every</code> &mdash; True if all items match</h3>
+      <pre><code>allPositive <span class="kw">is</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>] | every <span class="kw">with</span> n: n <span class="kw">is greater than</span> <span class="num">0</span>
+<span class="kw">say</span> allPositive   <span class="cmt">-- yes</span></code></pre>
+
+      <h3>Chaining it all together</h3>
+      <p>The real power comes from combining these operations into pipelines. Nothing is computed until a terminal operation (<code>collect</code>, <code>reduce</code>, <code>first</code>, <code>last</code>, <code>any</code>, or <code>every</code>) is called:</p>
+      <pre><code><span class="cmt">-- Process a million numbers without using a million items of memory</span>
+result <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">1000000</span>)
+  | filter <span class="kw">with</span> n: n % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>
+  | map_list <span class="kw">with</span> n: n * n
+  | take <span class="num">10</span>
+  | collect
+
+<span class="kw">say</span> result   <span class="cmt">-- [4, 16, 36, 64, 100, 144, 196, 256, 324, 400]</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Why lazy?</strong> Without lazy evaluation, <code>range(1, 1000000)</code> would create a list of a million numbers in memory. With lazy evaluation, items are produced one at a time and only as many as needed. The <code>take 10</code> above means only 10 items are ever computed, no matter how large the range.
+      </div>
 
       <!-- ============================================ -->
       <!-- RECIPES                                      -->
