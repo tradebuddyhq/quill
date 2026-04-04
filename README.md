@@ -1,6 +1,6 @@
 # Quill
 
-Code that reads like English. A beginner-friendly language that compiles to JavaScript. No semicolons, no curly braces, no confusion.
+A beginner-friendly language that compiles to JavaScript
 
 [Website](https://quill.tradebuddy.dev) · [Playground](https://quill.tradebuddy.dev/playground.html) · [Docs](https://quill.tradebuddy.dev/docs/) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=tradebuddyhq.quill-lang)
 
