@@ -432,3 +432,59 @@ type TypedAssignStatement struct {
 
 func (s *TypedAssignStatement) nodeType() string { return "TypedAssign" }
 func (s *TypedAssignStatement) stmtNode()        {}
+
+// --- Reactive UI Framework ---
+
+// ComponentStatement represents a reactive UI component definition.
+type ComponentStatement struct {
+	Name       string
+	States     []StateDeclaration
+	Methods    []FuncDefinition
+	RenderBody []RenderElement
+	Line       int
+}
+
+func (s *ComponentStatement) nodeType() string { return "Component" }
+func (s *ComponentStatement) stmtNode()        {}
+
+// StateDeclaration represents a reactive state variable inside a component.
+type StateDeclaration struct {
+	Name  string
+	Value Expression
+	Line  int
+}
+
+func (s *StateDeclaration) nodeType() string { return "StateDecl" }
+func (s *StateDeclaration) stmtNode()        {}
+
+// RenderElement represents an HTML element in the render block.
+type RenderElement struct {
+	Tag       string
+	Props     map[string]Expression // attributes and event handlers
+	Children  []RenderNode          // child elements or text
+	Condition Expression            // for conditional rendering (if)
+	Iterator  *RenderIterator       // for list rendering (for each)
+	Line      int
+}
+
+// RenderNode is either an element or text content in a render block.
+type RenderNode struct {
+	Element *RenderElement // either an element...
+	Text    Expression     // ...or text content (string interpolation)
+}
+
+// RenderIterator represents a for-each loop in a render block.
+type RenderIterator struct {
+	Variable string
+	Iterable Expression
+}
+
+// MountStatement represents mounting a component to a DOM selector.
+type MountStatement struct {
+	Component string
+	Selector  Expression
+	Line      int
+}
+
+func (s *MountStatement) nodeType() string { return "Mount" }
+func (s *MountStatement) stmtNode()        {}

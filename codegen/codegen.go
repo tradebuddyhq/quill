@@ -11,9 +11,11 @@ import (
 )
 
 type Generator struct {
-	indent   int
-	declared map[string]bool
-	browser  bool
+	indent    int
+	declared  map[string]bool
+	browser   bool
+	SourceMap *SourceMap
+	genLine   int // current generated line number (0-based)
 }
 
 func New() *Generator {
@@ -48,8 +50,20 @@ func (g *Generator) Generate(program *ast.Program) string {
 	}
 	out.WriteString("\n")
 
+	// Include framework runtime if any component statements are present
+	if g.hasComponents(program) {
+		out.WriteString(stdlib.FrameworkRuntime)
+		out.WriteString("\n")
+	}
+
+	// Count the preamble lines so source map offsets are correct
+	preamble := out.String()
+	preambleLines := strings.Count(preamble, "\n")
+
 	if strings.Contains(userCodeStr, "await ") {
+		g.genLine = preambleLines // (async () => {
 		out.WriteString("(async () => {\n")
+		preambleLines++ // account for the async wrapper line
 		for _, line := range strings.Split(userCodeStr, "\n") {
 			if line != "" {
 				out.WriteString("  " + line + "\n")
@@ -57,10 +71,34 @@ func (g *Generator) Generate(program *ast.Program) string {
 		}
 		out.WriteString("})();\n")
 	} else {
+		g.genLine = preambleLines
 		out.WriteString(userCodeStr)
 	}
 
+	// Offset all source map segments by the preamble lines
+	if g.SourceMap != nil {
+		for i := range g.SourceMap.segments {
+			g.SourceMap.segments[i].genLine += preambleLines
+		}
+	}
+
 	return out.String()
+}
+
+// GenerateWithSourceMap generates JavaScript and a source map JSON string.
+func (g *Generator) GenerateWithSourceMap(program *ast.Program, sourceFile, outputFile string) (string, string) {
+	g.SourceMap = NewSourceMap(sourceFile, outputFile)
+
+	js := g.Generate(program)
+
+	return js, g.SourceMap.ToJSON()
+}
+
+// trackLine counts newlines in output and adds source mappings for statements.
+func (g *Generator) addStmtMapping(srcLine int) {
+	if g.SourceMap != nil && srcLine > 0 {
+		g.SourceMap.AddMapping(g.genLine, 0, srcLine-1, 0)
+	}
 }
 
 func (g *Generator) genStmt(stmt ast.Statement) string {
@@ -68,6 +106,7 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	switch s := stmt.(type) {
 	case *ast.AssignStatement:
+		g.addStmtMapping(s.Line)
 		value := g.genExpr(s.Value)
 		if g.declared[s.Name] {
 			return fmt.Sprintf("%s%s = %s;", prefix, s.Name, value)
@@ -76,24 +115,29 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		return fmt.Sprintf("%slet %s = %s;", prefix, s.Name, value)
 
 	case *ast.SayStatement:
+		g.addStmtMapping(s.Line)
 		return fmt.Sprintf("%sconsole.log(%s);", prefix, g.genExpr(s.Value))
 
 	case *ast.IfStatement:
+		g.addStmtMapping(s.Line)
 		return g.genIf(s, prefix)
 
 	case *ast.ForEachStatement:
+		g.addStmtMapping(s.Line)
 		g.indent++
 		body := g.genBlock(s.Body)
 		g.indent--
 		return fmt.Sprintf("%sfor (const %s of %s) {\n%s%s}", prefix, s.Variable, g.genExpr(s.Iterable), body, prefix)
 
 	case *ast.WhileStatement:
+		g.addStmtMapping(s.Line)
 		g.indent++
 		body := g.genBlock(s.Body)
 		g.indent--
 		return fmt.Sprintf("%swhile (%s) {\n%s%s}", prefix, g.genExpr(s.Condition), body, prefix)
 
 	case *ast.FuncDefinition:
+		g.addStmtMapping(s.Line)
 		g.indent++
 		body := g.genBlock(s.Body)
 		g.indent--
@@ -101,9 +145,11 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		return fmt.Sprintf("%sfunction %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
 
 	case *ast.ReturnStatement:
+		g.addStmtMapping(s.Line)
 		return fmt.Sprintf("%sreturn %s;", prefix, g.genExpr(s.Value))
 
 	case *ast.ExprStatement:
+		g.addStmtMapping(s.Line)
 		return fmt.Sprintf("%s%s;", prefix, g.genExpr(s.Expr))
 
 	case *ast.DotAssignStatement:
@@ -242,6 +288,12 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		}
 		return fmt.Sprintf("%sconst { %s } = require(\"%s\");", prefix, names, s.Path)
 
+	case *ast.ComponentStatement:
+		return g.genComponent(s, prefix)
+
+	case *ast.MountStatement:
+		return g.genMount(s, prefix)
+
 	default:
 		return prefix + "/* unknown statement */"
 	}
@@ -354,8 +406,10 @@ func (g *Generator) genDefine(s *ast.DefineStatement, prefix string) string {
 func (g *Generator) genBlock(stmts []ast.Statement) string {
 	var out strings.Builder
 	for _, stmt := range stmts {
-		out.WriteString(g.genStmt(stmt))
+		code := g.genStmt(stmt)
+		out.WriteString(code)
 		out.WriteString("\n")
+		g.genLine += strings.Count(code, "\n") + 1
 	}
 	return out.String()
 }
@@ -602,4 +656,17 @@ func isInterpolationExpr(s string) bool {
 		}
 	}
 	return true
+}
+
+// hasComponents checks if the program contains any ComponentStatement nodes.
+func (g *Generator) hasComponents(program *ast.Program) bool {
+	for _, stmt := range program.Statements {
+		if _, ok := stmt.(*ast.ComponentStatement); ok {
+			return true
+		}
+		if _, ok := stmt.(*ast.MountStatement); ok {
+			return true
+		}
+	}
+	return false
 }

@@ -66,6 +66,11 @@ const (
 	TOKEN_OF
 	TOKEN_PIPE // |
 
+	// Framework keywords
+	TOKEN_COMPONENT
+	TOKEN_STATE
+	TOKEN_MOUNT
+
 	// Operators
 	TOKEN_PLUS
 	TOKEN_MINUS
@@ -138,6 +143,9 @@ var tokenNames = map[TokenType]string{
 	TOKEN_DEFINE:    "define",
 	TOKEN_OF:        "of",
 	TOKEN_PIPE:      "|",
+	TOKEN_COMPONENT: "component",
+	TOKEN_STATE:     "state",
+	TOKEN_MOUNT:     "mount",
 	TOKEN_PLUS:      "+",
 	TOKEN_MINUS:     "-",
 	TOKEN_STAR:      "*",

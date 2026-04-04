@@ -85,6 +85,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseMatch()
 	case p.check(lexer.TOKEN_DEFINE):
 		return p.parseDefine()
+	case p.check(lexer.TOKEN_COMPONENT):
+		return p.parseComponent()
+	case p.check(lexer.TOKEN_MOUNT):
+		return p.parseMount()
 	case p.check(lexer.TOKEN_IDENT) && p.pos+3 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_DOT && p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT && (p.tokens[p.pos+3].Type == lexer.TOKEN_IS || p.tokens[p.pos+3].Type == lexer.TOKEN_ARE):
 		return p.parseDotAssignment()
 	case p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE):
@@ -480,6 +484,224 @@ func (p *Parser) parseExprStatement() *ast.ExprStatement {
 	expr := p.parseExpression()
 	p.consumeNewline()
 	return &ast.ExprStatement{Expr: expr, Line: line}
+}
+
+func (p *Parser) parseComponent() *ast.ComponentStatement {
+	line := p.current().Line
+	p.advance() // consume "component"
+	name := p.expect(lexer.TOKEN_IDENT)
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	var states []ast.StateDeclaration
+	var methods []ast.FuncDefinition
+	var renderBody []ast.RenderElement
+
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		if p.check(lexer.TOKEN_STATE) {
+			states = append(states, *p.parseStateDecl())
+		} else if p.check(lexer.TOKEN_TO) {
+			// Check if this is a render method
+			if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Value == "render" {
+				renderBody = p.parseRenderMethod()
+			} else {
+				method := p.parseFuncDef()
+				methods = append(methods, *method)
+			}
+		} else {
+			p.error("expected state, method (to), or render inside component block")
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return &ast.ComponentStatement{
+		Name:       name.Value,
+		States:     states,
+		Methods:    methods,
+		RenderBody: renderBody,
+		Line:       line,
+	}
+}
+
+func (p *Parser) parseStateDecl() *ast.StateDeclaration {
+	line := p.current().Line
+	p.advance() // consume "state"
+	name := p.expect(lexer.TOKEN_IDENT)
+	p.advance() // consume "is" or "are"
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.StateDeclaration{Name: name.Value, Value: value, Line: line}
+}
+
+func (p *Parser) parseRenderMethod() []ast.RenderElement {
+	p.advance() // consume "to"
+	p.advance() // consume "render"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	var elements []ast.RenderElement
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		elements = append(elements, *p.parseRenderElement())
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+	return elements
+}
+
+func (p *Parser) parseRenderElement() *ast.RenderElement {
+	line := p.current().Line
+
+	// Handle conditional: if condition:
+	if p.check(lexer.TOKEN_IF) {
+		p.advance() // consume "if"
+		condition := p.parseExpression()
+		p.expect(lexer.TOKEN_COLON)
+		p.expect(lexer.TOKEN_NEWLINE)
+		p.expect(lexer.TOKEN_INDENT)
+		var children []ast.RenderNode
+		for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+			p.skipNewlines()
+			if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+				break
+			}
+			el := p.parseRenderElement()
+			children = append(children, ast.RenderNode{Element: el})
+		}
+		if p.check(lexer.TOKEN_DEDENT) {
+			p.advance()
+		}
+		return &ast.RenderElement{
+			Tag:       "__fragment",
+			Condition: condition,
+			Children:  children,
+			Props:     map[string]ast.Expression{},
+			Line:      line,
+		}
+	}
+
+	// Handle for each: for each item in list:
+	if p.check(lexer.TOKEN_FOR) {
+		p.advance() // consume "for"
+		p.expect(lexer.TOKEN_EACH)
+		varTok := p.expect(lexer.TOKEN_IDENT)
+		p.expect(lexer.TOKEN_IN)
+		iterable := p.parseExpression()
+		p.expect(lexer.TOKEN_COLON)
+		p.expect(lexer.TOKEN_NEWLINE)
+		p.expect(lexer.TOKEN_INDENT)
+		var children []ast.RenderNode
+		for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+			p.skipNewlines()
+			if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+				break
+			}
+			el := p.parseRenderElement()
+			children = append(children, ast.RenderNode{Element: el})
+		}
+		if p.check(lexer.TOKEN_DEDENT) {
+			p.advance()
+		}
+		return &ast.RenderElement{
+			Tag:      "__fragment",
+			Iterator: &ast.RenderIterator{Variable: varTok.Value, Iterable: iterable},
+			Children: children,
+			Props:    map[string]ast.Expression{},
+			Line:     line,
+		}
+	}
+
+	// Regular element: tag [props...] [: "text" | NEWLINE INDENT children DEDENT]
+	tag := p.expect(lexer.TOKEN_IDENT)
+	props := make(map[string]ast.Expression)
+
+	// Parse props: onClick handler, bind:value ident, key value, etc.
+	for p.check(lexer.TOKEN_IDENT) && !p.isAtEnd() {
+		propName := p.current().Value
+		// Check for bind:value pattern
+		if propName == "bind" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_COLON {
+			p.advance() // consume "bind"
+			p.advance() // consume ":"
+			bindTarget := p.expect(lexer.TOKEN_IDENT)
+			props["bind:"+bindTarget.Value] = &ast.Identifier{Name: bindTarget.Value}
+			continue
+		}
+		// Check if next token is an identifier (event handler or attr with value)
+		if p.checkNext(lexer.TOKEN_IDENT) {
+			p.advance() // consume prop name
+			valTok := p.advance() // consume prop value (identifier)
+			props[propName] = &ast.Identifier{Name: valTok.Value}
+		} else if p.checkNext(lexer.TOKEN_STRING) {
+			p.advance() // consume prop name
+			valTok := p.advance() // consume string value
+			props[propName] = &ast.StringLiteral{Value: valTok.Value}
+		} else {
+			break
+		}
+	}
+
+	var children []ast.RenderNode
+
+	if p.check(lexer.TOKEN_COLON) {
+		p.advance() // consume ":"
+		if p.check(lexer.TOKEN_STRING) {
+			// Inline text: tag: "text"
+			text := p.advance()
+			children = append(children, ast.RenderNode{Text: &ast.StringLiteral{Value: text.Value}})
+			p.consumeNewline()
+		} else if p.check(lexer.TOKEN_IDENT) {
+			// Inline expression: tag: expr
+			expr := p.parseExpression()
+			children = append(children, ast.RenderNode{Text: expr})
+			p.consumeNewline()
+		} else if p.check(lexer.TOKEN_NEWLINE) {
+			// Block children
+			p.advance() // consume newline
+			p.expect(lexer.TOKEN_INDENT)
+			for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+				p.skipNewlines()
+				if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+					break
+				}
+				el := p.parseRenderElement()
+				children = append(children, ast.RenderNode{Element: el})
+			}
+			if p.check(lexer.TOKEN_DEDENT) {
+				p.advance()
+			}
+		}
+	} else {
+		p.consumeNewline()
+	}
+
+	return &ast.RenderElement{
+		Tag:      tag.Value,
+		Props:    props,
+		Children: children,
+		Line:     line,
+	}
+}
+
+func (p *Parser) parseMount() *ast.MountStatement {
+	line := p.current().Line
+	p.advance() // consume "mount"
+	comp := p.expect(lexer.TOKEN_IDENT)
+	p.expect(lexer.TOKEN_TO)
+	selector := p.parseExpression()
+	p.consumeNewline()
+	return &ast.MountStatement{Component: comp.Value, Selector: selector, Line: line}
 }
 
 func (p *Parser) parseBlock() []ast.Statement {

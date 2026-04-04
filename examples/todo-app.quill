@@ -1,0 +1,25 @@
+-- Todo App built with Quill UI Framework
+
+component TodoApp:
+  state todos are []
+  state input is ""
+
+  to addTodo:
+    if input is not "":
+      push(todos, {text: input, done: no})
+      input is ""
+
+  to toggleTodo index:
+    todos[index].done is not todos[index].done
+
+  to render:
+    div:
+      h1: "Todo App"
+      div:
+        input bind:value input placeholder "Add a todo..."
+        button onClick addTodo: "Add"
+      ul:
+        for each todo in todos:
+          li: todo.text
+
+mount TodoApp to "#app"

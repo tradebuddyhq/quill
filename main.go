@@ -10,7 +10,9 @@ import (
 	"quill/codegen"
 	"quill/formatter"
 	"quill/lexer"
+	"quill/lsp"
 	"quill/parser"
+	"quill/registry"
 	"quill/repl"
 	"quill/typechecker"
 	"strings"
@@ -48,12 +50,17 @@ func main() {
 				target = "wasm"
 			case "--standalone":
 				target = "standalone"
+			case "--llvm", "--native":
+				target = "llvm"
 			}
 		}
 		buildFileWithTarget(os.Args[2], target)
 
 	case "repl":
 		repl.Start()
+
+	case "lsp":
+		lsp.Start()
 
 	case "test":
 		runTests(os.Args[2:])
@@ -100,6 +107,28 @@ func main() {
 			os.Exit(1)
 		}
 		generateDocs(os.Args[2])
+
+	case "publish":
+		publishPackage()
+
+	case "search":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a search query")
+			fmt.Fprintln(os.Stderr, "Usage: quill search <query>")
+			os.Exit(1)
+		}
+		searchRegistry(os.Args[2])
+
+	case "install":
+		installDependencies()
+
+	case "bump":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide bump type (major, minor, or patch)")
+			fmt.Fprintln(os.Stderr, "Usage: quill bump <major|minor|patch>")
+			os.Exit(1)
+		}
+		bumpVersion(os.Args[2])
 
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
@@ -163,11 +192,16 @@ func buildFile(filename string, browser bool) {
 }
 
 func buildFileWithTarget(filename string, target string) {
-	browser := target == "browser"
-	js := compileWithTarget(filename, browser)
-
 	ext := filepath.Ext(filename)
 	base := filename[:len(filename)-len(ext)]
+
+	if target == "llvm" {
+		buildLLVM(filename, base)
+		return
+	}
+
+	browser := target == "browser"
+	js := compileWithTarget(filename, browser)
 
 	switch target {
 	case "wasm":
@@ -194,8 +228,20 @@ func buildFileWithTarget(filename string, target string) {
 
 	default:
 		outFile := base + ".js"
-		if err := os.WriteFile(outFile, []byte(js), 0644); err != nil {
+		mapFile := outFile + ".map"
+
+		// Generate with source map
+		jsWithMap, sourceMapJSON := compileWithSourceMap(filename, browser)
+
+		// Append source mapping URL
+		jsWithMap = jsWithMap + "\n//# sourceMappingURL=" + filepath.Base(mapFile) + "\n"
+
+		if err := os.WriteFile(outFile, []byte(jsWithMap), 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: could not write output file: %s\n", err)
+			os.Exit(1)
+		}
+		if err := os.WriteFile(mapFile, []byte(sourceMapJSON), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: could not write source map file: %s\n", err)
 			os.Exit(1)
 		}
 		targetLabel := "Node.js"
@@ -203,7 +249,65 @@ func buildFileWithTarget(filename string, target string) {
 			targetLabel = "browser"
 		}
 		fmt.Printf("Built %s -> %s (%s)\n", filename, outFile, targetLabel)
+		fmt.Printf("  Source map: %s\n", mapFile)
 	}
+}
+
+func buildLLVM(filename string, base string) {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read %q\n", filename)
+		os.Exit(1)
+	}
+
+	l := lexer.New(string(source))
+	tokens, err := l.Tokenize()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	p := parser.New(tokens)
+	program, err := p.Parse()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	gen := codegen.NewLLVM()
+	ir := gen.Generate(program)
+
+	outFile := base + ".ll"
+	if err := os.WriteFile(outFile, []byte(ir), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not write output file: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Built %s -> %s (LLVM IR)\n", filename, outFile)
+
+	// Try to compile to native binary if llc and cc are available
+	if _, err := exec.LookPath("llc"); err == nil {
+		if _, err := exec.LookPath("cc"); err == nil {
+			objFile := base + ".o"
+			binFile := base
+
+			llcCmd := exec.Command("llc", "-filetype=obj", outFile, "-o", objFile)
+			llcCmd.Stderr = os.Stderr
+			if err := llcCmd.Run(); err == nil {
+				ccCmd := exec.Command("cc", objFile, "-o", binFile, "-lm")
+				ccCmd.Stderr = os.Stderr
+				if err := ccCmd.Run(); err == nil {
+					fmt.Printf("  Compiled native binary: %s\n", binFile)
+					fmt.Println("  Run with: ./" + filepath.Base(binFile))
+					os.Remove(objFile)
+					return
+				}
+				os.Remove(objFile)
+			}
+		}
+	}
+
+	fmt.Println("  To compile: llc -filetype=obj " + outFile + " -o " + base + ".o && cc " + base + ".o -o " + base + " -lm")
 }
 
 func generateWASMWrapper(js string, base string) string {
@@ -264,6 +368,41 @@ func compileWithTarget(filename string, browser bool) string {
 		g = codegen.New()
 	}
 	return g.Generate(program)
+}
+
+func compileWithSourceMap(filename string, browser bool) (string, string) {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read %q\n", filename)
+		fmt.Fprintln(os.Stderr, "Make sure the file exists and you have permission to read it.")
+		os.Exit(1)
+	}
+
+	l := lexer.New(string(source))
+	tokens, err := l.Tokenize()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	p := parser.New(tokens)
+	program, err := p.Parse()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	ext := filepath.Ext(filename)
+	base := filename[:len(filename)-len(ext)]
+	outFile := base + ".js"
+
+	var g *codegen.Generator
+	if browser {
+		g = codegen.NewBrowser()
+	} else {
+		g = codegen.New()
+	}
+	return g.GenerateWithSourceMap(program, filename, outFile)
 }
 
 func findRuntime() string {
@@ -411,7 +550,11 @@ func initProject() {
 		"name":         name,
 		"version":      "0.1.0",
 		"description":  "",
+		"author":       "",
+		"license":      "MIT",
 		"main":         "main.quill",
+		"keywords":     []string{},
+		"repository":   "",
 		"dependencies": map[string]string{},
 	}
 
@@ -445,20 +588,41 @@ func addPackage(pkg string) {
 
 	json.Unmarshal(data, &config)
 
-	// Install with npm
-	fmt.Printf("Installing %s...\n", pkg)
+	// Update quill.json dependencies
+	deps, ok := config["dependencies"].(map[string]interface{})
+	if !ok {
+		deps = make(map[string]interface{})
+	}
+
+	// First, check the Quill registry
+	client := registry.NewClient()
+	if meta, err := client.GetPackage(pkg); err == nil {
+		fmt.Printf("Found %s@%s in Quill registry\n", pkg, meta.Version)
+
+		// Download and install to quill_modules
+		bundle, err := client.Download(pkg, meta.Version)
+		if err == nil {
+			destDir := filepath.Join("quill_modules", pkg)
+			os.MkdirAll(destDir, 0755)
+			if err := registry.UnpackBundle(bundle, destDir); err == nil {
+				deps[pkg] = "^" + meta.Version
+				config["dependencies"] = deps
+				outData, _ := json.MarshalIndent(config, "", "  ")
+				os.WriteFile("quill.json", outData, 0644)
+				fmt.Printf("✓ Added %s@%s from Quill registry\n", pkg, meta.Version)
+				return
+			}
+		}
+	}
+
+	// Fallback to npm
+	fmt.Printf("Installing %s via npm...\n", pkg)
 	cmd := exec.Command("npm", "install", pkg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error installing %s: %s\n", pkg, err)
 		os.Exit(1)
-	}
-
-	// Update quill.json dependencies
-	deps, ok := config["dependencies"].(map[string]interface{})
-	if !ok {
-		deps = make(map[string]interface{})
 	}
 
 	// Read installed version from node_modules
@@ -649,6 +813,120 @@ func generateDocs(filename string) {
 	fmt.Printf("✓ Generated documentation: %s\n", outFile)
 }
 
+func publishPackage() {
+	meta, err := registry.ReadPackageMeta(".")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error: could not read quill.json. Run 'quill init' first.")
+		os.Exit(1)
+	}
+
+	if meta.Name == "" {
+		fmt.Fprintln(os.Stderr, "Error: package name is required in quill.json")
+		os.Exit(1)
+	}
+
+	if !registry.ValidateVersion(meta.Version) {
+		fmt.Fprintf(os.Stderr, "Error: invalid version %q in quill.json — must be semver (e.g. 1.0.0)\n", meta.Version)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Publishing %s@%s...\n", meta.Name, meta.Version)
+
+	bundle, err := registry.PackageBundle(".")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating package bundle: %s\n", err)
+		os.Exit(1)
+	}
+
+	client := registry.NewClient()
+	if err := client.Publish(meta, bundle, ""); err != nil {
+		fmt.Fprintf(os.Stderr, "Error publishing: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("✓ Published %s@%s to local registry\n", meta.Name, meta.Version)
+}
+
+func searchRegistry(query string) {
+	client := registry.NewClient()
+	results, err := client.Search(query)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error searching registry: %s\n", err)
+		os.Exit(1)
+	}
+
+	if len(results) == 0 {
+		fmt.Printf("No packages found matching %q\n", query)
+		return
+	}
+
+	fmt.Printf("Found %d package(s):\n\n", len(results))
+	for _, pkg := range results {
+		desc := pkg.Description
+		if desc == "" {
+			desc = "(no description)"
+		}
+		fmt.Printf("  %s@%s\n", pkg.Name, pkg.Version)
+		fmt.Printf("    %s\n\n", desc)
+	}
+}
+
+func installDependencies() {
+	meta, err := registry.ReadPackageMeta(".")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error: could not read quill.json. Run 'quill init' first.")
+		os.Exit(1)
+	}
+
+	if len(meta.Dependencies) == 0 {
+		fmt.Println("No dependencies to install")
+		return
+	}
+
+	fmt.Printf("Installing %d dependenc", len(meta.Dependencies))
+	if len(meta.Dependencies) == 1 {
+		fmt.Println("y...")
+	} else {
+		fmt.Println("ies...")
+	}
+
+	resolver := registry.NewResolver()
+	if err := resolver.Install(".", meta.Dependencies); err != nil {
+		fmt.Fprintf(os.Stderr, "Error installing dependencies: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("✓ Dependencies installed")
+}
+
+func bumpVersion(bump string) {
+	if bump != "major" && bump != "minor" && bump != "patch" {
+		fmt.Fprintf(os.Stderr, "Error: invalid bump type %q — must be major, minor, or patch\n", bump)
+		os.Exit(1)
+	}
+
+	meta, err := registry.ReadPackageMeta(".")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error: could not read quill.json. Run 'quill init' first.")
+		os.Exit(1)
+	}
+
+	if !registry.ValidateVersion(meta.Version) {
+		fmt.Fprintf(os.Stderr, "Error: current version %q is not valid semver\n", meta.Version)
+		os.Exit(1)
+	}
+
+	oldVersion := meta.Version
+	meta.Version = registry.BumpVersion(meta.Version, bump)
+
+	if err := registry.WritePackageMeta(".", meta); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing quill.json: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("✓ Bumped version: %s -> %s\n", oldVersion, meta.Version)
+}
+
 func printUsage() {
 	fmt.Println("Quill — code that reads like English")
 	fmt.Println()
@@ -658,14 +936,20 @@ func printUsage() {
 	fmt.Println("  quill build <file> --browser       Compile for the browser")
 	fmt.Println("  quill build <file> --wasm          Compile as WASM-ready module")
 	fmt.Println("  quill build <file> --standalone     Compile as standalone executable")
+	fmt.Println("  quill build <file> --llvm           Compile to LLVM IR (.ll file)")
 	fmt.Println("  quill repl                   Start interactive REPL")
+	fmt.Println("  quill lsp                    Start the LSP server (for editor integration)")
 	fmt.Println("  quill test [files...]        Run tests in .quill files")
 	fmt.Println("  quill fmt <file.quill>       Format a Quill file")
 	fmt.Println("  quill check <file.quill>     Check for common issues")
 	fmt.Println("  quill docs <file.quill>      Generate documentation")
 	fmt.Println("  quill init                   Initialize a new Quill project")
-	fmt.Println("  quill add <package>          Install an npm package")
+	fmt.Println("  quill add <package>          Install a package (Quill registry or npm)")
 	fmt.Println("  quill remove <package>       Remove a package")
+	fmt.Println("  quill install                Install all dependencies from quill.json")
+	fmt.Println("  quill publish                Publish package to the Quill registry")
+	fmt.Println("  quill search <query>         Search the Quill package registry")
+	fmt.Println("  quill bump <major|minor|patch>  Bump version in quill.json")
 	fmt.Println("  quill version                Show version")
 	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
@@ -679,4 +963,8 @@ func printUsage() {
 	fmt.Println("  quill docs api.quill")
 	fmt.Println("  quill init")
 	fmt.Println("  quill add express")
+	fmt.Println("  quill install")
+	fmt.Println("  quill publish")
+	fmt.Println("  quill search utils")
+	fmt.Println("  quill bump patch")
 }

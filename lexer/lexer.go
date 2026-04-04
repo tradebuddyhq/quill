@@ -51,6 +51,9 @@ var keywords = map[string]TokenType{
 	"when":      TOKEN_WHEN,
 	"define":    TOKEN_DEFINE,
 	"of":        TOKEN_OF,
+	"component": TOKEN_COMPONENT,
+	"state":     TOKEN_STATE,
+	"mount":     TOKEN_MOUNT,
 }
 
 type Lexer struct {

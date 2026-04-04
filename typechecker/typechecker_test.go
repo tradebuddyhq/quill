@@ -169,6 +169,85 @@ func TestParseType(t *testing.T) {
 	}
 }
 
+func TestUnionTypeParsing(t *testing.T) {
+	ut := parseType("number | text")
+	if len(ut.Union) != 2 {
+		t.Fatalf("expected 2 union members, got %d", len(ut.Union))
+	}
+	if ut.Union[0].Name != "number" {
+		t.Errorf("expected first union member to be number, got %s", ut.Union[0].Name)
+	}
+	if ut.Union[1].Name != "text" {
+		t.Errorf("expected second union member to be text, got %s", ut.Union[1].Name)
+	}
+
+	// String representation
+	if ut.String() != "number | text" {
+		t.Errorf("expected 'number | text', got %q", ut.String())
+	}
+}
+
+func TestNullableTypeParsing(t *testing.T) {
+	nt := parseType("?number")
+	if nt.Name != "number" {
+		t.Errorf("expected name to be number, got %s", nt.Name)
+	}
+	if !nt.Nullable {
+		t.Error("expected nullable to be true")
+	}
+	if nt.String() != "?number" {
+		t.Errorf("expected '?number', got %q", nt.String())
+	}
+
+	// Nullable generic
+	ng := parseType("?list of number")
+	if ng.Name != "list" || ng.Inner != "number" || !ng.Nullable {
+		t.Errorf("expected ?list of number, got %v", ng)
+	}
+}
+
+func TestUnionTypeCompatibility(t *testing.T) {
+	tc := New()
+
+	unionType := parseType("number | text")
+
+	// number is compatible with number | text
+	if !tc.typeCompatible(unionType, Type{Name: "number"}) {
+		t.Error("number should be compatible with number | text")
+	}
+
+	// text is compatible with number | text
+	if !tc.typeCompatible(unionType, Type{Name: "text"}) {
+		t.Error("text should be compatible with number | text")
+	}
+
+	// boolean is NOT compatible with number | text
+	if tc.typeCompatible(unionType, Type{Name: "boolean"}) {
+		t.Error("boolean should not be compatible with number | text")
+	}
+}
+
+func TestNullableTypeCompatibility(t *testing.T) {
+	tc := New()
+
+	nullableNum := parseType("?number")
+
+	// number is compatible with ?number
+	if !tc.typeCompatible(nullableNum, Type{Name: "number"}) {
+		t.Error("number should be compatible with ?number")
+	}
+
+	// nothing is compatible with ?number
+	if !tc.typeCompatible(nullableNum, Type{Name: "nothing"}) {
+		t.Error("nothing should be compatible with ?number")
+	}
+
+	// text is NOT compatible with ?number
+	if tc.typeCompatible(nullableNum, Type{Name: "text"}) {
+		t.Error("text should not be compatible with ?number")
+	}
+}
+
 func TestHasErrors(t *testing.T) {
 	diags := []TypeDiagnostic{
 		{Line: 1, Severity: "warning", Message: "test"},

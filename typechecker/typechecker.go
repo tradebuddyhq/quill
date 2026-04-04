@@ -8,11 +8,26 @@ import (
 
 // Type represents a Quill type.
 type Type struct {
-	Name    string // "text", "number", "boolean", "list", "object", "nothing", "any", "function", or custom
-	Inner   string // for generics: "list of number" -> Inner="number"
+	Name     string // "text", "number", "boolean", "list", "object", "nothing", "any", "function", or custom
+	Inner    string // for generics: "list of number" -> Inner="number"
+	Union    []Type // for union types: number | text
+	Nullable bool   // for nullable: ?number
 }
 
 func (t Type) String() string {
+	if len(t.Union) > 0 {
+		parts := make([]string, len(t.Union))
+		for i, u := range t.Union {
+			parts[i] = u.String()
+		}
+		return strings.Join(parts, " | ")
+	}
+	if t.Nullable {
+		if t.Inner != "" {
+			return "?" + t.Name + " of " + t.Inner
+		}
+		return "?" + t.Name
+	}
 	if t.Inner != "" {
 		return t.Name + " of " + t.Inner
 	}
@@ -226,6 +241,19 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 	case *ast.DotAssignStatement:
 		c.inferType(s.Value)
 
+	case *ast.TypedAssignStatement:
+		inferredType := c.inferType(s.Value)
+		if s.TypeHint != "" {
+			expected := parseType(s.TypeHint)
+			if !c.typeCompatible(expected, inferredType) {
+				c.addError(s.Line, fmt.Sprintf("variable %q declared as %s but assigned %s",
+					s.Name, expected, inferredType))
+			}
+			c.variables[s.Name] = expected
+		} else {
+			c.variables[s.Name] = inferredType
+		}
+
 	case *ast.UseStatement:
 		// nothing to type check
 	case *ast.FromUseStatement:
@@ -351,6 +379,47 @@ func (c *Checker) typeCompatible(expected, actual Type) bool {
 	if expected.Name == "any" || actual.Name == "any" {
 		return true
 	}
+
+	// Union type on expected side: actual must match at least one member
+	if len(expected.Union) > 0 {
+		for _, u := range expected.Union {
+			if c.typeCompatible(u, actual) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Union type on actual side: all members must be compatible with expected
+	if len(actual.Union) > 0 {
+		for _, u := range actual.Union {
+			if !c.typeCompatible(expected, u) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Nullable expected: compatible with the base type or nothing
+	if expected.Nullable {
+		base := Type{Name: expected.Name, Inner: expected.Inner}
+		if actual.Name == "nothing" {
+			return true
+		}
+		return c.typeCompatible(base, actual)
+	}
+
+	// Nullable actual: compatible only if expected is also nullable or accepts nothing
+	if actual.Nullable {
+		base := Type{Name: actual.Name, Inner: actual.Inner}
+		if expected.Nullable {
+			expectedBase := Type{Name: expected.Name, Inner: expected.Inner}
+			return c.typeCompatible(expectedBase, base)
+		}
+		// Non-nullable expected: the base must match and nothing must also be acceptable
+		return false
+	}
+
 	if expected.Name == actual.Name {
 		if expected.Inner == "" || actual.Inner == "" {
 			return true
@@ -391,9 +460,27 @@ func (c *Checker) stdlibReturnType(name string) Type {
 	}
 }
 
-// parseType parses a type string like "number" or "list of number".
+// parseType parses a type string like "number", "list of number", "number | text", or "?number".
 func parseType(s string) Type {
 	s = strings.TrimSpace(s)
+
+	// Union type: "number | text"
+	if strings.Contains(s, " | ") {
+		parts := strings.Split(s, " | ")
+		union := make([]Type, len(parts))
+		for i, p := range parts {
+			union[i] = parseType(strings.TrimSpace(p))
+		}
+		return Type{Union: union}
+	}
+
+	// Nullable type: "?number" is shorthand for "number | nothing"
+	if strings.HasPrefix(s, "?") {
+		inner := parseType(s[1:])
+		inner.Nullable = true
+		return inner
+	}
+
 	if strings.Contains(s, " of ") {
 		parts := strings.SplitN(s, " of ", 2)
 		return Type{Name: strings.TrimSpace(parts[0]), Inner: strings.TrimSpace(parts[1])}
