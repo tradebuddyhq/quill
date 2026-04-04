@@ -1,12 +1,12 @@
 # Quill
 
-A beginner-friendly language that compiles to JavaScript. English-like syntax with real type checking, pattern matching, and a growing standard library.
+A beginner-friendly language that compiles to JavaScript
 
 [Website](https://quill.tradebuddy.dev) · [Playground](https://quill.tradebuddy.dev/playground) · [Docs](https://quill.tradebuddy.dev/docs/) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=tradebuddyhq.quill-lang)
 
 ## Community
 
-Join our [Discord](https://discord.gg/9rRyGRrh8E) for help, questions, and discussion. Visit [tradebuddy.dev](https://tradebuddy.dev) for more about the project.
+Join our [Discord](https://discord.gg/9rRyGRrh8E) for help and discussion. Visit [tradebuddy.dev](https://tradebuddy.dev) for more about the project
 
 ## Quick Start
 
