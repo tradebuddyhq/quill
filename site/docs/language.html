@@ -66,6 +66,16 @@
         <li><a href="#classes">Classes</a></li>
         <li><a href="#algebraic-types">Algebraic data types</a></li>
       </ul>
+      <h4>Concurrency</h4>
+      <ul>
+        <li><a href="#concurrency">Overview</a></li>
+        <li><a href="#spawn-task">Spawn task</a></li>
+        <li><a href="#await">Await</a></li>
+        <li><a href="#parallel-block">Parallel block</a></li>
+        <li><a href="#race-block">Race block</a></li>
+        <li><a href="#channels">Channels</a></li>
+        <li><a href="#select-block">Select block</a></li>
+      </ul>
       <h4>Advanced</h4>
       <ul>
         <li><a href="#pipe-operator">Pipe operator</a></li>
@@ -1311,6 +1321,190 @@ empty <span class="kw">are</span> []</code></pre>
       </div>
 
       <!-- ============================================================ -->
+      <!-- CONCURRENCY                                                   -->
+      <!-- ============================================================ -->
+
+      <h2 id="concurrency">Concurrency</h2>
+      <p>Sometimes your program needs to do more than one thing at the same time. Maybe you want to download three files at once, or process data while also listening for user input. This is called <strong>concurrency</strong> -- doing multiple things that overlap in time.</p>
+
+      <p>Think of it like cooking dinner: you can boil pasta on one burner while the sauce simmers on another. You are one person, but you are managing multiple things at once. That is concurrency.</p>
+
+      <div class="callout callout-info">
+        <strong>New to concurrency?</strong> Don't worry -- Quill makes it much simpler than most languages. Read each section below in order, and try the examples as you go. The key idea is: sometimes you want to start a job, keep doing other stuff, and come back for the result later.
+      </div>
+
+      <!-- SPAWN TASK -->
+      <h3 id="spawn-task"><code>spawn task</code> -- Running code in the background</h3>
+      <p>Imagine you ask someone to go fetch a package from the post office while you keep working at your desk. You gave them a task, and you did not stop what you were doing. That is what <code>spawn task</code> does -- it starts a piece of code running in the background so your program can keep going.</p>
+
+      <pre><code><span class="cmt">-- Start a background task</span>
+<span class="kw">spawn task</span> fetchData:
+  result <span class="kw">is</span> fetch(<span class="str">"https://api.example.com/data"</span>)
+  <span class="kw">say</span> <span class="str">"Got the data!"</span>
+
+<span class="cmt">-- This runs immediately -- we didn't wait for fetchData</span>
+<span class="kw">say</span> <span class="str">"Still working while data is being fetched..."</span></code></pre>
+
+      <p>The code inside <code>spawn task fetchData:</code> runs in the background. Your program continues to the next line without waiting. The task has a name (<code>fetchData</code>) so you can refer to it later if you need the result.</p>
+
+      <pre><code><span class="cmt">-- A practical example: processing items in the background</span>
+<span class="kw">spawn task</span> sendEmails:
+  users <span class="kw">is</span> getUsers()
+  <span class="kw">for each</span> user <span class="kw">in</span> users:
+    sendEmail(user.email, <span class="str">"Welcome!"</span>)
+  <span class="kw">say</span> <span class="str">"All emails sent."</span>
+
+<span class="kw">spawn task</span> generateReport:
+  data <span class="kw">is</span> loadSalesData()
+  report <span class="kw">is</span> buildReport(data)
+  saveFile(<span class="str">"report.pdf"</span>, report)
+  <span class="kw">say</span> <span class="str">"Report saved."</span>
+
+<span class="kw">say</span> <span class="str">"Both tasks started! The program continues here."</span></code></pre>
+
+      <!-- AWAIT -->
+      <h3 id="await"><code>await</code> -- Waiting for a task to finish</h3>
+      <p>Sometimes you need the result of a background task before you can continue. The <code>await</code> keyword pauses your code until the task is done -- like waiting at the door for your package to arrive before you can open it.</p>
+
+      <pre><code><span class="kw">spawn task</span> loadUser:
+  <span class="kw">give back</span> fetch(<span class="str">"https://api.example.com/user/1"</span>)
+
+<span class="cmt">-- Wait for the task to finish and get the result</span>
+user <span class="kw">is</span> <span class="kw">await</span> loadUser
+<span class="kw">say</span> <span class="str">"Hello, {user.name}!"</span></code></pre>
+
+      <pre><code><span class="cmt">-- You can await multiple tasks one after another</span>
+<span class="kw">spawn task</span> getWeather:
+  <span class="kw">give back</span> fetch(<span class="str">"https://api.weather.com/today"</span>)
+
+<span class="kw">spawn task</span> getNews:
+  <span class="kw">give back</span> fetch(<span class="str">"https://api.news.com/headlines"</span>)
+
+weather <span class="kw">is</span> <span class="kw">await</span> getWeather
+news <span class="kw">is</span> <span class="kw">await</span> getNews
+<span class="kw">say</span> <span class="str">"Weather: {weather.summary}"</span>
+<span class="kw">say</span> <span class="str">"Top headline: {news[0].title}"</span></code></pre>
+
+      <!-- PARALLEL BLOCK -->
+      <h3 id="parallel-block"><code>parallel:</code> -- Doing multiple things at once</h3>
+      <p>What if you want to start several tasks and wait for <em>all</em> of them to finish? The <code>parallel:</code> block does exactly that. Think of it like telling three friends to each go buy one item at the store -- you wait until everyone comes back, then you have everything you need.</p>
+
+      <p>Under the hood, this works like JavaScript's <code>Promise.all</code> -- all the tasks run at the same time, and the block finishes when the last one completes.</p>
+
+      <pre><code><span class="cmt">-- Fetch three APIs at the same time</span>
+<span class="kw">parallel</span>:
+  users <span class="kw">is</span> fetch(<span class="str">"https://api.example.com/users"</span>)
+  posts <span class="kw">is</span> fetch(<span class="str">"https://api.example.com/posts"</span>)
+  comments <span class="kw">is</span> fetch(<span class="str">"https://api.example.com/comments"</span>)
+
+<span class="cmt">-- All three are done now -- use the results</span>
+<span class="kw">say</span> <span class="str">"Got {length(users)} users, {length(posts)} posts, {length(comments)} comments"</span></code></pre>
+
+      <pre><code><span class="cmt">-- Process multiple files at the same time</span>
+<span class="kw">parallel</span>:
+  image <span class="kw">is</span> resizeImage(<span class="str">"photo.jpg"</span>, 800, 600)
+  thumbnail <span class="kw">is</span> resizeImage(<span class="str">"photo.jpg"</span>, 150, 150)
+  metadata <span class="kw">is</span> readExif(<span class="str">"photo.jpg"</span>)
+
+saveFile(<span class="str">"photo-resized.jpg"</span>, image)
+saveFile(<span class="str">"photo-thumb.jpg"</span>, thumbnail)
+<span class="kw">say</span> <span class="str">"Photo taken on: {metadata.date}"</span></code></pre>
+
+      <!-- RACE BLOCK -->
+      <h3 id="race-block"><code>race:</code> -- First one wins</h3>
+      <p>Sometimes you want to start several tasks but only care about whichever finishes first. The <code>race:</code> block does exactly that -- like starting a race between runners, the first one to cross the finish line wins, and the rest are ignored.</p>
+
+      <p>This is useful for timeouts, trying multiple servers, or getting the fastest response.</p>
+
+      <pre><code><span class="cmt">-- Try two mirrors, use whichever responds first</span>
+result <span class="kw">is</span> <span class="kw">race</span>:
+  fetch(<span class="str">"https://mirror1.example.com/data"</span>)
+  fetch(<span class="str">"https://mirror2.example.com/data"</span>)
+
+<span class="kw">say</span> <span class="str">"Got data from the fastest mirror!"</span></code></pre>
+
+      <pre><code><span class="cmt">-- Implement a timeout: if the API doesn't respond in 5 seconds, give up</span>
+result <span class="kw">is</span> <span class="kw">race</span>:
+  fetch(<span class="str">"https://slow-api.example.com/data"</span>)
+  delay(<span class="num">5000</span>) <span class="kw">then give back</span> {error: <span class="str">"Timed out"</span>}
+
+<span class="kw">if</span> result.error:
+  <span class="kw">say</span> <span class="str">"The request timed out."</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Got the data!"</span></code></pre>
+
+      <!-- CHANNELS -->
+      <h3 id="channels">Channels -- Sending messages between tasks</h3>
+      <p>Channels are like mailboxes that tasks use to send messages to each other. One task puts a message in the mailbox (<code>send</code>), and another task picks it up (<code>receive</code>). This is the safest way for tasks to communicate -- instead of sharing variables directly, they pass messages through a channel.</p>
+
+      <p>The <code>buffer</code> number controls how many messages can sit in the mailbox before the sender has to wait. Think of it like a physical mailbox -- if it can hold 5 letters, the mail carrier can drop off 5 without waiting. But if it is full, they have to wait until someone picks up a letter.</p>
+
+      <pre><code><span class="cmt">-- Create a channel that can hold 3 messages</span>
+<span class="kw">channel</span> messages <span class="kw">with buffer</span> <span class="num">3</span>
+
+<span class="cmt">-- Task 1: produce messages</span>
+<span class="kw">spawn task</span> producer:
+  <span class="kw">send</span> <span class="str">"Hello"</span> <span class="kw">to</span> messages
+  <span class="kw">send</span> <span class="str">"World"</span> <span class="kw">to</span> messages
+  <span class="kw">send</span> <span class="str">"Done"</span> <span class="kw">to</span> messages
+
+<span class="cmt">-- Task 2: consume messages</span>
+<span class="kw">spawn task</span> consumer:
+  msg1 <span class="kw">is</span> <span class="kw">receive from</span> messages
+  msg2 <span class="kw">is</span> <span class="kw">receive from</span> messages
+  msg3 <span class="kw">is</span> <span class="kw">receive from</span> messages
+  <span class="kw">say</span> <span class="str">"{msg1} {msg2} -- {msg3}"</span>
+  <span class="cmt">-- Output: Hello World -- Done</span></code></pre>
+
+      <pre><code><span class="cmt">-- A worker pool pattern: multiple workers sharing a channel</span>
+<span class="kw">channel</span> jobs <span class="kw">with buffer</span> <span class="num">10</span>
+<span class="kw">channel</span> results <span class="kw">with buffer</span> <span class="num">10</span>
+
+<span class="cmt">-- Start 3 workers</span>
+<span class="kw">repeat</span> <span class="num">3</span> <span class="kw">times</span> <span class="kw">with</span> i:
+  <span class="kw">spawn task</span> worker:
+    job <span class="kw">is</span> <span class="kw">receive from</span> jobs
+    result <span class="kw">is</span> processJob(job)
+    <span class="kw">send</span> result <span class="kw">to</span> results
+
+<span class="cmt">-- Send jobs to the workers</span>
+<span class="kw">for each</span> item <span class="kw">in</span> workItems:
+  <span class="kw">send</span> item <span class="kw">to</span> jobs</code></pre>
+
+      <!-- SELECT BLOCK -->
+      <h3 id="select-block"><code>select:</code> -- Waiting on multiple channels</h3>
+      <p>Sometimes a task needs to listen to more than one channel at a time, or give up after a certain amount of time. The <code>select:</code> block lets you do this -- it waits and reacts to whichever channel has a message first. Think of it like standing in a room with multiple doors -- you wait until any door opens, then go through that one.</p>
+
+      <pre><code><span class="kw">channel</span> orders <span class="kw">with buffer</span> <span class="num">5</span>
+<span class="kw">channel</span> cancellations <span class="kw">with buffer</span> <span class="num">5</span>
+
+<span class="cmt">-- Wait for either an order or a cancellation</span>
+<span class="kw">select</span>:
+  <span class="kw">when receive</span> order <span class="kw">from</span> orders:
+    <span class="kw">say</span> <span class="str">"New order: {order.item}"</span>
+    processOrder(order)
+  <span class="kw">when receive</span> cancel <span class="kw">from</span> cancellations:
+    <span class="kw">say</span> <span class="str">"Cancellation: {cancel.id}"</span>
+    refundOrder(cancel)
+  <span class="kw">after</span> <span class="num">30000</span>:
+    <span class="kw">say</span> <span class="str">"No activity for 30 seconds, checking again..."</span></code></pre>
+
+      <p>The <code>after</code> clause is a timeout -- if no channel has a message within that many milliseconds, the timeout code runs instead. This prevents your program from waiting forever.</p>
+
+      <pre><code><span class="cmt">-- A chat-like system with select</span>
+<span class="kw">channel</span> userMessages <span class="kw">with buffer</span> <span class="num">10</span>
+<span class="kw">channel</span> systemAlerts <span class="kw">with buffer</span> <span class="num">5</span>
+
+<span class="kw">repeat forever</span>:
+  <span class="kw">select</span>:
+    <span class="kw">when receive</span> msg <span class="kw">from</span> userMessages:
+      <span class="kw">say</span> <span class="str">"[User] {msg.author}: {msg.text}"</span>
+    <span class="kw">when receive</span> alert <span class="kw">from</span> systemAlerts:
+      <span class="kw">say</span> <span class="str">"[System] {alert.message}"</span>
+    <span class="kw">after</span> <span class="num">60000</span>:
+      <span class="kw">say</span> <span class="str">"No messages for a minute. Quiet in here!"</span></code></pre>
+
+      <!-- ============================================================ -->
       <!-- NEXT STEPS                                                    -->
       <!-- ============================================================ -->
 
@@ -1334,8 +1528,10 @@ empty <span class="kw">are</span> []</code></pre>
         <li><a href="/docs">Documentation</a></li>
         <li><a href="/playground">Playground</a></li>
         <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+        <li><a href="https://discord.gg/9rRyGRrh8E" target="_blank">Discord</a></li>
+        <li><a href="https://tradebuddy.dev" target="_blank">tradebuddy.dev</a></li>
       </ul>
-      <p>Built with care. Quill is open source.</p>
+      <p>Built with care by <a href="https://tradebuddy.dev" target="_blank">Trade Buddy</a>. Quill is open source.</p>
     </div>
   </footer>
 

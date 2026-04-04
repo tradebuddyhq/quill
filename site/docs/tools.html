@@ -906,6 +906,229 @@ quill bump major   <span class="cmt">-- 1.0.0 -> 2.0.0</span></code></pre>
       </div>
 
       <!-- ============================================================ -->
+      <!-- DEBUGGER                                                      -->
+      <!-- ============================================================ -->
+
+      <h2 id="debugger">Debugger (<code>quill debug</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill debug</code> lets you run your program one step at a time, pausing wherever you want to inspect what is happening. Think of it like watching a movie in slow motion -- you can pause, look around, and then continue.</p>
+
+      <p>When you start the debugger, you get an interactive prompt (called a REPL) where you can type commands to control how your program runs.</p>
+
+      <h3>When to use it</h3>
+      <p>Use the debugger when your program is not behaving the way you expect and you want to see exactly what is happening at each step. Instead of sprinkling <code>say</code> statements everywhere, the debugger lets you pause the program and look at every variable, function call, and line of code as it runs.</p>
+
+      <h3>Starting the debugger</h3>
+      <pre><code>quill debug main.quill</code></pre>
+      <p>This opens your program in the debugger. The program does not run immediately -- it pauses at the first line and waits for your instructions.</p>
+
+      <h3>Debugger commands</h3>
+      <p>Once inside the debugger, you can use these commands:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>break &lt;line&gt;</code></td><td>Set a breakpoint at a specific line number. The program will pause when it reaches that line.</td></tr>
+          <tr><td><code>step</code></td><td>Run the next line of code and pause again. If the line calls a function, it skips over the function (stays at the same level).</td></tr>
+          <tr><td><code>into</code></td><td>Like <code>step</code>, but if the line calls a function, it goes inside that function so you can see what happens in there.</td></tr>
+          <tr><td><code>out</code></td><td>If you are inside a function, run the rest of it and pause when you return to the caller. Like saying "finish this function and come back."</td></tr>
+          <tr><td><code>continue</code></td><td>Resume running the program normally until it hits the next breakpoint or finishes.</td></tr>
+          <tr><td><code>print &lt;expr&gt;</code></td><td>Show the current value of a variable or expression. For example: <code>print user.name</code></td></tr>
+          <tr><td><code>locals</code></td><td>Show all local variables and their current values in the current scope.</td></tr>
+          <tr><td><code>stack</code></td><td>Show the call stack -- the chain of function calls that led to where you are now.</td></tr>
+          <tr><td><code>list</code></td><td>Show the source code around the current line so you can see where you are.</td></tr>
+          <tr><td><code>quit</code></td><td>Exit the debugger and stop the program.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Example debug session</h3>
+      <p>Suppose you have this program in <code>math.quill</code>:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">add</span> a, b:
+  result <span class="kw">is</span> a + b
+  <span class="kw">give back</span> result
+
+answer <span class="kw">is</span> add(<span class="num">3</span>, <span class="num">5</span>)
+<span class="kw">say</span> answer</code></pre>
+
+      <p>Here is what a debug session looks like:</p>
+      <pre><code>$ quill debug math.quill
+Quill Debugger v1.0
+Paused at line 5
+
+<span class="cmt">&gt; break 2</span>
+Breakpoint set at line 2
+
+<span class="cmt">&gt; continue</span>
+Hit breakpoint at line 2 (inside function "add")
+
+<span class="cmt">&gt; print a</span>
+3
+
+<span class="cmt">&gt; print b</span>
+5
+
+<span class="cmt">&gt; locals</span>
+a = 3
+b = 5
+
+<span class="cmt">&gt; step</span>
+Paused at line 3
+
+<span class="cmt">&gt; print result</span>
+8
+
+<span class="cmt">&gt; stack</span>
+  add (line 3)
+  &lt;main&gt; (line 5)
+
+<span class="cmt">&gt; continue</span>
+8
+Program finished.</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> You can set multiple breakpoints before running <code>continue</code>. The program will pause at each one in order. This is great for checking values at specific points in your code.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- PROJECT CONFIG                                                -->
+      <!-- ============================================================ -->
+
+      <h2 id="project-config">Project Config (<code>quill.toml</code>)</h2>
+
+      <h3>What it does</h3>
+      <p>When your project grows beyond a single file, you will want a configuration file to keep things organized. The <code>quill.toml</code> file is where you describe your project -- its name, version, dependencies, build settings, and more. Think of it like the label on a box: it tells everyone (and the tools) what is inside and how to handle it.</p>
+
+      <h3>Full example</h3>
+      <p>Here is a complete <code>quill.toml</code> showing all available sections:</p>
+
+      <pre><code><span class="cmt"># Project metadata</span>
+[project]
+name = <span class="str">"my-app"</span>
+version = <span class="str">"1.0.0"</span>
+description = <span class="str">"A cool Quill application"</span>
+author = <span class="str">"Your Name"</span>
+license = <span class="str">"MIT"</span>
+entry = <span class="str">"src/main.quill"</span>
+
+<span class="cmt"># Build configuration</span>
+[build]
+target = <span class="str">"node"</span>           <span class="cmt"># "node", "browser", or "standalone"</span>
+outDir = <span class="str">"dist"</span>           <span class="cmt"># where compiled files go</span>
+sourcemap = <span class="kw">true</span>          <span class="cmt"># generate source maps</span>
+minify = <span class="kw">false</span>            <span class="cmt"># minify the output</span>
+
+<span class="cmt"># Dependencies</span>
+[dependencies]
+lodash = <span class="str">"^4.17.0"</span>
+express = <span class="str">"^4.18.0"</span>
+
+<span class="cmt"># Test configuration</span>
+[test]
+pattern = <span class="str">"tests/**/*.quill"</span>    <span class="cmt"># where to find test files</span>
+timeout = <span class="num">5000</span>                  <span class="cmt"># max time per test in ms</span>
+parallel = <span class="kw">true</span>                 <span class="cmt"># run tests in parallel</span>
+
+<span class="cmt"># LSP (editor integration) settings</span>
+[lsp]
+formatOnSave = <span class="kw">true</span>       <span class="cmt"># auto-format when you save</span>
+checkOnSave = <span class="kw">true</span>        <span class="cmt"># run the checker when you save</span>
+hoverDocs = <span class="kw">true</span>          <span class="cmt"># show docs when you hover over things</span></code></pre>
+
+      <p>You do not need all sections. Start with just <code>[project]</code> and add more as you need them.</p>
+
+      <!-- ============================================================ -->
+      <!-- QUILL INIT                                                    -->
+      <!-- ============================================================ -->
+
+      <h2 id="init">Initializing a Project (<code>quill init</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill init</code> creates a brand-new Quill project for you. It sets up the folder structure, creates a <code>quill.toml</code> config file, and gives you a starter <code>main.quill</code> file so you can begin coding right away. Think of it like a project template -- everything is set up and ready to go.</p>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Open your terminal and navigate to where you want your project.</p>
+      <p><strong>Step 2:</strong> Run the init command.</p>
+      <pre><code>quill init my-project</code></pre>
+
+      <p><strong>Step 3:</strong> Quill creates the following structure:</p>
+      <pre><code>my-project/
+  quill.toml        <span class="cmt">-- project config</span>
+  src/
+    main.quill      <span class="cmt">-- your starting file</span>
+  tests/
+    main.test.quill <span class="cmt">-- a starter test file</span></code></pre>
+
+      <p><strong>Step 4:</strong> Navigate into the project and start coding.</p>
+      <pre><code>cd my-project
+quill run src/main.quill</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> You can also run <code>quill init</code> without a name to initialize a project in the current directory. Quill will ask you a few questions (name, version, etc.) and create the files for you.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CI/CD                                                         -->
+      <!-- ============================================================ -->
+
+      <h2 id="cicd">CI/CD (Continuous Integration)</h2>
+
+      <h3>What it is</h3>
+      <p>CI/CD stands for Continuous Integration / Continuous Deployment. In plain English: it means automatically running your tests and checks every time you push code to GitHub. This catches bugs before they reach your users.</p>
+
+      <p>Quill has built-in support for GitHub Actions, the most popular CI/CD system for GitHub projects.</p>
+
+      <h3>How it works</h3>
+      <p>When you create a Quill project with <code>quill init</code>, you can optionally generate a GitHub Actions workflow file. Or you can create one yourself. The workflow file lives at <code>.github/workflows/quill.yml</code> in your project.</p>
+
+      <h3>Example workflow</h3>
+      <pre><code><span class="cmt"># .github/workflows/quill.yml</span>
+name: Quill CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Quill
+        run: npm install -g @tradebuddyhq/quill
+
+      - name: Install dependencies
+        run: quill install
+
+      - name: Check code
+        run: quill check
+
+      - name: Run tests
+        run: quill test
+
+      - name: Build
+        run: quill build src/main.quill</code></pre>
+
+      <p>Every time you push code or open a pull request, GitHub will automatically install Quill, check your code for issues, run your tests, and build your project. If anything fails, you will see a red X on GitHub so you know something needs fixing.</p>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Start with just the <code>quill check</code> and <code>quill test</code> steps. Add the build step once your project is ready for deployment.
+      </div>
+
+      <!-- ============================================================ -->
       <!-- ALL COMMANDS REFERENCE                                        -->
       <!-- ============================================================ -->
 
@@ -970,6 +1193,11 @@ quill bump major   <span class="cmt">-- 1.0.0 -> 2.0.0</span></code></pre>
             <td><code>quill test file.quill</code></td>
             <td>Runs tests in a specific file</td>
             <td><code>quill test math.quill</code></td>
+          </tr>
+          <tr>
+            <td><code>quill debug file.quill</code></td>
+            <td>Starts the interactive debugger for a Quill file</td>
+            <td><code>quill debug main.quill</code></td>
           </tr>
           <tr>
             <td><code>quill docs file.quill</code></td>
@@ -1047,8 +1275,10 @@ quill bump major   <span class="cmt">-- 1.0.0 -> 2.0.0</span></code></pre>
         <li><a href="/docs/getting-started">Getting Started</a></li>
         <li><a href="/playground">Playground</a></li>
         <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+        <li><a href="https://discord.gg/9rRyGRrh8E" target="_blank">Discord</a></li>
+        <li><a href="https://tradebuddy.dev" target="_blank">tradebuddy.dev</a></li>
       </ul>
-      <p>Built with care. Quill is open source.</p>
+      <p>Built with care by <a href="https://tradebuddy.dev" target="_blank">Trade Buddy</a>. Quill is open source.</p>
     </div>
   </footer>
 

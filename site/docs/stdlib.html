@@ -57,6 +57,13 @@
         <li><a href="#database">Database</a></li>
         <li><a href="#recipes">Recipes</a></li>
       </ul>
+      <h4>Ecosystem Packages</h4>
+      <ul>
+        <li><a href="#auth">Auth</a></li>
+        <li><a href="#orm">ORM (Database)</a></li>
+        <li><a href="#validation">Validation</a></li>
+        <li><a href="#logging">Logging</a></li>
+      </ul>
       <h4>Reference</h4>
       <ul>
         <li><a href="/docs/tools">Tools &amp; CLI</a></li>
@@ -831,6 +838,357 @@ quillFiles <span class="kw">is</span> filter(files, <span class="kw">with</span>
 <span class="kw">say</span> <span class="str">"Done! Backed up "</span> + toText(length(quillFiles)) + <span class="str">" files"</span></code></pre>
       </div>
 
+      <!-- ============================================ -->
+      <!-- AUTH                                          -->
+      <!-- ============================================ -->
+
+      <h2 id="auth">Auth (Authentication and Security)</h2>
+      <p>The Auth package gives you everything you need to handle user authentication -- password hashing, tokens (like login tickets), and sessions. Think of it like the security system for your application: it checks IDs at the door and makes sure only the right people get in.</p>
+
+      <div class="callout callout-info">
+        <strong>New to authentication?</strong> When someone logs in to a website, the server needs to (1) check their password safely, (2) give them a "ticket" (token) that proves they are logged in, and (3) remember them for a while (session). The Auth package handles all three.
+      </div>
+
+      <h3><code>Auth.hash(password)</code> &mdash; Hash a password</h3>
+      <p>Turns a plain text password into a scrambled version that is safe to store in a database. Even if someone steals your database, they cannot reverse the hash to get the original password. Think of it like putting a letter through a shredder -- you can verify it was the right letter, but you cannot unshred it.</p>
+      <pre><code><span class="cmt">-- When a user signs up, hash their password before saving</span>
+password <span class="kw">is</span> <span class="str">"mySecretPassword123"</span>
+hashed <span class="kw">is</span> Auth.hash(password)
+<span class="kw">say</span> hashed   <span class="cmt">-- "$2b$10$xK8f..." (a long scrambled string)</span>
+
+<span class="cmt">-- Save the hashed version to your database</span>
+saveUser({name: <span class="str">"Alice"</span>, password: hashed})</code></pre>
+
+      <h3><code>Auth.verify(password, hash)</code> &mdash; Check a password</h3>
+      <p>Compares a plain text password against a hashed version. Returns <code>true</code> if they match, <code>false</code> otherwise. Use this when a user logs in.</p>
+      <pre><code><span class="cmt">-- When a user logs in, check their password</span>
+user <span class="kw">is</span> findUser(<span class="str">"alice@example.com"</span>)
+isCorrect <span class="kw">is</span> Auth.verify(<span class="str">"mySecretPassword123"</span>, user.password)
+
+<span class="kw">if</span> isCorrect:
+  <span class="kw">say</span> <span class="str">"Welcome back, {user.name}!"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Wrong password. Try again."</span></code></pre>
+
+      <h3><code>Auth.createToken(payload, secret, expiresIn)</code> &mdash; Create a JWT</h3>
+      <p>Creates a JSON Web Token (JWT) -- a small encrypted "ticket" that proves a user is logged in. The <code>payload</code> is the data you want to include (like the user ID), the <code>secret</code> is a private key only your server knows, and <code>expiresIn</code> is how long the token is valid.</p>
+      <pre><code><span class="cmt">-- After successful login, give the user a token</span>
+token <span class="kw">is</span> Auth.createToken(
+  {userId: user.id, role: <span class="str">"admin"</span>},
+  <span class="str">"my-secret-key"</span>,
+  <span class="str">"24h"</span>
+)
+<span class="kw">say</span> <span class="str">"Your token: {token}"</span>
+
+<span class="cmt">-- Send this token back to the user</span>
+<span class="cmt">-- They will include it in future requests to prove who they are</span></code></pre>
+
+      <h3><code>Auth.verifyToken(token, secret)</code> &mdash; Verify a JWT</h3>
+      <p>Checks if a token is valid and has not expired. Returns the payload data if valid, or throws an error if the token is fake or expired.</p>
+      <pre><code><span class="cmt">-- When the user makes a request, check their token</span>
+<span class="kw">try</span>:
+  payload <span class="kw">is</span> Auth.verifyToken(token, <span class="str">"my-secret-key"</span>)
+  <span class="kw">say</span> <span class="str">"User {payload.userId} is authenticated"</span>
+  <span class="kw">say</span> <span class="str">"Role: {payload.role}"</span>
+<span class="kw">catch</span> error:
+  <span class="kw">say</span> <span class="str">"Invalid or expired token. Please log in again."</span></code></pre>
+
+      <h3><code>Auth.session(options)</code> &mdash; Manage sessions</h3>
+      <p>Creates a session manager that remembers users across requests. Think of it like a wristband at an event -- once you get one, you don't need to show your ID again until the wristband expires.</p>
+      <pre><code><span class="cmt">-- Set up session management for your server</span>
+sessions <span class="kw">is</span> Auth.session({
+  secret: <span class="str">"my-session-secret"</span>,
+  maxAge: <span class="str">"7d"</span>,           <span class="cmt">-- sessions last 7 days</span>
+  secure: <span class="kw">true</span>            <span class="cmt">-- only send over HTTPS</span>
+})
+
+<span class="cmt">-- Use it in your server</span>
+server.use(sessions)
+
+<span class="cmt">-- In a login route: create a session</span>
+server.post(<span class="str">"/login"</span>, <span class="kw">with</span> req, res:
+  user <span class="kw">is</span> authenticate(req.body)
+  req.session.userId <span class="kw">is</span> user.id
+  <span class="kw">give back</span> {message: <span class="str">"Logged in!"</span>}
+)
+
+<span class="cmt">-- In a protected route: check the session</span>
+server.get(<span class="str">"/profile"</span>, <span class="kw">with</span> req, res:
+  <span class="kw">if</span> req.session.userId:
+    user <span class="kw">is</span> getUser(req.session.userId)
+    <span class="kw">give back</span> user
+  <span class="kw">otherwise</span>:
+    <span class="kw">give back</span> {error: <span class="str">"Not logged in"</span>}
+)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- ORM                                           -->
+      <!-- ============================================ -->
+
+      <h2 id="orm">ORM (Object-Relational Mapping)</h2>
+      <p>The ORM package lets you work with databases using Quill code instead of writing raw SQL queries. Think of it like a translator between your Quill objects and the database tables -- you describe your data as Quill objects, and the ORM figures out how to store and retrieve them from the database.</p>
+
+      <div class="callout callout-info">
+        <strong>New to databases?</strong> A database is like a giant spreadsheet where your application stores data permanently (users, posts, orders, etc.). An ORM lets you interact with that spreadsheet using Quill code instead of a separate database language called SQL.
+      </div>
+
+      <h3><code>DB.connect(config)</code> &mdash; Connect to a database</h3>
+      <p>Opens a connection to your database. You need to do this once when your application starts.</p>
+      <pre><code><span class="cmt">-- Connect to a PostgreSQL database</span>
+db <span class="kw">is</span> DB.connect({
+  type: <span class="str">"postgres"</span>,
+  host: <span class="str">"localhost"</span>,
+  port: <span class="num">5432</span>,
+  database: <span class="str">"my_app"</span>,
+  user: <span class="str">"admin"</span>,
+  password: <span class="str">"secret"</span>
+})
+
+<span class="cmt">-- Or connect to SQLite (simpler, file-based)</span>
+db <span class="kw">is</span> DB.connect({
+  type: <span class="str">"sqlite"</span>,
+  file: <span class="str">"data.db"</span>
+})</code></pre>
+
+      <h3><code>DB.model(name, schema)</code> &mdash; Define a model</h3>
+      <p>A model describes what your data looks like -- the fields, their types, and any rules. Think of it like a form template: it defines what information you need to collect.</p>
+      <pre><code><span class="cmt">-- Define a User model</span>
+User <span class="kw">is</span> DB.model(<span class="str">"User"</span>, {
+  name: {type: <span class="str">"text"</span>, required: <span class="kw">true</span>},
+  email: {type: <span class="str">"text"</span>, required: <span class="kw">true</span>, unique: <span class="kw">true</span>},
+  age: {type: <span class="str">"number"</span>},
+  role: {type: <span class="str">"text"</span>, default: <span class="str">"user"</span>},
+  createdAt: {type: <span class="str">"date"</span>, default: now()}
+})
+
+<span class="cmt">-- Define a Post model</span>
+Post <span class="kw">is</span> DB.model(<span class="str">"Post"</span>, {
+  title: {type: <span class="str">"text"</span>, required: <span class="kw">true</span>},
+  body: {type: <span class="str">"text"</span>},
+  author: {type: <span class="str">"text"</span>},
+  likes: {type: <span class="str">"number"</span>, default: <span class="num">0</span>},
+  published: {type: <span class="str">"boolean"</span>, default: <span class="kw">false</span>}
+})</code></pre>
+
+      <h3><code>DB.migrate()</code> &mdash; Create or update tables</h3>
+      <p>Syncs your models with the actual database. If the tables don't exist yet, it creates them. If you added new fields to a model, it updates the tables.</p>
+      <pre><code><span class="cmt">-- After defining your models, run migrate</span>
+DB.migrate()
+<span class="kw">say</span> <span class="str">"Database tables are ready!"</span></code></pre>
+
+      <h3>CRUD Operations (Create, Read, Update, Delete)</h3>
+      <p>Once you have a model, you can create, find, update, and delete records:</p>
+
+      <pre><code><span class="cmt">-- CREATE: add a new user</span>
+newUser <span class="kw">is</span> User.create({
+  name: <span class="str">"Alice"</span>,
+  email: <span class="str">"alice@example.com"</span>,
+  age: <span class="num">28</span>
+})
+<span class="kw">say</span> <span class="str">"Created user: {newUser.name} (id: {newUser.id})"</span>
+
+<span class="cmt">-- READ: find users</span>
+allUsers <span class="kw">is</span> User.find()                        <span class="cmt">-- get everyone</span>
+admins <span class="kw">is</span> User.find({role: <span class="str">"admin"</span>})            <span class="cmt">-- filter by role</span>
+alice <span class="kw">is</span> User.findOne({email: <span class="str">"alice@example.com"</span>})  <span class="cmt">-- find one</span>
+
+<span class="cmt">-- UPDATE: change a user's data</span>
+User.update({email: <span class="str">"alice@example.com"</span>}, {age: <span class="num">29</span>})
+
+<span class="cmt">-- DELETE: remove a user</span>
+User.delete({email: <span class="str">"old-user@example.com"</span>})</code></pre>
+
+      <h3>Query Builder</h3>
+      <p>For more complex queries, chain methods together to build exactly the query you need:</p>
+      <pre><code><span class="cmt">-- Find the 10 most recent admin users</span>
+recentAdmins <span class="kw">is</span> User
+  .where({role: <span class="str">"admin"</span>})
+  .orderBy(<span class="str">"createdAt"</span>, <span class="str">"desc"</span>)
+  .limit(<span class="num">10</span>)
+
+<span class="cmt">-- Find published posts with more than 100 likes</span>
+popularPosts <span class="kw">is</span> Post
+  .where({published: <span class="kw">true</span>})
+  .where(<span class="str">"likes"</span>, <span class="str">">"</span>, <span class="num">100</span>)
+  .orderBy(<span class="str">"likes"</span>, <span class="str">"desc"</span>)
+  .limit(<span class="num">20</span>)</code></pre>
+
+      <h3><code>DB.raw()</code> &mdash; Raw SQL</h3>
+      <p>If you need to write SQL directly, you can:</p>
+      <pre><code>results <span class="kw">is</span> DB.raw(<span class="str">"SELECT * FROM users WHERE age > $1"</span>, [<span class="num">21</span>])</code></pre>
+
+      <h3><code>DB.transaction()</code> &mdash; Transactions</h3>
+      <p>A transaction groups multiple database operations so they either all succeed or all fail. Think of it like transferring money -- you want the debit and credit to happen together, not one without the other.</p>
+      <pre><code><span class="cmt">-- Transfer money between accounts</span>
+DB.transaction(<span class="kw">with</span> tx:
+  tx.update(<span class="str">"accounts"</span>, {id: <span class="num">1</span>}, {balance: balance - <span class="num">100</span>})
+  tx.update(<span class="str">"accounts"</span>, {id: <span class="num">2</span>}, {balance: balance + <span class="num">100</span>})
+  <span class="kw">say</span> <span class="str">"Transfer complete!"</span>
+)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- VALIDATION                                    -->
+      <!-- ============================================ -->
+
+      <h2 id="validation">Validation</h2>
+      <p>The Validation package helps you check that data is correct before you use it. Think of it like a bouncer at a club -- it checks that everyone meets the requirements before letting them in. Is the email address actually an email? Is the age a positive number? Is the name at least 2 characters long? Validation answers these questions.</p>
+
+      <h3><code>Validate.schema(rules)</code> &mdash; Define validation rules</h3>
+      <p>Creates a set of rules that data must follow. Each field gets one or more rules.</p>
+      <pre><code><span class="cmt">-- Define rules for user registration</span>
+userSchema <span class="kw">is</span> Validate.schema({
+  name: {required: <span class="kw">true</span>, minLength: <span class="num">2</span>, maxLength: <span class="num">50</span>},
+  email: {required: <span class="kw">true</span>, email: <span class="kw">true</span>},
+  age: {required: <span class="kw">true</span>, min: <span class="num">13</span>, max: <span class="num">120</span>},
+  website: {url: <span class="kw">true</span>},
+  password: {required: <span class="kw">true</span>, minLength: <span class="num">8</span>, pattern: <span class="str">"[A-Z]"</span>},
+  role: {oneOf: [<span class="str">"user"</span>, <span class="str">"admin"</span>, <span class="str">"moderator"</span>]}
+})</code></pre>
+
+      <h3>Available rules</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Rule</th>
+            <th>What it checks</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>required</code></td><td>Field must be present and not empty</td><td><code>required: true</code></td></tr>
+          <tr><td><code>minLength</code></td><td>Text must be at least this many characters</td><td><code>minLength: 2</code></td></tr>
+          <tr><td><code>maxLength</code></td><td>Text must be no more than this many characters</td><td><code>maxLength: 100</code></td></tr>
+          <tr><td><code>min</code></td><td>Number must be at least this value</td><td><code>min: 0</code></td></tr>
+          <tr><td><code>max</code></td><td>Number must be no more than this value</td><td><code>max: 999</code></td></tr>
+          <tr><td><code>email</code></td><td>Must be a valid email address</td><td><code>email: true</code></td></tr>
+          <tr><td><code>url</code></td><td>Must be a valid URL</td><td><code>url: true</code></td></tr>
+          <tr><td><code>pattern</code></td><td>Must match a regular expression</td><td><code>pattern: "[0-9]+"</code></td></tr>
+          <tr><td><code>oneOf</code></td><td>Must be one of the listed values</td><td><code>oneOf: ["a", "b"]</code></td></tr>
+          <tr><td><code>custom</code></td><td>Your own validation function</td><td><code>custom: with v: v &gt; 0</code></td></tr>
+          <tr><td><code>arrayOf</code></td><td>Each item in the list must match a schema</td><td><code>arrayOf: {type: "text"}</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>schema.check(data)</code> &mdash; Validate data</h3>
+      <p>Runs the rules against actual data and tells you what (if anything) is wrong.</p>
+      <pre><code><span class="cmt">-- Check valid data</span>
+result <span class="kw">is</span> userSchema.check({
+  name: <span class="str">"Alice"</span>,
+  email: <span class="str">"alice@example.com"</span>,
+  age: <span class="num">28</span>,
+  password: <span class="str">"SecurePass1"</span>,
+  role: <span class="str">"user"</span>
+})
+<span class="kw">say</span> result.valid   <span class="cmt">-- true</span>
+<span class="kw">say</span> result.errors  <span class="cmt">-- [] (empty -- no problems)</span>
+
+<span class="cmt">-- Check invalid data</span>
+result <span class="kw">is</span> userSchema.check({
+  name: <span class="str">""</span>,
+  email: <span class="str">"not-an-email"</span>,
+  age: <span class="num">5</span>,
+  password: <span class="str">"short"</span>
+})
+<span class="kw">say</span> result.valid   <span class="cmt">-- false</span>
+<span class="kw">say</span> result.errors
+<span class="cmt">-- ["name: must be at least 2 characters",
+--  "email: must be a valid email address",
+--  "age: must be at least 13",
+--  "password: must be at least 8 characters"]</span></code></pre>
+
+      <h3>Quick validators</h3>
+      <p>For simple one-off checks, use these shorthand functions:</p>
+      <pre><code><span class="kw">say</span> Validate.isEmail(<span class="str">"alice@example.com"</span>)   <span class="cmt">-- true</span>
+<span class="kw">say</span> Validate.isEmail(<span class="str">"not-valid"</span>)           <span class="cmt">-- false</span>
+
+<span class="kw">say</span> Validate.isUrl(<span class="str">"https://quill.dev"</span>)    <span class="cmt">-- true</span>
+<span class="kw">say</span> Validate.isUrl(<span class="str">"just some text"</span>)       <span class="cmt">-- false</span>
+
+<span class="kw">say</span> Validate.isNumber(<span class="num">42</span>)                  <span class="cmt">-- true</span>
+<span class="kw">say</span> Validate.isNumber(<span class="str">"hello"</span>)             <span class="cmt">-- false</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- LOGGING                                       -->
+      <!-- ============================================ -->
+
+      <h2 id="logging">Logging</h2>
+      <p>The Logging package helps you record what your application is doing. Think of it like a ship's log -- it keeps a record of important events so you can look back and understand what happened. Good logging is essential for finding and fixing bugs in production.</p>
+
+      <div class="callout callout-info">
+        <strong>Why not just use <code>say</code>?</strong> The <code>say</code> keyword prints text to the screen, which is fine for simple programs. But for real applications, you need different levels of importance (is this an error or just info?), timestamps, structured data, and the ability to send logs to files or monitoring services. That is what the Logging package provides.
+      </div>
+
+      <h3><code>Log.create(options)</code> &mdash; Create a logger</h3>
+      <p>Creates a logger with the settings you want. You can choose the minimum level, the output format, and where logs go.</p>
+      <pre><code><span class="cmt">-- Create a logger for your application</span>
+logger <span class="kw">is</span> Log.create({
+  level: <span class="str">"info"</span>,         <span class="cmt">-- minimum level to show (debug/info/warn/error/fatal)</span>
+  format: <span class="str">"pretty"</span>,      <span class="cmt">-- "pretty" for console, "json" for production</span>
+  name: <span class="str">"my-app"</span>         <span class="cmt">-- label for your logs</span>
+})</code></pre>
+
+      <h3>Log levels</h3>
+      <p>Each level represents a different severity. From least to most severe:</p>
+      <pre><code>logger.debug(<span class="str">"Loading config file..."</span>)     <span class="cmt">-- Detailed info for developers</span>
+logger.info(<span class="str">"Server started on port 3000"</span>)  <span class="cmt">-- Normal operational info</span>
+logger.warn(<span class="str">"Disk space is getting low"</span>)   <span class="cmt">-- Something is not ideal</span>
+logger.error(<span class="str">"Failed to connect to DB"</span>)    <span class="cmt">-- Something went wrong</span>
+logger.fatal(<span class="str">"Out of memory, shutting down"</span>) <span class="cmt">-- Critical failure</span></code></pre>
+
+      <p>When you set the level to <code>"info"</code>, you will see info, warn, error, and fatal messages -- but not debug messages. Set it to <code>"debug"</code> during development to see everything.</p>
+
+      <h3>Structured logging</h3>
+      <p>You can attach data to your log messages. This is especially useful in production where you want to search and filter logs.</p>
+      <pre><code><span class="cmt">-- Log with extra data</span>
+logger.info(<span class="str">"User logged in"</span>, {userId: <span class="num">42</span>, ip: <span class="str">"192.168.1.1"</span>})
+<span class="cmt">-- Output (pretty): [INFO] User logged in {userId: 42, ip: "192.168.1.1"}</span>
+<span class="cmt">-- Output (json):   {"level":"info","msg":"User logged in","userId":42,"ip":"192.168.1.1","time":"..."}</span>
+
+logger.error(<span class="str">"Payment failed"</span>, {orderId: <span class="str">"abc-123"</span>, amount: <span class="num">49.99</span>, reason: <span class="str">"card declined"</span>})</code></pre>
+
+      <h3><code>logger.child()</code> &mdash; Create a child logger</h3>
+      <p>Creates a new logger that inherits all settings but adds extra default fields. Useful for adding context like a request ID.</p>
+      <pre><code><span class="cmt">-- Create a child logger for a specific request</span>
+requestLogger <span class="kw">is</span> logger.child({requestId: <span class="str">"req-abc-123"</span>})
+
+requestLogger.info(<span class="str">"Processing request"</span>)
+<span class="cmt">-- Output: [INFO] Processing request {requestId: "req-abc-123"}</span>
+
+requestLogger.info(<span class="str">"Fetching user data"</span>)
+<span class="cmt">-- Output: [INFO] Fetching user data {requestId: "req-abc-123"}</span>
+<span class="cmt">-- The requestId is automatically included in every log</span></code></pre>
+
+      <h3><code>Log.middleware()</code> &mdash; HTTP request logging</h3>
+      <p>Automatically logs every HTTP request that comes into your server, including the method, URL, status code, and how long it took.</p>
+      <pre><code><span class="cmt">-- Add logging to your server</span>
+server.use(Log.middleware())
+
+<span class="cmt">-- Now every request is automatically logged:</span>
+<span class="cmt">-- [INFO] GET /api/users 200 12ms</span>
+<span class="cmt">-- [INFO] POST /api/login 200 45ms</span>
+<span class="cmt">-- [WARN] GET /api/missing 404 3ms</span>
+<span class="cmt">-- [ERROR] POST /api/crash 500 2ms</span></code></pre>
+
+      <h3>Complete example</h3>
+      <pre><code><span class="cmt">-- Set up logging for a production application</span>
+logger <span class="kw">is</span> Log.create({
+  level: <span class="str">"info"</span>,
+  format: <span class="str">"json"</span>,
+  name: <span class="str">"my-api"</span>
+})
+
+logger.info(<span class="str">"Application starting..."</span>)
+
+<span class="kw">try</span>:
+  db <span class="kw">is</span> DB.connect(config)
+  logger.info(<span class="str">"Connected to database"</span>, {host: config.host})
+<span class="kw">catch</span> error:
+  logger.fatal(<span class="str">"Cannot connect to database"</span>, {error: error.message})
+
+server.use(Log.middleware())
+server.listen(<span class="num">3000</span>)
+logger.info(<span class="str">"Server ready"</span>, {port: <span class="num">3000</span>})</code></pre>
+
     </main>
   </div>
 
@@ -840,8 +1198,10 @@ quillFiles <span class="kw">is</span> filter(files, <span class="kw">with</span>
         <li><a href="/docs">Documentation</a></li>
         <li><a href="/playground">Playground</a></li>
         <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+        <li><a href="https://discord.gg/9rRyGRrh8E" target="_blank">Discord</a></li>
+        <li><a href="https://tradebuddy.dev" target="_blank">tradebuddy.dev</a></li>
       </ul>
-      <p>Built with care. Quill is open source.</p>
+      <p>Built with care by <a href="https://tradebuddy.dev" target="_blank">Trade Buddy</a>. Quill is open source.</p>
     </div>
   </footer>
 
