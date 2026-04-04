@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examples - Quill</title>
+  <meta name="description" content="Complete example programs written in Quill.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="active">Docs</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="getting-started.html">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="language.html">Language reference</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="stdlib.html">Standard library</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="examples.html" class="active">Examples</a></li>
+        <li><a href="#hello-world">Hello World</a></li>
+        <li><a href="#fizzbuzz">FizzBuzz</a></li>
+        <li><a href="#todo-list">Todo list</a></li>
+        <li><a href="#number-game">Number game</a></li>
+        <li><a href="#text-analyzer">Text analyzer</a></li>
+        <li><a href="#calculator">Calculator</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Examples</h1>
+      <p>Complete programs that show off Quill's features. Copy any of these into the <a href="../playground.html">Playground</a> to try them out.</p>
+
+      <h2 id="hello-world">Hello World</h2>
+      <p>The classic first program.</p>
+      <pre><code><span class="cmt">-- hello.quill</span>
+<span class="kw">say</span> <span class="str">"Hello, World!"</span>
+
+name <span class="kw">is</span> <span class="str">"Quill"</span>
+<span class="kw">say</span> <span class="str">"Welcome to {name}!"</span></code></pre>
+      <p><strong>Output:</strong></p>
+      <pre><code>Hello, World!
+Welcome to Quill!</code></pre>
+
+      <h2 id="fizzbuzz">FizzBuzz</h2>
+      <p>The classic interview question, solved in Quill.</p>
+      <pre><code><span class="cmt">-- fizzbuzz.quill</span>
+<span class="kw">to</span> <span class="fn">fizzbuzz</span> n:
+  i <span class="kw">is</span> <span class="num">1</span>
+  <span class="kw">while</span> i <span class="kw">is less than</span> n + <span class="num">1</span>:
+    <span class="kw">if</span> i % <span class="num">15</span> <span class="kw">is</span> <span class="num">0</span>:
+      <span class="kw">say</span> <span class="str">"FizzBuzz"</span>
+    <span class="kw">otherwise if</span> i % <span class="num">3</span> <span class="kw">is</span> <span class="num">0</span>:
+      <span class="kw">say</span> <span class="str">"Fizz"</span>
+    <span class="kw">otherwise if</span> i % <span class="num">5</span> <span class="kw">is</span> <span class="num">0</span>:
+      <span class="kw">say</span> <span class="str">"Buzz"</span>
+    <span class="kw">otherwise</span>:
+      <span class="kw">say</span> i
+    i <span class="kw">is</span> i + <span class="num">1</span>
+
+fizzbuzz(<span class="num">20</span>)</code></pre>
+
+      <h2 id="todo-list">Todo list manager</h2>
+      <p>A simple todo list using lists and functions.</p>
+      <pre><code><span class="cmt">-- todo.quill</span>
+todos <span class="kw">are</span> []
+
+<span class="kw">to</span> <span class="fn">addTodo</span> task:
+  <span class="kw">say</span> <span class="str">"Added: {task}"</span>
+
+<span class="kw">to</span> <span class="fn">showTodos</span> list:
+  <span class="kw">if</span> length(list) <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">say</span> <span class="str">"No todos yet!"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Your todos:"</span>
+    i <span class="kw">is</span> <span class="num">0</span>
+    <span class="kw">for each</span> todo <span class="kw">in</span> list:
+      i <span class="kw">is</span> i + <span class="num">1</span>
+      <span class="kw">say</span> <span class="str">"  {i}. {todo}"</span>
+
+<span class="cmt">-- Add some tasks</span>
+tasks <span class="kw">are</span> [<span class="str">"Learn Quill"</span>, <span class="str">"Build a project"</span>, <span class="str">"Share with friends"</span>]
+
+<span class="kw">say</span> <span class="str">"--- Todo List ---"</span>
+showTodos(tasks)
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"Total: {length(tasks)} tasks"</span></code></pre>
+
+      <h2 id="number-game">Number guessing game</h2>
+      <p>Demonstrates functions, loops, and conditionals working together.</p>
+      <pre><code><span class="cmt">-- guess.quill</span>
+<span class="cmt">-- Since we can't get user input in the playground,</span>
+<span class="cmt">-- we'll simulate a game</span>
+
+secret <span class="kw">is</span> randomInt(<span class="num">1</span>, <span class="num">20</span>)
+<span class="kw">say</span> <span class="str">"I'm thinking of a number between 1 and 20..."</span>
+<span class="kw">say</span> <span class="str">"(The secret number is {secret})"</span>
+
+<span class="cmt">-- Simulate guesses</span>
+guesses <span class="kw">are</span> [<span class="num">5</span>, <span class="num">10</span>, <span class="num">15</span>, <span class="num">3</span>, <span class="num">17</span>, <span class="num">8</span>, <span class="num">12</span>]
+found <span class="kw">is</span> <span class="bool">no</span>
+attempts <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">for each</span> guess <span class="kw">in</span> guesses:
+  <span class="kw">if</span> <span class="kw">not</span> found:
+    attempts <span class="kw">is</span> attempts + <span class="num">1</span>
+    <span class="kw">if</span> guess <span class="kw">is</span> secret:
+      <span class="kw">say</span> <span class="str">"Guess {guess}: Correct! Found in {attempts} tries!"</span>
+      found <span class="kw">is</span> <span class="bool">yes</span>
+    <span class="kw">otherwise if</span> guess <span class="kw">is less than</span> secret:
+      <span class="kw">say</span> <span class="str">"Guess {guess}: Too low!"</span>
+    <span class="kw">otherwise</span>:
+      <span class="kw">say</span> <span class="str">"Guess {guess}: Too high!"</span>
+
+<span class="kw">if</span> <span class="kw">not</span> found:
+  <span class="kw">say</span> <span class="str">"Didn't find it! The number was {secret}."</span></code></pre>
+
+      <h2 id="text-analyzer">Text analyzer</h2>
+      <p>Analyze text: count words, characters, and find the longest word.</p>
+      <pre><code><span class="cmt">-- analyzer.quill</span>
+<span class="kw">to</span> <span class="fn">analyze</span> text:
+  <span class="kw">say</span> <span class="str">"--- Text Analysis ---"</span>
+  <span class="kw">say</span> <span class="str">"Text: {text}"</span>
+  <span class="kw">say</span> <span class="str">"Characters: {length(text)}"</span>
+
+  words <span class="kw">are</span> split(text, <span class="str">" "</span>)
+  <span class="kw">say</span> <span class="str">"Words: {length(words)}"</span>
+
+  <span class="cmt">-- Find the longest word</span>
+  longest <span class="kw">is</span> <span class="str">""</span>
+  <span class="kw">for each</span> word <span class="kw">in</span> words:
+    <span class="kw">if</span> length(word) <span class="kw">is greater than</span> length(longest):
+      longest <span class="kw">is</span> word
+
+  <span class="kw">say</span> <span class="str">"Longest word: {longest} ({length(longest)} chars)"</span>
+
+  <span class="cmt">-- Check for specific content</span>
+  <span class="kw">if</span> text <span class="kw">contains</span> <span class="str">"Quill"</span>:
+    <span class="kw">say</span> <span class="str">"This text mentions Quill!"</span>
+
+analyze(<span class="str">"The quick brown fox jumps over the lazy dog"</span>)
+<span class="kw">say</span> <span class="str">""</span>
+analyze(<span class="str">"Quill is a programming language for humans"</span>)</code></pre>
+
+      <h2 id="calculator">Simple calculator</h2>
+      <p>A calculator with multiple operations and error handling.</p>
+      <pre><code><span class="cmt">-- calculator.quill</span>
+<span class="kw">to</span> <span class="fn">add</span> a b:
+  <span class="kw">give back</span> a + b
+
+<span class="kw">to</span> <span class="fn">subtract</span> a b:
+  <span class="kw">give back</span> a - b
+
+<span class="kw">to</span> <span class="fn">multiply</span> a b:
+  <span class="kw">give back</span> a * b
+
+<span class="kw">to</span> <span class="fn">divide</span> a b:
+  <span class="kw">if</span> b <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">say</span> <span class="str">"Error: Cannot divide by zero!"</span>
+    <span class="kw">give back</span> <span class="num">0</span>
+  <span class="kw">give back</span> a / b
+
+<span class="kw">to</span> <span class="fn">power</span> base exp:
+  result <span class="kw">is</span> <span class="num">1</span>
+  i <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">while</span> i <span class="kw">is less than</span> exp:
+    result <span class="kw">is</span> result * base
+    i <span class="kw">is</span> i + <span class="num">1</span>
+  <span class="kw">give back</span> result
+
+<span class="cmt">-- Run some calculations</span>
+<span class="kw">say</span> <span class="str">"--- Calculator ---"</span>
+x <span class="kw">is</span> <span class="num">100</span>
+y <span class="kw">is</span> <span class="num">25</span>
+
+<span class="kw">say</span> <span class="str">"{x} + {y} = {add(x, y)}"</span>
+<span class="kw">say</span> <span class="str">"{x} - {y} = {subtract(x, y)}"</span>
+<span class="kw">say</span> <span class="str">"{x} * {y} = {multiply(x, y)}"</span>
+<span class="kw">say</span> <span class="str">"{x} / {y} = {divide(x, y)}"</span>
+<span class="kw">say</span> <span class="str">"2^10 = {power(2, 10)}"</span>
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"Division by zero:"</span>
+divide(<span class="num">5</span>, <span class="num">0</span>)
+
+<span class="cmt">-- Test our calculator</span>
+<span class="kw">test</span> <span class="str">"calculator operations"</span>:
+  <span class="kw">expect</span> add(<span class="num">2</span>, <span class="num">3</span>) <span class="kw">is</span> <span class="num">5</span>
+  <span class="kw">expect</span> subtract(<span class="num">10</span>, <span class="num">4</span>) <span class="kw">is</span> <span class="num">6</span>
+  <span class="kw">expect</span> multiply(<span class="num">3</span>, <span class="num">7</span>) <span class="kw">is</span> <span class="num">21</span>
+  <span class="kw">expect</span> divide(<span class="num">15</span>, <span class="num">3</span>) <span class="kw">is</span> <span class="num">5</span>
+  <span class="kw">expect</span> power(<span class="num">2</span>, <span class="num">8</span>) <span class="kw">is</span> <span class="num">256</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Try these!</strong> All of these examples can be run in the <a href="../playground.html">Playground</a>. Just copy-paste the code (without the syntax highlighting spans) and hit Run.
+      </div>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="index.html">Documentation</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

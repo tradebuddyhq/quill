@@ -1,0 +1,66 @@
+-- Hello World in Plain
+name is "World"
+say "Hello, {name}!"
+
+-- Variables
+age is 25
+price is 9.99
+active is yes
+
+-- Math
+total is price * 3
+say "Total: {total}"
+
+-- Lists
+colors are ["red", "green", "blue"]
+say colors
+
+-- Loops
+for each color in colors:
+  say "Color: {color}"
+
+-- Conditionals
+if age is greater than 18:
+  say "You are an adult"
+otherwise:
+  say "You are young"
+
+-- Functions
+to add a b:
+  give back a + b
+
+result is add(10, 20)
+say "10 + 20 = {result}"
+
+-- Nested logic
+to checkAge years:
+  if years is less than 13:
+    say "Child"
+  otherwise if years is less than 18:
+    say "Teenager"
+  otherwise:
+    say "Adult"
+
+checkAge(10)
+checkAge(15)
+checkAge(25)
+
+-- Boolean logic
+hasTicket is yes
+isVIP is no
+
+if hasTicket and not isVIP:
+  say "Regular entry"
+
+-- String with contains
+greeting is "Hello World"
+if greeting contains "World":
+  say "Found World!"
+
+-- While loop
+count is 0
+while count is less than 5:
+  say "Count: {count}"
+  count is count + 1
+
+say "Done!"

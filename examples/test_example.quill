@@ -1,0 +1,22 @@
+-- Testing in Quill
+
+to add a b:
+  give back a + b
+
+to multiply a b:
+  give back a * b
+
+test "addition works":
+  result is add(2, 3)
+  expect result is 5
+
+test "multiplication works":
+  expect multiply(3, 4) is 12
+
+test "list operations":
+  items are [1, 2, 3]
+  expect length(items) is 3
+
+test "string operations":
+  expect upper("hello") is "HELLO"
+  expect lower("WORLD") is "world"

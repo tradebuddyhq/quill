@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testing - Quill</title>
+  <meta name="description" content="Write and run tests in Quill using built-in test and expect keywords.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="active">Docs</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="getting-started.html">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="language.html">Language reference</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="stdlib.html">Standard library</a></li>
+        <li><a href="testing.html" class="active">Testing</a></li>
+        <li><a href="#test-blocks">Test blocks</a></li>
+        <li><a href="#expect">The expect keyword</a></li>
+        <li><a href="#running">Running tests</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Testing</h1>
+      <p>Quill has first-class support for testing. No frameworks to install, no configuration to write. Just use <code>test</code> and <code>expect</code>.</p>
+
+      <h2 id="test-blocks">Test blocks</h2>
+      <p>A test block groups related assertions under a descriptive name:</p>
+      <pre><code><span class="kw">test</span> <span class="str">"basic math"</span>:
+  <span class="kw">expect</span> <span class="num">2</span> + <span class="num">2</span> <span class="kw">is</span> <span class="num">4</span>
+  <span class="kw">expect</span> <span class="num">10</span> - <span class="num">3</span> <span class="kw">is</span> <span class="num">7</span>
+  <span class="kw">expect</span> <span class="num">3</span> * <span class="num">4</span> <span class="kw">is</span> <span class="num">12</span></code></pre>
+
+      <p>When you run this, you will see:</p>
+      <pre><code>  &#10003; basic math
+
+1 passed, 0 failed</code></pre>
+
+      <p>If a test fails:</p>
+      <pre><code>  &#10007; basic math: Expected (2 + 2) === 5 to be true
+
+0 passed, 1 failed</code></pre>
+
+      <h2 id="expect">The expect keyword</h2>
+      <p><code>expect</code> takes an expression that should evaluate to <code>true</code>. If the expression is <code>false</code>, the test fails with an error message.</p>
+
+      <pre><code><span class="cmt">-- Equality</span>
+<span class="kw">expect</span> name <span class="kw">is</span> <span class="str">"Alice"</span>
+
+<span class="cmt">-- Comparisons</span>
+<span class="kw">expect</span> age <span class="kw">is greater than</span> <span class="num">18</span>
+<span class="kw">expect</span> count <span class="kw">is less than</span> <span class="num">100</span>
+
+<span class="cmt">-- Membership</span>
+<span class="kw">expect</span> colors <span class="kw">contains</span> <span class="str">"red"</span>
+
+<span class="cmt">-- Function results</span>
+<span class="kw">expect</span> length(<span class="str">"hello"</span>) <span class="kw">is</span> <span class="num">5</span>
+<span class="kw">expect</span> upper(<span class="str">"hello"</span>) <span class="kw">is</span> <span class="str">"HELLO"</span></code></pre>
+
+      <h2 id="testing-functions">Testing functions</h2>
+      <p>Define your functions, then write tests for them:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">add</span> a b:
+  <span class="kw">give back</span> a + b
+
+<span class="kw">to</span> <span class="fn">multiply</span> a b:
+  <span class="kw">give back</span> a * b
+
+<span class="kw">to</span> <span class="fn">isEven</span> n:
+  <span class="kw">give back</span> n % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"addition"</span>:
+  <span class="kw">expect</span> add(<span class="num">2</span>, <span class="num">3</span>) <span class="kw">is</span> <span class="num">5</span>
+  <span class="kw">expect</span> add(<span class="num">-1</span>, <span class="num">1</span>) <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">expect</span> add(<span class="num">0</span>, <span class="num">0</span>) <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"multiplication"</span>:
+  <span class="kw">expect</span> multiply(<span class="num">3</span>, <span class="num">4</span>) <span class="kw">is</span> <span class="num">12</span>
+  <span class="kw">expect</span> multiply(<span class="num">0</span>, <span class="num">100</span>) <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">expect</span> multiply(<span class="num">-2</span>, <span class="num">3</span>) <span class="kw">is</span> <span class="num">-6</span>
+
+<span class="kw">test</span> <span class="str">"even numbers"</span>:
+  <span class="kw">expect</span> isEven(<span class="num">4</span>)
+  <span class="kw">expect</span> <span class="kw">not</span> isEven(<span class="num">3</span>)</code></pre>
+
+      <h2 id="running">Running tests</h2>
+      <p>Run your test file just like any Quill program:</p>
+      <pre><code>quill run tests.quill</code></pre>
+      <p>Or use the dedicated test command that only runs <code>test</code> blocks:</p>
+      <pre><code>quill test tests.quill</code></pre>
+
+      <p>Example output:</p>
+      <pre><code>  &#10003; addition
+  &#10003; multiplication
+  &#10003; even numbers
+
+3 passed, 0 failed</code></pre>
+
+      <h2 id="best-practices">Best practices</h2>
+      <ul>
+        <li>Give each test a descriptive name that explains what it tests</li>
+        <li>Keep tests small and focused -- one concept per test block</li>
+        <li>Test edge cases: zero, negative numbers, empty strings, empty lists</li>
+        <li>Place test files alongside your code with a <code>_test</code> suffix (e.g., <code>math_test.quill</code>)</li>
+      </ul>
+
+      <h2>A complete test file</h2>
+      <pre><code><span class="cmt">-- string_test.quill</span>
+
+<span class="kw">test</span> <span class="str">"upper and lower"</span>:
+  <span class="kw">expect</span> upper(<span class="str">"hello"</span>) <span class="kw">is</span> <span class="str">"HELLO"</span>
+  <span class="kw">expect</span> lower(<span class="str">"HELLO"</span>) <span class="kw">is</span> <span class="str">"hello"</span>
+
+<span class="kw">test</span> <span class="str">"trim"</span>:
+  <span class="kw">expect</span> trim(<span class="str">"  hi  "</span>) <span class="kw">is</span> <span class="str">"hi"</span>
+
+<span class="kw">test</span> <span class="str">"startsWith and endsWith"</span>:
+  <span class="kw">expect</span> startsWith(<span class="str">"hello"</span>, <span class="str">"he"</span>)
+  <span class="kw">expect</span> endsWith(<span class="str">"hello"</span>, <span class="str">"lo"</span>)
+  <span class="kw">expect</span> <span class="kw">not</span> startsWith(<span class="str">"hello"</span>, <span class="str">"lo"</span>)
+
+<span class="kw">test</span> <span class="str">"replace"</span>:
+  <span class="kw">expect</span> replace_text(<span class="str">"hello world"</span>, <span class="str">"world"</span>, <span class="str">"Quill"</span>) <span class="kw">is</span> <span class="str">"hello Quill"</span>
+
+<span class="kw">test</span> <span class="str">"split and join"</span>:
+  words <span class="kw">are</span> split(<span class="str">"a,b,c"</span>, <span class="str">","</span>)
+  <span class="kw">expect</span> length(words) <span class="kw">is</span> <span class="num">3</span>
+  <span class="kw">expect</span> join(words, <span class="str">"-"</span>) <span class="kw">is</span> <span class="str">"a-b-c"</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Try it out!</strong> You can run test blocks in the <a href="../playground.html">Playground</a> -- select the "Testing" example to see tests in action.
+      </div>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="index.html">Documentation</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

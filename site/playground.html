@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playground - Quill</title>
+  <meta name="description" content="Try Quill in your browser. Write and run Quill code with an interactive playground.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="docs/index.html">Docs</a></li>
+        <li><a href="playground.html" class="active">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <!-- Playground -->
+  <div class="playground-container">
+    <div class="playground-toolbar">
+      <button class="btn btn-accent" id="run-btn" style="padding: 8px 18px; font-size: 14px;">&#9654; Run</button>
+      <select id="example-select">
+        <option value="">Load example...</option>
+        <option value="Hello World">Hello World</option>
+        <option value="FizzBuzz">FizzBuzz</option>
+        <option value="Calculator">Calculator</option>
+        <option value="Lists & Loops">Lists &amp; Loops</option>
+        <option value="Testing">Testing</option>
+      </select>
+      <button class="btn btn-secondary" id="clear-btn" style="padding: 8px 14px; font-size: 13px;">Clear</button>
+      <div class="spacer"></div>
+      <span class="shortcut-hint">Ctrl+Enter to run</span>
+    </div>
+    <div class="playground-panels">
+      <div class="playground-editor-wrapper">
+        <div class="line-numbers" id="line-numbers"></div>
+        <textarea class="playground-editor" id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+      </div>
+      <div class="playground-output-wrapper">
+        <div class="output-header">Output</div>
+        <div class="playground-output" id="output"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/compiler.js"></script>
+  <script src="js/playground.js"></script>
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

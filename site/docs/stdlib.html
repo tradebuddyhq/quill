@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standard Library - Quill</title>
+  <meta name="description" content="Quill standard library reference. Every built-in function documented with examples.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="active">Docs</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="getting-started.html">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="language.html">Language reference</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="stdlib.html" class="active">Standard library</a></li>
+        <li><a href="#collections">Collections</a></li>
+        <li><a href="#strings-section">Strings</a></li>
+        <li><a href="#math">Math</a></li>
+        <li><a href="#conversion">Conversion</a></li>
+        <li><a href="#file-io">File I/O</a></li>
+        <li><a href="#date-time">Date &amp; time</a></li>
+        <li><a href="#serialization">Serialization</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Standard Library</h1>
+      <p>Quill comes with a rich set of built-in functions. No imports required -- they are available everywhere.</p>
+
+      <h2 id="collections">Collections</h2>
+
+      <h3><code>length(x)</code></h3>
+      <p>Returns the length of a string or list.</p>
+      <pre><code><span class="kw">say</span> length(<span class="str">"hello"</span>)       <span class="cmt">-- 5</span>
+<span class="kw">say</span> length([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>])    <span class="cmt">-- 3</span></code></pre>
+
+      <h3><code>join(list, separator)</code></h3>
+      <p>Joins a list into a string with the given separator. Defaults to <code>", "</code>.</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+<span class="kw">say</span> join(colors, <span class="str">" and "</span>)  <span class="cmt">-- red and green and blue</span>
+<span class="kw">say</span> join(colors)            <span class="cmt">-- red, green, blue</span></code></pre>
+
+      <h3><code>split(text, separator)</code></h3>
+      <p>Splits a string into a list by the separator.</p>
+      <pre><code>words <span class="kw">is</span> split(<span class="str">"hello world foo"</span>, <span class="str">" "</span>)
+<span class="kw">say</span> words   <span class="cmt">-- ["hello", "world", "foo"]</span></code></pre>
+
+      <h3><code>range(start, end)</code></h3>
+      <p>Returns a list of numbers from <code>start</code> (inclusive) to <code>end</code> (exclusive).</p>
+      <pre><code><span class="kw">say</span> range(<span class="num">1</span>, <span class="num">5</span>)   <span class="cmt">-- [1, 2, 3, 4]</span></code></pre>
+
+      <h3><code>sort(list)</code></h3>
+      <p>Returns a new sorted list (ascending).</p>
+      <pre><code><span class="kw">say</span> sort([<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">5</span>])   <span class="cmt">-- [1, 1, 3, 4, 5]</span></code></pre>
+
+      <h3><code>reverse(list)</code></h3>
+      <p>Returns a new list with elements in reverse order.</p>
+      <pre><code><span class="kw">say</span> reverse([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>])   <span class="cmt">-- [3, 2, 1]</span></code></pre>
+
+      <h3><code>unique(list)</code></h3>
+      <p>Returns a new list with duplicate elements removed.</p>
+      <pre><code><span class="kw">say</span> unique([<span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">3</span>])   <span class="cmt">-- [1, 2, 3]</span></code></pre>
+
+      <h3><code>sum(list)</code></h3>
+      <p>Returns the sum of all numbers in a list.</p>
+      <pre><code><span class="kw">say</span> sum([<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>])   <span class="cmt">-- 60</span></code></pre>
+
+      <h3><code>smallest(list)</code></h3>
+      <p>Returns the smallest value.</p>
+      <pre><code><span class="kw">say</span> smallest([<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>])   <span class="cmt">-- 2</span></code></pre>
+
+      <h3><code>largest(list)</code></h3>
+      <p>Returns the largest value.</p>
+      <pre><code><span class="kw">say</span> largest([<span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>])   <span class="cmt">-- 8</span></code></pre>
+
+      <h2 id="strings-section">Strings</h2>
+
+      <h3><code>trim(text)</code></h3>
+      <p>Removes whitespace from both ends of a string.</p>
+      <pre><code><span class="kw">say</span> trim(<span class="str">"  hello  "</span>)   <span class="cmt">-- "hello"</span></code></pre>
+
+      <h3><code>upper(text)</code></h3>
+      <p>Converts a string to uppercase.</p>
+      <pre><code><span class="kw">say</span> upper(<span class="str">"hello"</span>)   <span class="cmt">-- "HELLO"</span></code></pre>
+
+      <h3><code>lower(text)</code></h3>
+      <p>Converts a string to lowercase.</p>
+      <pre><code><span class="kw">say</span> lower(<span class="str">"HELLO"</span>)   <span class="cmt">-- "hello"</span></code></pre>
+
+      <h3><code>replace_text(text, old, new)</code></h3>
+      <p>Replaces all occurrences of <code>old</code> with <code>new</code>.</p>
+      <pre><code><span class="kw">say</span> replace_text(<span class="str">"hello world"</span>, <span class="str">"world"</span>, <span class="str">"Quill"</span>)
+<span class="cmt">-- "hello Quill"</span></code></pre>
+
+      <h3><code>startsWith(text, prefix)</code></h3>
+      <p>Returns <code>yes</code> if the string starts with the given prefix.</p>
+      <pre><code><span class="kw">say</span> startsWith(<span class="str">"hello"</span>, <span class="str">"he"</span>)   <span class="cmt">-- true</span></code></pre>
+
+      <h3><code>endsWith(text, suffix)</code></h3>
+      <p>Returns <code>yes</code> if the string ends with the given suffix.</p>
+      <pre><code><span class="kw">say</span> endsWith(<span class="str">"hello"</span>, <span class="str">"lo"</span>)   <span class="cmt">-- true</span></code></pre>
+
+      <h2 id="math">Math</h2>
+
+      <h3><code>round(n)</code></h3>
+      <p>Rounds a number to the nearest integer.</p>
+      <pre><code><span class="kw">say</span> round(<span class="num">3.7</span>)   <span class="cmt">-- 4</span>
+<span class="kw">say</span> round(<span class="num">3.2</span>)   <span class="cmt">-- 3</span></code></pre>
+
+      <h3><code>floor(n)</code></h3>
+      <p>Rounds down to the nearest integer.</p>
+      <pre><code><span class="kw">say</span> floor(<span class="num">3.9</span>)   <span class="cmt">-- 3</span></code></pre>
+
+      <h3><code>ceil(n)</code></h3>
+      <p>Rounds up to the nearest integer.</p>
+      <pre><code><span class="kw">say</span> ceil(<span class="num">3.1</span>)   <span class="cmt">-- 4</span></code></pre>
+
+      <h3><code>abs(n)</code></h3>
+      <p>Returns the absolute value.</p>
+      <pre><code><span class="kw">say</span> abs(<span class="num">-5</span>)   <span class="cmt">-- 5</span></code></pre>
+
+      <h3><code>random()</code></h3>
+      <p>Returns a random decimal between 0 (inclusive) and 1 (exclusive).</p>
+      <pre><code><span class="kw">say</span> random()   <span class="cmt">-- 0.7291...</span></code></pre>
+
+      <h3><code>randomInt(min, max)</code></h3>
+      <p>Returns a random integer between <code>min</code> and <code>max</code> (inclusive).</p>
+      <pre><code><span class="kw">say</span> randomInt(<span class="num">1</span>, <span class="num">10</span>)   <span class="cmt">-- e.g., 7</span></code></pre>
+
+      <h2 id="conversion">Conversion</h2>
+
+      <h3><code>toNumber(x)</code></h3>
+      <p>Converts a value to a number.</p>
+      <pre><code><span class="kw">say</span> toNumber(<span class="str">"42"</span>)   <span class="cmt">-- 42</span></code></pre>
+
+      <h3><code>toText(x)</code></h3>
+      <p>Converts a value to text.</p>
+      <pre><code><span class="kw">say</span> toText(<span class="num">42</span>)   <span class="cmt">-- "42"</span></code></pre>
+
+      <h3><code>typeOf(x)</code></h3>
+      <p>Returns the type of a value as text: <code>"number"</code>, <code>"string"</code>, <code>"boolean"</code>, <code>"list"</code>, or <code>"nothing"</code>.</p>
+      <pre><code><span class="kw">say</span> typeOf(<span class="num">42</span>)         <span class="cmt">-- "number"</span>
+<span class="kw">say</span> typeOf(<span class="str">"hello"</span>)    <span class="cmt">-- "string"</span>
+<span class="kw">say</span> typeOf([<span class="num">1</span>, <span class="num">2</span>])    <span class="cmt">-- "list"</span></code></pre>
+
+      <h2 id="file-io">File I/O</h2>
+      <div class="callout callout-info">
+        File I/O functions are only available when running Quill with the CLI (<code>quill run</code>). They are not available in the browser playground.
+      </div>
+
+      <h3><code>read(path)</code></h3>
+      <p>Reads the contents of a file as text.</p>
+      <pre><code>content <span class="kw">is</span> read(<span class="str">"data.txt"</span>)
+<span class="kw">say</span> content</code></pre>
+
+      <h3><code>write(path, content)</code></h3>
+      <p>Writes text to a file, creating or overwriting it.</p>
+      <pre><code>write(<span class="str">"output.txt"</span>, <span class="str">"Hello, file!"</span>)</code></pre>
+
+      <h3><code>append_file(path, content)</code></h3>
+      <p>Appends text to the end of a file.</p>
+      <pre><code>append_file(<span class="str">"log.txt"</span>, <span class="str">"New entry\n"</span>)</code></pre>
+
+      <h3><code>exists(path)</code></h3>
+      <p>Returns <code>yes</code> if a file exists at the given path.</p>
+      <pre><code><span class="kw">if</span> exists(<span class="str">"config.txt"</span>):
+  <span class="kw">say</span> <span class="str">"Config found"</span></code></pre>
+
+      <h2 id="date-time">Date &amp; time</h2>
+
+      <h3><code>now()</code></h3>
+      <p>Returns the current date and time as an ISO 8601 string.</p>
+      <pre><code><span class="kw">say</span> now()   <span class="cmt">-- "2026-04-04T12:34:56.789Z"</span></code></pre>
+
+      <h3><code>today()</code></h3>
+      <p>Returns today's date as a string (<code>YYYY-MM-DD</code>).</p>
+      <pre><code><span class="kw">say</span> today()   <span class="cmt">-- "2026-04-04"</span></code></pre>
+
+      <h2 id="serialization">Serialization</h2>
+
+      <h3><code>parseJSON(text)</code></h3>
+      <p>Parses a JSON string into a Quill value.</p>
+      <pre><code>data <span class="kw">is</span> parseJSON(<span class="str">'{"name": "Alice"}'</span>)
+<span class="kw">say</span> data.name   <span class="cmt">-- "Alice"</span></code></pre>
+
+      <h3><code>toJSON(value)</code></h3>
+      <p>Converts a value to a formatted JSON string.</p>
+      <pre><code>list <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+<span class="kw">say</span> toJSON(list)</code></pre>
+
+      <h2 id="system">System</h2>
+
+      <h3><code>wait(ms)</code></h3>
+      <p>Pauses execution for the given number of milliseconds. CLI only.</p>
+      <pre><code>wait(<span class="num">1000</span>)   <span class="cmt">-- wait 1 second</span></code></pre>
+
+      <h3><code>exit(code)</code></h3>
+      <p>Exits the program with the given exit code. CLI only.</p>
+      <pre><code>exit(<span class="num">0</span>)   <span class="cmt">-- exit successfully</span></code></pre>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="index.html">Documentation</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

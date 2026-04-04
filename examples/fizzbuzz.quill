@@ -1,0 +1,16 @@
+-- FizzBuzz in Plain
+
+to fizzbuzz n:
+  i is 1
+  while i is less than n + 1:
+    if i % 15 is 0:
+      say "FizzBuzz"
+    otherwise if i % 3 is 0:
+      say "Fizz"
+    otherwise if i % 5 is 0:
+      say "Buzz"
+    otherwise:
+      say i
+    i is i + 1
+
+fizzbuzz(20)

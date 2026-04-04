@@ -1,0 +1,33 @@
+-- Simple calculator functions
+
+to add a b:
+  give back a + b
+
+to subtract a b:
+  give back a - b
+
+to multiply a b:
+  give back a * b
+
+to divide a b:
+  if b is 0:
+    say "Cannot divide by zero!"
+    give back 0
+  give back a / b
+
+-- Use the calculator
+say "=== Calculator ==="
+
+x is 100
+y is 25
+
+say "x = {x}"
+say "y = {y}"
+say "{x} + {y} = {add(x, y)}"
+say "{x} - {y} = {subtract(x, y)}"
+say "{x} * {y} = {multiply(x, y)}"
+say "{x} / {y} = {divide(x, y)}"
+
+-- Chained operations
+result is add(multiply(3, 4), subtract(10, 5))
+say "3 * 4 + (10 - 5) = {result}"

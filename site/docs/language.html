@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Language Reference - Quill</title>
+  <meta name="description" content="Complete guide to Quill syntax: variables, functions, control flow, operators, and more.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="active">Docs</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="getting-started.html">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="language.html" class="active">Language reference</a></li>
+        <li><a href="#comments">Comments</a></li>
+        <li><a href="#variables">Variables</a></li>
+        <li><a href="#data-types">Data types</a></li>
+        <li><a href="#operators">Operators</a></li>
+        <li><a href="#strings">Strings</a></li>
+        <li><a href="#comparisons">Comparisons</a></li>
+        <li><a href="#logic">Logic</a></li>
+        <li><a href="#control-flow">Control flow</a></li>
+        <li><a href="#loops">Loops</a></li>
+        <li><a href="#functions">Functions</a></li>
+        <li><a href="#lists">Lists</a></li>
+        <li><a href="#imports">Imports</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="stdlib.html">Standard library</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Language Reference</h1>
+      <p>A complete guide to everything you can write in Quill.</p>
+
+      <h2 id="comments">Comments</h2>
+      <p>Comments start with <code>--</code> and continue to the end of the line. They are ignored by the compiler.</p>
+      <pre><code><span class="cmt">-- This is a comment</span>
+name <span class="kw">is</span> <span class="str">"Alice"</span>  <span class="cmt">-- This is also a comment</span></code></pre>
+
+      <h2 id="variables">Variables</h2>
+      <p>Create variables with <code>is</code> (singular) or <code>are</code> (plural). Quill uses both for readability -- they work exactly the same way.</p>
+      <pre><code>name <span class="kw">is</span> <span class="str">"Alice"</span>
+age <span class="kw">is</span> <span class="num">25</span>
+colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+active <span class="kw">is</span> <span class="bool">yes</span></code></pre>
+      <p>Reassign variables by using <code>is</code> again:</p>
+      <pre><code>count <span class="kw">is</span> <span class="num">0</span>
+count <span class="kw">is</span> count + <span class="num">1</span>  <span class="cmt">-- count is now 1</span></code></pre>
+
+      <h2 id="data-types">Data types</h2>
+      <table>
+        <tr><th>Type</th><th>Description</th><th>Example</th></tr>
+        <tr><td>Text</td><td>A string of characters</td><td><code>"Hello, World!"</code></td></tr>
+        <tr><td>Number</td><td>Integer or decimal</td><td><code>42</code>, <code>3.14</code></td></tr>
+        <tr><td>Boolean</td><td>True or false</td><td><code>yes</code>, <code>no</code>, <code>true</code>, <code>false</code></td></tr>
+        <tr><td>List</td><td>Ordered collection</td><td><code>[1, 2, 3]</code></td></tr>
+      </table>
+
+      <h2 id="operators">Operators</h2>
+      <h3>Math operators</h3>
+      <table>
+        <tr><th>Operator</th><th>Description</th><th>Example</th></tr>
+        <tr><td><code>+</code></td><td>Addition</td><td><code>2 + 3</code> gives <code>5</code></td></tr>
+        <tr><td><code>-</code></td><td>Subtraction</td><td><code>10 - 4</code> gives <code>6</code></td></tr>
+        <tr><td><code>*</code></td><td>Multiplication</td><td><code>3 * 7</code> gives <code>21</code></td></tr>
+        <tr><td><code>/</code></td><td>Division</td><td><code>15 / 4</code> gives <code>3.75</code></td></tr>
+        <tr><td><code>%</code></td><td>Modulo (remainder)</td><td><code>10 % 3</code> gives <code>1</code></td></tr>
+      </table>
+
+      <h3>Unary minus</h3>
+      <pre><code>x <span class="kw">is</span> <span class="num">-5</span>
+y <span class="kw">is</span> -x  <span class="cmt">-- y is 5</span></code></pre>
+
+      <h2 id="strings">Strings &amp; interpolation</h2>
+      <p>Strings are wrapped in double quotes. Use <code>{expression}</code> inside strings to interpolate values:</p>
+      <pre><code>name <span class="kw">is</span> <span class="str">"World"</span>
+<span class="kw">say</span> <span class="str">"Hello, {name}!"</span>        <span class="cmt">-- Hello, World!</span>
+<span class="kw">say</span> <span class="str">"2 + 2 = {2 + 2}"</span>        <span class="cmt">-- 2 + 2 = 4</span>
+<span class="kw">say</span> <span class="str">"Length: {length(name)}"</span>  <span class="cmt">-- Length: 5</span></code></pre>
+      <p>Escape sequences: <code>\"</code> for a literal quote, <code>\\</code> for a backslash, <code>\n</code> for a newline, <code>\t</code> for a tab.</p>
+
+      <h2 id="comparisons">Comparisons</h2>
+      <p>Quill comparisons read like English:</p>
+      <table>
+        <tr><th>Quill</th><th>Meaning</th><th>JavaScript equivalent</th></tr>
+        <tr><td><code>x is greater than y</code></td><td>x &gt; y</td><td><code>x > y</code></td></tr>
+        <tr><td><code>x is less than y</code></td><td>x &lt; y</td><td><code>x < y</code></td></tr>
+        <tr><td><code>x is equal to y</code></td><td>strict equality</td><td><code>x === y</code></td></tr>
+        <tr><td><code>x is y</code></td><td>strict equality (shorthand)</td><td><code>x === y</code></td></tr>
+        <tr><td><code>x is not y</code></td><td>not equal</td><td><code>x !== y</code></td></tr>
+        <tr><td><code>list contains x</code></td><td>membership test</td><td><code>list.includes(x)</code></td></tr>
+      </table>
+
+      <pre><code>age <span class="kw">is</span> <span class="num">20</span>
+
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span>:
+  <span class="kw">say</span> <span class="str">"Adult"</span>
+
+<span class="kw">if</span> age <span class="kw">is equal to</span> <span class="num">20</span>:
+  <span class="kw">say</span> <span class="str">"Twenty!"</span>
+
+colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"blue"</span>]
+<span class="kw">if</span> colors <span class="kw">contains</span> <span class="str">"red"</span>:
+  <span class="kw">say</span> <span class="str">"Red is present"</span></code></pre>
+
+      <h2 id="logic">Logic operators</h2>
+      <table>
+        <tr><th>Operator</th><th>Description</th></tr>
+        <tr><td><code>and</code></td><td>Both conditions must be true</td></tr>
+        <tr><td><code>or</code></td><td>At least one condition must be true</td></tr>
+        <tr><td><code>not</code></td><td>Negates a condition</td></tr>
+      </table>
+
+      <pre><code>age <span class="kw">is</span> <span class="num">25</span>
+name <span class="kw">is</span> <span class="str">"Alice"</span>
+
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span> <span class="kw">and</span> name <span class="kw">is</span> <span class="str">"Alice"</span>:
+  <span class="kw">say</span> <span class="str">"Hello, adult Alice!"</span>
+
+<span class="kw">if</span> <span class="kw">not</span> age <span class="kw">is less than</span> <span class="num">18</span>:
+  <span class="kw">say</span> <span class="str">"Not a minor"</span></code></pre>
+
+      <h2 id="control-flow">Control flow</h2>
+      <h3>If / otherwise</h3>
+      <p>Conditional execution. The body must be indented (2 spaces recommended).</p>
+      <pre><code>temp <span class="kw">is</span> <span class="num">72</span>
+
+<span class="kw">if</span> temp <span class="kw">is greater than</span> <span class="num">80</span>:
+  <span class="kw">say</span> <span class="str">"It's hot!"</span>
+<span class="kw">otherwise if</span> temp <span class="kw">is greater than</span> <span class="num">60</span>:
+  <span class="kw">say</span> <span class="str">"It's nice"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"It's cold"</span></code></pre>
+
+      <h2 id="loops">Loops</h2>
+      <h3>For each</h3>
+      <p>Iterate over items in a list:</p>
+      <pre><code>fruits <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"cherry"</span>]
+
+<span class="kw">for each</span> fruit <span class="kw">in</span> fruits:
+  <span class="kw">say</span> <span class="str">"I like {fruit}"</span></code></pre>
+
+      <p>Use <code>range()</code> to loop over numbers:</p>
+      <pre><code><span class="kw">for each</span> i <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">6</span>):
+  <span class="kw">say</span> i   <span class="cmt">-- prints 1, 2, 3, 4, 5</span></code></pre>
+
+      <h3>While</h3>
+      <p>Repeat as long as a condition is true:</p>
+      <pre><code>count <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">while</span> count <span class="kw">is less than</span> <span class="num">5</span>:
+  <span class="kw">say</span> count
+  count <span class="kw">is</span> count + <span class="num">1</span></code></pre>
+
+      <h2 id="functions">Functions</h2>
+      <p>Define functions with <code>to</code>. Parameters are listed by name (no parentheses or commas needed in the definition).</p>
+      <pre><code><span class="kw">to</span> <span class="fn">greet</span> name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+
+greet(<span class="str">"Alice"</span>)   <span class="cmt">-- Hello, Alice!</span></code></pre>
+
+      <h3>Return values</h3>
+      <p>Use <code>give back</code> to return a value from a function:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">add</span> a b:
+  <span class="kw">give back</span> a + b
+
+result <span class="kw">is</span> add(<span class="num">3</span>, <span class="num">4</span>)
+<span class="kw">say</span> result   <span class="cmt">-- 7</span></code></pre>
+
+      <h3>Multiple parameters</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">fullName</span> first last:
+  <span class="kw">give back</span> <span class="str">"{first} {last}"</span>
+
+<span class="kw">say</span> fullName(<span class="str">"John"</span>, <span class="str">"Doe"</span>)   <span class="cmt">-- John Doe</span></code></pre>
+
+      <h2 id="lists">Lists</h2>
+      <p>Lists are ordered collections of values:</p>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+mixed <span class="kw">are</span> [<span class="str">"hello"</span>, <span class="num">42</span>, <span class="bool">yes</span>]
+empty <span class="kw">are</span> []</code></pre>
+
+      <h3>Access by index</h3>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+<span class="kw">say</span> colors[<span class="num">0</span>]   <span class="cmt">-- red</span>
+<span class="kw">say</span> colors[<span class="num">2</span>]   <span class="cmt">-- blue</span></code></pre>
+
+      <h3>Dot access</h3>
+      <p>Use dot notation to access properties on objects:</p>
+      <pre><code><span class="kw">say</span> <span class="str">"hello"</span>.length   <span class="cmt">-- 5</span></code></pre>
+
+      <h2 id="output">Output</h2>
+      <p>Use <code>say</code> to print values to the console:</p>
+      <pre><code><span class="kw">say</span> <span class="str">"Hello!"</span>
+<span class="kw">say</span> <span class="num">42</span>
+<span class="kw">say</span> <span class="num">2</span> + <span class="num">2</span></code></pre>
+
+      <h2 id="imports">Imports</h2>
+      <p>Import other Quill files with <code>use</code>:</p>
+      <pre><code><span class="kw">use</span> <span class="str">"helpers.quill"</span></code></pre>
+      <div class="callout callout-info">
+        Imports are resolved at compile time and bring all definitions from the imported file into scope.
+      </div>
+
+      <h2>Next steps</h2>
+      <ul>
+        <li><a href="stdlib.html">Standard Library</a> -- built-in functions</li>
+        <li><a href="testing.html">Testing</a> -- write and run tests</li>
+        <li><a href="examples.html">Examples</a> -- complete programs</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="index.html">Documentation</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

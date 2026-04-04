@@ -1,0 +1,18 @@
+-- Standard library demo
+numbers are [5, 3, 8, 1, 9, 2]
+say "Numbers: {join(numbers, ', ')}"
+say "Sorted: {join(sort(numbers), ', ')}"
+say "Sum: {sum(numbers)}"
+say "Length: {length(numbers)}"
+say "Smallest: {smallest(numbers)}"
+say "Largest: {largest(numbers)}"
+say "Unique: {join(unique([1, 2, 2, 3, 3, 3]), ', ')}"
+
+name is "  Hello World  "
+say "Trimmed: '{trim(name)}'"
+say "Upper: {upper(name)}"
+say "Lower: {lower(name)}"
+
+say "Today: {today()}"
+say "Type of numbers: {typeOf(numbers)}"
+say "Range 1-5: {join(range(1, 6), ', ')}"

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation - Quill</title>
+  <meta name="description" content="Quill programming language documentation. Learn how to write Quill programs.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="active">Docs</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="getting-started.html">Installation</a></li>
+        <li><a href="getting-started.html#first-program">First program</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="language.html">Language reference</a></li>
+        <li><a href="language.html#variables">Variables</a></li>
+        <li><a href="language.html#functions">Functions</a></li>
+        <li><a href="language.html#control-flow">Control flow</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="stdlib.html">Standard library</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Quill Documentation</h1>
+      <p>Welcome to the Quill documentation. Quill is a programming language designed to be readable, friendly, and powerful. Code in Quill reads like English, making it easy to learn and a joy to write.</p>
+
+      <div class="callout callout-tip">
+        <strong>New to Quill?</strong> Start with the <a href="getting-started.html">Getting Started</a> guide, or jump straight into the <a href="../playground.html">Playground</a> to try it in your browser.
+      </div>
+
+      <h2>Documentation overview</h2>
+
+      <div class="features-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 24px;">
+        <a href="getting-started.html" class="feature-card" style="text-decoration: none;">
+          <h3>Getting Started</h3>
+          <p>Install Quill, write your first program, and learn the basics of running Quill code.</p>
+        </a>
+        <a href="language.html" class="feature-card" style="text-decoration: none;">
+          <h3>Language Reference</h3>
+          <p>Complete guide to Quill syntax: variables, functions, control flow, operators, and more.</p>
+        </a>
+        <a href="stdlib.html" class="feature-card" style="text-decoration: none;">
+          <h3>Standard Library</h3>
+          <p>Every built-in function documented with signatures, descriptions, and examples.</p>
+        </a>
+        <a href="testing.html" class="feature-card" style="text-decoration: none;">
+          <h3>Testing Guide</h3>
+          <p>Write and run tests using Quill's built-in <code>test</code> and <code>expect</code> keywords.</p>
+        </a>
+        <a href="examples.html" class="feature-card" style="text-decoration: none;">
+          <h3>Examples</h3>
+          <p>Complete programs that demonstrate Quill's features, from Hello World to text analyzers.</p>
+        </a>
+        <a href="../playground.html" class="feature-card" style="text-decoration: none;">
+          <h3>Playground</h3>
+          <p>Write and run Quill code right in your browser. No installation required.</p>
+        </a>
+      </div>
+
+      <h2>Quick taste</h2>
+      <p>Here is a simple Quill program that shows off the language:</p>
+      <pre><code><span class="cmt">-- Define a function</span>
+<span class="kw">to</span> <span class="fn">greet</span> name:
+  <span class="kw">if</span> name <span class="kw">is</span> <span class="str">"World"</span>:
+    <span class="kw">say</span> <span class="str">"Hello, everyone!"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+
+friends <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"World"</span>]
+<span class="kw">for each</span> friend <span class="kw">in</span> friends:
+  greet(friend)</code></pre>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

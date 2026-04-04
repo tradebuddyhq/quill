@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quill - A programming language for humans</title>
+  <meta name="description" content="Quill is a programming language that reads like English. No cryptic syntax. No confusing errors. Just say what you want.">
+  <meta name="keywords" content="quill, programming language, learn to code, english-like, beginner friendly">
+  <meta property="og:title" content="Quill - A programming language for humans">
+  <meta property="og:description" content="Write code that reads like English. No cryptic syntax. No confusing errors. Just say what you want.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://quill.tradebuddy.dev">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Quill - A programming language for humans">
+  <meta name="twitter:description" content="Write code that reads like English. No cryptic syntax. No confusing errors.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="docs/index.html">Docs</a></li>
+        <li><a href="playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero page-content">
+    <div class="container">
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        Open Source
+      </div>
+      <h1>
+        <span class="gradient-text">Quill</span>
+        <span class="subtitle-line">A programming language for humans</span>
+      </h1>
+      <p class="subtitle">Write code that reads like English. No cryptic syntax. No confusing errors. Just say what you want.</p>
+      <div class="hero-buttons">
+        <a href="playground.html" class="btn btn-primary">Try it now</a>
+        <a href="docs/index.html" class="btn btn-secondary">Read the docs</a>
+      </div>
+
+      <div class="hero-code">
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <div class="dot" style="background: #1EB969;"></div>
+            Quill
+          </div>
+          <pre><span class="cmt">-- A friendly greeting</span>
+<span class="kw">to</span> <span class="fn">greet</span> name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+
+names <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>]
+<span class="kw">for each</span> name <span class="kw">in</span> names:
+  greet(name)</pre>
+        </div>
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <div class="dot" style="background: #FFA657;"></div>
+            Python
+          </div>
+          <pre><span class="cmt"># A friendly greeting</span>
+<span class="kw">def</span> <span class="fn">greet</span>(name):
+    <span class="fn">print</span>(<span class="str">f"Hello, {name}!"</span>)
+
+names = [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>]
+<span class="kw">for</span> name <span class="kw">in</span> names:
+    greet(name)</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="container">
+      <p class="section-overline">Features</p>
+      <h2 class="section-title">Why Quill?</h2>
+      <p class="section-subtitle">Designed from the ground up to be readable, teachable, and enjoyable.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="icon">&#128214;</div>
+          <h3>Reads like English</h3>
+          <p>Variables use <code>is</code>, conditions use <code>if</code>/<code>otherwise</code>, loops use <code>for each</code>. Your code tells a story.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#128075;</div>
+          <h3>Friendly errors</h3>
+          <p>Error messages that explain what went wrong and suggest how to fix it. No more cryptic stack traces.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#9989;</div>
+          <h3>Built-in testing</h3>
+          <p>Write tests with <code>test</code> and <code>expect</code> keywords. Testing is a first-class citizen, not an afterthought.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#128230;</div>
+          <h3>Standard library</h3>
+          <p>File I/O, string operations, math, dates -- everything you need is built in and ready to use.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#9889;</div>
+          <h3>Compiles to JavaScript</h3>
+          <p>Runs anywhere JS runs: browsers, servers, scripts. Leverage the entire JavaScript ecosystem.</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">&#128187;</div>
+          <h3>Single binary</h3>
+          <p>Download one file, start coding. No runtime, no dependencies, no configuration needed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section class="quickstart">
+    <div class="container">
+      <p class="section-overline">Quick Start</p>
+      <h2 class="section-title">Get started in seconds</h2>
+      <div class="quickstart-box">
+        <div class="code-header">Terminal</div>
+        <pre><span class="cmt"># Install Quill (coming soon to Homebrew)</span>
+brew install quill
+
+<span class="cmt"># Or download from GitHub</span>
+curl -fsSL https://quill.tradebuddy.dev/install.sh | sh
+
+<span class="cmt"># Write your first program</span>
+echo '<span class="kw">say</span> <span class="str">"Hello, World!"</span>' > hello.quill
+
+<span class="cmt"># Run it</span>
+quill run hello.quill</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Comparison -->
+  <section class="comparison">
+    <div class="container">
+      <p class="section-overline">Comparison</p>
+      <h2 class="section-title">See the difference</h2>
+      <p class="section-subtitle">The same program in three languages. Which one would you rather read?</p>
+      <div class="comparison-grid">
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <div class="dot" style="background: #1EB969;"></div>
+            Quill
+          </div>
+          <pre>names <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>]
+
+<span class="kw">for each</span> name <span class="kw">in</span> names:
+  <span class="kw">if</span> length(name) <span class="kw">is greater than</span> <span class="num">3</span>:
+    <span class="kw">say</span> <span class="str">"{name} is long"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"{name} is short"</span></pre>
+        </div>
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <div class="dot" style="background: #3572A5;"></div>
+            Python
+          </div>
+          <pre>names = [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>]
+
+<span class="kw">for</span> name <span class="kw">in</span> names:
+    <span class="kw">if</span> len(name) > <span class="num">3</span>:
+        print(<span class="str">f"{name} is long"</span>)
+    <span class="kw">else</span>:
+        print(<span class="str">f"{name} is short"</span>)</pre>
+        </div>
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <div class="dot" style="background: #89e051;"></div>
+            Bash
+          </div>
+          <pre>names=(<span class="str">"Alice"</span> <span class="str">"Bob"</span>)
+
+<span class="kw">for</span> name <span class="kw">in</span> <span class="str">"${names[@]}"</span>; <span class="kw">do</span>
+  <span class="kw">if</span> [ ${<span class="op">#</span>name} -gt <span class="num">3</span> ]; <span class="kw">then</span>
+    echo <span class="str">"$name is long"</span>
+  <span class="kw">else</span>
+    echo <span class="str">"$name is short"</span>
+  <span class="kw">fi</span>
+<span class="kw">done</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="docs/index.html">Documentation</a></li>
+        <li><a href="playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

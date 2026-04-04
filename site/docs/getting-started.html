@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Getting Started - Quill</title>
+  <meta name="description" content="Install Quill and write your first program.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="active">Docs</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="getting-started.html" class="active">Installation</a></li>
+        <li><a href="getting-started.html#first-program">First program</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="language.html">Language reference</a></li>
+        <li><a href="language.html#variables">Variables</a></li>
+        <li><a href="language.html#functions">Functions</a></li>
+        <li><a href="language.html#control-flow">Control flow</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="stdlib.html">Standard library</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Getting Started</h1>
+      <p>Get Quill installed and running on your machine in under a minute.</p>
+
+      <h2 id="installation">Installation</h2>
+
+      <h3>macOS (Homebrew)</h3>
+      <pre><code>brew install quill</code></pre>
+      <div class="callout callout-info">
+        <strong>Coming soon.</strong> Homebrew installation is in progress. For now, use the download method below.
+      </div>
+
+      <h3>Download from GitHub</h3>
+      <pre><code><span class="cmt"># macOS / Linux</span>
+curl -fsSL https://quill.tradebuddy.dev/install.sh | sh
+
+<span class="cmt"># Or download the binary directly</span>
+<span class="cmt"># Visit https://github.com/tradebuddy/quill/releases</span></code></pre>
+
+      <h3>Windows</h3>
+      <pre><code><span class="cmt"># Download the .exe from GitHub releases</span>
+<span class="cmt"># Add it to your PATH</span></code></pre>
+
+      <h3>Verify installation</h3>
+      <pre><code>quill --version
+<span class="cmt"># quill 0.1.0</span></code></pre>
+
+      <h2 id="first-program">Your first program</h2>
+      <p>Create a file called <code>hello.quill</code>:</p>
+      <pre><code><span class="kw">say</span> <span class="str">"Hello, World!"</span></code></pre>
+
+      <p>Run it:</p>
+      <pre><code>quill run hello.quill</code></pre>
+
+      <p>You should see:</p>
+      <pre><code>Hello, World!</code></pre>
+
+      <p>Congratulations! You just ran your first Quill program.</p>
+
+      <h2 id="a-real-program">A real program</h2>
+      <p>Let's write something more interesting. Create <code>greet.quill</code>:</p>
+      <pre><code><span class="cmt">-- A greeting program</span>
+name <span class="kw">is</span> <span class="str">"Quill"</span>
+version <span class="kw">is</span> <span class="num">1</span>
+
+<span class="kw">say</span> <span class="str">"Welcome to {name} version {version}!"</span>
+
+languages <span class="kw">are</span> [<span class="str">"Python"</span>, <span class="str">"JavaScript"</span>, <span class="str">"Quill"</span>]
+
+<span class="kw">for each</span> lang <span class="kw">in</span> languages:
+  <span class="kw">if</span> lang <span class="kw">is</span> <span class="str">"Quill"</span>:
+    <span class="kw">say</span> <span class="str">"{lang} is the best!"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"{lang} is pretty good too"</span></code></pre>
+
+      <p>Run it:</p>
+      <pre><code>quill run greet.quill</code></pre>
+      <pre><code>Welcome to Quill version 1!
+Python is pretty good too
+JavaScript is pretty good too
+Quill is the best!</code></pre>
+
+      <h2 id="building">Building to JavaScript</h2>
+      <p>Quill compiles to JavaScript. You can output the compiled JS with:</p>
+      <pre><code>quill build hello.quill -o hello.js</code></pre>
+      <p>Then run it with Node.js or include it in a web page:</p>
+      <pre><code>node hello.js</code></pre>
+
+      <h2>Next steps</h2>
+      <ul>
+        <li>Read the <a href="language.html">Language Reference</a> to learn all of Quill's syntax</li>
+        <li>Explore the <a href="stdlib.html">Standard Library</a> for built-in functions</li>
+        <li>Try the <a href="../playground.html">Playground</a> to experiment in your browser</li>
+        <li>Check out <a href="examples.html">Examples</a> for complete programs</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="index.html">Documentation</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddy/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
