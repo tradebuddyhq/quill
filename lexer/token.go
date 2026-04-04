@@ -66,6 +66,18 @@ const (
 	TOKEN_OF
 	TOKEN_PIPE // |
 
+	// Concurrency keywords
+	TOKEN_SPAWN
+	TOKEN_TASK
+	TOKEN_PARALLEL
+	TOKEN_RACE
+	TOKEN_CHANNEL
+	TOKEN_SEND
+	TOKEN_RECEIVE
+	TOKEN_SELECT
+	TOKEN_AFTER
+	TOKEN_BUFFER
+
 	// Framework keywords
 	TOKEN_COMPONENT
 	TOKEN_STATE
@@ -143,6 +155,16 @@ var tokenNames = map[TokenType]string{
 	TOKEN_DEFINE:    "define",
 	TOKEN_OF:        "of",
 	TOKEN_PIPE:      "|",
+	TOKEN_SPAWN:     "spawn",
+	TOKEN_TASK:      "task",
+	TOKEN_PARALLEL:  "parallel",
+	TOKEN_RACE:      "race",
+	TOKEN_CHANNEL:   "channel",
+	TOKEN_SEND:      "send",
+	TOKEN_RECEIVE:   "receive",
+	TOKEN_SELECT:    "select",
+	TOKEN_AFTER:     "after",
+	TOKEN_BUFFER:    "buffer",
 	TOKEN_COMPONENT: "component",
 	TOKEN_STATE:     "state",
 	TOKEN_MOUNT:     "mount",

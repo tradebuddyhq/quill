@@ -488,3 +488,88 @@ type MountStatement struct {
 
 func (s *MountStatement) nodeType() string { return "Mount" }
 func (s *MountStatement) stmtNode()        {}
+
+// --- Concurrency ---
+
+// SpawnStatement represents spawning a concurrent task.
+type SpawnStatement struct {
+	Name string
+	Body []Statement
+	Line int
+}
+
+func (s *SpawnStatement) nodeType() string { return "Spawn" }
+func (s *SpawnStatement) stmtNode()        {}
+
+// AwaitExpression represents awaiting a task, "all", or "first".
+type AwaitExpression struct {
+	Target Expression // variable or identifier "all" / "first"
+	Line   int
+}
+
+func (e *AwaitExpression) nodeType() string { return "AwaitExpr" }
+func (e *AwaitExpression) exprNode()        {}
+
+// ParallelBlock represents a parallel: block with multiple task assignments.
+type ParallelBlock struct {
+	Tasks []Statement // assignments inside the block
+	Line  int
+}
+
+func (s *ParallelBlock) nodeType() string { return "Parallel" }
+func (s *ParallelBlock) stmtNode()        {}
+
+// RaceBlock represents a race: block with multiple task assignments.
+type RaceBlock struct {
+	Tasks []Statement
+	Line  int
+}
+
+func (s *RaceBlock) nodeType() string { return "Race" }
+func (s *RaceBlock) stmtNode()        {}
+
+// ChannelStatement represents a channel declaration.
+type ChannelStatement struct {
+	Name       string
+	BufferSize Expression // optional
+	Line       int
+}
+
+func (s *ChannelStatement) nodeType() string { return "Channel" }
+func (s *ChannelStatement) stmtNode()        {}
+
+// SendStatement represents sending a value to a channel.
+type SendStatement struct {
+	Value   Expression
+	Channel string
+	Line    int
+}
+
+func (s *SendStatement) nodeType() string { return "Send" }
+func (s *SendStatement) stmtNode()        {}
+
+// ReceiveExpression represents receiving a value from a channel.
+type ReceiveExpression struct {
+	Channel string
+	Line    int
+}
+
+func (e *ReceiveExpression) nodeType() string { return "Receive" }
+func (e *ReceiveExpression) exprNode()        {}
+
+// SelectStatement represents a select: block with channel cases and optional timeout.
+type SelectStatement struct {
+	Cases     []SelectCase
+	AfterMs   Expression  // optional timeout in ms
+	AfterBody []Statement // body to execute on timeout
+	Line      int
+}
+
+func (s *SelectStatement) nodeType() string { return "Select" }
+func (s *SelectStatement) stmtNode()        {}
+
+// SelectCase represents a single case in a select statement.
+type SelectCase struct {
+	Channel string
+	Body    []Statement
+}

@@ -56,11 +56,36 @@ func (g *Generator) Generate(program *ast.Program) string {
 		out.WriteString("\n")
 	}
 
+	// Include channel runtime if concurrency features are used
+	if g.hasConcurrency(program) {
+		out.WriteString(channelRuntime)
+		out.WriteString("\n")
+	}
+
+	// Include stdlib runtimes based on usage detection in user code
+	if g.usesIdentifier(userCodeStr, "Auth") {
+		out.WriteString(stdlib.GetAuthRuntime())
+		out.WriteString("\n")
+	}
+	if g.usesIdentifier(userCodeStr, "DB") {
+		out.WriteString(stdlib.GetOrmRuntime())
+		out.WriteString("\n")
+	}
+	if g.usesIdentifier(userCodeStr, "Validate") {
+		out.WriteString(stdlib.GetValidateRuntime())
+		out.WriteString("\n")
+	}
+	if g.usesIdentifier(userCodeStr, "Log") {
+		out.WriteString(stdlib.GetLoggingRuntime())
+		out.WriteString("\n")
+	}
+
 	// Count the preamble lines so source map offsets are correct
 	preamble := out.String()
 	preambleLines := strings.Count(preamble, "\n")
 
-	if strings.Contains(userCodeStr, "await ") {
+	needsAsync := strings.Contains(userCodeStr, "await ") || g.hasAsyncConstructs(program)
+	if needsAsync {
 		g.genLine = preambleLines // (async () => {
 		out.WriteString("(async () => {\n")
 		preambleLines++ // account for the async wrapper line
@@ -294,6 +319,30 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 	case *ast.MountStatement:
 		return g.genMount(s, prefix)
 
+	case *ast.SpawnStatement:
+		g.addStmtMapping(s.Line)
+		return g.genSpawn(s, prefix)
+
+	case *ast.ParallelBlock:
+		g.addStmtMapping(s.Line)
+		return g.genParallel(s, prefix)
+
+	case *ast.RaceBlock:
+		g.addStmtMapping(s.Line)
+		return g.genRaceBlock(s, prefix)
+
+	case *ast.ChannelStatement:
+		g.addStmtMapping(s.Line)
+		return g.genChannelStmt(s, prefix)
+
+	case *ast.SendStatement:
+		g.addStmtMapping(s.Line)
+		return fmt.Sprintf("%sawait %s.send(%s);", prefix, s.Channel, g.genExpr(s.Value))
+
+	case *ast.SelectStatement:
+		g.addStmtMapping(s.Line)
+		return g.genSelectStmt(s, prefix)
+
 	default:
 		return prefix + "/* unknown statement */"
 	}
@@ -505,6 +554,18 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 	case *ast.AwaitExpr:
 		return fmt.Sprintf("await %s", g.genExpr(e.Expr))
 
+	case *ast.AwaitExpression:
+		// "await all" or "await first" — handled contextually by parallel/race
+		if ident, ok := e.Target.(*ast.Identifier); ok {
+			if ident.Name == "all" || ident.Name == "first" {
+				return fmt.Sprintf("await %s", ident.Name)
+			}
+		}
+		return fmt.Sprintf("await __task_%s", g.genExpr(e.Target))
+
+	case *ast.ReceiveExpression:
+		return fmt.Sprintf("await %s.receive()", e.Channel)
+
 	case *ast.NothingLiteral:
 		return "null"
 
@@ -550,6 +611,155 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 	default:
 		return "undefined"
 	}
+}
+
+// --- Concurrency code generation ---
+
+func (g *Generator) genSpawn(s *ast.SpawnStatement, prefix string) string {
+	var out strings.Builder
+	g.indent++
+	body := g.genBlock(s.Body)
+	g.indent--
+	out.WriteString(fmt.Sprintf("%sasync function %s() {\n%s%s}\n", prefix, s.Name, body, prefix))
+	out.WriteString(fmt.Sprintf("%slet __task_%s = %s();", prefix, s.Name, s.Name))
+	return out.String()
+}
+
+func (g *Generator) genParallel(s *ast.ParallelBlock, prefix string) string {
+	var out strings.Builder
+	// Collect variable names and their value expressions
+	var names []string
+	var exprs []string
+	for _, task := range s.Tasks {
+		if assign, ok := task.(*ast.AssignStatement); ok {
+			names = append(names, assign.Name)
+			exprs = append(exprs, g.genExpr(assign.Value))
+			g.declared[assign.Name] = true
+		}
+	}
+	out.WriteString(fmt.Sprintf("%slet [%s] = await Promise.all([\n", prefix, strings.Join(names, ", ")))
+	for i, expr := range exprs {
+		comma := ","
+		if i == len(exprs)-1 {
+			comma = ""
+		}
+		out.WriteString(fmt.Sprintf("%s  %s%s\n", prefix, expr, comma))
+	}
+	out.WriteString(fmt.Sprintf("%s]);", prefix))
+	return out.String()
+}
+
+func (g *Generator) genRaceBlock(s *ast.RaceBlock, prefix string) string {
+	var out strings.Builder
+	var exprs []string
+	for _, task := range s.Tasks {
+		if assign, ok := task.(*ast.AssignStatement); ok {
+			exprs = append(exprs, g.genExpr(assign.Value))
+			g.declared[assign.Name] = true
+		}
+	}
+	out.WriteString(fmt.Sprintf("%slet __race_result = await Promise.race([\n", prefix))
+	for i, expr := range exprs {
+		comma := ","
+		if i == len(exprs)-1 {
+			comma = ""
+		}
+		out.WriteString(fmt.Sprintf("%s  %s%s\n", prefix, expr, comma))
+	}
+	out.WriteString(fmt.Sprintf("%s]);", prefix))
+	return out.String()
+}
+
+func (g *Generator) genChannelStmt(s *ast.ChannelStatement, prefix string) string {
+	if s.BufferSize != nil {
+		return fmt.Sprintf("%slet %s = new __QuillChannel(%s);", prefix, s.Name, g.genExpr(s.BufferSize))
+	}
+	return fmt.Sprintf("%slet %s = new __QuillChannel();", prefix, s.Name)
+}
+
+func (g *Generator) genSelectStmt(s *ast.SelectStatement, prefix string) string {
+	var out strings.Builder
+	out.WriteString(fmt.Sprintf("%sawait Promise.race([\n", prefix))
+	for _, c := range s.Cases {
+		g.indent++
+		body := g.genBlock(c.Body)
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s  %s.receive().then(val => {\n%s%s  }),\n", prefix, c.Channel, body, prefix))
+	}
+	if s.AfterMs != nil {
+		g.indent++
+		afterBody := g.genBlock(s.AfterBody)
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s  new Promise(resolve => setTimeout(() => {\n%s%s    resolve();\n%s  }, %s)),\n",
+			prefix, afterBody, prefix, prefix, g.genExpr(s.AfterMs)))
+	}
+	out.WriteString(fmt.Sprintf("%s]);", prefix))
+	return out.String()
+}
+
+// channelRuntime is the __QuillChannel class injected when channel/send/receive/select is used.
+const channelRuntime = `class __QuillChannel {
+  constructor(bufferSize = 0) {
+    this.buffer = [];
+    this.bufferSize = bufferSize;
+    this.waiting = [];
+    this.senders = [];
+  }
+  send(value) {
+    return new Promise(resolve => {
+      if (this.waiting.length > 0) {
+        this.waiting.shift()(value);
+        resolve();
+      } else if (this.buffer.length < this.bufferSize) {
+        this.buffer.push(value);
+        resolve();
+      } else {
+        this.senders.push({ value, resolve });
+      }
+    });
+  }
+  receive() {
+    return new Promise(resolve => {
+      if (this.buffer.length > 0) {
+        resolve(this.buffer.shift());
+        if (this.senders.length > 0) {
+          let s = this.senders.shift();
+          this.buffer.push(s.value);
+          s.resolve();
+        }
+      } else if (this.senders.length > 0) {
+        let s = this.senders.shift();
+        resolve(s.value);
+        s.resolve();
+      } else {
+        this.waiting.push(resolve);
+      }
+    });
+  }
+}
+`
+
+// hasAsyncConstructs checks if the program uses any concurrency constructs that need async IIFE.
+func (g *Generator) hasAsyncConstructs(program *ast.Program) bool {
+	for _, stmt := range program.Statements {
+		switch stmt.(type) {
+		case *ast.SpawnStatement, *ast.ParallelBlock, *ast.RaceBlock,
+			*ast.ChannelStatement, *ast.SendStatement, *ast.SelectStatement:
+			return true
+		}
+	}
+	return false
+}
+
+// hasConcurrency checks if the program uses channel/send/receive/select features.
+func (g *Generator) hasConcurrency(program *ast.Program) bool {
+	for _, stmt := range program.Statements {
+		switch stmt.(type) {
+		case *ast.ChannelStatement, *ast.SendStatement, *ast.SelectStatement:
+			return true
+		}
+	}
+	return false
 }
 
 func (g *Generator) GenerateBody(program *ast.Program) string {
@@ -656,6 +866,12 @@ func isInterpolationExpr(s string) bool {
 		}
 	}
 	return true
+}
+
+// usesIdentifier checks if the generated user code references a given identifier
+// followed by a dot (e.g., "Auth.", "DB.", "Validate.", "Log.").
+func (g *Generator) usesIdentifier(code string, name string) bool {
+	return strings.Contains(code, name+".")
 }
 
 // hasComponents checks if the program contains any ComponentStatement nodes.

@@ -400,6 +400,20 @@ func (g *LLVMGenerator) genStmt(stmt ast.Statement) {
 		}
 	case *ast.FuncDefinition:
 		// handled at top level, skip here
+
+	// Concurrency stubs
+	case *ast.SpawnStatement:
+		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (spawn)")
+	case *ast.ParallelBlock:
+		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (parallel)")
+	case *ast.RaceBlock:
+		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (race)")
+	case *ast.ChannelStatement:
+		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (channel)")
+	case *ast.SendStatement:
+		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (send)")
+	case *ast.SelectStatement:
+		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (select)")
 	}
 }
 
@@ -689,6 +703,12 @@ func (g *LLVMGenerator) genExpr(expr ast.Expression) llvmValue {
 	case *ast.ListLiteral:
 		// Simplified: return null pointer
 		return llvmValue{reg: "null", typ: "i8*"}
+	case *ast.AwaitExpression:
+		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (await expression)")
+		return llvmValue{reg: "0", typ: "i64"}
+	case *ast.ReceiveExpression:
+		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (receive)")
+		return llvmValue{reg: "0", typ: "i64"}
 	default:
 		// Unsupported expression, emit a comment and return zero
 		g.emitIndented(fmt.Sprintf("; unsupported expression type: %T", expr))

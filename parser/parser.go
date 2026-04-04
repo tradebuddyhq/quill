@@ -17,8 +17,9 @@ func (e *ParseError) Error() string {
 }
 
 type Parser struct {
-	tokens []lexer.Token
-	pos    int
+	tokens   []lexer.Token
+	pos      int
+	recovery *ErrorRecovery // nil means no recovery (panic on first error)
 }
 
 func New(tokens []lexer.Token) *Parser {
@@ -85,6 +86,18 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseMatch()
 	case p.check(lexer.TOKEN_DEFINE):
 		return p.parseDefine()
+	case p.check(lexer.TOKEN_SPAWN):
+		return p.parseSpawn()
+	case p.check(lexer.TOKEN_PARALLEL):
+		return p.parseParallel()
+	case p.check(lexer.TOKEN_RACE):
+		return p.parseRace()
+	case p.check(lexer.TOKEN_CHANNEL):
+		return p.parseChannel()
+	case p.check(lexer.TOKEN_SEND):
+		return p.parseSend()
+	case p.check(lexer.TOKEN_SELECT):
+		return p.parseSelect()
 	case p.check(lexer.TOKEN_COMPONENT):
 		return p.parseComponent()
 	case p.check(lexer.TOKEN_MOUNT):
@@ -704,6 +717,103 @@ func (p *Parser) parseMount() *ast.MountStatement {
 	return &ast.MountStatement{Component: comp.Value, Selector: selector, Line: line}
 }
 
+// --- Concurrency parsing ---
+
+func (p *Parser) parseSpawn() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "spawn"
+	p.expect(lexer.TOKEN_TASK)
+	nameTok := p.expect(lexer.TOKEN_IDENT)
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+	return &ast.SpawnStatement{Name: nameTok.Value, Body: body, Line: line}
+}
+
+func (p *Parser) parseParallel() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "parallel"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+	return &ast.ParallelBlock{Tasks: body, Line: line}
+}
+
+func (p *Parser) parseRace() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "race"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+	return &ast.RaceBlock{Tasks: body, Line: line}
+}
+
+func (p *Parser) parseChannel() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "channel"
+	nameTok := p.expect(lexer.TOKEN_IDENT)
+	var bufferSize ast.Expression
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+		p.expect(lexer.TOKEN_BUFFER)
+		bufferSize = p.parseExpression()
+	}
+	p.consumeNewline()
+	return &ast.ChannelStatement{Name: nameTok.Value, BufferSize: bufferSize, Line: line}
+}
+
+func (p *Parser) parseSend() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "send"
+	value := p.parseExpression()
+	p.expect(lexer.TOKEN_TO)
+	channelTok := p.expect(lexer.TOKEN_IDENT)
+	p.consumeNewline()
+	return &ast.SendStatement{Value: value, Channel: channelTok.Value, Line: line}
+}
+
+func (p *Parser) parseSelect() ast.Statement {
+	line := p.current().Line
+	p.advance() // consume "select"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	var cases []ast.SelectCase
+	var afterMs ast.Expression
+	var afterBody []ast.Statement
+
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		if p.check(lexer.TOKEN_WHEN) {
+			p.advance() // consume "when"
+			p.expect(lexer.TOKEN_RECEIVE)
+			p.expect(lexer.TOKEN_FROM)
+			channelTok := p.expect(lexer.TOKEN_IDENT)
+			p.expect(lexer.TOKEN_COLON)
+			p.expect(lexer.TOKEN_NEWLINE)
+			body := p.parseBlock()
+			cases = append(cases, ast.SelectCase{Channel: channelTok.Value, Body: body})
+		} else if p.check(lexer.TOKEN_AFTER) {
+			p.advance() // consume "after"
+			afterMs = p.parseExpression()
+			p.expect(lexer.TOKEN_COLON)
+			p.expect(lexer.TOKEN_NEWLINE)
+			afterBody = p.parseBlock()
+		} else {
+			p.error("expected 'when' or 'after' in select block")
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return &ast.SelectStatement{Cases: cases, AfterMs: afterMs, AfterBody: afterBody, Line: line}
+}
+
 func (p *Parser) parseBlock() []ast.Statement {
 	p.expect(lexer.TOKEN_INDENT)
 	stmts := []ast.Statement{}
@@ -856,6 +966,11 @@ func (p *Parser) parseMultiplication() ast.Expression {
 func (p *Parser) parseUnary() ast.Expression {
 	if p.check(lexer.TOKEN_AWAIT) {
 		p.advance()
+		// Check for "await all" or "await first"
+		if p.check(lexer.TOKEN_IDENT) && (p.current().Value == "all" || p.current().Value == "first") {
+			keyword := p.advance().Value
+			return &ast.AwaitExpression{Target: &ast.Identifier{Name: keyword}}
+		}
 		expr := p.parseUnary()
 		return &ast.AwaitExpr{Expr: expr}
 	}
@@ -959,6 +1074,12 @@ func (p *Parser) parsePrimary() ast.Expression {
 			p.expect(lexer.TOKEN_RPAREN)
 		}
 		return &ast.NewExpr{ClassName: className.Value, Args: args}
+
+	case lexer.TOKEN_RECEIVE:
+		p.advance() // consume "receive"
+		p.expect(lexer.TOKEN_FROM)
+		channelTok := p.expect(lexer.TOKEN_IDENT)
+		return &ast.ReceiveExpression{Channel: channelTok.Value, Line: tok.Line}
 
 	case lexer.TOKEN_MY:
 		p.advance()

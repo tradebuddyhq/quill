@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,6 +9,9 @@ import (
 	"path/filepath"
 	"quill/analyzer"
 	"quill/codegen"
+	"quill/config"
+	"quill/debugger"
+	quillerrors "quill/errors"
 	"quill/formatter"
 	"quill/lexer"
 	"quill/lsp"
@@ -55,6 +59,14 @@ func main() {
 			}
 		}
 		buildFileWithTarget(os.Args[2], target)
+
+	case "debug":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a file to debug")
+			fmt.Fprintln(os.Stderr, "Usage: quill debug <file.quill>")
+			os.Exit(1)
+		}
+		debugger.StartREPL(os.Args[2])
 
 	case "repl":
 		repl.Start()
@@ -492,63 +504,123 @@ func checkFile(filename string) {
 		os.Exit(1)
 	}
 
-	l := lexer.New(string(source))
+	sourceStr := string(source)
+	sourceLines := strings.Split(sourceStr, "\n")
+
+	l := lexer.New(sourceStr)
 	tokens, err := l.Tokenize()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
 	}
 
-	p := parser.New(tokens)
-	program, err := p.Parse()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		os.Exit(1)
+	// Use error recovery to collect all parse errors
+	program, parseErrors := parser.ParseWithRecovery(tokens)
+
+	// Display parse errors using the new error display system
+	if len(parseErrors) > 0 {
+		displayErrors := make([]quillerrors.DisplayError, len(parseErrors))
+		for i, pe := range parseErrors {
+			displayErrors[i] = quillerrors.DisplayError{
+				Line:    pe.Line,
+				Column:  pe.Column,
+				Message: pe.Message,
+				Hint:    pe.Hint,
+				Code:    pe.Code,
+			}
+		}
+		fmt.Fprint(os.Stderr, quillerrors.FormatErrors(displayErrors, sourceLines, filename, true))
 	}
 
-	// Static analysis
-	a := analyzer.New()
-	diagnostics := a.Analyze(program)
+	// Run static analysis and type checking on the partial program
+	var diagnostics []analyzer.Diagnostic
+	var typeDiags []typechecker.TypeDiagnostic
+	if program != nil {
+		a := analyzer.New()
+		diagnostics = a.Analyze(program)
 
-	// Type checking
-	tc := typechecker.New()
-	typeDiags := tc.Check(program)
+		tc := typechecker.New()
+		typeDiags = tc.Check(program)
+	}
 
-	totalIssues := len(diagnostics) + len(typeDiags)
+	totalIssues := len(parseErrors) + len(diagnostics) + len(typeDiags)
 
 	if totalIssues == 0 {
 		fmt.Printf("✓ %s — no issues found\n", filename)
 		return
 	}
 
-	fmt.Printf("Found %d issue(s) in %s:\n\n", totalIssues, filename)
-	for _, d := range diagnostics {
-		fmt.Println(d.String())
+	// Print analyzer and type checker diagnostics
+	if len(diagnostics) > 0 || len(typeDiags) > 0 {
+		for _, d := range diagnostics {
+			fmt.Println(d.String())
+		}
+		for _, d := range typeDiags {
+			fmt.Println(d.String())
+		}
+		fmt.Println()
 	}
-	for _, d := range typeDiags {
-		fmt.Println(d.String())
-	}
-	fmt.Println()
 
-	if analyzer.HasErrors(diagnostics) || typechecker.HasErrors(typeDiags) {
+	if len(parseErrors) > 0 || analyzer.HasErrors(diagnostics) || typechecker.HasErrors(typeDiags) {
 		os.Exit(1)
 	}
 }
 
 func initProject() {
-	// Create quill.json
+	// Check if either config file already exists
+	if _, err := os.Stat("quill.toml"); err == nil {
+		fmt.Println("quill.toml already exists")
+		return
+	}
 	if _, err := os.Stat("quill.json"); err == nil {
 		fmt.Println("quill.json already exists")
 		return
 	}
 
-	// Get current directory name for project name
+	// Get current directory name for default project name
 	dir, _ := os.Getwd()
-	name := filepath.Base(dir)
+	defaultName := filepath.Base(dir)
 
-	config := map[string]interface{}{
-		"name":         name,
-		"version":      "0.1.0",
+	// Interactive prompts
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Printf("Project name (%s): ", defaultName)
+	nameInput, _ := reader.ReadString('\n')
+	nameInput = strings.TrimSpace(nameInput)
+	if nameInput == "" {
+		nameInput = defaultName
+	}
+
+	fmt.Printf("Version (0.1.0): ")
+	versionInput, _ := reader.ReadString('\n')
+	versionInput = strings.TrimSpace(versionInput)
+	if versionInput == "" {
+		versionInput = "0.1.0"
+	}
+
+	fmt.Printf("Target (js/browser/llvm) [js]: ")
+	targetInput, _ := reader.ReadString('\n')
+	targetInput = strings.TrimSpace(targetInput)
+	if targetInput == "" {
+		targetInput = "js"
+	}
+
+	// Create quill.toml
+	cfg := config.DefaultConfig()
+	cfg.Project.Name = nameInput
+	cfg.Project.Version = versionInput
+	cfg.Build.Target = targetInput
+
+	tomlContent := config.GenerateTOML(cfg)
+	if err := os.WriteFile("quill.toml", []byte(tomlContent), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not create quill.toml: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Also create quill.json for backward compatibility with the package system
+	jsonConfig := map[string]interface{}{
+		"name":         nameInput,
+		"version":      versionInput,
 		"description":  "",
 		"author":       "",
 		"license":      "MIT",
@@ -557,12 +629,8 @@ func initProject() {
 		"repository":   "",
 		"dependencies": map[string]string{},
 	}
-
-	data, _ := json.MarshalIndent(config, "", "  ")
-	if err := os.WriteFile("quill.json", data, 0644); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: could not create quill.json: %s\n", err)
-		os.Exit(1)
-	}
+	data, _ := json.MarshalIndent(jsonConfig, "", "  ")
+	os.WriteFile("quill.json", data, 0644)
 
 	// Create main.quill if it doesn't exist
 	if _, err := os.Stat("main.quill"); err != nil {
@@ -571,6 +639,7 @@ func initProject() {
 	}
 
 	fmt.Println("✓ Initialized Quill project")
+	fmt.Println("  Created quill.toml")
 	fmt.Println("  Created quill.json")
 	fmt.Println("  Run: quill run main.quill")
 }
@@ -932,6 +1001,7 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  quill run <file.quill>       Run a Quill program")
+	fmt.Println("  quill debug <file.quill>     Debug a Quill program (step-through debugger)")
 	fmt.Println("  quill build <file.quill>          Compile to JavaScript (Node.js)")
 	fmt.Println("  quill build <file> --browser       Compile for the browser")
 	fmt.Println("  quill build <file> --wasm          Compile as WASM-ready module")
@@ -955,6 +1025,7 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  quill run hello.quill")
+	fmt.Println("  quill debug hello.quill")
 	fmt.Println("  quill build script.quill")
 	fmt.Println("  quill repl")
 	fmt.Println("  quill test examples/test_example.quill")
