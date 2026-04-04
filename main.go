@@ -278,7 +278,7 @@ func checkFile(filename string) {
 }
 
 func printUsage() {
-	fmt.Println("Quill — a programming language for humans")
+	fmt.Println("Quill — code that reads like English")
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  quill run <file.quill>      Run a Quill program")
