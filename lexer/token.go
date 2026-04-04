@@ -43,6 +43,11 @@ const (
 	TOKEN_USE
 	TOKEN_TEST
 	TOKEN_EXPECT
+	TOKEN_DESCRIBE
+	TOKEN_NEW
+	TOKEN_MY
+	TOKEN_AWAIT
+	TOKEN_AS
 
 	// Operators
 	TOKEN_PLUS
@@ -94,6 +99,11 @@ var tokenNames = map[TokenType]string{
 	TOKEN_USE:       "use",
 	TOKEN_TEST:      "test",
 	TOKEN_EXPECT:    "expect",
+	TOKEN_DESCRIBE:  "describe",
+	TOKEN_NEW:       "new",
+	TOKEN_MY:        "my",
+	TOKEN_AWAIT:     "await",
+	TOKEN_AS:        "as",
 	TOKEN_PLUS:      "+",
 	TOKEN_MINUS:     "-",
 	TOKEN_STAR:      "*",

@@ -71,6 +71,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseTest()
 	case p.check(lexer.TOKEN_EXPECT):
 		return p.parseExpect()
+	case p.check(lexer.TOKEN_DESCRIBE):
+		return p.parseDescribe()
+	case p.check(lexer.TOKEN_IDENT) && p.pos+3 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_DOT && p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT && (p.tokens[p.pos+3].Type == lexer.TOKEN_IS || p.tokens[p.pos+3].Type == lexer.TOKEN_ARE):
+		return p.parseDotAssignment()
 	case p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE):
 		return p.parseAssignment()
 	default:
@@ -201,8 +205,14 @@ func (p *Parser) parseUse() *ast.UseStatement {
 	line := p.current().Line
 	p.advance() // consume "use"
 	path := p.expect(lexer.TOKEN_STRING)
+	alias := ""
+	if p.check(lexer.TOKEN_AS) {
+		p.advance()
+		aliasTok := p.expect(lexer.TOKEN_IDENT)
+		alias = aliasTok.Value
+	}
 	p.consumeNewline()
-	return &ast.UseStatement{Path: path.Value, Line: line}
+	return &ast.UseStatement{Path: path.Value, Alias: alias, Line: line}
 }
 
 func (p *Parser) parseTest() *ast.TestBlock {
@@ -221,6 +231,50 @@ func (p *Parser) parseExpect() *ast.ExpectStatement {
 	expr := p.parseExpression()
 	p.consumeNewline()
 	return &ast.ExpectStatement{Expr: expr, Line: line}
+}
+
+func (p *Parser) parseDescribe() *ast.DescribeStatement {
+	line := p.current().Line
+	p.advance() // consume "describe"
+	name := p.expect(lexer.TOKEN_IDENT)
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	var props []ast.AssignStatement
+	var methods []ast.FuncDefinition
+
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		if p.check(lexer.TOKEN_TO) {
+			method := p.parseFuncDef()
+			methods = append(methods, *method)
+		} else if p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE) {
+			assign := p.parseAssignment()
+			props = append(props, *assign)
+		} else {
+			p.error("expected a property or method inside describe block")
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return &ast.DescribeStatement{Name: name.Value, Properties: props, Methods: methods, Line: line}
+}
+
+func (p *Parser) parseDotAssignment() ast.Statement {
+	line := p.current().Line
+	obj := p.advance().Value  // consume identifier
+	p.advance()                // consume "."
+	field := p.advance().Value // consume field name
+	p.advance()                // consume "is"/"are"
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.DotAssignStatement{Object: obj, Field: field, Value: value, Line: line}
 }
 
 func (p *Parser) parseExprStatement() *ast.ExprStatement {
@@ -370,6 +424,11 @@ func (p *Parser) parseMultiplication() ast.Expression {
 }
 
 func (p *Parser) parseUnary() ast.Expression {
+	if p.check(lexer.TOKEN_AWAIT) {
+		p.advance()
+		expr := p.parseUnary()
+		return &ast.AwaitExpr{Expr: expr}
+	}
 	if p.check(lexer.TOKEN_MINUS) {
 		p.advance()
 		operand := p.parseUnary()
@@ -438,6 +497,29 @@ func (p *Parser) parsePrimary() ast.Expression {
 	case lexer.TOKEN_IDENT:
 		p.advance()
 		return &ast.Identifier{Name: tok.Value}
+
+	case lexer.TOKEN_NEW:
+		p.advance() // consume "new"
+		className := p.expect(lexer.TOKEN_IDENT)
+		args := []ast.Expression{}
+		if p.check(lexer.TOKEN_LPAREN) {
+			p.advance()
+			if !p.check(lexer.TOKEN_RPAREN) {
+				args = append(args, p.parseExpression())
+				for p.check(lexer.TOKEN_COMMA) {
+					p.advance()
+					args = append(args, p.parseExpression())
+				}
+			}
+			p.expect(lexer.TOKEN_RPAREN)
+		}
+		return &ast.NewExpr{ClassName: className.Value, Args: args}
+
+	case lexer.TOKEN_MY:
+		p.advance()
+		p.expect(lexer.TOKEN_DOT)
+		field := p.expect(lexer.TOKEN_IDENT)
+		return &ast.DotExpr{Object: &ast.Identifier{Name: "this"}, Field: field.Value}
 
 	case lexer.TOKEN_LBRACKET:
 		return p.parseListLiteral()

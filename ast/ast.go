@@ -105,8 +105,9 @@ func (s *ExprStatement) nodeType() string { return "ExprStmt" }
 func (s *ExprStatement) stmtNode()        {}
 
 type UseStatement struct {
-	Path string
-	Line int
+	Path  string
+	Alias string
+	Line  int
 }
 
 func (s *UseStatement) nodeType() string { return "Use" }
@@ -230,3 +231,40 @@ type IndexExpr struct {
 
 func (e *IndexExpr) nodeType() string { return "Index" }
 func (e *IndexExpr) exprNode()        {}
+
+// --- New nodes for classes, async, etc. ---
+
+type DescribeStatement struct {
+	Name       string
+	Properties []AssignStatement
+	Methods    []FuncDefinition
+	Line       int
+}
+
+func (s *DescribeStatement) nodeType() string { return "Describe" }
+func (s *DescribeStatement) stmtNode()        {}
+
+type DotAssignStatement struct {
+	Object string
+	Field  string
+	Value  Expression
+	Line   int
+}
+
+func (s *DotAssignStatement) nodeType() string { return "DotAssign" }
+func (s *DotAssignStatement) stmtNode()        {}
+
+type NewExpr struct {
+	ClassName string
+	Args      []Expression
+}
+
+func (e *NewExpr) nodeType() string { return "New" }
+func (e *NewExpr) exprNode()        {}
+
+type AwaitExpr struct {
+	Expr Expression
+}
+
+func (e *AwaitExpr) nodeType() string { return "Await" }
+func (e *AwaitExpr) exprNode()        {}

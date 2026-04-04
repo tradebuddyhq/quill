@@ -1,0 +1,22 @@
+-- Classes in Quill
+
+describe Animal:
+  name is ""
+  sound is ""
+
+  to speak:
+    say "{my.name} says {my.sound}!"
+
+  to info:
+    say "I'm {my.name}, a {my.sound}-making animal"
+
+dog is new Animal()
+dog.name is "Rex"
+dog.sound is "Woof"
+dog.speak()
+
+cat is new Animal()
+cat.name is "Whiskers"
+cat.sound is "Meow"
+cat.speak()
+cat.info()

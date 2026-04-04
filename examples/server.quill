@@ -1,0 +1,10 @@
+-- Simple web server in Quill
+
+server is createServer()
+
+server.get("/", "Hello from Quill!")
+
+server.get("/api/time", toJSON({time: now()}))
+
+server.listen(3000)
+say "Server running on http://localhost:3000"

@@ -1,0 +1,72 @@
+{
+  "If Statement": {
+    "prefix": "if",
+    "body": ["if ${1:condition}:", "  ${2:body}"],
+    "description": "If statement"
+  },
+  "If Otherwise": {
+    "prefix": "ifelse",
+    "body": ["if ${1:condition}:", "  ${2:body}", "otherwise:", "  ${3:else_body}"],
+    "description": "If/otherwise statement"
+  },
+  "For Each Loop": {
+    "prefix": "for",
+    "body": ["for each ${1:item} in ${2:list}:", "  ${3:body}"],
+    "description": "For each loop"
+  },
+  "While Loop": {
+    "prefix": "while",
+    "body": ["while ${1:condition}:", "  ${2:body}"],
+    "description": "While loop"
+  },
+  "Function": {
+    "prefix": "to",
+    "body": ["to ${1:name} ${2:params}:", "  ${3:body}"],
+    "description": "Function definition"
+  },
+  "Say": {
+    "prefix": "say",
+    "body": ["say \"${1:message}\""],
+    "description": "Print a message"
+  },
+  "Variable": {
+    "prefix": "var",
+    "body": ["${1:name} is ${2:value}"],
+    "description": "Variable assignment"
+  },
+  "List": {
+    "prefix": "list",
+    "body": ["${1:name} are [${2:items}]"],
+    "description": "List variable"
+  },
+  "Describe Class": {
+    "prefix": "describe",
+    "body": ["describe ${1:ClassName}:", "  ${2:field} is ${3:default}", "", "  to ${4:method}:", "    ${5:body}"],
+    "description": "Class definition"
+  },
+  "Test": {
+    "prefix": "test",
+    "body": ["test \"${1:test name}\":", "  ${2:expect something}"],
+    "description": "Test block"
+  },
+  "Expect": {
+    "prefix": "expect",
+    "body": ["expect ${1:expression}"],
+    "description": "Test expectation"
+  },
+  "Give Back": {
+    "prefix": "return",
+    "body": ["give back ${1:value}"],
+    "description": "Return value"
+  },
+  "Web Server": {
+    "prefix": "server",
+    "body": ["server is createServer()", "server.get(\"/\", \"${1:Hello!}\")", "server.listen(${2:3000})", "say \"Running on port ${2:3000}\""],
+    "description": "Simple web server"
+  },
+  "Use Import": {
+    "prefix": "use",
+    "body": ["use \"${1:module}\""],
+    "description": "Import a module"
+  }
+}

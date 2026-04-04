@@ -1,0 +1,23 @@
+-- File operations in Quill
+
+-- Write a file
+write("hello.txt", "Hello from Quill!")
+say "Wrote hello.txt"
+
+-- Read it back
+content is read("hello.txt")
+say "Content: {content}"
+
+-- File info
+info is fileInfo("hello.txt")
+say "Size: {info.size} bytes"
+
+-- List files in current directory
+files is listFiles(".")
+say "Files in current directory:"
+for each f in files:
+  say "  {f}"
+
+-- Clean up
+deleteFile("hello.txt")
+say "Cleaned up!"

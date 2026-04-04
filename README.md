@@ -54,11 +54,15 @@ test "math works":
 
 - **English-like syntax** — `is`, `if/otherwise`, `for each`, `give back`
 - **String interpolation** — `"Hello {name}!"`
-- **40+ built-in functions** — `sort()`, `length()`, `sum()`, `upper()`, `trim()`, and more
+- **Classes** — `describe Dog:` with properties, methods, and `my` keyword
+- **60+ built-in functions** — `sort()`, `filter()`, `map_list()`, `length()`, `sum()`, and more
 - **Built-in testing** — `test` and `expect` keywords
-- **Import system** — `use "math.quill"`
+- **Async/await** — `data is await fetchJSON("url")`
+- **Import system** — `use "math.quill"` or `use "express" as app`
+- **Web server** — `createServer()` with routing built in
 - **Interactive REPL** — `quill repl`
 - **Friendly error messages** — with source context and hints
+- **VS Code extension** — syntax highlighting, snippets, comment toggling
 - **Compiles to JavaScript** — runs on Node.js, Bun, or Deno
 - **Single binary** — no dependencies
 
@@ -109,22 +113,83 @@ to add a b:
   give back a + b
 ```
 
+### Classes
+```
+describe Dog:
+  name is ""
+  sound is ""
+
+  to bark:
+    say "{my.name} says {my.sound}!"
+
+rex is new Dog()
+rex.name is "Rex"
+rex.sound is "Woof"
+rex.bark()
+```
+
+### Functional Programming
+```
+to isEven n:
+  give back n % 2 is 0
+
+evens is filter(numbers, isEven)
+doubled is map_list(numbers, double)
+found is find(numbers, bigEnough)
+```
+
+### Async/Await
+```
+data is await fetchJSON("https://api.example.com")
+say data
+```
+
+### Imports
+```
+use "helpers.quill"            -- import another Quill file
+use "express" as app           -- import npm package
+```
+
+### Web Server
+```
+server is createServer()
+server.get("/", "Hello from Quill!")
+server.listen(3000)
+```
+
 ### Standard Library
 ```
-length(items)          -- length of list/string
-sort(items)            -- sort a list
-reverse(items)         -- reverse a list
-sum(numbers)           -- sum a list of numbers
-join(items, ", ")      -- join list into string
-split(text, " ")       -- split string into list
-upper("hello")         -- "HELLO"
-lower("HELLO")         -- "hello"
-trim("  hi  ")         -- "hi"
-range(1, 5)            -- [1, 2, 3, 4]
-random()               -- random number 0-1
-today()                -- "2026-04-04"
-read("file.txt")       -- read a file
-write("out.txt", data) -- write a file
+-- Lists
+length(items)              sort(items)
+reverse(items)             sum(numbers)
+filter(list, fn)           map_list(list, fn)
+find(list, fn)             every(list, fn)
+some(list, fn)             reduce(list, fn, init)
+unique(items)              concat(a, b)
+slice(list, start, end)    push(list, item)
+
+-- Strings
+join(items, ", ")          split(text, " ")
+upper("hello")             lower("HELLO")
+trim("  hi  ")             replace_text(s, old, new)
+startsWith(s, prefix)      endsWith(s, suffix)
+
+-- Math
+round(n)    floor(n)    ceil(n)    abs(n)
+random()    randomInt(1, 10)    range(1, 5)
+
+-- Files
+read("file.txt")           write("out.txt", data)
+listFiles("./dir")         deleteFile("old.txt")
+copyFile(src, dest)        moveFile(src, dest)
+readJSON("data.json")      writeJSON("out.json", data)
+fileInfo("file.txt")       fileExists("file.txt")
+
+-- HTTP
+fetchJSON("url")           postJSON("url", body)
+
+-- Other
+today()    now()    toNumber(x)    toText(x)    typeOf(x)
 ```
 
 ### Testing
@@ -133,6 +198,17 @@ test "my test":
   result is add(2, 3)
   expect result is 5
 ```
+
+## VS Code Extension
+
+Syntax highlighting, snippets, and language support for `.quill` files.
+
+**Install manually:**
+```bash
+cp -r vscode-quill ~/.vscode/extensions/quill-lang
+```
+
+Then restart VS Code. Open any `.quill` file and you'll get highlighting, comment toggling (`Cmd+/`), and snippets.
 
 ## How it Works
 
@@ -153,9 +229,24 @@ quill/
   parser/              Recursive descent parser
   ast/                 AST node types
   codegen/             JavaScript code generator
-  stdlib/              Standard library (40+ built-in functions)
+  stdlib/              Standard library (60+ built-in functions)
   repl/                Interactive REPL
   errors/              Friendly error messages
   examples/            Example programs
   site/                Website, docs, and playground
+  vscode-quill/        VS Code extension
 ```
+
+## Contributing
+
+Pull requests welcome! Areas where help is needed:
+
+- More standard library functions
+- Better error messages
+- Publish VS Code extension to marketplace
+- More example programs
+- Documentation improvements
+
+## License
+
+MIT

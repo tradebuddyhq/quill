@@ -34,6 +34,11 @@ var keywords = map[string]TokenType{
 	"no":        TOKEN_NO,
 	"true":      TOKEN_YES,
 	"false":     TOKEN_NO,
+	"describe":  TOKEN_DESCRIBE,
+	"new":       TOKEN_NEW,
+	"my":        TOKEN_MY,
+	"await":     TOKEN_AWAIT,
+	"as":        TOKEN_AS,
 }
 
 type Lexer struct {

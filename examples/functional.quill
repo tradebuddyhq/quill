@@ -1,0 +1,47 @@
+-- Functional programming in Quill
+
+numbers are [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+-- Filter: keep only even numbers
+to isEven n:
+  give back n % 2 is 0
+
+evens is filter(numbers, isEven)
+say "Evens: {join(evens, ', ')}"
+
+-- Map: double each number
+to double n:
+  give back n * 2
+
+doubled is map_list(numbers, double)
+say "Doubled: {join(doubled, ', ')}"
+
+-- Find first number greater than 7
+to bigEnough n:
+  give back n is greater than 7
+
+found is find(numbers, bigEnough)
+say "First > 7: {found}"
+
+-- Check if all are positive
+to isPositive n:
+  give back n is greater than 0
+
+allPositive is every(numbers, isPositive)
+say "All positive: {allPositive}"
+
+-- Sum using reduce
+to addUp a b:
+  give back a + b
+
+total is reduce(numbers, addUp, 0)
+say "Sum: {total}"
+
+-- Slice
+firstThree is slice(numbers, 0, 3)
+say "First three: {join(firstThree, ', ')}"
+
+-- Concat
+more are [11, 12, 13]
+combined is concat(numbers, more)
+say "Combined: {join(combined, ', ')}"
