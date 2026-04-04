@@ -4,6 +4,10 @@ A beginner-friendly language that compiles to JavaScript. English-like syntax wi
 
 [Website](https://quill.tradebuddy.dev) · [Playground](https://quill.tradebuddy.dev/playground) · [Docs](https://quill.tradebuddy.dev/docs/) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=tradebuddyhq.quill-lang)
 
+## Community
+
+Join our [Discord](https://discord.gg/9rRyGRrh8E) for help, questions, and discussion. Visit [tradebuddy.dev](https://tradebuddy.dev) for more about the project.
+
 ## Quick Start
 
 ```bash
@@ -149,6 +153,7 @@ mount Counter to "#app"
 | `quill remove package` | Remove a package |
 | `quill repl` | Start interactive mode |
 | `quill build file.quill --llvm` | Compile to LLVM IR / native binary |
+| `quill debug file.quill` | Launch step-through debugger |
 | `quill lsp` | Start LSP server for editors |
 | `quill publish` | Publish package to registry |
 | `quill search query` | Search the package registry |
@@ -357,6 +362,219 @@ test "my test":
   expect result is 5
 ```
 
+## Ecosystem (Standard Library)
+
+Quill ships with high-level libraries for common backend tasks, all with English-like syntax.
+
+### Auth
+
+Built-in authentication with hashing, JWT tokens, and sessions.
+
+```
+use "auth"
+
+-- Hash and verify passwords
+hashed is Auth.hash("my-password")
+valid is Auth.verify("my-password", hashed)
+
+-- JWT tokens
+token is Auth.createToken({userId: 42}, "secret", {expiresIn: "1h"})
+payload is Auth.verifyToken(token, "secret")
+
+-- Session middleware
+app.use(Auth.session({secret: "keyboard-cat"}))
+```
+
+### ORM
+
+Database access with models, query builder, migrations, and transactions.
+
+```
+use "db"
+
+-- Connect and define a model
+DB.connect("postgres://localhost/myapp")
+
+User is DB.model("users", {
+  name: "text",
+  email: "text",
+  age: "number"
+})
+
+-- CRUD operations
+User.create({name: "Alice", email: "alice@example.com", age: 30})
+users is User.find({age: {gte: 18}})
+User.update({email: "alice@example.com"}, {age: 31})
+User.delete({name: "Alice"})
+
+-- Transactions
+DB.transaction(with tx:
+  tx.run("INSERT INTO orders ...")
+  tx.run("UPDATE inventory ...")
+)
+```
+
+### Validation
+
+Schema-based validation with built-in rules and custom validators.
+
+```
+use "validate"
+
+userSchema is Validate.schema({
+  name: {required: yes, min: 2},
+  email: {required: yes, email: yes},
+  age: {min: 0, max: 150},
+  role: {pattern: "^(admin|user)$"},
+  tags: {arrayOf: {min: 1}},
+  address: {
+    street: {required: yes},
+    zip: {pattern: "^[0-9]{5}$"}
+  }
+})
+
+result is userSchema.validate(input)
+if result.valid:
+  say "All good"
+otherwise:
+  say result.errors
+```
+
+### Logging
+
+Structured logging with levels, JSON output, colored console, and child loggers.
+
+```
+use "log"
+
+logger is Log.create({level: "info", json: yes})
+
+logger.debug("Startup details")
+logger.info("Server started", {port: 3000})
+logger.warn("Disk space low")
+logger.error("Connection failed", {host: "db.local"})
+logger.fatal("Out of memory")
+
+-- Child loggers inherit config
+reqLogger is logger.child({requestId: "abc-123"})
+reqLogger.info("Handling request")
+
+-- Use as middleware
+app.use(logger.middleware())
+```
+
+## Concurrency
+
+Quill has built-in concurrency primitives: tasks, channels, parallel blocks, race blocks, and select.
+
+```
+-- Spawn a background task
+spawn task:
+  data is await fetchJSON("https://api.example.com")
+  say data
+
+-- Run tasks in parallel (all must complete)
+parallel:
+  users is await fetchJSON("/users")
+  posts is await fetchJSON("/posts")
+  stats is await fetchJSON("/stats")
+
+-- Race: first to finish wins
+race:
+  result is await fetchJSON("/fast-api")
+  result is await fetchJSON("/slow-api")
+
+-- Channels with buffered capacity
+ch is channel(5)
+send ch, "hello"
+msg is receive ch
+
+-- Select with timeout
+select:
+  when receive ch1:
+    say "Got from ch1: {it}"
+  when receive ch2:
+    say "Got from ch2: {it}"
+  after 5000:
+    say "Timed out"
+```
+
+## Debugger
+
+Launch a step-through debugger for any Quill program:
+
+```bash
+quill debug examples/hello.quill
+```
+
+Features:
+- **Breakpoints** -- set on any Quill source line
+- **Step controls** -- step over, step into, step out
+- **Variable inspection** -- view locals and globals at any point
+- **Call stacks** -- see the full call chain
+- **Source maps** -- you debug Quill source, not compiled JS
+
+REPL commands inside the debugger:
+
+| Command | Description |
+|---------|-------------|
+| `break <line>` | Set a breakpoint |
+| `continue` / `c` | Continue execution |
+| `step` / `s` | Step to next line |
+| `into` / `i` | Step into function call |
+| `out` / `o` | Step out of current function |
+| `print <expr>` | Evaluate and print expression |
+| `locals` | Show all local variables |
+| `stack` | Show call stack |
+| `list` | Show source around current line |
+| `quit` / `q` | Exit debugger |
+
+## Stability
+
+### Rust-Style Error Messages
+
+The parser recovers from errors and keeps going, collecting all problems in a single pass instead of stopping at the first one. Error messages include source context, underlines, and helpful hints.
+
+```
+error[E001]: type mismatch
+  --> app.quill:12:5
+   |
+12 |   count is "hello"
+   |            ^^^^^^^ expected number, found text
+   |
+   = hint: did you mean to use toNumber("hello")?
+```
+
+### Project Configuration
+
+`quill.toml` defines project settings, dependencies, and build options:
+
+```toml
+[project]
+name = "my-app"
+version = "0.1.0"
+entry = "src/main.quill"
+
+[dependencies]
+express = "^4.18.0"
+
+[build]
+target = "node"
+minify = true
+```
+
+### Project Scaffolding
+
+```bash
+quill init my-app
+```
+
+Creates a new project with `quill.toml`, a `src/` directory, example files, and a `.gitignore`.
+
+### GitHub Actions CI
+
+Quill projects include a CI template that runs `quill check`, `quill test`, and `quill build` on every push and pull request.
+
 ## VS Code Extension
 
 Syntax highlighting, snippets, and language support for `.quill` files.
@@ -386,7 +604,7 @@ The compiler is written in Go. Generated JS runs on any JavaScript runtime (Node
 quill/
   main.go              CLI entry point
   lexer/               Tokenizer with indentation tracking
-  parser/              Recursive descent parser
+  parser/              Recursive descent parser (with error recovery)
   ast/                 AST node types
   codegen/             JavaScript code generator
   typechecker/         Type inference and checking
@@ -394,9 +612,12 @@ quill/
   analyzer/            Static analyzer (quill check)
   stdlib/              Standard library (60+ functions, Node + browser)
   lsp/                 Language Server Protocol server
+  debugger/            Step-through debugger with source map support
   registry/            Package registry client & resolver
   repl/                Interactive REPL
-  errors/              Friendly error messages
+  config/              Project configuration (quill.toml) handling
+  errors/              Rust-style error messages with hints
+  tests/               Test suite and test runner
   examples/            Example programs
   site/                Website, docs, and playground
   vscode-quill/        VS Code extension
