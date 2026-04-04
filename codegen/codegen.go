@@ -212,7 +212,7 @@ func (g *Generator) genBlock(stmts []ast.Statement) string {
 func (g *Generator) genExpr(expr ast.Expression) string {
 	switch e := expr.(type) {
 	case *ast.StringLiteral:
-		if strings.Contains(e.Value, "{") {
+		if hasInterpolation(e.Value) {
 			// Convert {var} to ${var} for JS template literals
 			converted := e.Value
 			converted = strings.ReplaceAll(converted, "`", "\\`")
@@ -321,6 +321,7 @@ func escapeJS(s string) string {
 }
 
 // convertInterpolation converts {expr} to ${expr} for JS template literals.
+// Only converts {identifier} or {expr.field} patterns, not { css } blocks.
 func convertInterpolation(s string) string {
 	var out strings.Builder
 	i := 0
@@ -329,9 +330,30 @@ func convertInterpolation(s string) string {
 			// Check if it's already ${
 			if i > 0 && s[i-1] == '$' {
 				out.WriteByte(s[i])
-			} else {
-				out.WriteString("${")
+				i++
+				continue
 			}
+			// Look ahead to see if content looks like an interpolation expression
+			// (starts with a letter/underscore, contains only valid identifier chars, dots, parens, etc.)
+			j := i + 1
+			if j < len(s) && isInterpolationStart(s[j]) {
+				// Find the closing brace
+				for j < len(s) && s[j] != '}' {
+					j++
+				}
+				if j < len(s) {
+					content := s[i+1 : j]
+					if isInterpolationExpr(content) {
+						out.WriteString("${")
+						out.WriteString(content)
+						out.WriteByte('}')
+						i = j + 1
+						continue
+					}
+				}
+			}
+			// Not an interpolation — keep the brace as-is but escape for template literal
+			out.WriteString("\\{")
 			i++
 		} else {
 			out.WriteByte(s[i])
@@ -339,4 +361,52 @@ func convertInterpolation(s string) string {
 		}
 	}
 	return out.String()
+}
+
+// hasInterpolation returns true if the string contains at least one {identifier} interpolation.
+func hasInterpolation(s string) bool {
+	i := 0
+	for i < len(s) {
+		if s[i] == '{' {
+			j := i + 1
+			if j < len(s) && isInterpolationStart(s[j]) {
+				for j < len(s) && s[j] != '}' {
+					j++
+				}
+				if j < len(s) {
+					content := s[i+1 : j]
+					if isInterpolationExpr(content) {
+						return true
+					}
+				}
+			}
+		}
+		i++
+	}
+	return false
+}
+
+// isInterpolationStart returns true if the character can start a Quill interpolation.
+func isInterpolationStart(c byte) bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+}
+
+// isInterpolationExpr returns true if the string looks like a valid interpolation expression
+// (identifier, dot access, function call, etc.) rather than CSS or other content.
+func isInterpolationExpr(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	// Must start with a letter or underscore
+	if !isInterpolationStart(s[0]) {
+		return false
+	}
+	// Should only contain valid identifier characters, dots, parens, commas, spaces
+	for _, c := range s {
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+			c == '_' || c == '.' || c == '(' || c == ')' || c == ',' || c == ' ') {
+			return false
+		}
+	}
+	return true
 }

@@ -1,0 +1,158 @@
+-- The Quill website, built entirely in Quill
+-- Run: quill run examples/website.quill
+-- Then open http://localhost:3000
+
+-- We store CSS in a file to avoid brace conflicts with string interpolation
+to setup:
+  css is "* { margin: 0; padding: 0; box-sizing: border-box; }"
+  css is css + " body { font-family: -apple-system, sans-serif; background: #0D1117; color: #E6EDF3; }"
+  css is css + " a { color: #1EB969; text-decoration: none; }"
+  css is css + " code { background: #161B22; padding: 2px 8px; border-radius: 4px; font-family: monospace; color: #1EB969; }"
+  css is css + " nav { border-bottom: 1px solid #30363D; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; max-width: 960px; margin: 0 auto; }"
+  css is css + " .logo { font-size: 20px; font-weight: 700; color: #1EB969; }"
+  css is css + " .badge { font-size: 11px; background: #30363D; padding: 2px 8px; border-radius: 12px; margin-left: 8px; color: #8B949E; }"
+  css is css + " .links { display: flex; gap: 24px; list-style: none; }"
+  css is css + " .links a { color: #8B949E; font-size: 14px; }"
+  css is css + " .hero { text-align: center; padding: 80px 24px 60px; max-width: 700px; margin: 0 auto; }"
+  css is css + " .eyebrow { display: inline-block; border: 1px solid #30363D; padding: 4px 16px; border-radius: 20px; font-size: 13px; color: #1EB969; margin-bottom: 24px; }"
+  css is css + " h1 { font-size: 48px; font-weight: 700; line-height: 1.2; margin-bottom: 20px; }"
+  css is css + " h1 em { color: #1EB969; display: block; font-size: 56px; font-style: normal; }"
+  css is css + " .subtitle { font-size: 18px; color: #8B949E; line-height: 1.6; margin-bottom: 32px; }"
+  css is css + " .buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }"
+  css is css + " .btn { padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 600; display: inline-block; }"
+  css is css + " .primary { background: #1EB969; color: #0D1117; }"
+  css is css + " .secondary { background: #21262D; color: #E6EDF3; border: 1px solid #30363D; }"
+  css is css + " .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 900px; margin: 0 auto 80px; padding: 0 24px; }"
+  css is css + " .panel { background: #161B22; border: 1px solid #30363D; border-radius: 12px; overflow: hidden; }"
+  css is css + " .panel-head { padding: 10px 16px; border-bottom: 1px solid #30363D; font-size: 13px; color: #8B949E; display: flex; align-items: center; gap: 8px; }"
+  css is css + " .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }"
+  css is css + " .panel pre { padding: 20px; font-family: monospace; font-size: 14px; line-height: 1.6; }"
+  css is css + " .kw { color: #FF7B72; } .str { color: #A5D6FF; } .fn { color: #D2A8FF; } .cmt { color: #8B949E; }"
+  css is css + " .features { padding: 80px 24px; max-width: 960px; margin: 0 auto; }"
+  css is css + " .overline { text-align: center; color: #1EB969; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }"
+  css is css + " .features h2 { text-align: center; font-size: 32px; margin-bottom: 12px; }"
+  css is css + " .sub { text-align: center; color: #8B949E; margin-bottom: 48px; }"
+  css is css + " .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }"
+  css is css + " .card { background: #161B22; border: 1px solid #30363D; border-radius: 12px; padding: 28px; }"
+  css is css + " .card h3 { font-size: 17px; margin-bottom: 8px; }"
+  css is css + " .card p { font-size: 14px; color: #8B949E; line-height: 1.5; }"
+  css is css + " .icon { font-size: 28px; margin-bottom: 12px; }"
+  css is css + " .meta { text-align: center; padding: 60px 24px; border-top: 1px solid #30363D; }"
+  css is css + " .hl { color: #1EB969; font-weight: 600; font-size: 16px; margin-bottom: 8px; }"
+  css is css + " .meta p { color: #8B949E; font-size: 14px; margin-bottom: 8px; }"
+  css is css + " footer { border-top: 1px solid #30363D; padding: 32px 24px; text-align: center; }"
+  css is css + " footer ul { display: flex; gap: 24px; justify-content: center; list-style: none; margin-bottom: 12px; }"
+  css is css + " footer ul a { color: #8B949E; font-size: 14px; }"
+  css is css + " footer p { color: #484F58; font-size: 13px; }"
+  css is css + " @media (max-width: 768px) { h1 { font-size: 32px; } h1 em { font-size: 40px; } .compare, .grid { grid-template-columns: 1fr; } }"
+  write("_site_style.css", css)
+  give back css
+
+to build_page:
+  css is read("_site_style.css")
+
+  h is "<!DOCTYPE html><html lang='en'><head>"
+  h is h + "<meta charset='UTF-8'>"
+  h is h + "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+  h is h + "<title>Quill - Code that reads like English</title>"
+  h is h + "<style>" + css + "</style>"
+  h is h + "</head><body>"
+
+  -- Nav
+  h is h + "<nav>"
+  h is h + "<div><span class='logo'>Quill</span><span class='badge'>by Trade Buddy</span></div>"
+  h is h + "<ul class='links'>"
+  h is h + "<li><a href='https://quill.tradebuddy.dev/docs/'>Docs</a></li>"
+  h is h + "<li><a href='https://quill.tradebuddy.dev/playground.html'>Playground</a></li>"
+  h is h + "<li><a href='https://github.com/tradebuddyhq/quill'>GitHub</a></li>"
+  h is h + "</ul></nav>"
+
+  -- Hero
+  h is h + "<section class='hero'>"
+  h is h + "<div class='eyebrow'>Open Source</div>"
+  h is h + "<h1><em>Quill</em>Code that reads like English</h1>"
+  h is h + "<p class='subtitle'>A beginner-friendly language that compiles to JavaScript. No semicolons, no curly braces, no confusion.</p>"
+  h is h + "<div class='buttons'>"
+  h is h + "<a href='https://quill.tradebuddy.dev/playground.html' class='btn primary'>Try it now</a>"
+  h is h + "<a href='https://quill.tradebuddy.dev/docs/' class='btn secondary'>Read the docs</a>"
+  h is h + "</div></section>"
+
+  -- Code comparison
+  h is h + "<div class='compare'>"
+  h is h + "<div class='panel'>"
+  h is h + "<div class='panel-head'><span class='dot' style='background:#1EB969'></span> Quill</div>"
+  h is h + "<pre>"
+  h is h + "<span class='cmt'>-- A friendly greeting</span><br>"
+  h is h + "<span class='kw'>to</span> <span class='fn'>greet</span> name:<br>"
+  h is h + "  <span class='kw'>say</span> <span class='str'>\"Hello!\"</span><br><br>"
+  h is h + "names <span class='kw'>are</span> [<span class='str'>\"Alice\"</span>, <span class='str'>\"Bob\"</span>]<br>"
+  h is h + "<span class='kw'>for each</span> name <span class='kw'>in</span> names:<br>"
+  h is h + "  greet(name)"
+  h is h + "</pre></div>"
+  h is h + "<div class='panel'>"
+  h is h + "<div class='panel-head'><span class='dot' style='background:#FFA657'></span> Python</div>"
+  h is h + "<pre>"
+  h is h + "<span class='cmt'># A friendly greeting</span><br>"
+  h is h + "<span class='kw'>def</span> <span class='fn'>greet</span>(name):<br>"
+  h is h + "    <span class='fn'>print</span>(<span class='str'>\"Hello!\"</span>)<br><br>"
+  h is h + "names = [<span class='str'>\"Alice\"</span>, <span class='str'>\"Bob\"</span>]<br>"
+  h is h + "<span class='kw'>for</span> name <span class='kw'>in</span> names:<br>"
+  h is h + "    greet(name)"
+  h is h + "</pre></div></div>"
+
+  -- Features
+  h is h + "<section class='features'>"
+  h is h + "<p class='overline'>Features</p>"
+  h is h + "<h2>Why Quill?</h2>"
+  h is h + "<p class='sub'>Designed from the ground up to be readable, teachable, and enjoyable.</p>"
+  h is h + "<div class='grid'>"
+
+  h is h + "<div class='card'><div class='icon'>&#128214;</div>"
+  h is h + "<h3>Reads like English</h3>"
+  h is h + "<p>Variables use <code>is</code>, loops use <code>for each</code>. Your code tells a story.</p></div>"
+
+  h is h + "<div class='card'><div class='icon'>&#128075;</div>"
+  h is h + "<h3>Friendly errors</h3>"
+  h is h + "<p>Error messages that explain what went wrong and suggest how to fix it.</p></div>"
+
+  h is h + "<div class='card'><div class='icon'>&#9989;</div>"
+  h is h + "<h3>Built-in testing</h3>"
+  h is h + "<p>Write tests with <code>test</code> and <code>expect</code>. Testing is a first-class citizen.</p></div>"
+
+  h is h + "<div class='card'><div class='icon'>&#128230;</div>"
+  h is h + "<h3>Standard library</h3>"
+  h is h + "<p>60+ built-in functions for files, strings, math, HTTP, and more.</p></div>"
+
+  h is h + "<div class='card'><div class='icon'>&#9889;</div>"
+  h is h + "<h3>Compiles to JS</h3>"
+  h is h + "<p>Runs anywhere JavaScript runs. Use the entire JS ecosystem.</p></div>"
+
+  h is h + "<div class='card'><div class='icon'>&#128296;</div>"
+  h is h + "<h3>Built-in tools</h3>"
+  h is h + "<p><code>quill fmt</code> formats code. <code>quill check</code> catches bugs.</p></div>"
+
+  h is h + "</div></section>"
+
+  -- Meta
+  h is h + "<section class='meta'>"
+  h is h + "<p class='hl'>This entire page is served by a Quill program.</p>"
+  h is h + "<p>Run it yourself: <code>quill run examples/website.quill</code></p>"
+  h is h + "</section>"
+
+  -- Footer
+  h is h + "<footer><ul>"
+  h is h + "<li><a href='https://quill.tradebuddy.dev/docs/'>Docs</a></li>"
+  h is h + "<li><a href='https://quill.tradebuddy.dev/playground.html'>Playground</a></li>"
+  h is h + "<li><a href='https://github.com/tradebuddyhq/quill'>GitHub</a></li>"
+  h is h + "<li><a href='https://marketplace.visualstudio.com/items?itemName=tradebuddyhq.quill-lang'>VS Code</a></li>"
+  h is h + "</ul><p>Built with Quill. Open source.</p></footer>"
+
+  h is h + "</body></html>"
+  give back h
+
+-- Write CSS file first, then start server
+setup()
+server is createServer()
+server.get("/", build_page)
+server.listen(4000)
+say "Quill website running at http://localhost:4000"
