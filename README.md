@@ -251,7 +251,6 @@ Pull requests welcome! Areas where help is needed:
 
 - More standard library functions
 - Better error messages
-- Publish VS Code extension to marketplace
 - More example programs
 - Documentation improvements
 
