@@ -1509,6 +1509,276 @@ result <span class="kw">is</span> <span class="kw">race</span>:
       <span class="kw">say</span> <span class="str">"No messages for a minute. Quiet in here!"</span></code></pre>
 
       <!-- ============================================================ -->
+      <!-- TRAITS & INTERFACES                                           -->
+      <!-- ============================================================ -->
+
+      <h2 id="traits">Traits &amp; Interfaces</h2>
+      <p><strong>What are traits?</strong> Traits are like contracts. They define a set of methods that a class must implement. If a class says it implements a trait, the compiler checks that all the required methods are present. This is useful for writing code that works with any type that has certain capabilities.</p>
+
+      <p>Think of traits like job requirements. A job posting says "must be able to write reports and give presentations." Any candidate who meets those requirements can fill the role -- it does not matter who they are specifically.</p>
+
+      <h3>Defining a trait</h3>
+      <pre><code><span class="kw">describe trait</span> Printable:
+  <span class="kw">to</span> <span class="fn">display</span> -> text
+
+<span class="kw">describe trait</span> Serializable:
+  <span class="kw">to</span> <span class="fn">toJSON</span> -> text
+  <span class="kw">to</span> <span class="fn">fromJSON</span> data <span class="kw">as</span> text</code></pre>
+
+      <h3>Implementing a trait</h3>
+      <pre><code><span class="kw">describe</span> User <span class="kw">implements</span> Printable, Serializable:
+  name <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">to</span> <span class="fn">display</span> -> text:
+    <span class="kw">give back</span> my.name
+
+  <span class="kw">to</span> <span class="fn">toJSON</span> -> text:
+    <span class="kw">give back</span> <span class="str">"{\"name\": \"{my.name}\"}"</span>
+
+  <span class="kw">to</span> <span class="fn">fromJSON</span> data <span class="kw">as</span> text:
+    <span class="kw">say</span> <span class="str">"parsing..."</span></code></pre>
+
+      <div class="callout callout-info">
+        If you forget to implement a method required by a trait, <code>quill check</code> will tell you exactly which method is missing and where.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- GENERIC CONSTRAINTS                                           -->
+      <!-- ============================================================ -->
+
+      <h2 id="generic-constraints">Generic Constraints</h2>
+      <p>Generics become even more powerful when you add constraints. The <code>where</code> keyword lets you say "this type parameter must implement a specific trait." This way, you can write generic functions that still know what operations are available.</p>
+
+      <h3>Basic constraint</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">sort</span> items <span class="kw">as</span> list <span class="kw">of</span> T <span class="kw">where</span> T <span class="kw">is</span> Comparable:
+  <span class="kw">give back</span> items | sort
+
+<span class="kw">to</span> <span class="fn">printAll</span> items <span class="kw">as</span> list <span class="kw">of</span> T <span class="kw">where</span> T <span class="kw">is</span> Printable:
+  <span class="kw">for each</span> item <span class="kw">in</span> items:
+    <span class="kw">say</span> item.display()</code></pre>
+
+      <h3>Multiple constraints</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">process</span> items <span class="kw">as</span> list <span class="kw">of</span> T <span class="kw">where</span> T <span class="kw">is</span> Printable, T <span class="kw">is</span> Serializable:
+  <span class="kw">for each</span> item <span class="kw">in</span> items:
+    <span class="kw">say</span> item.display()
+    <span class="kw">say</span> item.toJSON()</code></pre>
+
+      <!-- ============================================================ -->
+      <!-- DESTRUCTURING                                                 -->
+      <!-- ============================================================ -->
+
+      <h2 id="destructuring">Destructuring</h2>
+      <p><strong>What is destructuring?</strong> Destructuring lets you pull values out of objects and lists in a single step, instead of accessing them one by one. It is like opening a package and labeling each item as you take it out.</p>
+
+      <h3>Object destructuring</h3>
+      <pre><code>person <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>, city: <span class="str">"Portland"</span>}
+
+<span class="cmt">-- Pull out name and age</span>
+{name, age} <span class="kw">is</span> person
+<span class="kw">say</span> name   <span class="cmt">-- "Alice"</span>
+<span class="kw">say</span> age    <span class="cmt">-- 30</span>
+
+<span class="cmt">-- Rest: grab some fields and collect the rest</span>
+{name, ...rest} <span class="kw">is</span> person
+<span class="kw">say</span> rest   <span class="cmt">-- {age: 30, city: "Portland"}</span></code></pre>
+
+      <h3>List destructuring</h3>
+      <pre><code>items <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+
+<span class="cmt">-- Pull out the first two</span>
+[first, second] <span class="kw">are</span> items
+<span class="kw">say</span> first    <span class="cmt">-- 1</span>
+
+<span class="cmt">-- Head and tail pattern</span>
+[head, ...tail] <span class="kw">are</span> items
+<span class="kw">say</span> head     <span class="cmt">-- 1</span>
+<span class="kw">say</span> tail     <span class="cmt">-- [2, 3, 4, 5]</span></code></pre>
+
+      <h3>Nested destructuring</h3>
+      <pre><code>user <span class="kw">is</span> {name: <span class="str">"Bob"</span>, address: {city: <span class="str">"Seattle"</span>, zip: <span class="str">"98101"</span>}}
+
+{address: {city, zip}} <span class="kw">is</span> user
+<span class="kw">say</span> city   <span class="cmt">-- "Seattle"</span>
+<span class="kw">say</span> zip    <span class="cmt">-- "98101"</span></code></pre>
+
+      <h3>In function parameters</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">greet</span> {name, age}:
+  <span class="kw">say</span> <span class="str">"{name} is {age} years old"</span>
+
+greet({name: <span class="str">"Alice"</span>, age: <span class="num">30</span>})</code></pre>
+
+      <!-- ============================================================ -->
+      <!-- ITERATORS & GENERATORS                                        -->
+      <!-- ============================================================ -->
+
+      <h2 id="iterators">Iterators &amp; Generators</h2>
+      <p><strong>What are generators?</strong> A generator is a special function that can pause and produce values one at a time using <code>yield</code>. Instead of computing everything up front and returning a big list, generators produce values lazily -- only when you ask for the next one.</p>
+
+      <p>Think of a generator like a card dealer. They do not throw the whole deck at you. They deal one card at a time, whenever you ask.</p>
+
+      <h3>Basic generator</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">countUp</span> start:
+  n <span class="kw">is</span> start
+  <span class="kw">loop</span>:
+    <span class="kw">yield</span> n
+    n <span class="kw">is</span> n + <span class="num">1</span>
+
+<span class="cmt">-- Produces 1, 2, 3, 4, 5, ... forever</span>
+counter <span class="kw">is</span> countUp(<span class="num">1</span>)</code></pre>
+
+      <h3>Fibonacci generator</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">fibonacci</span>:
+  a <span class="kw">is</span> <span class="num">0</span>
+  b <span class="kw">is</span> <span class="num">1</span>
+  <span class="kw">loop</span>:
+    <span class="kw">yield</span> a
+    temp <span class="kw">is</span> a
+    a <span class="kw">is</span> b
+    b <span class="kw">is</span> temp + b
+
+<span class="cmt">-- Get the first 10 Fibonacci numbers</span>
+fibs <span class="kw">is</span> fibonacci() | take <span class="num">10</span> | collect
+<span class="kw">say</span> fibs   <span class="cmt">-- [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]</span></code></pre>
+
+      <div class="callout callout-info">
+        Functions that use <code>yield</code> compile to JavaScript <code>function*</code> generators. The <code>loop:</code> keyword creates an infinite loop -- it runs forever until something breaks out of it.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- LAZY EVALUATION                                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="lazy-evaluation">Lazy Evaluation</h2>
+      <p>Lazy evaluation means values are only computed when they are actually needed. Combined with generators and the pipe operator, you can build powerful data processing pipelines that handle huge (even infinite) data sets efficiently.</p>
+
+      <h3>Lazy chains</h3>
+      <pre><code><span class="cmt">-- Process a million numbers without using a million items of memory</span>
+result <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">1000000</span>)
+  | filter <span class="kw">with</span> n: n % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>
+  | map_list <span class="kw">with</span> n: n * n
+  | take <span class="num">10</span>
+  | collect
+
+<span class="kw">say</span> result   <span class="cmt">-- [4, 16, 36, 64, 100, 144, 196, 256, 324, 400]</span></code></pre>
+
+      <h3>Available lazy operations</h3>
+      <p>These operations are lazy -- they do not process items until you call <code>collect</code>, <code>reduce</code>, <code>first</code>, or <code>last</code>:</p>
+      <ul>
+        <li><code>filter</code> -- keep items that match a condition</li>
+        <li><code>map_list</code> -- transform each item</li>
+        <li><code>take n</code> -- keep only the first <em>n</em> items</li>
+        <li><code>skip n</code> -- skip the first <em>n</em> items</li>
+        <li><code>takeWhile</code> -- keep items while a condition is true</li>
+        <li><code>skipWhile</code> -- skip items while a condition is true</li>
+        <li><code>zip</code> -- combine two iterators into pairs</li>
+        <li><code>enumerate</code> -- add an index to each item</li>
+        <li><code>flatten</code> -- flatten nested iterators</li>
+      </ul>
+      <p>Terminal operations (these consume the iterator and produce a result):</p>
+      <ul>
+        <li><code>collect</code> -- gather all items into a list</li>
+        <li><code>reduce</code> -- combine all items into a single value</li>
+        <li><code>first</code> -- get the first item</li>
+        <li><code>last</code> -- get the last item</li>
+        <li><code>any</code> -- true if any item matches</li>
+        <li><code>every</code> -- true if all items match</li>
+      </ul>
+
+      <h3>Combining with generators</h3>
+      <pre><code><span class="cmt">-- Find the first 5 prime Fibonacci numbers</span>
+result <span class="kw">is</span> fibonacci()
+  | filter <span class="kw">with</span> n: isPrime(n)
+  | take <span class="num">5</span>
+  | collect</code></pre>
+
+      <!-- ============================================================ -->
+      <!-- TYPE-BASED PATTERN MATCHING                                   -->
+      <!-- ============================================================ -->
+
+      <h2 id="type-pattern-matching">Type-Based Pattern Matching</h2>
+      <p>Quill's <code>match</code> expression supports matching on the type of a value, not just its content. Combined with guard clauses, this gives you very expressive branching logic.</p>
+
+      <h3>Matching by type</h3>
+      <pre><code><span class="kw">match</span> value:
+  <span class="kw">when</span> text t:
+    <span class="kw">say</span> <span class="str">"Got text: {t}"</span>
+  <span class="kw">when</span> number n:
+    <span class="kw">say</span> <span class="str">"Got number: {n}"</span>
+  <span class="kw">when</span> list l:
+    <span class="kw">say</span> <span class="str">"Got a list with {length(l)} items"</span>
+  <span class="kw">when</span> nothing:
+    <span class="kw">say</span> <span class="str">"Got nothing"</span></code></pre>
+
+      <h3>Guard clauses</h3>
+      <p>Add an <code>if</code> condition after a <code>when</code> clause to refine the match:</p>
+      <pre><code><span class="kw">match</span> age:
+  <span class="kw">when</span> n <span class="kw">if</span> n <span class="kw">is less than</span> <span class="num">18</span>:
+    <span class="kw">say</span> <span class="str">"Minor"</span>
+  <span class="kw">when</span> n <span class="kw">if</span> n <span class="kw">is less than</span> <span class="num">65</span>:
+    <span class="kw">say</span> <span class="str">"Adult"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Senior"</span></code></pre>
+
+      <h3>Exhaustive checking</h3>
+      <p>When matching on algebraic data types, the compiler checks that you cover every variant. If you miss one, you get a clear error:</p>
+      <pre><code><span class="kw">define</span> Shape:
+  Circle <span class="kw">of</span> radius
+  Rectangle <span class="kw">of</span> width, height
+  Triangle <span class="kw">of</span> base, height
+
+<span class="kw">match</span> shape:
+  <span class="kw">when</span> Circle r:
+    <span class="kw">say</span> <span class="str">"Circle with radius {r}"</span>
+  <span class="kw">when</span> Rectangle w, h:
+    <span class="kw">say</span> <span class="str">"Rectangle {w}x{h}"</span>
+  <span class="cmt">-- compiler error: non-exhaustive match, missing Triangle variant</span></code></pre>
+
+      <div class="callout callout-info">
+        Exhaustive checking only applies to algebraic types (created with <code>define</code>). For other values, use <code>otherwise:</code> as a catch-all.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- FULL-STACK SYNTAX                                             -->
+      <!-- ============================================================ -->
+
+      <h2 id="fullstack">Full-Stack in One File</h2>
+      <p>Quill lets you write an entire application -- server, database, and UI -- in a single file. The compiler separates server-side and client-side code automatically. No configuration needed.</p>
+
+      <h3>Server block</h3>
+      <pre><code><span class="kw">server</span>:
+    port <span class="kw">is</span> <span class="num">3000</span>
+    <span class="kw">route</span> get <span class="str">"/api/users"</span>:
+        users <span class="kw">is</span> <span class="kw">await</span> DB.find({})
+        respond <span class="kw">with</span> users</code></pre>
+
+      <h3>Database block</h3>
+      <pre><code><span class="kw">database</span>:
+    connect <span class="str">"sqlite://app.db"</span>
+    model User:
+        name <span class="kw">as</span> text
+        email <span class="kw">as</span> text</code></pre>
+
+      <h3>UI + Mount</h3>
+      <pre><code><span class="kw">component</span> App:
+    <span class="kw">state</span>:
+        users <span class="kw">is</span> []
+    <span class="kw">to</span> render:
+        h1 <span class="str">"My App"</span>
+        <span class="kw">for each</span> user <span class="kw">in</span> users:
+            p <span class="str">"{user.name}"</span>
+
+<span class="kw">mount</span> App <span class="kw">to</span> <span class="str">"#app"</span></code></pre>
+
+      <h3>Running it</h3>
+      <p>Just one command:</p>
+      <pre><code>quill run app.quill</code></pre>
+      <p>That gives you a running server, a connected database, and a rendered UI. No <code>package.json</code>, no <code>node_modules</code>, no webpack, no config files.</p>
+
+      <div class="callout callout-tip">
+        <strong>When to use full-stack mode:</strong> It is perfect for prototypes, internal tools, and small apps. For large projects, you can split into separate files and use Quill's import system.
+      </div>
+
+      <!-- ============================================================ -->
       <!-- NEXT STEPS                                                    -->
       <!-- ============================================================ -->
 

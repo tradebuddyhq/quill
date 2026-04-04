@@ -141,6 +141,85 @@ quill run hello.quill --runtime deno</code></pre>
       </ul>
 
       <!-- ============================================================ -->
+      <!-- DEV SERVER                                                    -->
+      <!-- ============================================================ -->
+
+      <h2 id="serve">Dev Server (<code>quill serve</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill serve</code> starts a development server with hot reload. When you save a <code>.quill</code> file, the browser automatically refreshes with your latest changes. It also supports file-based routing, so your file structure becomes your URL structure.</p>
+
+      <h3>When to use it</h3>
+      <p>Use <code>quill serve</code> when you are building a web application and want to see changes instantly. It replaces the need for tools like webpack-dev-server or Vite.</p>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Navigate to your project folder in the terminal.</p>
+      <p><strong>Step 2:</strong> Run the dev server.</p>
+      <pre><code>quill serve</code></pre>
+      <p><strong>Step 3:</strong> Open <code>http://localhost:3000</code> in your browser. Edit any <code>.quill</code> file and the page updates automatically.</p>
+
+      <h3>File-based routing</h3>
+      <p>Place files in a <code>pages/</code> directory and they become routes automatically:</p>
+      <pre><code><span class="cmt">-- pages/about.quill    -> /about</span>
+<span class="cmt">-- pages/blog/[id].quill -> /blog/:id</span>
+<span class="cmt">-- pages/index.quill    -> /</span></code></pre>
+      <p>Dynamic segments use square brackets. Inside your file, the parameter is available as a variable:</p>
+      <pre><code><span class="cmt">-- pages/blog/[id].quill</span>
+<span class="kw">to</span> <span class="fn">load</span> request:
+  post <span class="kw">is</span> <span class="kw">await</span> DB.find({id: request.params.id})
+  <span class="kw">give back</span> {post: post}
+
+<span class="kw">to</span> render data:
+  h1 data.post.title
+  p data.post.body</code></pre>
+
+      <h3>Tips</h3>
+      <ul>
+        <li>The server runs on port 3000 by default. Change it with <code>quill serve --port 8080</code>.</li>
+        <li>Hot reload works for both server-side and client-side code.</li>
+        <li>Use the <code>style:</code> block in your components for scoped CSS that is automatically hashed.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <!-- FULL-STACK MODE                                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="fullstack-run">Full-Stack Mode (<code>quill run</code>)</h2>
+
+      <h3>What it does</h3>
+      <p>Quill can run a single file that contains your server, database, and UI all in one. No configuration, no <code>package.json</code>, no <code>node_modules</code>, no webpack. The compiler reads the <code>server:</code>, <code>database:</code>, and <code>component:</code> blocks and wires everything together.</p>
+
+      <h3>When to use it</h3>
+      <p>Use this for prototypes, internal tools, weekend projects, or any time you want the fastest path from idea to running app.</p>
+
+      <h3>Example</h3>
+      <pre><code><span class="kw">server</span>:
+    port <span class="kw">is</span> <span class="num">3000</span>
+    <span class="kw">route</span> get <span class="str">"/api/users"</span>:
+        users <span class="kw">is</span> <span class="kw">await</span> DB.find({})
+        respond <span class="kw">with</span> users
+
+<span class="kw">database</span>:
+    connect <span class="str">"sqlite://app.db"</span>
+    model User:
+        name <span class="kw">as</span> text
+        email <span class="kw">as</span> text
+
+<span class="kw">component</span> App:
+    <span class="kw">state</span>:
+        users <span class="kw">is</span> []
+    <span class="kw">to</span> render:
+        h1 <span class="str">"My App"</span>
+        <span class="kw">for each</span> user <span class="kw">in</span> users:
+            p <span class="str">"{user.name}"</span>
+
+<span class="kw">mount</span> App <span class="kw">to</span> <span class="str">"#app"</span></code></pre>
+
+      <p><strong>Run it:</strong></p>
+      <pre><code>quill run app.quill</code></pre>
+      <p>That is it. One file, one command, full-stack application.</p>
+
+      <!-- ============================================================ -->
       <!-- BUILDING / COMPILING                                          -->
       <!-- ============================================================ -->
 
