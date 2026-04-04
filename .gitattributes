@@ -1,5 +1,0 @@
-# Mark website, docs, and playground as documentation (not counted in language stats)
-site/** linguist-documentation
-
-# Mark VS Code extension as vendored (not counted in language stats)
-vscode-quill/** linguist-vendored
