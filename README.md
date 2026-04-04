@@ -61,6 +61,8 @@ test "math works":
 - **Import system** — `use "math.quill"` or `use "express" as app`
 - **Web server** — `createServer()` with routing built in
 - **Interactive REPL** — `quill repl`
+- **Code formatter** — `quill fmt` for consistent style
+- **Static analyzer** — `quill check` catches bugs before you run
 - **Friendly error messages** — with source context and hints
 - **VS Code extension** — syntax highlighting, snippets, comment toggling
 - **Compiles to JavaScript** — runs on Node.js, Bun, or Deno
@@ -73,6 +75,8 @@ test "math works":
 | `quill run file.quill` | Run a program |
 | `quill build file.quill` | Compile to JavaScript |
 | `quill test file.quill` | Run tests |
+| `quill fmt file.quill` | Format source code |
+| `quill check file.quill` | Check for common issues |
 | `quill repl` | Start interactive mode |
 | `quill help` | Show help |
 
@@ -229,6 +233,8 @@ quill/
   parser/              Recursive descent parser
   ast/                 AST node types
   codegen/             JavaScript code generator
+  formatter/           Code formatter (quill fmt)
+  analyzer/            Static analyzer (quill check)
   stdlib/              Standard library (60+ built-in functions)
   repl/                Interactive REPL
   errors/              Friendly error messages

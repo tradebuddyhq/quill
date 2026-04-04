@@ -5,7 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"quill/analyzer"
 	"quill/codegen"
+	"quill/formatter"
 	"quill/lexer"
 	"quill/parser"
 	"quill/repl"
@@ -41,6 +43,22 @@ func main() {
 
 	case "test":
 		runTests(os.Args[2:])
+
+	case "fmt", "format":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a file to format")
+			fmt.Fprintln(os.Stderr, "Usage: quill fmt <file.quill>")
+			os.Exit(1)
+		}
+		formatFile(os.Args[2])
+
+	case "check", "lint":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a file to check")
+			fmt.Fprintln(os.Stderr, "Usage: quill check <file.quill>")
+			os.Exit(1)
+		}
+		checkFile(os.Args[2])
 
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
@@ -187,20 +205,96 @@ func runJS(js string) {
 	cmd.Run()
 }
 
+func formatFile(filename string) {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read %q\n", filename)
+		os.Exit(1)
+	}
+
+	l := lexer.New(string(source))
+	tokens, err := l.Tokenize()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	p := parser.New(tokens)
+	program, err := p.Parse()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	f := formatter.New()
+	formatted := f.Format(program)
+
+	if err := os.WriteFile(filename, []byte(formatted), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not write %q\n", filename)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Formatted %s\n", filename)
+}
+
+func checkFile(filename string) {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read %q\n", filename)
+		os.Exit(1)
+	}
+
+	l := lexer.New(string(source))
+	tokens, err := l.Tokenize()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	p := parser.New(tokens)
+	program, err := p.Parse()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	a := analyzer.New()
+	diagnostics := a.Analyze(program)
+
+	if len(diagnostics) == 0 {
+		fmt.Printf("✓ %s — no issues found\n", filename)
+		return
+	}
+
+	fmt.Printf("Found %d issue(s) in %s:\n\n", len(diagnostics), filename)
+	for _, d := range diagnostics {
+		fmt.Println(d.String())
+	}
+	fmt.Println()
+
+	if analyzer.HasErrors(diagnostics) {
+		os.Exit(1)
+	}
+}
+
 func printUsage() {
 	fmt.Println("Quill — a programming language for humans")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  quill run <file.quill>    Run a Quill program")
-	fmt.Println("  quill build <file.quill>  Compile to JavaScript")
-	fmt.Println("  quill repl                Start interactive REPL")
-	fmt.Println("  quill test [files...]     Run tests in .quill files")
-	fmt.Println("  quill version             Show version")
-	fmt.Println("  quill help                Show this help")
+	fmt.Println("  quill run <file.quill>      Run a Quill program")
+	fmt.Println("  quill build <file.quill>    Compile to JavaScript")
+	fmt.Println("  quill repl                  Start interactive REPL")
+	fmt.Println("  quill test [files...]       Run tests in .quill files")
+	fmt.Println("  quill fmt <file.quill>      Format a Quill file")
+	fmt.Println("  quill check <file.quill>    Check for common issues")
+	fmt.Println("  quill version               Show version")
+	fmt.Println("  quill help                  Show this help")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  quill run hello.quill")
 	fmt.Println("  quill build script.quill")
 	fmt.Println("  quill repl")
 	fmt.Println("  quill test examples/test_example.quill")
+	fmt.Println("  quill fmt script.quill")
+	fmt.Println("  quill check script.quill")
 }

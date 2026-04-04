@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tools - Quill</title>
+  <meta name="description" content="Quill developer tools: formatter, static analyzer, and more.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="active">Docs</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="getting-started.html">Installation</a></li>
+        <li><a href="getting-started.html#first-program">First program</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="language.html">Language reference</a></li>
+        <li><a href="language.html#variables">Variables</a></li>
+        <li><a href="language.html#functions">Functions</a></li>
+        <li><a href="language.html#control-flow">Control flow</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="stdlib.html">Standard library</a></li>
+        <li><a href="testing.html">Testing</a></li>
+        <li><a href="tools.html">Tools</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Developer Tools</h1>
+      <p>Quill ships with built-in developer tools that help you write cleaner, more reliable code. No extra setup or plugins required.</p>
+
+      <h2 id="formatter">Formatter (<code>quill fmt</code>)</h2>
+      <p>The Quill formatter automatically reformats your code to follow a consistent style. It fixes indentation, spacing, and layout while preserving your code's meaning.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Format a file (overwrites in place)</span>
+quill fmt myprogram.quill</code></pre>
+
+      <h3>What it does</h3>
+      <ul>
+        <li>Normalizes indentation to 2 spaces</li>
+        <li>Adds blank lines between function definitions and block statements</li>
+        <li>Ensures consistent spacing around operators</li>
+        <li>Converts comparison operators back to English (<code>is greater than</code>, <code>is less than</code>)</li>
+        <li>Formats boolean values as <code>yes</code>/<code>no</code></li>
+      </ul>
+
+      <h3>Example</h3>
+      <p>Before formatting:</p>
+      <pre><code>name is "Sarah"
+age   is 25
+if age is greater than 18:
+  say "adult"
+to add a b:
+  give back a+b</code></pre>
+
+      <p>After <code>quill fmt</code>:</p>
+      <pre><code><span class="kw">name</span> is <span class="str">"Sarah"</span>
+<span class="kw">age</span> is <span class="num">25</span>
+
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">18</span>:
+  <span class="kw">say</span> <span class="str">"adult"</span>
+
+<span class="kw">to</span> <span class="fn">add</span> a b:
+  <span class="kw">give back</span> a + b</code></pre>
+
+      <h2 id="analyzer">Static Analyzer (<code>quill check</code>)</h2>
+      <p>The static analyzer catches common mistakes and potential bugs without running your code. It reports errors, warnings, and helpful hints.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Check a file for issues</span>
+quill check myprogram.quill</code></pre>
+
+      <h3>What it checks</h3>
+
+      <div class="callout callout-tip">
+        <strong>Errors</strong> (will cause problems at runtime)
+      </div>
+      <ul>
+        <li><strong>Wrong argument count</strong> &mdash; calling a function with too many or too few arguments</li>
+        <li><strong>Return outside function</strong> &mdash; using <code>give back</code> outside of a <code>to</code> block</li>
+        <li><strong>Empty import path</strong> &mdash; <code>use ""</code> with no path</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <strong>Warnings</strong> (probably not what you intended)
+      </div>
+      <ul>
+        <li><strong>Unused variables</strong> &mdash; defined but never read (prefix with <code>_</code> to suppress)</li>
+        <li><strong>Division by zero</strong> &mdash; dividing by a literal <code>0</code></li>
+        <li><strong>Self-comparison</strong> &mdash; comparing a variable to itself (<code>x is x</code>)</li>
+        <li><strong>Always-true/false conditions</strong> &mdash; <code>if yes:</code> or <code>if no:</code></li>
+        <li><strong>Infinite loops</strong> &mdash; <code>while yes:</code> with no exit</li>
+        <li><strong>Negative array index</strong> &mdash; JavaScript doesn't support Python-style <code>items[-1]</code></li>
+        <li><strong>Tests without expectations</strong> &mdash; a <code>test</code> block with no <code>expect</code></li>
+        <li><strong>Expect outside test</strong> &mdash; <code>expect</code> used without a <code>test</code> wrapper</li>
+        <li><strong>Duplicate properties/methods</strong> &mdash; same name defined twice in a class</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <strong>Info</strong> (style suggestions)
+      </div>
+      <ul>
+        <li><strong>Lowercase class names</strong> &mdash; <code>describe dog:</code> should be <code>describe Dog:</code></li>
+        <li><strong>Functions without return</strong> &mdash; might be missing a <code>give back</code></li>
+      </ul>
+
+      <h3>Example output</h3>
+      <pre><code>Found 3 issue(s) in program.quill:
+
+  line 2 [warning]: variable "temp" is defined but never used
+    hint: prefix with _ to suppress this warning
+  line 8 [error]: add() expects 2 arguments but got 3
+  line 12 [warning]: division by zero</code></pre>
+
+      <h2 id="all-commands">All Commands</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>quill run file.quill</code></td>
+            <td>Run a Quill program</td>
+          </tr>
+          <tr>
+            <td><code>quill build file.quill</code></td>
+            <td>Compile to JavaScript</td>
+          </tr>
+          <tr>
+            <td><code>quill test [files...]</code></td>
+            <td>Run tests in Quill files</td>
+          </tr>
+          <tr>
+            <td><code>quill fmt file.quill</code></td>
+            <td>Format source code</td>
+          </tr>
+          <tr>
+            <td><code>quill check file.quill</code></td>
+            <td>Check for common issues</td>
+          </tr>
+          <tr>
+            <td><code>quill repl</code></td>
+            <td>Start interactive REPL</td>
+          </tr>
+          <tr>
+            <td><code>quill version</code></td>
+            <td>Show version number</td>
+          </tr>
+          <tr>
+            <td><code>quill help</code></td>
+            <td>Show help</td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="getting-started.html">Getting Started</a></li>
+        <li><a href="../playground.html">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
