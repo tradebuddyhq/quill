@@ -60,6 +60,11 @@ const (
 	TOKEN_SPREAD  // ...
 	TOKEN_BREAK
 	TOKEN_CONTINUE
+	TOKEN_MATCH
+	TOKEN_WHEN
+	TOKEN_DEFINE
+	TOKEN_OF
+	TOKEN_PIPE // |
 
 	// Operators
 	TOKEN_PLUS
@@ -128,6 +133,11 @@ var tokenNames = map[TokenType]string{
 	TOKEN_SPREAD:    "...",
 	TOKEN_BREAK:     "break",
 	TOKEN_CONTINUE:  "continue",
+	TOKEN_MATCH:     "match",
+	TOKEN_WHEN:      "when",
+	TOKEN_DEFINE:    "define",
+	TOKEN_OF:        "of",
+	TOKEN_PIPE:      "|",
 	TOKEN_PLUS:      "+",
 	TOKEN_MINUS:     "-",
 	TOKEN_STAR:      "*",

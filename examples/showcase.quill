@@ -214,7 +214,76 @@ say "Base64: " + encoded
 say "Decoded: " + decodeBase64(encoded)
 
 -- ==========================================
--- 12. Pattern Matching (RegExp)
+-- 12. Pattern Matching (match/when)
+-- ==========================================
+
+say ""
+say "=== Match/When ==="
+
+status is "active"
+match status:
+  when "active":
+    say "User is active and ready"
+  when "inactive":
+    say "User is offline"
+  when "banned":
+    say "User is banned"
+  otherwise:
+    say "Unknown status"
+
+day is "Monday"
+match day:
+  when "Saturday":
+    say "Weekend!"
+  when "Sunday":
+    say "Weekend!"
+  otherwise:
+    say day + " is a weekday"
+
+-- ==========================================
+-- 13. Algebraic Data Types (define)
+-- ==========================================
+
+say ""
+say "=== Algebraic Types ==="
+
+define Color:
+  Red
+  Green
+  Blue
+
+say "Color.Red: " + toText(Color.Red)
+say "Color.Green: " + toText(Color.Green)
+
+define Priority:
+  Low
+  Medium
+  High
+  Critical
+
+say "Priority.Critical: " + toText(Priority.Critical)
+
+-- ==========================================
+-- 14. Pipe Operator
+-- ==========================================
+
+say ""
+say "=== Pipe Operator ==="
+
+to double x:
+  give back x * 2
+
+to addTen x:
+  give back x + 10
+
+result is 5 | double
+say "5 | double = " + toText(result)
+
+chained is 5 | double | addTen
+say "5 | double | addTen = " + toText(chained)
+
+-- ==========================================
+-- 15. String Patterns (RegExp)
 -- ==========================================
 
 say ""
@@ -229,7 +298,7 @@ fruits is split(csv, ",")
 say "Fruits: " + join(fruits, " | ")
 
 -- ==========================================
--- 13. Crypto
+-- 16. Crypto
 -- ==========================================
 
 say ""

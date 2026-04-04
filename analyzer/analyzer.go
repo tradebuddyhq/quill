@@ -262,6 +262,29 @@ func (a *Analyzer) analyzeStmt(stmt ast.Statement) {
 			a.defined[name] = s.Line
 			a.used[name] = true
 		}
+
+	case *ast.MatchStatement:
+		a.analyzeExpr(s.Value, s.Line)
+		for _, mc := range s.Cases {
+			if mc.Pattern != nil {
+				a.analyzeExpr(mc.Pattern, s.Line)
+			}
+			if mc.Guard != nil {
+				a.analyzeExpr(mc.Guard, s.Line)
+			}
+			for _, stmt := range mc.Body {
+				a.analyzeStmt(stmt)
+			}
+		}
+
+	case *ast.DefineStatement:
+		// Register enum type and variant names
+		a.defined[s.Name] = s.Line
+		a.used[s.Name] = true
+		for _, v := range s.Variants {
+			a.defined[v.Name] = s.Line
+			a.used[v.Name] = true
+		}
 	}
 }
 
@@ -361,6 +384,10 @@ func (a *Analyzer) analyzeExpr(expr ast.Expression, line int) {
 
 	case *ast.NothingLiteral:
 		// nothing to analyze
+
+	case *ast.PipeExpr:
+		a.analyzeExpr(e.Left, line)
+		a.analyzeExpr(e.Right, line)
 	}
 }
 

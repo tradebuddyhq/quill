@@ -192,6 +192,33 @@ list <span class="kw">is</span> select(<span class="str">"#todo-list"</span>)
 
 onClick button addTodo</code></pre>
 
+      <h2 id="wasm">WASM Build (<code>--wasm</code>)</h2>
+      <p>Compile a Quill program as a WebAssembly-ready module. The output can be loaded in any WASM runtime or imported from JavaScript.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Build as a WASM module</span>
+quill build app.quill --wasm</code></pre>
+      <p>This produces a <code>.wasm</code> file that can be loaded in the browser or any WASM-compatible environment.</p>
+
+      <h3>Example</h3>
+      <pre><code>$ quill build math.quill --wasm
+Compiled math.wasm (WASM module)</code></pre>
+
+      <h2 id="standalone">Standalone Build (<code>--standalone</code>)</h2>
+      <p>Compile a Quill program as a standalone executable. The output is a self-contained binary that can be run without the Quill runtime or Node.js installed.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Build as a standalone executable</span>
+quill build app.quill --standalone</code></pre>
+      <p>This produces a native executable you can distribute and run directly.</p>
+
+      <h3>Example</h3>
+      <pre><code>$ quill build server.quill --standalone
+Compiled server (standalone executable)
+
+$ ./server
+Server running on port 3000</code></pre>
+
       <h2 id="init">Project Init (<code>quill init</code>)</h2>
       <p>Scaffolds a new Quill project in the current directory. It creates a <code>quill.json</code> manifest (with name, version, and an empty dependency list) and a starter <code>main.quill</code> file.</p>
 
@@ -269,6 +296,14 @@ Generated utils.html (3 functions documented)</code></pre>
           <tr>
             <td><code>quill build file.quill --browser</code></td>
             <td>Compile for the browser</td>
+          </tr>
+          <tr>
+            <td><code>quill build file.quill --wasm</code></td>
+            <td>Compile as WASM-ready module</td>
+          </tr>
+          <tr>
+            <td><code>quill build file.quill --standalone</code></td>
+            <td>Compile as standalone executable</td>
           </tr>
           <tr>
             <td><code>quill test [files...]</code></td>

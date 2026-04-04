@@ -56,6 +56,10 @@
         <li><a href="#spread">Spread operator</a></li>
         <li><a href="#try-catch">Try / Catch</a></li>
         <li><a href="#imports">Imports</a></li>
+        <li><a href="#pattern-matching">Pattern matching</a></li>
+        <li><a href="#algebraic-types">Algebraic data types</a></li>
+        <li><a href="#pipe-operator">Pipe operator</a></li>
+        <li><a href="#generics">Generics</a></li>
       </ul>
       <h4>Reference</h4>
       <ul>
@@ -350,6 +354,86 @@ merged <span class="kw">is</span> {...defaults, ...overrides}
 
       <div class="callout callout-info">
         Imports are resolved at compile time and bring definitions from the imported file into scope.
+      </div>
+
+      <h2 id="pattern-matching">Pattern matching</h2>
+      <p>Use <code>match</code>/<code>when</code> to branch on a value. Each <code>when</code> clause tests the value against a pattern, and <code>otherwise</code> acts as the default fallback.</p>
+      <pre><code>status <span class="kw">is</span> <span class="str">"active"</span>
+
+<span class="kw">match</span> status:
+  <span class="kw">when</span> <span class="str">"active"</span>:
+    <span class="kw">say</span> <span class="str">"User is active"</span>
+  <span class="kw">when</span> <span class="str">"inactive"</span>:
+    <span class="kw">say</span> <span class="str">"User is inactive"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Unknown status"</span></code></pre>
+      <p>Pattern matching works with any value type -- numbers, text, booleans, and more:</p>
+      <pre><code>code <span class="kw">is</span> <span class="num">404</span>
+
+<span class="kw">match</span> code:
+  <span class="kw">when</span> <span class="num">200</span>:
+    <span class="kw">say</span> <span class="str">"OK"</span>
+  <span class="kw">when</span> <span class="num">404</span>:
+    <span class="kw">say</span> <span class="str">"Not found"</span>
+  <span class="kw">when</span> <span class="num">500</span>:
+    <span class="kw">say</span> <span class="str">"Server error"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Unexpected code: {code}"</span></code></pre>
+      <div class="callout callout-info">
+        The <code>otherwise</code> clause is optional but recommended to handle unexpected values.
+      </div>
+
+      <h2 id="algebraic-types">Algebraic data types</h2>
+      <p>Use <code>define</code> to declare algebraic data types (ADTs). These let you model data with distinct variants, similar to enums or tagged unions in other languages.</p>
+      <h3>Simple variants (enumerations)</h3>
+      <p>Variants with no associated data work like enums:</p>
+      <pre><code><span class="kw">define</span> <span class="fn">Color</span>:
+  Red
+  Green
+  Blue</code></pre>
+      <h3>Variants with data</h3>
+      <p>Use <code>of</code> to attach fields to a variant:</p>
+      <pre><code><span class="kw">define</span> <span class="fn">Shape</span>:
+  Circle <span class="kw">of</span> radius
+  Rectangle <span class="kw">of</span> width, height</code></pre>
+      <p>Algebraic types pair naturally with pattern matching:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">area</span> shape:
+  <span class="kw">match</span> shape:
+    <span class="kw">when</span> Circle radius:
+      <span class="kw">give back</span> <span class="num">3.14159</span> * radius * radius
+    <span class="kw">when</span> Rectangle width height:
+      <span class="kw">give back</span> width * height</code></pre>
+
+      <h2 id="pipe-operator">Pipe operator</h2>
+      <p>The pipe operator <code>|</code> passes the result of one expression as the first argument to the next function. This lets you write left-to-right data transformation chains instead of nested calls.</p>
+      <pre><code>result <span class="kw">is</span> <span class="str">"hello"</span> | upper | trim</code></pre>
+      <p>The above is equivalent to <code>trim(upper("hello"))</code>, but reads in the order the operations happen.</p>
+      <p>Pipes work with functions that take additional arguments too -- the piped value becomes the first argument:</p>
+      <pre><code>result <span class="kw">is</span> text | replace_text(<span class="str">"old"</span>, <span class="str">"new"</span>)</code></pre>
+      <p>Chain as many steps as you need:</p>
+      <pre><code>output <span class="kw">is</span> rawInput
+  | trim
+  | lower
+  | replace_text(<span class="str">" "</span>, <span class="str">"-"</span>)</code></pre>
+
+      <h2 id="generics">Generics</h2>
+      <p>Quill supports generic type annotations using <code>of</code> to parameterize collection types. This lets you express that a function works on a list of a specific type:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">sum</span> items <span class="kw">as</span> list <span class="kw">of</span> number -> number:
+  total <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">for each</span> item <span class="kw">in</span> items:
+    total <span class="kw">is</span> total + item
+  <span class="kw">give back</span> total</code></pre>
+      <p>Generic annotations work with any element type:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">first</span> items <span class="kw">as</span> list <span class="kw">of</span> text -> text:
+  <span class="kw">give back</span> items[<span class="num">0</span>]
+
+<span class="kw">to</span> <span class="fn">hasAny</span> items <span class="kw">as</span> list <span class="kw">of</span> boolean -> boolean:
+  <span class="kw">for each</span> item <span class="kw">in</span> items:
+    <span class="kw">if</span> item:
+      <span class="kw">give back</span> <span class="bool">yes</span>
+  <span class="kw">give back</span> <span class="bool">no</span></code></pre>
+      <div class="callout callout-info">
+        Like other type annotations in Quill, generics are optional and serve as documentation. They do not change runtime behavior.
       </div>
 
       <h2>Next steps</h2>

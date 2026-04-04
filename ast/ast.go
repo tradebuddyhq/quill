@@ -79,10 +79,12 @@ func (s *WhileStatement) nodeType() string { return "While" }
 func (s *WhileStatement) stmtNode()        {}
 
 type FuncDefinition struct {
-	Name   string
-	Params []string
-	Body   []Statement
-	Line   int
+	Name       string
+	Params     []string
+	ParamTypes []string // parallel to Params, empty string = no annotation
+	ReturnType string   // optional return type annotation
+	Body       []Statement
+	Line       int
 }
 
 func (s *FuncDefinition) nodeType() string { return "FuncDef" }
@@ -369,3 +371,64 @@ type FromUseStatement struct {
 
 func (s *FromUseStatement) nodeType() string { return "FromUse" }
 func (s *FromUseStatement) stmtNode()        {}
+
+// --- Pattern Matching ---
+
+type MatchCase struct {
+	Pattern Expression // the value to match against (or nil for otherwise)
+	Guard   Expression // optional "if" guard condition
+	Body    []Statement
+}
+
+type MatchStatement struct {
+	Value Expression
+	Cases []MatchCase
+	Line  int
+}
+
+func (s *MatchStatement) nodeType() string { return "Match" }
+func (s *MatchStatement) stmtNode()        {}
+
+// --- Enum / Algebraic Types ---
+
+type EnumVariant struct {
+	Name   string
+	Fields []string // optional fields for algebraic data types
+}
+
+type DefineStatement struct {
+	Name     string
+	Variants []EnumVariant
+	Line     int
+}
+
+func (s *DefineStatement) nodeType() string { return "Define" }
+func (s *DefineStatement) stmtNode()        {}
+
+// --- Pipe expression ---
+
+type PipeExpr struct {
+	Left  Expression
+	Right Expression // must be a CallExpr or Identifier
+}
+
+func (e *PipeExpr) nodeType() string { return "Pipe" }
+func (e *PipeExpr) exprNode()        {}
+
+// --- Enhanced type info on FuncDefinition for type checker ---
+
+type FuncParamType struct {
+	Name     string
+	TypeHint string // empty if no annotation
+}
+
+// TypedAssignStatement is like AssignStatement but with type info
+type TypedAssignStatement struct {
+	Name     string
+	TypeHint string // e.g. "number", "text", "list of number"
+	Value    Expression
+	Line     int
+}
+
+func (s *TypedAssignStatement) nodeType() string { return "TypedAssign" }
+func (s *TypedAssignStatement) stmtNode()        {}

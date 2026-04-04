@@ -47,6 +47,10 @@ var keywords = map[string]TokenType{
 	"nothing":   TOKEN_NOTHING,
 	"break":     TOKEN_BREAK,
 	"continue":  TOKEN_CONTINUE,
+	"match":     TOKEN_MATCH,
+	"when":      TOKEN_WHEN,
+	"define":    TOKEN_DEFINE,
+	"of":        TOKEN_OF,
 }
 
 type Lexer struct {
@@ -173,6 +177,10 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 				l.addToken(TOKEN_MINUS, "-")
 				l.advance()
 			}
+
+		case ch == '|':
+			l.addToken(TOKEN_PIPE, "|")
+			l.advance()
 
 		case ch == '{':
 			l.addToken(TOKEN_LBRACE, "{")

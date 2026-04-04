@@ -53,7 +53,7 @@ func isBlockStatement(stmt ast.Statement) bool {
 	switch stmt.(type) {
 	case *ast.IfStatement, *ast.ForEachStatement, *ast.WhileStatement,
 		*ast.FuncDefinition, *ast.DescribeStatement, *ast.TestBlock,
-		*ast.TryCatchStatement:
+		*ast.TryCatchStatement, *ast.MatchStatement, *ast.DefineStatement:
 		return true
 	}
 	return false
@@ -159,6 +159,33 @@ func (f *Formatter) formatStmt(stmt ast.Statement) {
 
 	case *ast.FromUseStatement:
 		f.output.WriteString(fmt.Sprintf("%sfrom \"%s\" use %s", f.prefix(), s.Path, strings.Join(s.Names, ", ")))
+
+	case *ast.MatchStatement:
+		f.output.WriteString(fmt.Sprintf("%smatch %s:", f.prefix(), f.formatExpr(s.Value)))
+		f.indent++
+		for _, mc := range s.Cases {
+			f.output.WriteString("\n")
+			if mc.Pattern != nil {
+				f.output.WriteString(fmt.Sprintf("%swhen %s:", f.prefix(), f.formatExpr(mc.Pattern)))
+			} else {
+				f.output.WriteString(fmt.Sprintf("%sotherwise:", f.prefix()))
+			}
+			f.formatBlock(mc.Body)
+		}
+		f.indent--
+
+	case *ast.DefineStatement:
+		f.output.WriteString(fmt.Sprintf("%sdefine %s:", f.prefix(), s.Name))
+		f.indent++
+		for _, v := range s.Variants {
+			f.output.WriteString("\n")
+			if len(v.Fields) > 0 {
+				f.output.WriteString(fmt.Sprintf("%s%s of %s", f.prefix(), v.Name, strings.Join(v.Fields, ", ")))
+			} else {
+				f.output.WriteString(fmt.Sprintf("%s%s", f.prefix(), v.Name))
+			}
+		}
+		f.indent--
 
 	default:
 		f.output.WriteString(f.prefix() + "-- unknown statement")
@@ -281,6 +308,9 @@ func (f *Formatter) formatExpr(expr ast.Expression) string {
 
 	case *ast.SpreadExpr:
 		return fmt.Sprintf("...%s", f.formatExpr(e.Expr))
+
+	case *ast.PipeExpr:
+		return fmt.Sprintf("%s | %s", f.formatExpr(e.Left), f.formatExpr(e.Right))
 
 	default:
 		return "???"

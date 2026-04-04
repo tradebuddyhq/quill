@@ -637,6 +637,73 @@ func TestGenerateSpread(t *testing.T) {
 	}
 }
 
+func TestGenerateMatch(t *testing.T) {
+	src := `status is "active"
+match status:
+  when "active":
+    say "User is active"
+  when "inactive":
+    say "User is inactive"
+  otherwise:
+    say "Unknown status"
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	checks := []string{
+		"__match_val",
+		"if (",
+		"else if (",
+		"else {",
+	}
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}
+
+func TestGenerateDefine(t *testing.T) {
+	src := `define Color:
+  Red
+  Green
+  Blue
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "Object.freeze") {
+		t.Errorf("expected Object.freeze, got:\n%s", output)
+	}
+	if !strings.Contains(output, "Red") {
+		t.Errorf("expected Red variant, got:\n%s", output)
+	}
+}
+
+func TestGeneratePipe(t *testing.T) {
+	src := `result is 5 | toText`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "toText(5)") {
+		t.Errorf("expected piped function call, got:\n%s", output)
+	}
+}
+
+func TestGeneratePipeWithArgs(t *testing.T) {
+	src := `result is "hello world" | replace_text("world", "quill")`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "replace_text") {
+		t.Errorf("expected replace_text call, got:\n%s", output)
+	}
+}
+
 func TestGenerateComplexNewFeatures(t *testing.T) {
 	src := `
 config is {debug: yes, name: "app"}

@@ -210,6 +210,20 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 	case *ast.ContinueStatement:
 		return fmt.Sprintf("%scontinue;", prefix)
 
+	case *ast.MatchStatement:
+		return g.genMatch(s, prefix)
+
+	case *ast.DefineStatement:
+		return g.genDefine(s, prefix)
+
+	case *ast.TypedAssignStatement:
+		value := g.genExpr(s.Value)
+		if g.declared[s.Name] {
+			return fmt.Sprintf("%s%s = %s;", prefix, s.Name, value)
+		}
+		g.declared[s.Name] = true
+		return fmt.Sprintf("%slet %s = %s;", prefix, s.Name, value)
+
 	case *ast.FromUseStatement:
 		names := strings.Join(s.Names, ", ")
 		if strings.HasSuffix(s.Path, ".quill") {
@@ -254,6 +268,84 @@ func (g *Generator) genIf(s *ast.IfStatement, prefix string) string {
 		elseBody := g.genBlock(s.Else)
 		g.indent--
 		out.WriteString(fmt.Sprintf(" else {\n%s%s}", elseBody, prefix))
+	}
+
+	return out.String()
+}
+
+func (g *Generator) genMatch(s *ast.MatchStatement, prefix string) string {
+	var out strings.Builder
+	matchVar := "__match_val"
+	out.WriteString(fmt.Sprintf("%s{\n", prefix))
+	g.indent++
+	innerPrefix := strings.Repeat("  ", g.indent)
+	out.WriteString(fmt.Sprintf("%sconst %s = %s;\n", innerPrefix, matchVar, g.genExpr(s.Value)))
+
+	for i, c := range s.Cases {
+		g.indent++
+		body := g.genBlock(c.Body)
+		g.indent--
+
+		if c.Pattern == nil {
+			// otherwise case
+			if i == 0 {
+				out.WriteString(fmt.Sprintf("%sif (true) {\n%s%s}", innerPrefix, body, innerPrefix))
+			} else {
+				out.WriteString(fmt.Sprintf(" else {\n%s%s}", body, innerPrefix))
+			}
+		} else {
+			condition := fmt.Sprintf("(%s === %s)", matchVar, g.genExpr(c.Pattern))
+			if c.Guard != nil {
+				condition = fmt.Sprintf("(%s === %s && %s)", matchVar, g.genExpr(c.Pattern), g.genExpr(c.Guard))
+			}
+
+			if i == 0 {
+				out.WriteString(fmt.Sprintf("%sif %s {\n%s%s}", innerPrefix, condition, body, innerPrefix))
+			} else {
+				out.WriteString(fmt.Sprintf(" else if %s {\n%s%s}", condition, body, innerPrefix))
+			}
+		}
+	}
+	out.WriteString("\n")
+	g.indent--
+	out.WriteString(fmt.Sprintf("%s}", prefix))
+	return out.String()
+}
+
+func (g *Generator) genDefine(s *ast.DefineStatement, prefix string) string {
+	var out strings.Builder
+
+	// Generate as a frozen object with variant constructors
+	out.WriteString(fmt.Sprintf("%sconst %s = Object.freeze({\n", prefix, s.Name))
+	g.indent++
+	innerPrefix := strings.Repeat("  ", g.indent)
+
+	for i, variant := range s.Variants {
+		if len(variant.Fields) == 0 {
+			// Simple enum variant: Color.Red = { type: "Color", variant: "Red", toString() }
+			out.WriteString(fmt.Sprintf("%s%s: Object.freeze({ type: \"%s\", variant: \"%s\", toString() { return \"%s.%s\"; } })", innerPrefix, variant.Name, s.Name, variant.Name, s.Name, variant.Name))
+		} else {
+			// Algebraic variant with fields: Result.Ok(value) = { type: "Result", variant: "Ok", value }
+			params := strings.Join(variant.Fields, ", ")
+			fieldAssignments := make([]string, len(variant.Fields))
+			for j, field := range variant.Fields {
+				fieldAssignments[j] = fmt.Sprintf("%s: %s", field, field)
+			}
+			out.WriteString(fmt.Sprintf("%s%s: (%s) => Object.freeze({ type: \"%s\", variant: \"%s\", %s, toString() { return \"%s.%s(\" + [%s].join(\", \") + \")\"; } })",
+				innerPrefix, variant.Name, params, s.Name, variant.Name, strings.Join(fieldAssignments, ", "), s.Name, variant.Name, params))
+		}
+		if i < len(s.Variants)-1 {
+			out.WriteString(",")
+		}
+		out.WriteString("\n")
+	}
+
+	g.indent--
+	out.WriteString(fmt.Sprintf("%s});\n", prefix))
+
+	// Add helper: is<Variant> functions
+	for _, variant := range s.Variants {
+		out.WriteString(fmt.Sprintf("%sconst is%s = (v) => v && v.variant === \"%s\";\n", prefix, variant.Name, variant.Name))
 	}
 
 	return out.String()
@@ -382,6 +474,24 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 
 	case *ast.SpreadExpr:
 		return fmt.Sprintf("...%s", g.genExpr(e.Expr))
+
+	case *ast.PipeExpr:
+		// x | fn  becomes  fn(x)
+		// x | fn(a, b)  becomes  fn(x, a, b)
+		leftCode := g.genExpr(e.Left)
+		switch right := e.Right.(type) {
+		case *ast.CallExpr:
+			// Insert left as first argument
+			args := []string{leftCode}
+			for _, a := range right.Args {
+				args = append(args, g.genExpr(a))
+			}
+			return fmt.Sprintf("%s(%s)", g.genExpr(right.Function), strings.Join(args, ", "))
+		case *ast.Identifier:
+			return fmt.Sprintf("%s(%s)", right.Name, leftCode)
+		default:
+			return fmt.Sprintf("%s(%s)", g.genExpr(e.Right), leftCode)
+		}
 
 	default:
 		return "undefined"
