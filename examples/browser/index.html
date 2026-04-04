@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quill Todo App</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #0D1117; color: #E6EDF3; min-height: 100vh; display: flex; justify-content: center; padding-top: 80px; }
+    .app { width: 100%; max-width: 480px; padding: 0 24px; }
+    h1 { font-size: 32px; margin-bottom: 8px; }
+    h1 span { color: #1EB969; }
+    .subtitle { color: #8B949E; margin-bottom: 32px; font-size: 14px; }
+    .input-row { display: flex; gap: 8px; margin-bottom: 24px; }
+    input { flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #30363D; background: #161B22; color: #E6EDF3; font-size: 15px; outline: none; }
+    input:focus { border-color: #1EB969; }
+    button { padding: 12px 20px; border-radius: 8px; border: none; background: #1EB969; color: #0D1117; font-size: 15px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #17a05b; }
+    #todo-list { list-style: none; }
+    #todo-list li { padding: 14px 16px; background: #161B22; border: 1px solid #30363D; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+    #todo-list li:hover { border-color: #1EB969; text-decoration: line-through; color: #8B949E; }
+    #count { color: #8B949E; font-size: 13px; margin-top: 16px; }
+    .badge { display: inline-block; background: #161B22; border: 1px solid #30363D; padding: 4px 12px; border-radius: 12px; font-size: 11px; color: #1EB969; margin-top: 32px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1><span>Quill</span> Todo</h1>
+    <p class="subtitle">A todo app running entirely in the browser, written in Quill.</p>
+    <div class="input-row">
+      <input type="text" id="todo-input" placeholder="What needs to be done?">
+      <button id="add-btn">Add</button>
+    </div>
+    <ul id="todo-list"></ul>
+    <p id="count">0 tasks</p>
+    <div class="badge">Powered by Quill &mdash; compiled with: quill build app.quill --browser</div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

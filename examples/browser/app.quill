@@ -1,0 +1,34 @@
+-- A todo app built with Quill (browser mode)
+-- Build: quill build examples/browser/app.quill --browser
+-- Then open examples/browser/index.html
+
+input is select("#todo-input")
+button is select("#add-btn")
+list is select("#todo-list")
+counter is select("#count")
+todos are []
+
+to updateCount:
+  setText counter toText(length(todos)) + " tasks"
+
+to addTodo:
+  text is getValue(input)
+  if length(text) is greater than 0:
+    push(todos, text)
+    li is createElement("li")
+    setText li text
+    onClick li removeTodo
+    append list li
+    setValue input ""
+    updateCount()
+
+to removeTodo:
+  say "done!"
+
+onClick button addTodo
+
+onKeyPress input checkEnter
+
+to checkEnter key event:
+  if key is "Enter":
+    addTodo()

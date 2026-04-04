@@ -65,6 +65,7 @@ test "math works":
 - **Static analyzer** — `quill check` catches bugs before you run
 - **Friendly error messages** — with source context and hints
 - **VS Code extension** — syntax highlighting, snippets, comment toggling
+- **Browser support** — `quill build --browser` compiles for the browser with DOM APIs
 - **Compiles to JavaScript** — runs on Node.js, Bun, or Deno
 - **Single binary** — no dependencies
 
@@ -73,7 +74,8 @@ test "math works":
 | Command | Description |
 |---------|-------------|
 | `quill run file.quill` | Run a program |
-| `quill build file.quill` | Compile to JavaScript |
+| `quill build file.quill` | Compile to JavaScript (Node.js) |
+| `quill build file.quill --browser` | Compile for the browser |
 | `quill test file.quill` | Run tests |
 | `quill fmt file.quill` | Format source code |
 | `quill check file.quill` | Check for common issues |
@@ -235,7 +237,7 @@ quill/
   codegen/             JavaScript code generator
   formatter/           Code formatter (quill fmt)
   analyzer/            Static analyzer (quill check)
-  stdlib/              Standard library (60+ built-in functions)
+  stdlib/              Standard library (60+ functions, Node + browser)
   repl/                Interactive REPL
   errors/              Friendly error messages
   examples/            Example programs

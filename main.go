@@ -33,10 +33,16 @@ func main() {
 	case "build":
 		if len(os.Args) < 3 {
 			fmt.Fprintln(os.Stderr, "Error: please provide a file to build")
-			fmt.Fprintln(os.Stderr, "Usage: quill build <file.quill>")
+			fmt.Fprintln(os.Stderr, "Usage: quill build <file.quill> [--browser]")
 			os.Exit(1)
 		}
-		buildFile(os.Args[2])
+		browser := false
+		for _, arg := range os.Args[3:] {
+			if arg == "--browser" {
+				browser = true
+			}
+		}
+		buildFile(os.Args[2], browser)
 
 	case "repl":
 		repl.Start()
@@ -113,8 +119,8 @@ func runFile(filename string) {
 	}
 }
 
-func buildFile(filename string) {
-	js := compile(filename)
+func buildFile(filename string, browser bool) {
+	js := compileWithTarget(filename, browser)
 
 	// Output .js file next to the source
 	ext := filepath.Ext(filename)
@@ -125,10 +131,18 @@ func buildFile(filename string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Built %s -> %s\n", filename, outFile)
+	target := "Node.js"
+	if browser {
+		target = "browser"
+	}
+	fmt.Printf("Built %s -> %s (%s)\n", filename, outFile, target)
 }
 
 func compile(filename string) string {
+	return compileWithTarget(filename, false)
+}
+
+func compileWithTarget(filename string, browser bool) string {
 	source, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: could not read %q\n", filename)
@@ -153,7 +167,12 @@ func compile(filename string) string {
 	}
 
 	// Generate JS
-	g := codegen.New()
+	var g *codegen.Generator
+	if browser {
+		g = codegen.NewBrowser()
+	} else {
+		g = codegen.New()
+	}
 	return g.Generate(program)
 }
 
@@ -282,7 +301,8 @@ func printUsage() {
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  quill run <file.quill>      Run a Quill program")
-	fmt.Println("  quill build <file.quill>    Compile to JavaScript")
+	fmt.Println("  quill build <file.quill>    Compile to JavaScript (Node.js)")
+	fmt.Println("  quill build <file> --browser Compile for the browser")
 	fmt.Println("  quill repl                  Start interactive REPL")
 	fmt.Println("  quill test [files...]       Run tests in .quill files")
 	fmt.Println("  quill fmt <file.quill>      Format a Quill file")

@@ -139,6 +139,59 @@ quill check myprogram.quill</code></pre>
   line 8 [error]: add() expects 2 arguments but got 3
   line 12 [warning]: division by zero</code></pre>
 
+      <h2 id="browser">Browser Mode (<code>--browser</code>)</h2>
+      <p>Quill can compile to browser-compatible JavaScript, giving you access to DOM manipulation, events, and local storage — all with readable English syntax.</p>
+
+      <h3>Usage</h3>
+      <pre><code><span class="cmt">-- Build for the browser</span>
+quill build app.quill --browser</code></pre>
+      <p>Then include the output <code>app.js</code> in a <code>&lt;script&gt;</code> tag in your HTML.</p>
+
+      <h3>Browser functions</h3>
+      <table>
+        <thead>
+          <tr><th>Function</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>select(selector)</code></td><td>Select a DOM element</td></tr>
+          <tr><td><code>selectAll(selector)</code></td><td>Select all matching elements</td></tr>
+          <tr><td><code>setText(el, text)</code></td><td>Set element text</td></tr>
+          <tr><td><code>setHTML(el, html)</code></td><td>Set element HTML</td></tr>
+          <tr><td><code>getValue(el)</code></td><td>Get input value</td></tr>
+          <tr><td><code>setValue(el, val)</code></td><td>Set input value</td></tr>
+          <tr><td><code>addClass(el, cls)</code></td><td>Add CSS class</td></tr>
+          <tr><td><code>removeClass(el, cls)</code></td><td>Remove CSS class</td></tr>
+          <tr><td><code>toggleClass(el, cls)</code></td><td>Toggle CSS class</td></tr>
+          <tr><td><code>hide(el)</code> / <code>show(el)</code></td><td>Hide/show element</td></tr>
+          <tr><td><code>onClick(el, fn)</code></td><td>Handle click events</td></tr>
+          <tr><td><code>onInput(el, fn)</code></td><td>Handle input changes</td></tr>
+          <tr><td><code>onKeyPress(el, fn)</code></td><td>Handle key presses</td></tr>
+          <tr><td><code>onLoad(fn)</code></td><td>Run when page loads</td></tr>
+          <tr><td><code>createElement(tag)</code></td><td>Create new element</td></tr>
+          <tr><td><code>append(parent, child)</code></td><td>Append child element</td></tr>
+          <tr><td><code>save(key, val)</code></td><td>Save to localStorage</td></tr>
+          <tr><td><code>load(key)</code></td><td>Load from localStorage</td></tr>
+          <tr><td><code>after(ms, fn)</code></td><td>Run after delay</td></tr>
+          <tr><td><code>every(ms, fn)</code></td><td>Run on interval</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Example: Todo app</h3>
+      <pre><code><span class="cmt">-- Select elements</span>
+input <span class="kw">is</span> select(<span class="str">"#todo-input"</span>)
+button <span class="kw">is</span> select(<span class="str">"#add-btn"</span>)
+list <span class="kw">is</span> select(<span class="str">"#todo-list"</span>)
+
+<span class="cmt">-- Add a todo when button is clicked</span>
+<span class="kw">to</span> <span class="fn">addTodo</span>:
+  text <span class="kw">is</span> getValue(input)
+  li <span class="kw">is</span> createElement(<span class="str">"li"</span>)
+  setText li text
+  append list li
+  setValue input <span class="str">""</span>
+
+onClick button addTodo</code></pre>
+
       <h2 id="all-commands">All Commands</h2>
       <table>
         <thead>
@@ -154,7 +207,11 @@ quill check myprogram.quill</code></pre>
           </tr>
           <tr>
             <td><code>quill build file.quill</code></td>
-            <td>Compile to JavaScript</td>
+            <td>Compile to JavaScript (Node.js)</td>
+          </tr>
+          <tr>
+            <td><code>quill build file.quill --browser</code></td>
+            <td>Compile for the browser</td>
           </tr>
           <tr>
             <td><code>quill test [files...]</code></td>
