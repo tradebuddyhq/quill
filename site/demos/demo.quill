@@ -1,0 +1,102 @@
+-- Live interactive demo for quill.tradebuddy.dev
+-- This file is compiled with: quill build demo.quill --browser
+
+-- Demo 1: Live greeting
+nameInput is select("#demo-name")
+greetBtn is select("#demo-greet-btn")
+greetOutput is select("#demo-greet-output")
+
+to greetUser:
+  name is getValue(nameInput)
+  if length(name) is greater than 0:
+    setHTML(greetOutput, "<span style='color:#1EB969'>Hello, " + name + "! Welcome to Quill.</span>")
+  otherwise:
+    setHTML(greetOutput, "<span style='color:#FF7B72'>Type your name first!</span>")
+
+onClick(greetBtn, greetUser)
+
+to checkGreetEnter key event:
+  if key is "Enter":
+    greetUser()
+
+onKeyPress(nameInput, checkGreetEnter)
+
+-- Demo 2: Live counter
+count is 0
+countDisplay is select("#demo-count")
+addBtn is select("#demo-add")
+subBtn is select("#demo-sub")
+resetBtn is select("#demo-reset")
+
+to updateDisplay:
+  setText(countDisplay, toText(count))
+  if count is greater than 0:
+    setStyle(countDisplay, "color", "#1EB969")
+  otherwise if count is less than 0:
+    setStyle(countDisplay, "color", "#FF7B72")
+  otherwise:
+    setStyle(countDisplay, "color", "#E6EDF3")
+
+to increment:
+  count is count + 1
+  updateDisplay()
+
+to decrement:
+  count is count - 1
+  updateDisplay()
+
+to resetCount:
+  count is 0
+  updateDisplay()
+
+onClick(addBtn, increment)
+onClick(subBtn, decrement)
+onClick(resetBtn, resetCount)
+
+-- Demo 3: Todo list
+todoInput is select("#demo-todo-input")
+todoBtn is select("#demo-todo-btn")
+todoList is select("#demo-todo-list")
+todoCount is select("#demo-todo-count")
+todos are []
+
+to addTodo:
+  text is getValue(todoInput)
+  if length(text) is greater than 0:
+    push(todos, text)
+    renderTodos()
+    setValue(todoInput, "")
+
+to renderTodos:
+  html is ""
+  for each todo in todos:
+    html is html + "<li>" + todo + "</li>"
+  setHTML(todoList, html)
+  setText(todoCount, toText(length(todos)) + " items")
+  items is selectAll("#demo-todo-list li")
+  for each item in items:
+    onClick(item, markDone)
+
+to markDone:
+  say "Task completed!"
+
+onClick(todoBtn, addTodo)
+
+to checkTodoEnter key event:
+  if key is "Enter":
+    addTodo()
+
+onKeyPress(todoInput, checkTodoEnter)
+
+-- Demo 4: Color picker
+colorBtns is selectAll(".demo-color-btn")
+colorBox is select("#demo-color-box")
+colorLabel is select("#demo-color-label")
+
+to changeColor event:
+  color is getAttribute(event.target, "data-color")
+  setStyle(colorBox, "backgroundColor", color)
+  setText(colorLabel, color)
+
+for each btn in colorBtns:
+  onClick(btn, changeColor)

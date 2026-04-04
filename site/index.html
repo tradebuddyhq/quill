@@ -210,6 +210,108 @@ quill run hello.quill</pre>
     </div>
   </section>
 
+  <!-- Interactive Demo -->
+  <section class="demos">
+    <div class="container">
+      <p class="section-overline">Live Demo</p>
+      <h2 class="section-title">See Quill in action</h2>
+      <p class="section-subtitle">These demos are powered by Quill's browser mode. The code below is real Quill, compiled to JS and running live on this page.</p>
+
+      <div class="demos-grid">
+        <!-- Demo 1: Greeting -->
+        <div class="demo-card">
+          <div class="demo-card-header">
+            <span class="demo-badge">Demo 1</span>
+            <h3>Live Greeting</h3>
+          </div>
+          <div class="demo-card-body">
+            <input type="text" id="demo-name" class="demo-input" placeholder="Type your name...">
+            <button id="demo-greet-btn" class="demo-btn">Greet me</button>
+            <div id="demo-greet-output" class="demo-output">&nbsp;</div>
+          </div>
+          <div class="demo-card-code">
+            <pre><span class="kw">to</span> <span class="fn">greetUser</span>:
+  name <span class="kw">is</span> getValue(nameInput)
+  <span class="kw">if</span> length(name) <span class="kw">is greater than</span> <span class="num">0</span>:
+    setHTML(output, <span class="str">"Hello, "</span> + name + <span class="str">"!"</span>)</pre>
+          </div>
+        </div>
+
+        <!-- Demo 2: Counter -->
+        <div class="demo-card">
+          <div class="demo-card-header">
+            <span class="demo-badge">Demo 2</span>
+            <h3>Counter</h3>
+          </div>
+          <div class="demo-card-body">
+            <div class="demo-counter">
+              <button id="demo-sub" class="demo-btn demo-btn-sm">−</button>
+              <span id="demo-count" class="demo-count-display">0</span>
+              <button id="demo-add" class="demo-btn demo-btn-sm">+</button>
+            </div>
+            <button id="demo-reset" class="demo-btn demo-btn-outline">Reset</button>
+          </div>
+          <div class="demo-card-code">
+            <pre><span class="kw">to</span> <span class="fn">increment</span>:
+  count <span class="kw">is</span> count + <span class="num">1</span>
+  updateDisplay()
+
+onClick(addBtn, increment)</pre>
+          </div>
+        </div>
+
+        <!-- Demo 3: Todo List -->
+        <div class="demo-card">
+          <div class="demo-card-header">
+            <span class="demo-badge">Demo 3</span>
+            <h3>Todo List</h3>
+          </div>
+          <div class="demo-card-body">
+            <div class="demo-todo-row">
+              <input type="text" id="demo-todo-input" class="demo-input" placeholder="Add a task...">
+              <button id="demo-todo-btn" class="demo-btn">Add</button>
+            </div>
+            <ul id="demo-todo-list" class="demo-todo-list"></ul>
+            <span id="demo-todo-count" class="demo-todo-count">0 items</span>
+          </div>
+          <div class="demo-card-code">
+            <pre><span class="kw">to</span> <span class="fn">addTodo</span>:
+  text <span class="kw">is</span> getValue(todoInput)
+  push(todos, text)
+  renderTodos()</pre>
+          </div>
+        </div>
+
+        <!-- Demo 4: Color Picker -->
+        <div class="demo-card">
+          <div class="demo-card-header">
+            <span class="demo-badge">Demo 4</span>
+            <h3>Color Picker</h3>
+          </div>
+          <div class="demo-card-body">
+            <div class="demo-color-row">
+              <button class="demo-color-btn" data-color="#1EB969" style="background:#1EB969"></button>
+              <button class="demo-color-btn" data-color="#198CD7" style="background:#198CD7"></button>
+              <button class="demo-color-btn" data-color="#D2A8FF" style="background:#D2A8FF"></button>
+              <button class="demo-color-btn" data-color="#FFA657" style="background:#FFA657"></button>
+              <button class="demo-color-btn" data-color="#FF7B72" style="background:#FF7B72"></button>
+              <button class="demo-color-btn" data-color="#79C0FF" style="background:#79C0FF"></button>
+            </div>
+            <div id="demo-color-box" class="demo-color-box"></div>
+            <span id="demo-color-label" class="demo-color-label">#1EB969</span>
+          </div>
+          <div class="demo-card-code">
+            <pre><span class="kw">to</span> <span class="fn">changeColor</span> event:
+  color <span class="kw">is</span> getAttribute(event.target, <span class="str">"data-color"</span>)
+  setStyle(colorBox, <span class="str">"backgroundColor"</span>, color)</pre>
+          </div>
+        </div>
+      </div>
+
+      <p class="demo-footnote">All four demos above are written in a single <code>demo.quill</code> file, compiled with <code>quill build demo.quill --browser</code>.</p>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
@@ -227,5 +329,6 @@ quill run hello.quill</pre>
       document.getElementById('nav-links').classList.toggle('open');
     });
   </script>
+  <script src="demos/demo.js"></script>
 </body>
 </html>
