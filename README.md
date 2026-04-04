@@ -1,8 +1,6 @@
 # Quill
 
-**A programming language for humans.** Write code that reads like English — no cryptic syntax, no confusing errors, just say what you want.
-
-Built by [Trade Buddy Developers](https://tradebuddy.dev)
+Write code that reads like English. No cryptic syntax, no confusing errors, just say what you want.
 
 [Website](https://quill.tradebuddy.dev) · [Playground](https://quill.tradebuddy.dev/playground.html) · [Docs](https://quill.tradebuddy.dev/docs/)
 
@@ -161,17 +159,3 @@ quill/
   examples/            Example programs
   site/                Website, docs, and playground
 ```
-
-## Contributing
-
-Pull requests welcome! Areas where help is needed:
-
-- More standard library functions
-- Better error messages
-- VS Code extension
-- More example programs
-- Documentation improvements
-
-## License
-
-MIT
