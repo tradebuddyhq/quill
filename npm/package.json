@@ -14,6 +14,9 @@
     "url": "https://github.com/tradebuddyhq/quill"
   },
   "homepage": "https://quill.tradebuddy.dev",
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
   "engines": {
     "node": ">=16"
   }

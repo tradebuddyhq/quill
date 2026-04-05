@@ -336,6 +336,7 @@ img { max-width: 100%; }
   line-height: 1.7;
   overflow-x: auto;
   color: var(--text-primary);
+  text-align: left;
 }
 
 /* ---- Section Pattern ---- */

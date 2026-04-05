@@ -1,6 +1,19 @@
 #!/usr/bin/env node
 'use strict';
 
+// Try native Go binary first, fall back to JS compiler
+const _nativePath = require('path').join(__dirname, 'quill-native');
+if (require('fs').existsSync(_nativePath)) {
+  try {
+    const { execFileSync } = require('child_process');
+    execFileSync(_nativePath, process.argv.slice(2), { stdio: 'inherit' });
+    process.exit(0);
+  } catch (e) {
+    if (e.status != null) process.exit(e.status);
+    // If exec failed entirely (e.g. corrupt binary), fall through to JS compiler
+  }
+}
+
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
