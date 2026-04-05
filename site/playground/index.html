@@ -1063,18 +1063,7 @@ function runCode() {
 }
 
 // ---- Event listeners ----
-editor.addEventListener('input', () => {
-  if (pendingIndent !== null) {
-    const indent = pendingIndent;
-    pendingIndent = null;
-    const pos = editor.selectionStart;
-    const before = editor.value.substring(0, pos);
-    const after = editor.value.substring(pos);
-    editor.value = before + indent + after;
-    editor.selectionStart = editor.selectionEnd = pos + indent.length;
-  }
-  updateLineNumbers();
-});
+editor.addEventListener('input', updateLineNumbers);
 editor.addEventListener('scroll', () => {
   lineNumbers.scrollTop = editor.scrollTop;
 });
@@ -1116,8 +1105,6 @@ function replaceRange(textarea, from, to, text) {
 function setCursor(textarea, pos) {
   textarea.selectionStart = textarea.selectionEnd = pos;
 }
-
-let pendingIndent = null;
 
 editor.addEventListener('keydown', (e) => {
   const { value, selectionStart: start, selectionEnd: end } = editor;
@@ -1217,7 +1204,7 @@ editor.addEventListener('keydown', (e) => {
     return;
   }
 
-  // Enter with auto-indent — store info, let browser handle newline, fix in input event
+  // Enter with auto-indent
   if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
     const currentLine = getLineAt(value, start);
     const currentIndent = getIndent(currentLine);
@@ -1227,9 +1214,15 @@ editor.addEventListener('keydown', (e) => {
       newIndent = currentIndent + INDENT;
     }
     if (newIndent.length > 0) {
-      pendingIndent = newIndent;
+      // Let the browser insert the newline, then inject indent after
+      setTimeout(() => {
+        const pos = editor.selectionStart;
+        const val = editor.value;
+        editor.value = val.substring(0, pos) + newIndent + val.substring(pos);
+        editor.selectionStart = editor.selectionEnd = pos + newIndent.length;
+        updateLineNumbers();
+      }, 0);
     }
-    // Don't preventDefault — let the browser insert the newline naturally
   }
 
   // Auto-close brackets and quotes
