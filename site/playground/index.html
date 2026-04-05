@@ -1086,8 +1086,20 @@ function getIndent(line) {
 }
 
 function insertText(textarea, text) {
-  // Use execCommand for undo support
-  document.execCommand('insertText', false, text);
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const before = textarea.value.substring(0, start);
+  const after = textarea.value.substring(end);
+  textarea.value = before + text + after;
+  textarea.selectionStart = textarea.selectionEnd = start + text.length;
+  textarea.dispatchEvent(new Event('input'));
+}
+
+function replaceRange(textarea, from, to, text) {
+  const before = textarea.value.substring(0, from);
+  const after = textarea.value.substring(to);
+  textarea.value = before + text + after;
+  textarea.dispatchEvent(new Event('input'));
 }
 
 function setCursor(textarea, pos) {
@@ -1123,9 +1135,7 @@ editor.addEventListener('keydown', (e) => {
         return indent + '-- ' + l.trimStart();
       }
     });
-    editor.selectionStart = lineStart;
-    editor.selectionEnd = selEnd;
-    insertText(editor, newLines.join('\n'));
+    replaceRange(editor, lineStart, selEnd, newLines.join('\n'));
     updateLineNumbers();
     return;
   }
@@ -1135,10 +1145,10 @@ editor.addEventListener('keydown', (e) => {
     e.preventDefault();
     const lineStart = value.lastIndexOf('\n', start - 1) + 1;
     const lineEnd = value.indexOf('\n', start);
-    const line = value.substring(lineStart, lineEnd === -1 ? value.length : lineEnd);
-    editor.selectionStart = lineEnd === -1 ? value.length : lineEnd;
-    editor.selectionEnd = editor.selectionStart;
-    insertText(editor, '\n' + line);
+    const lineEndPos = lineEnd === -1 ? value.length : lineEnd;
+    const line = value.substring(lineStart, lineEndPos);
+    replaceRange(editor, lineEndPos, lineEndPos, '\n' + line);
+    setCursor(editor, lineEndPos + 1 + line.length);
     updateLineNumbers();
     return;
   }
@@ -1149,10 +1159,9 @@ editor.addEventListener('keydown', (e) => {
     const lineStart = value.lastIndexOf('\n', start - 1) + 1;
     let lineEnd = value.indexOf('\n', start);
     if (lineEnd === -1) lineEnd = value.length;
-    else lineEnd += 1; // include the newline
-    editor.selectionStart = lineStart;
-    editor.selectionEnd = lineEnd;
-    insertText(editor, '');
+    else lineEnd += 1;
+    replaceRange(editor, lineStart, lineEnd, '');
+    setCursor(editor, lineStart);
     updateLineNumbers();
     return;
   }
@@ -1173,11 +1182,10 @@ editor.addEventListener('keydown', (e) => {
       } else {
         newLines = lines.map(l => INDENT + l);
       }
+      const newText = newLines.join('\n');
+      replaceRange(editor, lineStart, selEnd, newText);
       editor.selectionStart = lineStart;
-      editor.selectionEnd = selEnd;
-      insertText(editor, newLines.join('\n'));
-      editor.selectionStart = lineStart;
-      editor.selectionEnd = lineStart + newLines.join('\n').length;
+      editor.selectionEnd = lineStart + newText.length;
     } else if (e.shiftKey) {
       // Dedent current line
       const lineStart = value.lastIndexOf('\n', start - 1) + 1;
@@ -1185,9 +1193,8 @@ editor.addEventListener('keydown', (e) => {
       if (line.startsWith(INDENT)) {
         const cursorOffset = start - lineStart;
         const lineEnd = value.indexOf('\n', start);
-        editor.selectionStart = lineStart;
-        editor.selectionEnd = lineEnd === -1 ? value.length : lineEnd;
-        insertText(editor, line.substring(INDENT.length));
+        const lineEndPos = lineEnd === -1 ? value.length : lineEnd;
+        replaceRange(editor, lineStart, lineEndPos, line.substring(INDENT.length));
         setCursor(editor, lineStart + Math.max(0, cursorOffset - INDENT.length));
       }
     } else {
@@ -1253,9 +1260,8 @@ editor.addEventListener('keydown', (e) => {
     const after = value[start];
     if (AUTO_CLOSE[before] && AUTO_CLOSE[before] === after) {
       e.preventDefault();
-      editor.selectionStart = start - 1;
-      editor.selectionEnd = start + 1;
-      insertText(editor, '');
+      replaceRange(editor, start - 1, start + 1, '');
+      setCursor(editor, start - 1);
       updateLineNumbers();
       return;
     }
