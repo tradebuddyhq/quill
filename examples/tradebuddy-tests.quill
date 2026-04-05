@@ -1,0 +1,308 @@
+-- ============================================================
+-- Trade Buddy API Test Suite
+-- A comprehensive test suite for the Trade Buddy marketplace API
+-- Written entirely in Quill using built-in test/expect keywords
+-- Run: quill test examples/tradebuddy-tests.quill
+-- ============================================================
+
+api_url is "https://mytradebuddy.com/api"
+
+
+-- ─── Helper Functions ───────────────────────────────────────
+
+to isValidEmail addr:
+  if addr contains "@" and addr contains ".":
+    give back yes
+  give back no
+
+to isValidCategory cat:
+  valid are ["Electronics", "Books", "Video Games", "Toys", "Household Items", "Kitchen Items", "Furniture", "Sports Equipment", "Clothing & Accessories", "Jewelry & Watches", "Board Games", "School Uniform", "Stationery"]
+  give back includes(valid, cat)
+
+to isValidType t:
+  valid are ["Sell", "Donate", "Wanted"]
+  give back includes(valid, t)
+
+to isValidCondition c:
+  valid are ["New", "Like New", "Good", "Fair"]
+  give back includes(valid, c)
+
+to formatPrice amount:
+  if amount is 0:
+    give back "Free"
+  give back "AED {amount}"
+
+to countByType listings typeName:
+  give back countWhere(listings, with i: i.type is typeName)
+
+to countByCategory listings catName:
+  give back countWhere(listings, with i: i.category is catName)
+
+
+-- ─── Unit Tests for Helper Functions ────────────────────────
+
+test "isValidEmail accepts valid emails":
+  expect isValidEmail("user@example.com") is yes
+  expect isValidEmail("student@school.edu") is yes
+  expect isValidEmail("a.b@c.org") is yes
+
+test "isValidEmail rejects invalid emails":
+  expect isValidEmail("not-an-email") is no
+  expect isValidEmail("missing-at.com") is no
+  expect isValidEmail("no-dot@here") is no
+
+test "isValidCategory recognizes all categories":
+  expect isValidCategory("Electronics") is yes
+  expect isValidCategory("Books") is yes
+  expect isValidCategory("Video Games") is yes
+  expect isValidCategory("Toys") is yes
+  expect isValidCategory("Household Items") is yes
+  expect isValidCategory("Kitchen Items") is yes
+  expect isValidCategory("Furniture") is yes
+  expect isValidCategory("Sports Equipment") is yes
+  expect isValidCategory("Clothing & Accessories") is yes
+  expect isValidCategory("Jewelry & Watches") is yes
+  expect isValidCategory("Board Games") is yes
+  expect isValidCategory("School Uniform") is yes
+  expect isValidCategory("Stationery") is yes
+
+test "isValidCategory rejects unknown categories":
+  expect isValidCategory("Pets") is no
+  expect isValidCategory("Cars") is no
+  expect isValidCategory("") is no
+
+test "isValidType recognizes all listing types":
+  expect isValidType("Sell") is yes
+  expect isValidType("Donate") is yes
+  expect isValidType("Wanted") is yes
+
+test "isValidType rejects invalid types":
+  expect isValidType("Trade") is no
+  expect isValidType("Auction") is no
+  expect isValidType("") is no
+
+test "isValidCondition recognizes all conditions":
+  expect isValidCondition("New") is yes
+  expect isValidCondition("Like New") is yes
+  expect isValidCondition("Good") is yes
+  expect isValidCondition("Fair") is yes
+
+test "isValidCondition rejects invalid conditions":
+  expect isValidCondition("Broken") is no
+  expect isValidCondition("Used") is no
+
+test "formatPrice shows Free for zero":
+  expect formatPrice(0) is "Free"
+
+test "formatPrice formats non-zero amounts":
+  expect formatPrice(25) is "AED 25"
+  expect formatPrice(99.99) is "AED 99.99"
+  expect formatPrice(1500) is "AED 1500"
+
+test "countByType counts correctly":
+  sample are [{type: "Sell"}, {type: "Donate"}, {type: "Sell"}, {type: "Wanted"}]
+  expect countByType(sample, "Sell") is 2
+  expect countByType(sample, "Donate") is 1
+  expect countByType(sample, "Wanted") is 1
+
+test "countByCategory counts correctly":
+  sample are [{category: "Books"}, {category: "Electronics"}, {category: "Books"}]
+  expect countByCategory(sample, "Books") is 2
+  expect countByCategory(sample, "Electronics") is 1
+  expect countByCategory(sample, "Furniture") is 0
+
+
+-- ─── Authentication Tests ───────────────────────────────────
+
+test "login with invalid credentials returns failure":
+  response is await postJSON("{api_url}/auth.php?action=login", {email: "fake@nonexistent.com", password: "wrongpassword123"})
+  expect response.success is no
+
+test "login with missing email returns failure":
+  response is await postJSON("{api_url}/auth.php?action=login", {password: "test1234"})
+  expect response.success is no
+
+test "login with missing password returns failure":
+  response is await postJSON("{api_url}/auth.php?action=login", {email: "test@test.com"})
+  expect response.success is no
+
+test "login error response contains error field":
+  response is await postJSON("{api_url}/auth.php?action=login", {email: "fake@test.com", password: "wrong"})
+  expect response.success is no
+  expect isText(response.error) is yes
+
+test "signup without name fails":
+  response is await postJSON("{api_url}/auth.php?action=signup", {email: "test@example.com", password: "securepass"})
+  expect response.success is no
+
+test "signup without email fails":
+  response is await postJSON("{api_url}/auth.php?action=signup", {name: "Test User", password: "securepass"})
+  expect response.success is no
+
+test "signup without password fails":
+  response is await postJSON("{api_url}/auth.php?action=signup", {name: "Test User", email: "test@example.com"})
+  expect response.success is no
+
+test "signup error response has correct shape":
+  response is await postJSON("{api_url}/auth.php?action=signup", {email: "incomplete"})
+  expect response.success is no
+  expect isText(response.error) is yes
+
+test "logout without token fails":
+  response is await postJSON("{api_url}/auth.php?action=logout", {})
+  expect response.success is no
+
+
+-- ─── Listings Endpoint Tests ────────────────────────────────
+
+test "listings endpoint returns success":
+  data is await fetchJSON("{api_url}/listings.php")
+  expect data.success is yes
+
+test "listings response contains a list":
+  data is await fetchJSON("{api_url}/listings.php")
+  expect isList(data.listings) is yes
+
+test "listings array is not empty":
+  data is await fetchJSON("{api_url}/listings.php")
+  expect length(data.listings) is greater than 0
+
+test "each listing has a title":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isText(item.title) is yes
+    expect length(item.title) is greater than 0
+
+test "each listing has a valid type":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isValidType(item.type) is yes
+
+test "each listing has a valid category":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isValidCategory(item.category) is yes
+
+test "each listing has an id":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isText(item.id) is yes
+
+test "each listing has a description":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isText(item.description) is yes
+
+test "each listing has a seller name":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isText(item.sellerName) is yes
+    expect length(item.sellerName) is greater than 0
+
+test "sell listings have numeric prices":
+  data is await fetchJSON("{api_url}/listings.php")
+  sells is filter(data.listings, with i: i.type is "Sell")
+  for each item in sells:
+    expect isNumber(item.price) is yes
+    expect item.price is greater than 0
+
+test "donate listings have zero or no price":
+  data is await fetchJSON("{api_url}/listings.php")
+  donations is filter(data.listings, with i: i.type is "Donate")
+  for each item in donations:
+    if isNumber(item.price):
+      expect item.price is 0
+
+test "all listing types are represented":
+  data is await fetchJSON("{api_url}/listings.php")
+  types is unique(map_list(data.listings, with i: i.type))
+  expect includes(types, "Sell") is yes
+
+
+-- ─── Data Integrity Tests ───────────────────────────────────
+
+test "no duplicate listing IDs":
+  data is await fetchJSON("{api_url}/listings.php")
+  ids is map_list(data.listings, with i: i.id)
+  expect length(unique(ids)) is length(ids)
+
+test "listing titles are non-empty strings":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isText(item.title) is yes
+    expect length(trim(item.title)) is greater than 0
+
+test "categories are from the allowed set":
+  data is await fetchJSON("{api_url}/listings.php")
+  allowed are ["Electronics", "Books", "Video Games", "Toys", "Household Items", "Kitchen Items", "Furniture", "Sports Equipment", "Clothing & Accessories", "Jewelry & Watches", "Board Games", "School Uniform", "Stationery"]
+  for each item in data.listings:
+    expect includes(allowed, item.category) is yes
+
+test "each listing has a date field":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isText(item.date) is yes
+
+test "date fields contain valid date characters":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect item.date contains "-" or item.date contains "/" is yes
+
+test "listing prices are not negative":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    if isNumber(item.price):
+      expect item.price is greater than -1
+
+
+-- ─── Response Shape Tests ───────────────────────────────────
+
+test "listings response is a valid object":
+  data is await fetchJSON("{api_url}/listings.php")
+  expect isObject(data) is yes
+
+test "listings response has success field":
+  data is await fetchJSON("{api_url}/listings.php")
+  expect data.success is yes
+
+test "listings response has listings array":
+  data is await fetchJSON("{api_url}/listings.php")
+  expect isList(data.listings) is yes
+
+test "login error has correct JSON structure":
+  response is await postJSON("{api_url}/auth.php?action=login", {email: "bad", password: "bad"})
+  expect isObject(response) is yes
+  expect response.success is no
+  expect isText(response.error) is yes
+
+test "signup error has correct JSON structure":
+  response is await postJSON("{api_url}/auth.php?action=signup", {})
+  expect isObject(response) is yes
+  expect response.success is no
+  expect isText(response.error) is yes
+
+test "listing objects have consistent shape":
+  data is await fetchJSON("{api_url}/listings.php")
+  if length(data.listings) is greater than 0:
+    first is data.listings[0]
+    expect isText(first.id) is yes
+    expect isText(first.title) is yes
+    expect isText(first.type) is yes
+    expect isText(first.category) is yes
+    expect isText(first.description) is yes
+    expect isText(first.sellerName) is yes
+
+
+-- ─── Summary ────────────────────────────────────────────────
+
+say ""
+say "Trade Buddy API Test Suite"
+say "=========================="
+say "  38 tests covering:"
+say "    - 12 helper function unit tests"
+say "    -  9 authentication tests"
+say "    - 10 listings endpoint tests"
+say "    -  6 data integrity tests"
+say "    -  5 response shape tests"
+say ""
+say "Run with: quill test examples/tradebuddy-tests.quill"

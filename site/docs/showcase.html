@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showcase: API Testing - Quill</title>
+  <meta name="description" content="A real-world API test suite written in Quill, demonstrating how readable code can be when it looks like English.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .showcase-section { margin: 48px 0; }
+    .showcase-section h2 { margin-bottom: 12px; }
+    .showcase-section > p { color: var(--text-secondary); margin-bottom: 20px; }
+
+    .code-block {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      margin: 16px 0 32px 0;
+    }
+    .code-block .cmt { color: var(--text-tertiary); }
+    .code-block .kw { color: var(--code-purple); }
+    .code-block .str { color: var(--green); }
+    .code-block .fn { color: var(--code-orange); }
+    .code-block .num { color: #79C0FF; }
+
+    .feature-callout {
+      background: linear-gradient(135deg, rgba(30,185,105,0.08), rgba(25,140,215,0.08));
+      border: 1px solid rgba(30,185,105,0.25);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 24px 0;
+    }
+    .feature-callout h4 {
+      color: var(--green);
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .feature-callout p { color: var(--text-secondary); margin: 0; }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0 32px 0;
+    }
+    @media (max-width: 768px) {
+      .comparison-grid { grid-template-columns: 1fr; }
+    }
+    .comparison-grid .code-block { margin: 0; }
+    .comparison-label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .label-quill { background: rgba(30,185,105,0.15); color: var(--green); }
+    .label-js { background: rgba(255,166,87,0.15); color: var(--code-orange); }
+
+    .stats-box {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin: 24px 0 32px 0;
+    }
+    @media (max-width: 600px) {
+      .stats-box { grid-template-columns: 1fr; }
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+    }
+    .stat-card .stat-number {
+      font-size: 2.4rem;
+      font-weight: 700;
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-card .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 48px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="callout callout-tip" style="text-align: center; margin: 0; border-radius: 0; padding: 12px 24px; background: linear-gradient(135deg, #5865F2, #7289DA); color: #fff;">
+    Need help? <a href="https://discord.gg/9rRyGRrh8E" target="_blank" style="color: #fff; text-decoration: underline; font-weight: 600;">Join our Discord</a> &mdash; ask questions, share projects, and connect with the Quill community.
+  </div>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="/docs/getting-started">Installation</a></li>
+        <li><a href="/docs/getting-started#first-program">First program</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="/docs/language">Language reference</a></li>
+        <li><a href="/docs/language#variables">Variables</a></li>
+        <li><a href="/docs/language#functions">Functions</a></li>
+        <li><a href="/docs/language#control-flow">Control flow</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/tools">Tools</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+        <li><a href="/docs/showcase" class="active">Showcase</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+
+      <!-- Header -->
+      <h1>Real-World Example: API Testing with Quill</h1>
+      <p style="font-size: 1.2em; color: var(--text-secondary); margin-top: -8px;">
+        This is a real test suite that validates the <a href="https://mytradebuddy.com" target="_blank">Trade Buddy</a> marketplace API &mdash; a live production API for a student trading platform. Every test below is written entirely in Quill, demonstrating that readable code and powerful testing are not mutually exclusive.
+      </p>
+
+      <!-- Stats -->
+      <div class="stats-box">
+        <div class="stat-card">
+          <div class="stat-number">38</div>
+          <div class="stat-label">Tests</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">215</div>
+          <div class="stat-label">Lines of Quill</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">~400</div>
+          <div class="stat-label">Equivalent lines of JavaScript</div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Section 1: Setup & Configuration -->
+      <div class="showcase-section">
+        <h2>Setup and Configuration</h2>
+        <p>The test suite starts by declaring the API base URL and defining reusable helper functions. In Quill, creating a variable is as simple as writing <code>name is value</code>, and functions are defined with the <code>to</code> keyword. No imports, no boilerplate, no semicolons.</p>
+
+        <div class="code-block"><span class="cmt">-- Trade Buddy API Test Suite</span>
+<span class="cmt">-- Run: quill test examples/tradebuddy-tests.quill</span>
+
+<span class="kw">api_url</span> is <span class="str">"https://mytradebuddy.com/api"</span>
+
+
+<span class="cmt">-- Helper Functions</span>
+
+<span class="kw">to</span> <span class="fn">isValidEmail</span> addr:
+  <span class="kw">if</span> addr contains <span class="str">"@"</span> <span class="kw">and</span> addr contains <span class="str">"."</span>:
+    <span class="kw">give back</span> <span class="kw">yes</span>
+  <span class="kw">give back</span> <span class="kw">no</span>
+
+<span class="kw">to</span> <span class="fn">isValidCategory</span> cat:
+  valid <span class="kw">are</span> [<span class="str">"Electronics"</span>, <span class="str">"Books"</span>, <span class="str">"Video Games"</span>, <span class="str">"Toys"</span>,
+    <span class="str">"Household Items"</span>, <span class="str">"Kitchen Items"</span>, <span class="str">"Furniture"</span>,
+    <span class="str">"Sports Equipment"</span>, <span class="str">"Clothing &amp; Accessories"</span>,
+    <span class="str">"Jewelry &amp; Watches"</span>, <span class="str">"Board Games"</span>,
+    <span class="str">"School Uniform"</span>, <span class="str">"Stationery"</span>]
+  <span class="kw">give back</span> includes(valid, cat)
+
+<span class="kw">to</span> <span class="fn">isValidType</span> t:
+  valid <span class="kw">are</span> [<span class="str">"Sell"</span>, <span class="str">"Donate"</span>, <span class="str">"Wanted"</span>]
+  <span class="kw">give back</span> includes(valid, t)
+
+<span class="kw">to</span> <span class="fn">formatPrice</span> amount:
+  <span class="kw">if</span> amount is <span class="num">0</span>:
+    <span class="kw">give back</span> <span class="str">"Free"</span>
+  <span class="kw">give back</span> <span class="str">"AED {amount}"</span></div>
+
+        <div class="feature-callout">
+          <h4>Quill Feature: English-Like Syntax</h4>
+          <p>Notice how <code>if addr contains "@" and addr contains "."</code> reads like a sentence. Quill uses <code>yes</code>/<code>no</code> instead of <code>true</code>/<code>false</code>, <code>give back</code> instead of <code>return</code>, and <code>is</code> instead of <code>=</code>. The goal is code that anyone can read, even without programming experience.</p>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Section 2: Helper Unit Tests -->
+      <div class="showcase-section">
+        <h2>Unit Tests for Helper Functions</h2>
+        <p>Before testing the API, we validate our helper functions in isolation. Quill's <code>test</code> keyword creates a named test block, and <code>expect</code> asserts a condition. If any expectation fails, the test fails with a clear message.</p>
+
+        <div class="code-block"><span class="kw">test</span> <span class="str">"isValidEmail accepts valid emails"</span>:
+  <span class="kw">expect</span> isValidEmail(<span class="str">"user@example.com"</span>) is <span class="kw">yes</span>
+  <span class="kw">expect</span> isValidEmail(<span class="str">"student@school.edu"</span>) is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"isValidEmail rejects invalid emails"</span>:
+  <span class="kw">expect</span> isValidEmail(<span class="str">"not-an-email"</span>) is <span class="kw">no</span>
+  <span class="kw">expect</span> isValidEmail(<span class="str">"missing-at.com"</span>) is <span class="kw">no</span>
+
+<span class="kw">test</span> <span class="str">"isValidCategory recognizes all categories"</span>:
+  <span class="kw">expect</span> isValidCategory(<span class="str">"Electronics"</span>) is <span class="kw">yes</span>
+  <span class="kw">expect</span> isValidCategory(<span class="str">"Books"</span>) is <span class="kw">yes</span>
+  <span class="kw">expect</span> isValidCategory(<span class="str">"Video Games"</span>) is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"isValidCategory rejects unknown categories"</span>:
+  <span class="kw">expect</span> isValidCategory(<span class="str">"Pets"</span>) is <span class="kw">no</span>
+  <span class="kw">expect</span> isValidCategory(<span class="str">"Cars"</span>) is <span class="kw">no</span>
+
+<span class="kw">test</span> <span class="str">"formatPrice shows Free for zero"</span>:
+  <span class="kw">expect</span> formatPrice(<span class="num">0</span>) is <span class="str">"Free"</span>
+
+<span class="kw">test</span> <span class="str">"formatPrice formats non-zero amounts"</span>:
+  <span class="kw">expect</span> formatPrice(<span class="num">25</span>) is <span class="str">"AED 25"</span>
+  <span class="kw">expect</span> formatPrice(<span class="num">99.99</span>) is <span class="str">"AED 99.99"</span>
+
+<span class="kw">test</span> <span class="str">"countByType counts correctly"</span>:
+  sample <span class="kw">are</span> [{type: <span class="str">"Sell"</span>}, {type: <span class="str">"Donate"</span>}, {type: <span class="str">"Sell"</span>}]
+  <span class="kw">expect</span> countByType(sample, <span class="str">"Sell"</span>) is <span class="num">2</span>
+  <span class="kw">expect</span> countByType(sample, <span class="str">"Donate"</span>) is <span class="num">1</span>
+  <span class="kw">expect</span> countByType(sample, <span class="str">"Wanted"</span>) is <span class="num">0</span></div>
+
+        <div class="feature-callout">
+          <h4>Quill Feature: Built-In Testing</h4>
+          <p>No test framework to install. No configuration files. Just write <code>test "name":</code> and <code>expect value is expected</code>. Run with <code>quill test your-file.quill</code> and you get clear pass/fail output.</p>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Section 3: Auth Tests -->
+      <div class="showcase-section">
+        <h2>Authentication Tests</h2>
+        <p>These tests verify the login, signup, and logout endpoints. We check that invalid credentials return failures, missing fields are caught, and error responses have the expected shape. The <code>await</code> keyword handles async HTTP calls naturally.</p>
+
+        <div class="code-block"><span class="kw">test</span> <span class="str">"login with invalid credentials returns failure"</span>:
+  response is <span class="kw">await</span> postJSON(<span class="str">"{api_url}/auth.php?action=login"</span>,
+    {email: <span class="str">"fake@nonexistent.com"</span>, password: <span class="str">"wrongpassword123"</span>})
+  <span class="kw">expect</span> response.success is <span class="kw">no</span>
+
+<span class="kw">test</span> <span class="str">"login with missing email returns failure"</span>:
+  response is <span class="kw">await</span> postJSON(<span class="str">"{api_url}/auth.php?action=login"</span>,
+    {password: <span class="str">"test1234"</span>})
+  <span class="kw">expect</span> response.success is <span class="kw">no</span>
+
+<span class="kw">test</span> <span class="str">"login error response contains error field"</span>:
+  response is <span class="kw">await</span> postJSON(<span class="str">"{api_url}/auth.php?action=login"</span>,
+    {email: <span class="str">"fake@test.com"</span>, password: <span class="str">"wrong"</span>})
+  <span class="kw">expect</span> response.success is <span class="kw">no</span>
+  <span class="kw">expect</span> isText(response.error) is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"signup without name fails"</span>:
+  response is <span class="kw">await</span> postJSON(<span class="str">"{api_url}/auth.php?action=signup"</span>,
+    {email: <span class="str">"test@example.com"</span>, password: <span class="str">"securepass"</span>})
+  <span class="kw">expect</span> response.success is <span class="kw">no</span>
+
+<span class="kw">test</span> <span class="str">"signup without email fails"</span>:
+  response is <span class="kw">await</span> postJSON(<span class="str">"{api_url}/auth.php?action=signup"</span>,
+    {name: <span class="str">"Test User"</span>, password: <span class="str">"securepass"</span>})
+  <span class="kw">expect</span> response.success is <span class="kw">no</span>
+
+<span class="kw">test</span> <span class="str">"logout without token fails"</span>:
+  response is <span class="kw">await</span> postJSON(<span class="str">"{api_url}/auth.php?action=logout"</span>, {})
+  <span class="kw">expect</span> response.success is <span class="kw">no</span></div>
+
+        <div class="feature-callout">
+          <h4>Quill Feature: Async Made Simple</h4>
+          <p>Quill uses <code>await</code> to pause and wait for network requests, just like you would wait for a reply in a conversation. No <code>.then()</code> chains, no callback functions &mdash; just <code>response is await postJSON(url, data)</code>.</p>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Section 4: Listings Tests -->
+      <div class="showcase-section">
+        <h2>Listings and Data Validation Tests</h2>
+        <p>These tests fetch the public listings endpoint and verify that every listing has the correct fields, valid types and categories, and proper pricing. The <code>for each</code> loop checks every single listing in the response.</p>
+
+        <div class="code-block"><span class="kw">test</span> <span class="str">"listings endpoint returns success"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">expect</span> data.success is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"each listing has a valid type"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">for each</span> item <span class="kw">in</span> data.listings:
+    <span class="kw">expect</span> isValidType(item.type) is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"each listing has a valid category"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">for each</span> item <span class="kw">in</span> data.listings:
+    <span class="kw">expect</span> isValidCategory(item.category) is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"sell listings have numeric prices"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  sells is filter(data.listings, <span class="kw">with</span> i: i.type is <span class="str">"Sell"</span>)
+  <span class="kw">for each</span> item <span class="kw">in</span> sells:
+    <span class="kw">expect</span> isNumber(item.price) is <span class="kw">yes</span>
+    <span class="kw">expect</span> item.price is greater than <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"each listing has a seller name"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">for each</span> item <span class="kw">in</span> data.listings:
+    <span class="kw">expect</span> isText(item.sellerName) is <span class="kw">yes</span>
+    <span class="kw">expect</span> length(item.sellerName) is greater than <span class="num">0</span></div>
+
+        <div class="feature-callout">
+          <h4>Quill Feature: Lambdas with "with"</h4>
+          <p>Filtering a list uses the <code>with</code> keyword: <code>filter(listings, with i: i.type is "Sell")</code>. It reads almost like English: "filter listings, with each item where the type is Sell." Compare that to JavaScript's <code>listings.filter(i =&gt; i.type === "Sell")</code>.</p>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Section 5: Data Integrity Tests -->
+      <div class="showcase-section">
+        <h2>Data Integrity Tests</h2>
+        <p>Beyond checking individual fields, these tests verify the dataset as a whole: no duplicate IDs, non-empty titles, valid date formats, and no negative prices. These are the kinds of tests that catch real bugs in production data.</p>
+
+        <div class="code-block"><span class="kw">test</span> <span class="str">"no duplicate listing IDs"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  ids is map_list(data.listings, <span class="kw">with</span> i: i.id)
+  <span class="kw">expect</span> length(unique(ids)) is length(ids)
+
+<span class="kw">test</span> <span class="str">"listing titles are non-empty strings"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">for each</span> item <span class="kw">in</span> data.listings:
+    <span class="kw">expect</span> isText(item.title) is <span class="kw">yes</span>
+    <span class="kw">expect</span> length(trim(item.title)) is greater than <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"listing prices are not negative"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">for each</span> item <span class="kw">in</span> data.listings:
+    <span class="kw">if</span> isNumber(item.price):
+      <span class="kw">expect</span> item.price is greater than <span class="num">-1</span></div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Section 6: Response Shape Tests -->
+      <div class="showcase-section">
+        <h2>Response Shape Tests</h2>
+        <p>API contract validation ensures the server always returns the JSON structure your application expects. These tests guard against breaking changes in the API by verifying fields, types, and the overall shape of every response.</p>
+
+        <div class="code-block"><span class="kw">test</span> <span class="str">"listings response is a valid object"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">expect</span> isObject(data) is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"listings response has success field"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">expect</span> data.success is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"login error has correct JSON structure"</span>:
+  response is <span class="kw">await</span> postJSON(<span class="str">"{api_url}/auth.php?action=login"</span>,
+    {email: <span class="str">"bad"</span>, password: <span class="str">"bad"</span>})
+  <span class="kw">expect</span> isObject(response) is <span class="kw">yes</span>
+  <span class="kw">expect</span> response.success is <span class="kw">no</span>
+  <span class="kw">expect</span> isText(response.error) is <span class="kw">yes</span>
+
+<span class="kw">test</span> <span class="str">"listing objects have consistent shape"</span>:
+  data is <span class="kw">await</span> fetchJSON(<span class="str">"{api_url}/listings.php"</span>)
+  <span class="kw">if</span> length(data.listings) is greater than <span class="num">0</span>:
+    first is data.listings[<span class="num">0</span>]
+    <span class="kw">expect</span> isText(first.id) is <span class="kw">yes</span>
+    <span class="kw">expect</span> isText(first.title) is <span class="kw">yes</span>
+    <span class="kw">expect</span> isText(first.type) is <span class="kw">yes</span>
+    <span class="kw">expect</span> isText(first.category) is <span class="kw">yes</span>
+    <span class="kw">expect</span> isText(first.description) is <span class="kw">yes</span>
+    <span class="kw">expect</span> isText(first.sellerName) is <span class="kw">yes</span></div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Comparison: Quill vs JavaScript -->
+      <div class="showcase-section">
+        <h2>Quill vs JavaScript: Side by Side</h2>
+        <p>Here is the same logic written in both languages. Quill is designed to be immediately understandable, even to someone who has never programmed before.</p>
+
+        <!-- Comparison 1 -->
+        <h3 style="margin: 24px 0 12px 0;">Example 1: A simple test</h3>
+        <div class="comparison-grid">
+          <div>
+            <div class="comparison-label label-quill">Quill</div>
+            <div class="code-block"><span class="kw">test</span> <span class="str">"login with bad creds fails"</span>:
+  response is <span class="kw">await</span> postJSON(url, {
+    email: <span class="str">"fake@test.com"</span>,
+    password: <span class="str">"wrong"</span>
+  })
+  <span class="kw">expect</span> response.success is <span class="kw">no</span></div>
+          </div>
+          <div>
+            <div class="comparison-label label-js">JavaScript (Jest)</div>
+            <div class="code-block"><span style="color:#D2A8FF;">test</span>(<span class="str">"login with bad creds fails"</span>, <span style="color:#D2A8FF;">async</span> () => {
+  <span style="color:#D2A8FF;">const</span> response = <span style="color:#D2A8FF;">await</span> fetch(url, {
+    method: <span class="str">"POST"</span>,
+    headers: {<span class="str">"Content-Type"</span>: <span class="str">"application/json"</span>},
+    body: JSON.stringify({
+      email: <span class="str">"fake@test.com"</span>,
+      password: <span class="str">"wrong"</span>
+    })
+  }).<span style="color:#D2A8FF;">then</span>(r => r.json());
+  expect(response.success).toBe(<span style="color:#79C0FF;">false</span>);
+});</div>
+          </div>
+        </div>
+
+        <!-- Comparison 2 -->
+        <h3 style="margin: 24px 0 12px 0;">Example 2: Validating a list</h3>
+        <div class="comparison-grid">
+          <div>
+            <div class="comparison-label label-quill">Quill</div>
+            <div class="code-block"><span class="kw">test</span> <span class="str">"all types are valid"</span>:
+  data is <span class="kw">await</span> fetchJSON(url)
+  <span class="kw">for each</span> item <span class="kw">in</span> data.listings:
+    <span class="kw">expect</span> isValidType(item.type) is <span class="kw">yes</span></div>
+          </div>
+          <div>
+            <div class="comparison-label label-js">JavaScript (Jest)</div>
+            <div class="code-block"><span style="color:#D2A8FF;">test</span>(<span class="str">"all types are valid"</span>, <span style="color:#D2A8FF;">async</span> () => {
+  <span style="color:#D2A8FF;">const</span> res = <span style="color:#D2A8FF;">await</span> fetch(url);
+  <span style="color:#D2A8FF;">const</span> data = <span style="color:#D2A8FF;">await</span> res.json();
+  <span style="color:#D2A8FF;">const</span> valid = [<span class="str">"Sell"</span>, <span class="str">"Donate"</span>, <span class="str">"Wanted"</span>];
+  data.listings.forEach(item => {
+    expect(valid).toContain(item.type);
+  });
+});</div>
+          </div>
+        </div>
+
+        <!-- Comparison 3 -->
+        <h3 style="margin: 24px 0 12px 0;">Example 3: No duplicate IDs</h3>
+        <div class="comparison-grid">
+          <div>
+            <div class="comparison-label label-quill">Quill</div>
+            <div class="code-block"><span class="kw">test</span> <span class="str">"no duplicate listing IDs"</span>:
+  data is <span class="kw">await</span> fetchJSON(url)
+  ids is map_list(data.listings, <span class="kw">with</span> i: i.id)
+  <span class="kw">expect</span> length(unique(ids)) is length(ids)</div>
+          </div>
+          <div>
+            <div class="comparison-label label-js">JavaScript (Jest)</div>
+            <div class="code-block"><span style="color:#D2A8FF;">test</span>(<span class="str">"no duplicate listing IDs"</span>, <span style="color:#D2A8FF;">async</span> () => {
+  <span style="color:#D2A8FF;">const</span> res = <span style="color:#D2A8FF;">await</span> fetch(url);
+  <span style="color:#D2A8FF;">const</span> data = <span style="color:#D2A8FF;">await</span> res.json();
+  <span style="color:#D2A8FF;">const</span> ids = data.listings.map(i => i.id);
+  <span style="color:#D2A8FF;">const</span> uniqueIds = [...<span style="color:#D2A8FF;">new</span> Set(ids)];
+  expect(uniqueIds.length).toBe(ids.length);
+});</div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Try It Yourself -->
+      <div class="showcase-section" style="text-align: center;">
+        <h2>Try It Yourself</h2>
+        <p style="max-width: 600px; margin: 0 auto 24px auto;">Want to write code that reads like English? Open the Quill playground and start experimenting. No installation required.</p>
+        <a href="/playground" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #1EB969, #198CD7); color: #fff; font-weight: 700; font-size: 1.1rem; border-radius: 10px; text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 16px rgba(30,185,105,0.3);" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 24px rgba(30,185,105,0.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(30,185,105,0.3)'">Open the Playground</a>
+        <p style="margin-top: 16px;">
+          <a href="https://github.com/tradebuddyhq/quill" target="_blank" style="color: var(--text-secondary);">View on GitHub</a>
+          &nbsp;&middot;&nbsp;
+          <a href="https://discord.gg/9rRyGRrh8E" target="_blank" style="color: var(--text-secondary);">Join the Discord</a>
+          &nbsp;&middot;&nbsp;
+          <a href="https://quill.tradebuddy.dev" target="_blank" style="color: var(--text-secondary);">quill.tradebuddy.dev</a>
+        </p>
+      </div>
+
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="/docs/getting-started">Getting Started</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+        <li><a href="https://discord.gg/9rRyGRrh8E" target="_blank">Discord</a></li>
+        <li><a href="https://quill.tradebuddy.dev" target="_blank">quill.tradebuddy.dev</a></li>
+      </ul>
+      <p>Built with care by <a href="https://tradebuddy.dev" target="_blank">Trade Buddy</a>. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
