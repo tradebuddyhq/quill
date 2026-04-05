@@ -54,6 +54,10 @@
         <li><a href="#init">quill init</a></li>
         <li><a href="#cicd">CI/CD</a></li>
         <li><a href="#all-commands">All commands</a></li>
+        <li><a href="#deployment">Deployment</a></li>
+        <li><a href="#migrations">Database migrations</a></li>
+        <li><a href="#env-management">Environment management</a></li>
+        <li><a href="#ai-scaffolding">AI scaffolding</a></li>
       </ul>
       <h4>Reference</h4>
       <ul>
@@ -1464,12 +1468,201 @@ jobs:
             <td><code>quill fix --from v0.1 --to v0.3</code></td>
           </tr>
           <tr>
+            <td><code>quill deploy</code></td>
+            <td>Generates a Dockerfile and production bundle</td>
+            <td><code>quill deploy</code></td>
+          </tr>
+          <tr>
+            <td><code>quill db migrate</code></td>
+            <td>Runs all pending database migrations</td>
+            <td><code>quill db migrate</code></td>
+          </tr>
+          <tr>
+            <td><code>quill db rollback</code></td>
+            <td>Rolls back the last database migration</td>
+            <td><code>quill db rollback</code></td>
+          </tr>
+          <tr>
+            <td><code>quill db seed</code></td>
+            <td>Seeds the database with sample data</td>
+            <td><code>quill db seed</code></td>
+          </tr>
+          <tr>
+            <td><code>quill db status</code></td>
+            <td>Shows which migrations have been applied</td>
+            <td><code>quill db status</code></td>
+          </tr>
+          <tr>
+            <td><code>quill db create &lt;name&gt;</code></td>
+            <td>Creates a new migration file</td>
+            <td><code>quill db create add_users</code></td>
+          </tr>
+          <tr>
+            <td><code>quill generate &lt;description&gt;</code></td>
+            <td>AI-powered project scaffolding from a description</td>
+            <td><code>quill generate "blog"</code></td>
+          </tr>
+          <tr>
             <td><code>quill help</code></td>
             <td>Shows a summary of all available commands</td>
             <td><code>quill help</code></td>
           </tr>
         </tbody>
       </table>
+
+      <!-- ============================================================ -->
+      <!-- DEPLOYMENT                                                     -->
+      <!-- ============================================================ -->
+
+      <h2 id="deployment">Deployment (<code>quill deploy</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill deploy</code> takes your project and generates everything you need to deploy it to production: a multi-stage <strong>Dockerfile</strong>, an optimized bundle with minified assets, and a startup script. Think of it as packaging your app into a box that any server can open and run.</p>
+
+      <h3>When to use it</h3>
+      <p>Use <code>quill deploy</code> when you are ready to put your application on a real server &mdash; whether that is a cloud provider, a VPS, or your own machine running Docker.</p>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Navigate to your project directory (the one with <code>quill.toml</code>).</p>
+      <p><strong>Step 2:</strong> Run the deploy command.</p>
+      <pre><code>quill deploy</code></pre>
+
+      <p><strong>Step 3:</strong> Quill generates a <code>Dockerfile</code> and a <code>dist/</code> folder with your production bundle.</p>
+      <pre><code>$ quill deploy
+Generated Dockerfile
+Built production bundle in dist/
+Ready to deploy!</code></pre>
+
+      <p><strong>Step 4:</strong> Build and run the Docker image.</p>
+      <pre><code>docker build -t my-app .
+docker run -p 3000:3000 my-app</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>No Docker?</strong> The <code>dist/</code> folder contains a standard Node.js application. You can deploy it directly with <code>node dist/index.js</code> on any server that has Node.js installed.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- DATABASE MIGRATIONS                                            -->
+      <!-- ============================================================ -->
+
+      <h2 id="migrations">Database Migrations (<code>quill db</code>)</h2>
+
+      <h3>What are migrations?</h3>
+      <p>A migration is a small file that describes a change to your database &mdash; like adding a new table, renaming a column, or creating an index. Migrations let you evolve your database over time in a controlled, repeatable way. Think of them as version control for your database schema.</p>
+
+      <h3>Available commands</h3>
+      <ul>
+        <li><code>quill db create &lt;name&gt;</code> &mdash; Creates a new migration file with a timestamp and the name you provide.</li>
+        <li><code>quill db migrate</code> &mdash; Runs all pending migrations that have not been applied yet.</li>
+        <li><code>quill db rollback</code> &mdash; Undoes the last migration. Useful when you made a mistake.</li>
+        <li><code>quill db seed</code> &mdash; Populates the database with sample data for development and testing.</li>
+        <li><code>quill db status</code> &mdash; Shows a list of all migrations and whether each one has been applied.</li>
+      </ul>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Create a new migration.</p>
+      <pre><code>$ quill db create add_users_table
+Created migrations/20260405_add_users_table.quill</code></pre>
+
+      <p><strong>Step 2:</strong> Edit the migration file to define your schema change.</p>
+      <pre><code><span class="kw">to</span> up:
+  create table <span class="str">"users"</span>:
+    id <span class="kw">as</span> number, primary key
+    name <span class="kw">as</span> text
+    email <span class="kw">as</span> text, unique
+
+<span class="kw">to</span> down:
+  drop table <span class="str">"users"</span></code></pre>
+
+      <p><strong>Step 3:</strong> Run the migration.</p>
+      <pre><code>$ quill db migrate
+Running: 20260405_add_users_table
+Done. 1 migration applied.</code></pre>
+
+      <p><strong>Step 4:</strong> Check the status at any time.</p>
+      <pre><code>$ quill db status
+20260405_add_users_table   applied</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Rolling back:</strong> If something goes wrong, run <code>quill db rollback</code> to undo the last migration. The <code>down</code> function in your migration file defines how to reverse the change.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- ENVIRONMENT MANAGEMENT                                         -->
+      <!-- ============================================================ -->
+
+      <h2 id="env-management">Environment Management</h2>
+
+      <h3>What it does</h3>
+      <p>Environment variables store configuration that changes between environments &mdash; like database URLs, API keys, and feature flags. Quill automatically loads <code>.env</code> files so you do not have to set these values manually every time you run your program.</p>
+
+      <h3>How it works</h3>
+      <p>When you run a Quill program, it looks for a <code>.env</code> file in your project directory and loads the values into the environment. You can also specify which environment to use with the <code>--env</code> flag.</p>
+
+      <pre><code><span class="cmt">-- .env (default)</span>
+DATABASE_URL=sqlite://dev.db
+DEBUG=true
+
+<span class="cmt">-- .env.production</span>
+DATABASE_URL=postgres://prod-server/myapp
+DEBUG=false</code></pre>
+
+      <p>Run with a specific environment:</p>
+      <pre><code>quill run app.quill --env production</code></pre>
+      <p>This loads <code>.env.production</code> instead of the default <code>.env</code>.</p>
+
+      <h3>Accessing environment variables in code</h3>
+      <pre><code><span class="cmt">-- Read a variable with a default</span>
+debug <span class="kw">is</span> env(<span class="str">"DEBUG"</span>, <span class="str">"false"</span>)
+
+<span class="cmt">-- Require a variable (fails fast if missing)</span>
+apiKey <span class="kw">is</span> env.require(<span class="str">"API_KEY"</span>)
+<span class="cmt">-- If API_KEY is not set, your program stops immediately with a clear error message</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Never commit secrets:</strong> Add <code>.env</code> to your <code>.gitignore</code>. Use <code>.env.example</code> (with placeholder values) to document which variables your project needs.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- AI SCAFFOLDING                                                 -->
+      <!-- ============================================================ -->
+
+      <h2 id="ai-scaffolding">AI Scaffolding (<code>quill generate</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill generate</code> creates a complete project structure from a short description. Instead of setting up files, routes, models, and configuration by hand, you describe what you want and Quill generates it for you.</p>
+
+      <h3>When to use it</h3>
+      <p>Use <code>quill generate</code> when starting a new project or adding a major feature. It gives you a working starting point that follows best practices, so you can focus on customizing the logic instead of writing boilerplate.</p>
+
+      <h3>Available templates</h3>
+      <pre><code>quill generate <span class="str">"blog"</span>          <span class="cmt">-- Blog with posts, comments, markdown rendering</span>
+quill generate <span class="str">"api"</span>           <span class="cmt">-- REST API with routes, models, validation</span>
+quill generate <span class="str">"chat"</span>          <span class="cmt">-- Real-time chat app with WebSockets</span>
+quill generate <span class="str">"crud user"</span>     <span class="cmt">-- Full CRUD endpoints for a model</span>
+quill generate <span class="str">"auth"</span>          <span class="cmt">-- Login, register, JWT, sessions</span>
+quill generate <span class="str">"dashboard"</span>     <span class="cmt">-- Admin dashboard with charts and tables</span></code></pre>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Run the generate command with a description.</p>
+      <pre><code>$ quill generate "blog"
+Creating blog project...
+  Created main.quill
+  Created models/post.quill
+  Created models/comment.quill
+  Created pages/index.quill
+  Created pages/post/[id].quill
+  Created quill.toml
+Done! Run "quill serve" to start.</code></pre>
+
+      <p><strong>Step 2:</strong> Start the dev server and explore what was generated.</p>
+      <pre><code>quill serve</code></pre>
+
+      <p><strong>Step 3:</strong> Customize the generated code to fit your needs. The generated files are standard Quill code &mdash; there is nothing special or locked about them.</p>
+
+      <div class="callout callout-info">
+        <strong>Custom descriptions work too:</strong> You are not limited to the templates above. Try <code>quill generate "recipe sharing app with user profiles"</code> and Quill will do its best to scaffold something useful.
+      </div>
 
       <div class="callout callout-tip">
         <strong>Not sure where to start?</strong> Try <code>quill run</code> to run your first program, then explore <code>quill fmt</code> and <code>quill check</code> as you write more code. The other tools become useful as your projects grow.

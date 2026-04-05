@@ -90,6 +90,17 @@
         <li><a href="#reactive-components">Reactive components</a></li>
         <li><a href="#union-nullable">Union &amp; nullable types</a></li>
         <li><a href="#source-maps">Source maps</a></li>
+        <li><a href="#async-improvements">Async improvements</a></li>
+        <li><a href="#error-propagation">Error propagation</a></li>
+        <li><a href="#advanced-destructuring">Advanced destructuring</a></li>
+        <li><a href="#computed-properties">Computed properties</a></li>
+        <li><a href="#tagged-templates">Tagged templates</a></li>
+        <li><a href="#visibility">Visibility</a></li>
+        <li><a href="#enums-methods">Enums with methods</a></li>
+        <li><a href="#type-utilities">Type utilities</a></li>
+        <li><a href="#decorators">Decorators</a></li>
+        <li><a href="#websockets">WebSockets</a></li>
+        <li><a href="#testing-mocks">Testing mocks</a></li>
       </ul>
       <h4>Reference</h4>
       <ul>
@@ -1777,6 +1788,231 @@ result <span class="kw">is</span> fibonacci()
       <div class="callout callout-tip">
         <strong>When to use full-stack mode:</strong> It is perfect for prototypes, internal tools, and small apps. For large projects, you can split into separate files and use Quill's import system.
       </div>
+
+      <!-- ============================================================ -->
+      <!-- ASYNC IMPROVEMENTS                                            -->
+      <!-- ============================================================ -->
+
+      <h2 id="async-improvements">Async Improvements</h2>
+      <p>Quill's async system goes beyond basic <code>await</code>. You can cancel running tasks, iterate over async streams, and handle parallel operations where some may fail without crashing the whole group.</p>
+
+      <h3>Cancellation</h3>
+      <p>Sometimes you start a background task and then decide you no longer need it &mdash; maybe the user navigated away, or a timeout was reached. Use <code>cancel</code> to stop a running task.</p>
+      <pre><code><span class="kw">spawn task</span> fetcher:
+  data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/slow-endpoint"</span>)
+
+<span class="cmt">-- Changed our mind, stop the task</span>
+<span class="kw">cancel</span> fetcher</code></pre>
+
+      <h3>Async iteration</h3>
+      <p>When data arrives in chunks (like reading a large file or receiving messages from a server), use <code>for await each</code> to process each piece as it arrives.</p>
+      <pre><code><span class="kw">for await each</span> chunk <span class="kw">in</span> stream:
+  <span class="kw">say</span> <span class="str">"Got: {chunk}"</span></code></pre>
+
+      <h3>Parallel settled</h3>
+      <p>A regular <code>parallel:</code> block stops everything if one task fails. With <code>parallel settled:</code>, every task runs to completion. Each result is either a <code>Success()</code> or an <code>Error()</code>, so you can handle failures individually.</p>
+      <pre><code><span class="kw">parallel settled</span>:
+  a <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/a"</span>)
+  b <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/b"</span>)
+
+<span class="cmt">-- a and b are each Success() or Error(), never throws</span>
+<span class="kw">if</span> a.ok:
+  <span class="kw">say</span> a.value</code></pre>
+
+      <!-- ============================================================ -->
+      <!-- ERROR PROPAGATION                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="error-propagation">Error Propagation</h2>
+      <p>Quill has a <strong>Result type</strong> that represents either a successful value or an error. This lets you handle errors explicitly without exceptions, similar to Rust's <code>Result</code> type but with Quill's English-like syntax.</p>
+
+      <h3>Success and Error</h3>
+      <p>Functions return <code>Success(value)</code> when things go well and <code>Error(message)</code> when something goes wrong.</p>
+      <pre><code><span class="kw">to</span> loadUser id <span class="kw">as</span> number -> Result <span class="kw">of</span> User:
+  <span class="kw">if</span> id <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">give back</span> Error(<span class="str">"not found"</span>)
+  <span class="kw">give back</span> Success({name: <span class="str">"Alice"</span>, id: id})</code></pre>
+
+      <h3>The <code>?</code> operator</h3>
+      <p>Writing error checks for every function call gets repetitive. The <code>?</code> operator automatically propagates errors &mdash; if the result is an <code>Error</code>, the current function returns that error immediately. If it is a <code>Success</code>, the inner value is unwrapped.</p>
+      <pre><code><span class="kw">to</span> loadProfile id <span class="kw">as</span> number -> Result <span class="kw">of</span> Profile:
+  user <span class="kw">is</span> loadUser(id)?          <span class="cmt">-- returns Error early if loadUser fails</span>
+  <span class="kw">give back</span> Success(user.profile)</code></pre>
+
+      <h3>The <code>try</code> expression</h3>
+      <p>Use <code>try</code> as an expression to provide a fallback value when something fails.</p>
+      <pre><code>name <span class="kw">is</span> <span class="kw">try</span> loadUser(<span class="num">42</span>) <span class="kw">otherwise</span> <span class="str">"anonymous"</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- ADVANCED DESTRUCTURING                                         -->
+      <!-- ============================================================ -->
+
+      <h2 id="advanced-destructuring">Advanced Destructuring</h2>
+      <p>You already know how to destructure variables (<code>{name, age} is person</code>). Quill also lets you destructure directly inside loops and match expressions, which keeps your code short and readable.</p>
+
+      <h3>In loops</h3>
+      <p>Instead of pulling out fields inside the loop body, destructure right in the <code>for each</code> line.</p>
+      <pre><code><span class="kw">for each</span> {name, age} <span class="kw">in</span> users:
+  <span class="kw">say</span> <span class="str">"{name} is {age} years old"</span></code></pre>
+
+      <h3>In match expressions</h3>
+      <p>Match on the shape of an object by destructuring inside <code>when</code> clauses.</p>
+      <pre><code><span class="kw">match</span> response:
+  <span class="kw">when</span> {status: <span class="num">200</span>, body}:
+    <span class="kw">say</span> body
+  <span class="kw">when</span> {status: <span class="num">404</span>}:
+    <span class="kw">say</span> <span class="str">"Not found"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Unexpected status"</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- COMPUTED PROPERTIES                                            -->
+      <!-- ============================================================ -->
+
+      <h2 id="computed-properties">Computed Properties</h2>
+      <p>Sometimes you do not know the name of an object key until your program is running. Computed properties let you use a variable or expression as the key by wrapping it in square brackets.</p>
+
+      <pre><code>key <span class="kw">is</span> <span class="str">"color"</span>
+obj <span class="kw">is</span> {[key]: <span class="str">"blue"</span>, size: <span class="num">10</span>}
+<span class="kw">say</span> obj.color   <span class="cmt">-- "blue"</span></code></pre>
+
+      <p>This is useful when building objects dynamically &mdash; for example, collecting form fields into an object where the field names come from user input.</p>
+
+      <!-- ============================================================ -->
+      <!-- TAGGED TEMPLATES                                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="tagged-templates">Tagged Templates</h2>
+      <p>Tagged templates let you prefix a string with a function name. The function receives the string parts and interpolated values separately, so it can process them &mdash; for example, escaping SQL parameters or sanitizing HTML.</p>
+
+      <pre><code><span class="cmt">-- SQL with automatic parameter escaping</span>
+result <span class="kw">is</span> query<span class="str">`SELECT * FROM users WHERE age > {minAge}`</span>
+
+<span class="cmt">-- HTML with sanitization</span>
+page <span class="kw">is</span> html<span class="str">`&lt;h1&gt;{title}&lt;/h1&gt;&lt;p&gt;{body}&lt;/p&gt;`</span>
+
+<span class="cmt">-- CSS with scoping</span>
+styles <span class="kw">is</span> css<span class="str">`
+  .card:
+    padding is {spacing}px
+    color is {theme.text}
+`</span></code></pre>
+
+      <p>The built-in tags <code>query</code>, <code>html</code>, and <code>css</code> are part of the standard library. You can also write your own tag functions.</p>
+
+      <!-- ============================================================ -->
+      <!-- VISIBILITY                                                     -->
+      <!-- ============================================================ -->
+
+      <h2 id="visibility">Visibility</h2>
+      <p>By default, all fields and methods in a class are accessible from anywhere. Use <code>private</code> and <code>public</code> to control what outside code can see and use.</p>
+
+      <pre><code><span class="kw">describe</span> Account:
+  <span class="kw">private</span> balance <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">public</span> name <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">public</span> <span class="kw">to</span> deposit amount:
+    my.balance <span class="kw">is</span> my.balance + amount
+
+  <span class="kw">private</span> <span class="kw">to</span> audit:
+    <span class="kw">say</span> <span class="str">"Balance: {my.balance}"</span></code></pre>
+
+      <p>Private fields compile to JavaScript <code>#</code> private fields, so they are truly private at runtime &mdash; not just a naming convention.</p>
+
+      <!-- ============================================================ -->
+      <!-- ENUMS WITH METHODS                                             -->
+      <!-- ============================================================ -->
+
+      <h2 id="enums-methods">Enums with Methods</h2>
+      <p>Algebraic data types can have methods attached to them. This is useful when your enum variants carry values and you want to define behavior that works across all variants.</p>
+
+      <pre><code><span class="kw">define</span> HttpStatus:
+  OK <span class="kw">is</span> <span class="num">200</span>
+  NotFound <span class="kw">is</span> <span class="num">404</span>
+  ServerError <span class="kw">is</span> <span class="num">500</span>
+
+  <span class="kw">to</span> isSuccess:
+    <span class="kw">give back</span> my.value <span class="kw">is less than</span> <span class="num">400</span>
+
+  <span class="kw">to</span> toMessage:
+    <span class="kw">match</span> my:
+      <span class="kw">when</span> OK: <span class="kw">give back</span> <span class="str">"OK"</span>
+      <span class="kw">when</span> NotFound: <span class="kw">give back</span> <span class="str">"Not Found"</span>
+      <span class="kw">when</span> ServerError: <span class="kw">give back</span> <span class="str">"Internal Server Error"</span></code></pre>
+
+      <p>Call methods on an enum value just like on an object: <code>HttpStatus.OK.isSuccess()</code> returns <code>yes</code>.</p>
+
+      <!-- ============================================================ -->
+      <!-- TYPE UTILITIES                                                 -->
+      <!-- ============================================================ -->
+
+      <h2 id="type-utilities">Type Utilities</h2>
+      <p>Type utilities let you create new types by transforming existing ones. Instead of redefining a type from scratch, you can take an existing type and make all fields optional, pick a subset of fields, or mark everything as read-only.</p>
+
+      <pre><code><span class="kw">type</span> PartialUser <span class="kw">is</span> Partial <span class="kw">of</span> User          <span class="cmt">-- all fields optional</span>
+<span class="kw">type</span> UserName <span class="kw">is</span> Pick <span class="kw">of</span> User, <span class="str">"name"</span> | <span class="str">"email"</span>  <span class="cmt">-- only name and email</span>
+<span class="kw">type</span> SafeUser <span class="kw">is</span> Omit <span class="kw">of</span> User, <span class="str">"password"</span>     <span class="cmt">-- everything except password</span>
+<span class="kw">type</span> ScoreMap <span class="kw">is</span> Record <span class="kw">of</span> text, number       <span class="cmt">-- string keys, number values</span>
+<span class="kw">type</span> Frozen <span class="kw">is</span> Readonly <span class="kw">of</span> Config             <span class="cmt">-- no field can be reassigned</span>
+<span class="kw">type</span> Complete <span class="kw">is</span> Required <span class="kw">of</span> PartialUser      <span class="cmt">-- all fields required</span></code></pre>
+
+      <p>These work the same way as TypeScript utility types, but with Quill's English-like syntax.</p>
+
+      <!-- ============================================================ -->
+      <!-- DECORATORS                                                     -->
+      <!-- ============================================================ -->
+
+      <h2 id="decorators">Decorators</h2>
+      <p>Decorators let you attach extra behavior to a function or class without changing its code. Write the decorator name with an <code>@</code> symbol on the line above. Think of them as labels that tell Quill to wrap the function with additional logic.</p>
+
+      <pre><code><span class="cmt">-- This route requires authentication and is rate-limited</span>
+@authenticated
+@rateLimit(<span class="num">100</span>)
+<span class="kw">to</span> getUsers request:
+  <span class="kw">give back</span> DB.find({})
+
+<span class="cmt">-- This function logs every call</span>
+@log
+<span class="kw">to</span> processOrder order:
+  <span class="kw">say</span> <span class="str">"Processing {order.id}"</span></code></pre>
+
+      <p>Decorators compile to standard JavaScript decorator syntax. You can use built-in decorators like <code>@log</code>, <code>@authenticated</code>, and <code>@rateLimit</code>, or write your own.</p>
+
+      <!-- ============================================================ -->
+      <!-- WEBSOCKETS                                                     -->
+      <!-- ============================================================ -->
+
+      <h2 id="websockets">WebSockets</h2>
+      <p>WebSockets allow real-time, two-way communication between a server and its clients. Quill provides a dedicated <code>websocket</code> block that handles connection lifecycle and broadcasting.</p>
+
+      <pre><code><span class="kw">websocket</span> <span class="str">"/chat"</span>:
+  <span class="kw">on</span> connect client:
+    <span class="kw">say</span> <span class="str">"{client.id} joined"</span>
+
+  <span class="kw">on</span> message client, data:
+    broadcast data
+
+  <span class="kw">on</span> disconnect client:
+    <span class="kw">say</span> <span class="str">"{client.id} left"</span></code></pre>
+
+      <p>The <code>broadcast</code> function sends a message to every connected client. You can also send to a specific client with <code>client.send(data)</code>.</p>
+
+      <!-- ============================================================ -->
+      <!-- TESTING MOCKS                                                  -->
+      <!-- ============================================================ -->
+
+      <h2 id="testing-mocks">Testing Mocks</h2>
+      <p>Mocks let you replace a real function with a fake one during tests. This is useful when you do not want your tests to make real HTTP requests or talk to a real database.</p>
+
+      <pre><code><span class="kw">mock</span> fetchJSON <span class="kw">with</span> url:
+  <span class="kw">give back</span> {name: <span class="str">"Mock User"</span>}
+
+<span class="kw">test</span> <span class="str">"fetches user"</span>:
+  user <span class="kw">is</span> <span class="kw">await</span> getUser(<span class="num">1</span>)
+  <span class="kw">expect</span> user.name <span class="kw">is</span> <span class="str">"Mock User"</span>
+  <span class="kw">expect</span> fetchJSON was called <span class="num">1</span> times</code></pre>
+
+      <p>After the test finishes, the original function is automatically restored. You can also check how many times a mocked function was called and with what arguments.</p>
 
       <!-- ============================================================ -->
       <!-- NEXT STEPS                                                    -->

@@ -97,23 +97,27 @@ mount Counter to "#app"
 - **Type annotations with enforcement** — `to add a as number -> number:` checked by `quill check`
 - **Pattern matching** — `match`/`when`/`otherwise` for clean branching, type-based matching, guard clauses, exhaustive checking
 - **Algebraic data types** — `define Color: Red, Green, Blue` with variant constructors
+- **Enums with methods** — `define HttpStatus:` with `to isSuccess:` methods on enum variants
 - **Traits** — `describe trait Printable:` with method signatures for interface contracts
 - **Generics with constraints** — `to sort items as list of T where T is Comparable`
-- **Destructuring** — `{name, age} is person`, `[first, ...rest] are items`, nested patterns
+- **Destructuring** — `{name, age} is person`, `[first, ...rest] are items`, nested patterns, in loops (`for each {name, age} in users:`), in match (`when {status: 200, body}:`)
 - **Type narrowing** — `if x is text:` and the compiler knows `x` is text inside the block
 - **Pipe operator** — `value | transform | format` for function chaining
 - **Lambdas** — `with x: x * 2` arrow-style anonymous functions
-- **Classes with inheritance** — `describe Dog extends Animal:` with `my` keyword
+- **Classes with inheritance** — `describe Dog extends Animal:` with `my` keyword, `private`/`public` visibility, JS `#` private fields
 - **Try/catch** — `try:` / `if it fails err:` error handling
+- **Error propagation** — Result type with `Success()`/`Error()`, `?` operator for auto-propagation, `try` expression
 - **Iterators & generators** — `yield`, `loop:` infinite loops, lazy evaluation chains
 - **Lazy evaluation** — `range(1, 1000000) | filter | map_list | take 10 | collect`
-- **Object literals** — `{name: "Alice", age: 30}`
+- **Object literals** — `{name: "Alice", age: 30}`, computed properties `{[key]: "value"}`
 - **Spread operator** — `...items` for expanding lists
-- **String interpolation** — `"Hello {name}!"`
+- **String interpolation** — `"Hello {name}!"`, tagged templates `` query`SELECT * FROM users WHERE age > {min}` ``
 - **Break/continue** — loop control flow
 - **60+ built-in functions** — `sort()`, `filter()`, `map_list()`, `hash()`, `uuid()`, and more
-- **Async/await** — `data is await fetchJSON("url")`
+- **Async/await** — `data is await fetchJSON("url")`, cancellation (`cancel task`), async iteration (`for await each chunk in stream:`), `parallel settled:` (allSettled)
 - **Import system** — `use "express" as app` or `from "express" use Router, json`
+- **Type utilities** — `type X is Partial of Y`, `Omit`, `Pick`, `Record`, `Readonly`, `Required`
+- **Decorators** — `@authenticated`, `@rateLimit(100)`, `@log` for annotating functions and classes
 - **Union types** — `number | text` for values that can be multiple types
 - **Nullable types** — `?number` shorthand for `number | nothing`
 - **Reactive web framework** — Svelte-like `component`/`state`/`mount` with virtual DOM
@@ -131,6 +135,11 @@ mount Counter to "#app"
 - **Profiler** — `quill profile app.quill` for function timing reports
 - **Workspaces** — monorepo support via `[workspace]` in quill.toml
 - **Migration tool** — `quill fix --from v0.1 --to v0.3` for automated code migration
+- **Deployment** — `quill deploy` generates Dockerfile and production bundle
+- **Database migrations** — `quill db migrate`, `rollback`, `seed`, `status`, `create` for schema management
+- **Environment management** — auto-loads `.env` files, `env.require("KEY")`, `--env production`
+- **Testing mocks** — `mock fetchJSON with url:`, `expect func was called N times`
+- **AI scaffolding** — `quill generate "blog"` / `"api"` / `"chat"` / `"crud user"` / `"auth"` / `"dashboard"`
 - **Friendly error messages** — with source context and hints
 - **VS Code extension** — syntax highlighting, snippets, comment toggling
 - **LSP server** — `quill lsp` for editor integration (diagnostics, hover, autocomplete)
@@ -144,6 +153,7 @@ mount Counter to "#app"
 - **Client-side routing** — `link to="/about" "About Us"` with pushState navigation
 - **Head management** — `head:` block for title/meta tags
 - **Form actions** — `form action=handler:` for server-side form handling
+- **WebSockets** — `websocket "/chat":` with `on connect`, `on message`, `on disconnect`, and `broadcast`
 
 **Build Targets**
 - **Node.js** — `quill build file.quill` (default)
@@ -183,6 +193,13 @@ mount Counter to "#app"
 | `quill search query` | Search the package registry |
 | `quill install` | Install all dependencies |
 | `quill bump patch` | Bump version in quill.json |
+| `quill deploy` | Generate Dockerfile and production bundle |
+| `quill db migrate` | Run pending database migrations |
+| `quill db rollback` | Roll back the last migration |
+| `quill db seed` | Seed the database with sample data |
+| `quill db status` | Show migration status |
+| `quill db create` | Create a new migration file |
+| `quill generate "description"` | AI-powered project scaffolding |
 | `quill help` | Show help |
 
 ## Language Reference
@@ -446,6 +463,154 @@ to process value as number | text:
     say value + 1
 ```
 
+### Async Improvements
+```
+-- Cancellation
+spawn task fetcher:
+  data is await fetchJSON("/slow")
+cancel fetcher
+
+-- Async iteration
+for await each chunk in stream:
+  say chunk
+
+-- Parallel settled (allSettled)
+parallel settled:
+  a is await fetchJSON("/a")
+  b is await fetchJSON("/b")
+-- a and b are each Success() or Error(), never throws
+```
+
+### Error Propagation
+```
+-- Result type
+to loadUser id as number -> Result of User:
+  if id is 0:
+    give back Error("not found")
+  give back Success({name: "Alice", id: id})
+
+-- ? operator for auto-propagation
+to loadProfile id as number -> Result of Profile:
+  user is loadUser(id)?
+  give back Success(user.profile)
+
+-- try expression
+name is try loadUser(42) otherwise "anonymous"
+```
+
+### Advanced Destructuring
+```
+-- In loops
+for each {name, age} in users:
+  say "{name} is {age}"
+
+-- In match
+match response:
+  when {status: 200, body}:
+    say body
+  when {status: 404}:
+    say "Not found"
+```
+
+### Computed Properties
+```
+key is "color"
+obj is {[key]: "blue", size: 10}
+say obj.color   -- "blue"
+```
+
+### Tagged Templates
+```
+-- SQL with automatic escaping
+result is query`SELECT * FROM users WHERE age > {minAge}`
+
+-- HTML with sanitization
+page is html`<h1>{title}</h1><p>{body}</p>`
+
+-- CSS with scoping
+styles is css`
+  .card:
+    padding is {spacing}px
+    color is {theme.text}
+`
+```
+
+### Visibility
+```
+describe Account:
+  private balance is 0
+  public name is ""
+
+  public to deposit amount:
+    my.balance is my.balance + amount
+
+  private to audit:
+    say "Balance: {my.balance}"
+```
+
+### Enums with Methods
+```
+define HttpStatus:
+  OK is 200
+  NotFound is 404
+  ServerError is 500
+
+  to isSuccess:
+    give back my.value is less than 400
+
+  to toMessage:
+    match my:
+      when OK: give back "OK"
+      when NotFound: give back "Not Found"
+      when ServerError: give back "Internal Server Error"
+```
+
+### Type Utilities
+```
+type PartialUser is Partial of User
+type UserName is Pick of User, "name" | "email"
+type SafeUser is Omit of User, "password"
+type ScoreMap is Record of text, number
+type Frozen is Readonly of Config
+type Complete is Required of PartialUser
+```
+
+### Decorators
+```
+@authenticated
+@rateLimit(100)
+to getUsers request:
+  give back DB.find({})
+
+@log
+to processOrder order:
+  say "Processing {order.id}"
+```
+
+### WebSockets
+```
+websocket "/chat":
+  on connect client:
+    say "{client.id} joined"
+
+  on message client, data:
+    broadcast data
+
+  on disconnect client:
+    say "{client.id} left"
+```
+
+### Testing Mocks
+```
+mock fetchJSON with url:
+  give back {name: "Mock User"}
+
+test "fetches user":
+  user is await getUser(1)
+  expect user.name is "Mock User"
+  expect fetchJSON was called 1 times
+```
+
 ### Iterators & Generators
 ```
 -- Generator function (compiles to function*)
@@ -544,7 +709,7 @@ form action=handleSubmit:
 
 ### Full-Stack in One File
 
-Write your entire app -- server, database, auth, and UI -- in a single `.quill` file. No config files, no `package.json`, no `node_modules`, no webpack. Just `quill run app.quill`.
+Write your entire app — server, database, auth, and UI — in a single `.quill` file. No config files, no `package.json`, no `node_modules`, no webpack. Just `quill run app.quill`.
 
 ```
 server:
@@ -723,11 +888,11 @@ quill debug examples/hello.quill
 ```
 
 Features:
-- **Breakpoints** -- set on any Quill source line
-- **Step controls** -- step over, step into, step out
-- **Variable inspection** -- view locals and globals at any point
-- **Call stacks** -- see the full call chain
-- **Source maps** -- you debug Quill source, not compiled JS
+- **Breakpoints** — set on any Quill source line
+- **Step controls** — step over, step into, step out
+- **Variable inspection** — view locals and globals at any point
+- **Call stacks** — see the full call chain
+- **Source maps** — you debug Quill source, not compiled JS
 
 REPL commands inside the debugger:
 
@@ -779,6 +944,44 @@ Rewrites deprecated syntax, renames changed functions, and updates import paths 
 quill serve
 ```
 Starts a development server with hot reload, file-based routing, and SSR support. Perfect for web projects.
+
+### Deployment
+```bash
+quill deploy
+```
+Generates a production-ready Dockerfile and optimized bundle for your project. The output includes a multi-stage Docker build, minified assets, and a startup script.
+
+### Database Migrations
+```bash
+quill db create add_users_table    # Create a new migration file
+quill db migrate                   # Run pending migrations
+quill db rollback                  # Roll back the last migration
+quill db seed                      # Seed the database with sample data
+quill db status                    # Show which migrations have run
+```
+
+### Environment Management
+Quill auto-loads `.env` files based on context. Use `env.require("KEY")` to fail fast if a variable is missing.
+
+```bash
+quill run app.quill --env production     # Loads .env.production
+```
+
+```
+-- In your code
+apiKey is env.require("API_KEY")         -- throws if missing
+debug is env("DEBUG", "false")           -- default value
+```
+
+### AI Scaffolding
+```bash
+quill generate "blog"          # Blog with posts, comments, markdown
+quill generate "api"           # REST API with routes, models, validation
+quill generate "chat"          # Real-time chat with WebSockets
+quill generate "crud user"     # CRUD endpoints for a user model
+quill generate "auth"          # Login, register, JWT, sessions
+quill generate "dashboard"     # Admin dashboard with charts
+```
 
 ## Stability
 

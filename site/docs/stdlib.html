@@ -61,6 +61,8 @@
         <li><a href="#database">Database</a></li>
         <li><a href="#iterators">Iterators &amp; lazy evaluation</a></li>
         <li><a href="#recipes">Recipes</a></li>
+        <li><a href="#tagged-template-tags">Tagged template tags</a></li>
+        <li><a href="#result-type">Result type helpers</a></li>
       </ul>
       <h4>Ecosystem Packages</h4>
       <ul>
@@ -943,6 +945,89 @@ quillFiles <span class="kw">is</span> filter(files, <span class="kw">with</span>
 
 <span class="kw">say</span> <span class="str">"Done! Backed up "</span> + toText(length(quillFiles)) + <span class="str">" files"</span></code></pre>
       </div>
+
+      <!-- ============================================ -->
+      <!-- TAGGED TEMPLATE TAGS                          -->
+      <!-- ============================================ -->
+
+      <h2 id="tagged-template-tags">Tagged Template Tags</h2>
+      <p>Tagged templates let you prefix a string with a function name. The function receives the string parts and the interpolated values separately, so it can process them safely &mdash; for example, escaping SQL parameters to prevent injection, or sanitizing HTML to prevent cross-site scripting. Quill ships with three built-in tags.</p>
+
+      <h3><code>query</code> &mdash; Safe SQL queries</h3>
+      <p>The <code>query</code> tag automatically escapes interpolated values so they are safe to use in SQL. You never have to worry about SQL injection when you use this tag.</p>
+      <pre><code>minAge <span class="kw">is</span> <span class="num">18</span>
+result <span class="kw">is</span> query<span class="str">`SELECT * FROM users WHERE age > {minAge}`</span>
+<span class="cmt">-- The value 18 is passed as a parameter, not concatenated into the string</span>
+
+name <span class="kw">is</span> <span class="str">"O'Brien"</span>
+result <span class="kw">is</span> query<span class="str">`SELECT * FROM users WHERE name = {name}`</span>
+<span class="cmt">-- The apostrophe is safely escaped</span></code></pre>
+
+      <h3><code>html</code> &mdash; Safe HTML rendering</h3>
+      <p>The <code>html</code> tag sanitizes interpolated values so that any HTML special characters are escaped. This prevents malicious scripts from being injected into your pages.</p>
+      <pre><code>title <span class="kw">is</span> <span class="str">"Hello &lt;World&gt;"</span>
+body <span class="kw">is</span> <span class="str">"This is &lt;b&gt;safe&lt;/b&gt;"</span>
+page <span class="kw">is</span> html<span class="str">`&lt;h1&gt;{title}&lt;/h1&gt;&lt;p&gt;{body}&lt;/p&gt;`</span>
+<span class="cmt">-- Output: &lt;h1&gt;Hello &amp;lt;World&amp;gt;&lt;/h1&gt;&lt;p&gt;This is &amp;lt;b&amp;gt;safe&amp;lt;/b&amp;gt;&lt;/p&gt;</span></code></pre>
+
+      <h3><code>css</code> &mdash; Scoped CSS generation</h3>
+      <p>The <code>css</code> tag lets you write CSS with interpolated values for dynamic theming. Values are validated to prevent CSS injection.</p>
+      <pre><code>spacing <span class="kw">is</span> <span class="num">16</span>
+color <span class="kw">is</span> <span class="str">"#333"</span>
+styles <span class="kw">is</span> css<span class="str">`
+  .card:
+    padding: {spacing}px;
+    color: {color};
+`</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Custom tags:</strong> You can write your own tag functions. A tag function receives two arguments &mdash; a list of string parts and a list of interpolated values &mdash; and returns whatever you want.
+      </div>
+
+      <!-- ============================================ -->
+      <!-- RESULT TYPE HELPERS                           -->
+      <!-- ============================================ -->
+
+      <h2 id="result-type">Result Type Helpers</h2>
+      <p>The Result type represents an operation that can either succeed or fail. Instead of throwing exceptions, functions return <code>Success(value)</code> or <code>Error(message)</code>. This makes error handling explicit and predictable.</p>
+
+      <div class="callout callout-info">
+        <strong>Why use Result instead of try/catch?</strong> With try/catch, you might forget to handle an error and your program crashes. With Result, the type system reminds you &mdash; you cannot use the value without first checking whether the operation succeeded.
+      </div>
+
+      <h3><code>Success(value)</code> &mdash; Wrap a successful value</h3>
+      <p>Creates a Result that represents a successful outcome. The value inside can be anything &mdash; a number, text, object, or list.</p>
+      <pre><code><span class="kw">to</span> divide a <span class="kw">as</span> number, b <span class="kw">as</span> number -> Result <span class="kw">of</span> number:
+  <span class="kw">if</span> b <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">give back</span> Error(<span class="str">"cannot divide by zero"</span>)
+  <span class="kw">give back</span> Success(a / b)
+
+result <span class="kw">is</span> divide(<span class="num">10</span>, <span class="num">2</span>)
+<span class="kw">say</span> result.ok      <span class="cmt">-- yes</span>
+<span class="kw">say</span> result.value   <span class="cmt">-- 5</span></code></pre>
+
+      <h3><code>Error(message)</code> &mdash; Wrap an error</h3>
+      <p>Creates a Result that represents a failure. The message describes what went wrong.</p>
+      <pre><code>result <span class="kw">is</span> divide(<span class="num">10</span>, <span class="num">0</span>)
+<span class="kw">say</span> result.ok       <span class="cmt">-- no</span>
+<span class="kw">say</span> result.error    <span class="cmt">-- "cannot divide by zero"</span></code></pre>
+
+      <h3>Working with Results</h3>
+      <p>Check whether a Result is a success or an error, then use the appropriate field.</p>
+      <pre><code>result <span class="kw">is</span> loadUser(<span class="num">42</span>)
+
+<span class="kw">if</span> result.ok:
+  <span class="kw">say</span> <span class="str">"Found user: {result.value.name}"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Error: {result.error}"</span>
+
+<span class="cmt">-- Or use the ? operator for auto-propagation</span>
+<span class="kw">to</span> loadProfile id <span class="kw">as</span> number -> Result <span class="kw">of</span> Profile:
+  user <span class="kw">is</span> loadUser(id)?    <span class="cmt">-- returns Error early if loadUser fails</span>
+  <span class="kw">give back</span> Success(user.profile)
+
+<span class="cmt">-- Or use try as an expression with a fallback</span>
+name <span class="kw">is</span> <span class="kw">try</span> loadUser(<span class="num">42</span>) <span class="kw">otherwise</span> <span class="str">"anonymous"</span></code></pre>
 
       <!-- ============================================ -->
       <!-- AUTH                                          -->
