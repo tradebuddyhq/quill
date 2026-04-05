@@ -1063,7 +1063,18 @@ function runCode() {
 }
 
 // ---- Event listeners ----
-editor.addEventListener('input', updateLineNumbers);
+editor.addEventListener('input', () => {
+  if (pendingIndent !== null) {
+    const indent = pendingIndent;
+    pendingIndent = null;
+    const pos = editor.selectionStart;
+    const before = editor.value.substring(0, pos);
+    const after = editor.value.substring(pos);
+    editor.value = before + indent + after;
+    editor.selectionStart = editor.selectionEnd = pos + indent.length;
+  }
+  updateLineNumbers();
+});
 editor.addEventListener('scroll', () => {
   lineNumbers.scrollTop = editor.scrollTop;
 });
@@ -1105,6 +1116,8 @@ function replaceRange(textarea, from, to, text) {
 function setCursor(textarea, pos) {
   textarea.selectionStart = textarea.selectionEnd = pos;
 }
+
+let pendingIndent = null;
 
 editor.addEventListener('keydown', (e) => {
   const { value, selectionStart: start, selectionEnd: end } = editor;
@@ -1204,26 +1217,19 @@ editor.addEventListener('keydown', (e) => {
     return;
   }
 
-  // Enter with auto-indent
+  // Enter with auto-indent — store info, let browser handle newline, fix in input event
   if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
-    e.preventDefault();
-    e.stopPropagation();
     const currentLine = getLineAt(value, start);
     const currentIndent = getIndent(currentLine);
     const trimmedLine = currentLine.trim();
-    // Add extra indent after block starters or lines ending with ':'
     let newIndent = currentIndent;
     if (trimmedLine.endsWith(':') || BLOCK_STARTERS.test(trimmedLine)) {
       newIndent = currentIndent + INDENT;
     }
-    const insertion = '\n' + newIndent;
-    const before = value.substring(0, start);
-    const after = value.substring(end);
-    editor.value = before + insertion + after;
-    const newPos = start + insertion.length;
-    editor.selectionStart = editor.selectionEnd = newPos;
-    updateLineNumbers();
-    return;
+    if (newIndent.length > 0) {
+      pendingIndent = newIndent;
+    }
+    // Don't preventDefault — let the browser insert the newline naturally
   }
 
   // Auto-close brackets and quotes
@@ -1270,20 +1276,6 @@ editor.addEventListener('keydown', (e) => {
       setCursor(editor, start - 1);
       updateLineNumbers();
       return;
-    }
-  }
-});
-
-// Block browser's native Enter insertion — our keydown handler already handles it
-let enterHandled = false;
-editor.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) enterHandled = true;
-}, true); // capture phase
-editor.addEventListener('beforeinput', (e) => {
-  if (e.inputType === 'insertLineBreak' || (e.inputType === 'insertText' && e.data === '\n')) {
-    if (enterHandled) {
-      e.preventDefault();
-      enterHandled = false;
     }
   }
 });
