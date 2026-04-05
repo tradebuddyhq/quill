@@ -119,7 +119,7 @@ func TestParseDestructuringInForEach(t *testing.T) {
 }
 
 func TestParseDestructuringInMatch(t *testing.T) {
-	input := "match response:\n    when {status: 200, body}:\n        say body\n    when {status: 404}:\n        say \"not found\"\n"
+	input := "match response:\n    when {code: 200, body}:\n        say body\n    when {code: 404}:\n        say \"not found\"\n"
 	prog, err := parse(input)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -135,7 +135,7 @@ func TestParseDestructuringInMatch(t *testing.T) {
 		t.Fatalf("expected 2 cases, got %d", len(match.Cases))
 	}
 
-	// First case: when {status: 200, body}
+	// First case: when {code: 200, body}
 	case1 := match.Cases[0]
 	objPat1, ok := case1.Pattern.(*ast.ObjectMatchPattern)
 	if !ok {
@@ -144,11 +144,11 @@ func TestParseDestructuringInMatch(t *testing.T) {
 	if len(objPat1.Fields) != 2 {
 		t.Fatalf("expected 2 fields in case 1, got %d", len(objPat1.Fields))
 	}
-	if objPat1.Fields[0].Key != "status" {
-		t.Errorf("expected field key 'status', got %q", objPat1.Fields[0].Key)
+	if objPat1.Fields[0].Key != "code" {
+		t.Errorf("expected field key 'code', got %q", objPat1.Fields[0].Key)
 	}
 	if objPat1.Fields[0].Value == nil {
-		t.Error("expected value for 'status' field")
+		t.Error("expected value for 'code' field")
 	}
 	if objPat1.Fields[1].Key != "body" {
 		t.Errorf("expected field key 'body', got %q", objPat1.Fields[1].Key)
@@ -157,7 +157,7 @@ func TestParseDestructuringInMatch(t *testing.T) {
 		t.Error("expected nil value for 'body' field (binding only)")
 	}
 
-	// Second case: when {status: 404}
+	// Second case: when {code: 404}
 	case2 := match.Cases[1]
 	objPat2, ok := case2.Pattern.(*ast.ObjectMatchPattern)
 	if !ok {

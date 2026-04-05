@@ -46,19 +46,23 @@ func ParsePrompt(prompt string) (string, string) {
 		return "crud", "item"
 	}
 
-	// Match keywords to templates
-	keywords := map[string][]string{
-		"blog":      {"blog", "post", "article", "writing"},
-		"api":       {"api", "rest", "endpoint", "backend"},
-		"chat":      {"chat", "realtime", "websocket", "messaging"},
-		"auth":      {"auth", "login", "signup", "authentication", "session"},
-		"dashboard": {"dashboard", "admin", "panel", "management"},
+	// Match keywords to templates (ordered for deterministic matching)
+	type templateMatch struct {
+		name  string
+		words []string
+	}
+	templates := []templateMatch{
+		{"blog", []string{"blog", "post", "article", "writing"}},
+		{"chat", []string{"chat", "realtime", "websocket", "messaging"}},
+		{"dashboard", []string{"dashboard", "admin", "panel", "management"}},
+		{"auth", []string{"auth", "login", "signup", "authentication", "session"}},
+		{"api", []string{"api", "rest", "endpoint", "backend"}},
 	}
 
-	for template, words := range keywords {
-		for _, word := range words {
+	for _, tmpl := range templates {
+		for _, word := range tmpl.words {
 			if strings.Contains(lower, word) {
-				return template, ""
+				return tmpl.name, ""
 			}
 		}
 	}

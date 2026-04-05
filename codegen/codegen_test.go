@@ -638,8 +638,8 @@ func TestGenerateSpread(t *testing.T) {
 }
 
 func TestGenerateMatch(t *testing.T) {
-	src := `status is "active"
-match status:
+	src := `statusVal is "active"
+match statusVal:
   when "active":
     say "User is active"
   when "inactive":
@@ -717,9 +717,9 @@ to processItems items as list -> list:
   give back results
 
 describe HTTPServer extends Server:
-  port is 3000
+  portNum is 3000
   to start:
-    say "Starting on port " + toText(my.port)
+    say "Starting on port " + toText(my.portNum)
 
 try:
   data is processItems([1, nothing, 3])
