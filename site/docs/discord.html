@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord Bots - Quill</title>
+  <meta name="description" content="Build Discord bots with Quill. Readable syntax, easy event handling, and slash command support.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="callout callout-tip" style="text-align: center; margin: 0; border-radius: 0; padding: 12px 24px; background: linear-gradient(135deg, #5865F2, #7289DA); color: #fff;">
+    Need help? <a href="https://discord.gg/9rRyGRrh8E" target="_blank" style="color: #fff; text-decoration: underline; font-weight: 600;">Join our Discord</a> &mdash; ask questions, share projects, and connect with the Quill community.
+  </div>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="/docs/getting-started">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="/docs/language">Language guide</a></li>
+      </ul>
+      <h4>Discord Bots</h4>
+      <ul>
+        <li><a href="/docs/discord" class="active">Overview</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#quick-start">Quick start</a></li>
+        <li><a href="#full-example">Full bot example</a></li>
+        <li><a href="#event-handling">Event handling</a></li>
+        <li><a href="#slash-commands">Slash commands</a></li>
+        <li><a href="#deployment">Deployment</a></li>
+      </ul>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/docs/discord" class="active">Discord Bots</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/tools">Tools</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Building Discord Bots with Quill</h1>
+      <p>Quill makes it straightforward to build Discord bots with clean, readable syntax. Under the hood, Quill compiles to JavaScript and uses the <code>discord.js</code> library &mdash; so you get the full power of the Discord API with Quill's English-like code style.</p>
+
+      <!-- ============================================ -->
+      <!-- PREREQUISITES                                -->
+      <!-- ============================================ -->
+
+      <h2 id="prerequisites">Prerequisites</h2>
+
+      <p>Before you start, make sure you have the following:</p>
+
+      <ol>
+        <li>
+          <strong>Node.js</strong> (version 16.11 or later) &mdash; <a href="https://nodejs.org" target="_blank">download from nodejs.org</a>. You can check your version by running <code>node --version</code> in your terminal.
+        </li>
+        <li>
+          <strong>Quill</strong> installed &mdash; see the <a href="/docs/getting-started">Getting Started</a> guide.
+        </li>
+        <li>
+          <strong>A Discord bot token</strong> &mdash; you get this from the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a>. Follow these steps:
+          <ol style="margin-top: 8px;">
+            <li>Go to the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a> and click <strong>New Application</strong>.</li>
+            <li>Give your application a name and click <strong>Create</strong>.</li>
+            <li>In the left sidebar, click <strong>Bot</strong>.</li>
+            <li>Click <strong>Reset Token</strong> (or <strong>Add Bot</strong> if it is a new application) and copy the token. Keep it secret.</li>
+            <li>Under <strong>Privileged Gateway Intents</strong>, enable <strong>Message Content Intent</strong> if you want your bot to read message text.</li>
+            <li>Go to <strong>OAuth2 &rarr; URL Generator</strong>, select the <strong>bot</strong> scope, choose the permissions your bot needs, and use the generated URL to invite the bot to your server.</li>
+          </ol>
+        </li>
+      </ol>
+
+      <div class="callout callout-info">
+        <strong>Keep your token safe.</strong> Never commit your bot token to version control. Use a <code>.env</code> file and add it to your <code>.gitignore</code>.
+      </div>
+
+      <!-- ============================================ -->
+      <!-- QUICK START                                  -->
+      <!-- ============================================ -->
+
+      <h2 id="quick-start">Quick Start</h2>
+
+      <p>The fastest way to get a Discord bot running is with the built-in scaffolding command:</p>
+
+      <pre><code>quill discord my-bot
+cd my-bot</code></pre>
+
+      <p>This creates a new project with the following structure:</p>
+
+      <pre><code>my-bot/
+  bot.quill          <span class="cmt">-- Your bot code</span>
+  package.json       <span class="cmt">-- Node.js dependencies (discord.js)</span>
+  .env               <span class="cmt">-- Your bot token goes here</span>
+  .gitignore         <span class="cmt">-- Keeps .env out of version control</span></code></pre>
+
+      <p><strong>Step 1:</strong> Open <code>.env</code> and paste your bot token:</p>
+
+      <pre><code>DISCORD_TOKEN=your-bot-token-here</code></pre>
+
+      <p><strong>Step 2:</strong> Install dependencies:</p>
+
+      <pre><code>npm install</code></pre>
+
+      <p><strong>Step 3:</strong> Build and run your bot:</p>
+
+      <pre><code>quill build bot.quill
+node bot.js</code></pre>
+
+      <p>Your bot should come online in your Discord server. Try typing <code>!hello</code> in a channel to see it respond.</p>
+
+      <!-- ============================================ -->
+      <!-- FULL BOT EXAMPLE                             -->
+      <!-- ============================================ -->
+
+      <h2 id="full-example">Full Bot Example</h2>
+
+      <p>Here is a complete bot with multiple commands. This example shows how to set up the client, handle events, and respond to messages:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"discord.js"</span> <span class="kw">as</span> Discord
+
+<span class="cmt">-- Create a bot with common intents pre-configured</span>
+bot <span class="kw">is</span> createBot(process.env.DISCORD_TOKEN)
+
+<span class="cmt">-- Log when the bot is ready</span>
+bot <span class="kw">on</span> <span class="str">"ready"</span> <span class="kw">with</span>:
+  <span class="kw">say</span> <span class="str">"Bot is online as {bot.user.tag}!"</span>
+
+<span class="cmt">-- Respond to messages</span>
+bot <span class="kw">on</span> <span class="str">"messageCreate"</span> <span class="kw">with</span> msg:
+  <span class="cmt">-- Ignore messages from other bots</span>
+  <span class="kw">if</span> msg.author.bot:
+    <span class="kw">give back</span> nothing
+
+  <span class="cmt">-- Simple greeting</span>
+  <span class="kw">if</span> msg.content <span class="kw">is</span> <span class="str">"!hello"</span>:
+    msg.reply(<span class="str">"Hello, {msg.author.username}!"</span>)
+
+  <span class="cmt">-- Echo command</span>
+  <span class="kw">if</span> startsWith(msg.content, <span class="str">"!say "</span>):
+    text <span class="kw">is</span> msg.content.slice(<span class="num">5</span>)
+    msg.channel.send(text)
+
+  <span class="cmt">-- Ping/pong</span>
+  <span class="kw">if</span> msg.content <span class="kw">is</span> <span class="str">"!ping"</span>:
+    msg.reply(<span class="str">"Pong!"</span>)
+
+  <span class="cmt">-- Server info</span>
+  <span class="kw">if</span> msg.content <span class="kw">is</span> <span class="str">"!server"</span>:
+    name <span class="kw">is</span> msg.guild.name
+    count <span class="kw">is</span> msg.guild.memberCount
+    msg.reply(<span class="str">"Server: {name} with {count} members"</span>)
+
+  <span class="cmt">-- User info</span>
+  <span class="kw">if</span> msg.content <span class="kw">is</span> <span class="str">"!whoami"</span>:
+    user <span class="kw">is</span> msg.author.username
+    id <span class="kw">is</span> msg.author.id
+    msg.reply(<span class="str">"You are {user} (ID: {id})"</span>)
+
+  <span class="cmt">-- Roll a dice</span>
+  <span class="kw">if</span> msg.content <span class="kw">is</span> <span class="str">"!roll"</span>:
+    result <span class="kw">is</span> randomInt(<span class="num">1</span>, <span class="num">6</span>)
+    msg.reply(<span class="str">"You rolled a {result}!"</span>)</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> The <code>createBot</code> helper function creates a Discord client with common intents (Guilds, GuildMessages, MessageContent) already configured. If you need more control, you can create the client manually &mdash; see the <a href="#manual-setup">manual setup</a> section below.
+      </div>
+
+      <!-- ============================================ -->
+      <!-- MANUAL SETUP                                 -->
+      <!-- ============================================ -->
+
+      <h3 id="manual-setup">Manual client setup</h3>
+
+      <p>If you need to configure specific intents or other client options, you can create the Discord client manually instead of using <code>createBot</code>:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"discord.js"</span> <span class="kw">as</span> Discord
+
+intents <span class="kw">is</span> [
+  Discord.GatewayIntentBits.Guilds,
+  Discord.GatewayIntentBits.GuildMessages,
+  Discord.GatewayIntentBits.MessageContent,
+  Discord.GatewayIntentBits.GuildMembers
+]
+
+options <span class="kw">is</span> {intents: intents}
+bot <span class="kw">is</span> <span class="kw">new</span> Discord.Client(options)
+
+<span class="cmt">-- Register your event handlers here...</span>
+
+bot.login(process.env.DISCORD_TOKEN)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- EVENT HANDLING                               -->
+      <!-- ============================================ -->
+
+      <h2 id="event-handling">Event Handling</h2>
+
+      <p>Discord bots are event-driven. Your bot listens for things that happen (a message is sent, a user joins, the bot starts up) and runs code in response. In Quill, you use the <code>on</code> keyword to register event handlers.</p>
+
+      <h3><code>ready</code> &mdash; Bot is online</h3>
+      <p>Fires once when the bot has connected to Discord and is ready to receive events.</p>
+
+      <pre><code>bot <span class="kw">on</span> <span class="str">"ready"</span> <span class="kw">with</span>:
+  <span class="kw">say</span> <span class="str">"Logged in as {bot.user.tag}"</span>
+  <span class="kw">say</span> <span class="str">"Serving {bot.guilds.cache.size} servers"</span></code></pre>
+
+      <h3><code>messageCreate</code> &mdash; A message is sent</h3>
+      <p>Fires every time someone sends a message in a channel the bot can see. The <code>msg</code> parameter contains the message object.</p>
+
+      <pre><code>bot <span class="kw">on</span> <span class="str">"messageCreate"</span> <span class="kw">with</span> msg:
+  <span class="cmt">-- Always check if the author is a bot to avoid loops</span>
+  <span class="kw">if</span> msg.author.bot:
+    <span class="kw">give back</span> nothing
+
+  <span class="kw">say</span> <span class="str">"{msg.author.username}: {msg.content}"</span></code></pre>
+
+      <h3><code>interactionCreate</code> &mdash; A slash command or button is used</h3>
+      <p>Fires when a user triggers a slash command, clicks a button, or uses a context menu. This is the modern way to handle bot commands on Discord.</p>
+
+      <pre><code>bot <span class="kw">on</span> <span class="str">"interactionCreate"</span> <span class="kw">with</span> interaction:
+  <span class="kw">if</span> interaction.isChatInputCommand() <span class="kw">is not</span> yes:
+    <span class="kw">give back</span> nothing
+
+  <span class="kw">if</span> interaction.commandName <span class="kw">is</span> <span class="str">"ping"</span>:
+    interaction.reply(<span class="str">"Pong!"</span>)
+
+  <span class="kw">if</span> interaction.commandName <span class="kw">is</span> <span class="str">"hello"</span>:
+    name <span class="kw">is</span> interaction.user.username
+    interaction.reply(<span class="str">"Hello, {name}!"</span>)</code></pre>
+
+      <h3><code>guildMemberAdd</code> &mdash; A user joins the server</h3>
+      <p>Fires when a new member joins a server the bot is in. Useful for welcome messages.</p>
+
+      <pre><code>bot <span class="kw">on</span> <span class="str">"guildMemberAdd"</span> <span class="kw">with</span> member:
+  channel <span class="kw">is</span> member.guild.systemChannel
+  <span class="kw">if</span> channel:
+    channel.send(<span class="str">"Welcome to the server, {member.user.username}!"</span>)</code></pre>
+
+      <h3><code>guildMemberRemove</code> &mdash; A user leaves the server</h3>
+
+      <pre><code>bot <span class="kw">on</span> <span class="str">"guildMemberRemove"</span> <span class="kw">with</span> member:
+  channel <span class="kw">is</span> member.guild.systemChannel
+  <span class="kw">if</span> channel:
+    channel.send(<span class="str">"Goodbye, {member.user.username}."</span>)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- SLASH COMMANDS                               -->
+      <!-- ============================================ -->
+
+      <h2 id="slash-commands">Slash Commands</h2>
+
+      <p>Slash commands are the modern, recommended way to build bot commands on Discord. Users type <code>/commandname</code> and get autocomplete, descriptions, and parameter validation built in.</p>
+
+      <h3>Registering slash commands</h3>
+
+      <p>You register slash commands using the Discord REST API. Here is how to do it in Quill:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"discord.js"</span> <span class="kw">as</span> Discord
+from <span class="str">"discord.js"</span> <span class="kw">use</span> REST, Routes, SlashCommandBuilder
+
+<span class="cmt">-- Define your commands</span>
+commands <span class="kw">are</span> [
+  <span class="kw">new</span> SlashCommandBuilder()
+    .setName(<span class="str">"ping"</span>)
+    .setDescription(<span class="str">"Check if the bot is alive"</span>),
+
+  <span class="kw">new</span> SlashCommandBuilder()
+    .setName(<span class="str">"hello"</span>)
+    .setDescription(<span class="str">"Get a greeting from the bot"</span>),
+
+  <span class="kw">new</span> SlashCommandBuilder()
+    .setName(<span class="str">"roll"</span>)
+    .setDescription(<span class="str">"Roll a dice"</span>)
+    .addIntegerOption(with option:
+      option.setName(<span class="str">"sides"</span>)
+        .setDescription(<span class="str">"Number of sides on the dice"</span>)
+        .setRequired(<span class="num">no</span>)
+    )
+]
+
+<span class="cmt">-- Convert to JSON for the API</span>
+commandData <span class="kw">are</span> map_list(commands, with cmd: cmd.toJSON())
+
+<span class="cmt">-- Register commands with Discord</span>
+rest <span class="kw">is</span> <span class="kw">new</span> REST().setToken(process.env.DISCORD_TOKEN)
+
+<span class="kw">try</span>:
+  <span class="kw">say</span> <span class="str">"Registering slash commands..."</span>
+  await rest.put(
+    Routes.applicationCommands(process.env.CLIENT_ID),
+    {body: commandData}
+  )
+  <span class="kw">say</span> <span class="str">"Slash commands registered!"</span>
+<span class="kw">if it fails</span> err:
+  <span class="kw">say</span> <span class="str">"Error registering commands: {err}"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Where do I find my Client ID?</strong> Go to the <a href="https://discord.com/developers/applications" target="_blank">Discord Developer Portal</a>, select your application, and copy the <strong>Application ID</strong> from the General Information page. Add it to your <code>.env</code> file as <code>CLIENT_ID</code>.
+      </div>
+
+      <h3>Handling slash commands</h3>
+
+      <p>Once registered, handle slash commands in the <code>interactionCreate</code> event:</p>
+
+      <pre><code>bot <span class="kw">on</span> <span class="str">"interactionCreate"</span> <span class="kw">with</span> interaction:
+  <span class="kw">if</span> interaction.isChatInputCommand() <span class="kw">is not</span> yes:
+    <span class="kw">give back</span> nothing
+
+  <span class="kw">match</span> interaction.commandName:
+    <span class="kw">when</span> <span class="str">"ping"</span>:
+      interaction.reply(<span class="str">"Pong!"</span>)
+
+    <span class="kw">when</span> <span class="str">"hello"</span>:
+      name <span class="kw">is</span> interaction.user.username
+      interaction.reply(<span class="str">"Hello, {name}!"</span>)
+
+    <span class="kw">when</span> <span class="str">"roll"</span>:
+      sides <span class="kw">is</span> interaction.options.getInteger(<span class="str">"sides"</span>)
+      <span class="kw">if</span> sides <span class="kw">is</span> nothing:
+        sides <span class="kw">is</span> <span class="num">6</span>
+      result <span class="kw">is</span> randomInt(<span class="num">1</span>, sides)
+      interaction.reply(<span class="str">"You rolled a {result} (d{sides})"</span>)</code></pre>
+
+      <h3>Slash commands with options</h3>
+
+      <p>Slash commands can accept typed parameters. Discord validates the input before your bot even sees it.</p>
+
+      <pre><code><span class="cmt">-- A command with a required string option</span>
+<span class="kw">new</span> SlashCommandBuilder()
+  .setName(<span class="str">"echo"</span>)
+  .setDescription(<span class="str">"Repeat a message"</span>)
+  .addStringOption(with option:
+    option.setName(<span class="str">"message"</span>)
+      .setDescription(<span class="str">"The message to echo"</span>)
+      .setRequired(yes)
+  )
+
+<span class="cmt">-- Handling it</span>
+<span class="kw">if</span> interaction.commandName <span class="kw">is</span> <span class="str">"echo"</span>:
+  text <span class="kw">is</span> interaction.options.getString(<span class="str">"message"</span>)
+  interaction.reply(text)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- DEPLOYMENT                                   -->
+      <!-- ============================================ -->
+
+      <h2 id="deployment">Deployment</h2>
+
+      <p>Once your bot is working locally, you will want to run it on a server so it stays online. Here are some tips for deploying your Quill Discord bot.</p>
+
+      <h3>Build for production</h3>
+
+      <p>Compile your Quill code to JavaScript:</p>
+
+      <pre><code>quill build bot.quill</code></pre>
+
+      <p>This produces a <code>bot.js</code> file that runs on any system with Node.js installed.</p>
+
+      <h3>Use environment variables</h3>
+
+      <p>Never hardcode your bot token. Use a <code>.env</code> file locally and set environment variables on your production server:</p>
+
+      <pre><code><span class="cmt">-- In your bot code</span>
+token <span class="kw">is</span> env.require(<span class="str">"DISCORD_TOKEN"</span>)
+bot <span class="kw">is</span> createBot(token)</code></pre>
+
+      <h3>Keep the bot running</h3>
+
+      <p>Use a process manager like <strong>pm2</strong> to keep your bot alive and restart it if it crashes:</p>
+
+      <pre><code><span class="cmt"># Install pm2 globally</span>
+npm install -g pm2
+
+<span class="cmt"># Start your bot</span>
+pm2 start bot.js --name my-bot
+
+<span class="cmt"># View logs</span>
+pm2 logs my-bot
+
+<span class="cmt"># Restart after updates</span>
+quill build bot.quill
+pm2 restart my-bot</code></pre>
+
+      <h3>Hosting options</h3>
+
+      <p>Discord bots need a persistent process (not serverless). Good options include:</p>
+
+      <ul>
+        <li><strong>A VPS</strong> (DigitalOcean, Linode, Vultr) &mdash; full control, starts around $5/month</li>
+        <li><strong>Railway</strong> &mdash; simple deployment from Git, free tier available</li>
+        <li><strong>Fly.io</strong> &mdash; deploy with a Dockerfile, generous free tier</li>
+        <li><strong>A Raspberry Pi</strong> &mdash; run it at home for free</li>
+      </ul>
+
+      <h3>Using Docker</h3>
+
+      <p>You can use Quill's built-in deployment command to generate a Dockerfile:</p>
+
+      <pre><code>quill deploy</code></pre>
+
+      <p>Or write your own minimal Dockerfile:</p>
+
+      <pre><code>FROM node:20-slim
+WORKDIR /app
+COPY package.json .
+RUN npm install --production
+COPY bot.js .
+CMD ["node", "bot.js"]</code></pre>
+
+      <p>Build and run:</p>
+
+      <pre><code>docker build -t my-bot .
+docker run -d --env-file .env my-bot</code></pre>
+
+      <!-- ============================================ -->
+      <!-- NEXT STEPS                                   -->
+      <!-- ============================================ -->
+
+      <h2>Next Steps</h2>
+
+      <ul>
+        <li>Read the <a href="/docs/stdlib#discord-bots">standard library Discord section</a> for the <code>createBot</code> helper reference.</li>
+        <li>Explore the <a href="https://discord.js.org" target="_blank">discord.js documentation</a> for the full Discord API.</li>
+        <li>Check out the <a href="/docs/examples">Examples</a> page for more Quill programs.</li>
+        <li>Join the <a href="https://discord.gg/9rRyGRrh8E" target="_blank">Quill Discord community</a> to share your bot and get help.</li>
+      </ul>
+
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+        <li><a href="https://discord.gg/9rRyGRrh8E" target="_blank">Discord</a></li>
+        <li><a href="https://tradebuddy.dev" target="_blank">tradebuddy.dev</a></li>
+      </ul>
+      <p>Built with care by <a href="https://tradebuddy.dev" target="_blank">Trade Buddy</a>. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

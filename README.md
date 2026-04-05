@@ -200,6 +200,7 @@ mount Counter to "#app"
 | `quill db status` | Show migration status |
 | `quill db create` | Create a new migration file |
 | `quill generate "description"` | AI-powered project scaffolding |
+| `quill discord my-bot` | Scaffold a Discord bot project |
 | `quill help` | Show help |
 
 ## Language Reference
@@ -842,6 +843,44 @@ reqLogger.info("Handling request")
 -- Use as middleware
 app.use(logger.middleware())
 ```
+
+## Discord Bots
+
+Quill makes it easy to build Discord bots with clean, readable syntax.
+
+**Scaffold a new bot:**
+```bash
+quill discord my-bot
+cd my-bot
+```
+
+**Example bot:**
+```
+use "discord.js" as Discord
+
+bot is createBot(process.env.DISCORD_TOKEN)
+
+bot on "ready" with:
+  say "Bot is online as {bot.user.tag}!"
+
+bot on "messageCreate" with msg:
+  if msg.author.bot:
+    give back nothing
+
+  if msg.content is "!hello":
+    msg.reply("Hello from Quill!")
+
+  if msg.content is "!ping":
+    msg.reply("Pong!")
+```
+
+**Build and run:**
+```bash
+quill build bot.quill
+node bot.js
+```
+
+See the [Discord Bots documentation](https://quill.tradebuddy.dev/docs/discord) for slash commands, event handling, and deployment tips.
 
 ## Concurrency
 
