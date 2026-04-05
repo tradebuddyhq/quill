@@ -139,7 +139,7 @@ mount Counter to "#app"
 - **Database migrations** — `quill db migrate`, `rollback`, `seed`, `status`, `create` for schema management
 - **Environment management** — auto-loads `.env` files, `env.require("KEY")`, `--env production`
 - **Testing mocks** — `mock fetchJSON with url:`, `expect func was called N times`
-- **AI scaffolding** — `quill generate "blog"` / `"api"` / `"chat"` / `"crud user"` / `"auth"` / `"dashboard"`
+- **AI-powered generation** — `quill generate "build me a todo API"` uses Claude CLI or Gemini CLI for real AI code generation (falls back to templates if no AI CLI installed)
 - **Friendly error messages** — with source context and hints
 - **VS Code extension** — syntax highlighting, snippets, comment toggling
 - **LSP server** — `quill lsp` for editor integration (diagnostics, hover, autocomplete)
@@ -1051,15 +1051,21 @@ apiKey is env.require("API_KEY")         -- throws if missing
 debug is env("DEBUG", "false")           -- default value
 ```
 
-### AI Scaffolding
+### AI-Powered Generation
 ```bash
+# Uses Claude CLI or Gemini CLI for real AI generation
+quill generate "a todo API with user auth"
+quill generate "a Discord bot that moderates chat"
+quill generate "a REST API for a bookstore"
+
+# Falls back to built-in templates if no AI CLI is installed
 quill generate "blog"          # Blog with posts, comments, markdown
 quill generate "api"           # REST API with routes, models, validation
 quill generate "chat"          # Real-time chat with WebSockets
 quill generate "crud user"     # CRUD endpoints for a user model
-quill generate "auth"          # Login, register, JWT, sessions
-quill generate "dashboard"     # Admin dashboard with charts
 ```
+
+> **Tip:** Install [Claude CLI](https://docs.anthropic.com/en/docs/claude-cli) or [Gemini CLI](https://github.com/google-gemini/gemini-cli) for AI-powered generation. No API key needed — it uses your local CLI auth.
 
 ## Stability
 

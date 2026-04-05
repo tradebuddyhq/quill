@@ -1309,7 +1309,7 @@ func printUsage() {
 	fmt.Println("  quill db seed                Run seed file")
 	fmt.Println("  quill db status              Show migration status")
 	fmt.Println("  quill db create <name>       Create new migration files")
-	fmt.Println("  quill generate \"<prompt>\"    Generate app from template")
+	fmt.Println("  quill generate \"<prompt>\"    AI-powered app generation (Claude/Gemini)")
 	fmt.Println("  quill discord [name]         Scaffold a new Discord bot project")
 	fmt.Println("  quill web [name]             Scaffold a new Express web server project")
 	fmt.Println("  quill version                Show version")
@@ -1501,6 +1501,15 @@ func dbCommand(args []string) {
 }
 
 func generateApp(prompt string) {
+	// Try AI-powered generation first (Claude CLI or Gemini CLI)
+	if tryAIGenerate(prompt) {
+		return
+	}
+
+	// Fall back to templates
+	fmt.Println("No AI CLI found, using built-in templates...")
+	fmt.Println("Install Claude CLI or Gemini CLI for AI-powered generation.")
+
 	gen := tools.NewAppGenerator()
 	template := gen.Generate(prompt)
 
@@ -1521,6 +1530,78 @@ func generateApp(prompt string) {
 	}
 
 	fmt.Println("\nDone! Run: quill run app.quill")
+}
+
+func tryAIGenerate(prompt string) bool {
+	aiPrompt := fmt.Sprintf(`You are a Quill programming language code generator. Quill is a beginner-friendly language that compiles to JavaScript and reads like English.
+
+Key Quill syntax:
+- "say" instead of console.log
+- "is" for assignment: name is "hello"
+- "are" for arrays: colors are ["red", "blue"]
+- "to" for functions: to greet name: say "Hello, {name}!"
+- "give back" instead of return
+- "if/otherwise" for conditionals
+- "for each x in list:" for loops
+- "use" for imports: use "express" as express
+- "on" for event handlers: app on get "/" with req res:
+- "test/expect" for testing
+- String interpolation: "Hello, {name}!"
+- Comments start with --
+
+Generate a complete Quill application for the following request. Output ONLY the Quill code, no explanations, no markdown fences.
+
+Request: %s`, prompt)
+
+	// Try Claude CLI first
+	claudePath, err := exec.LookPath("claude")
+	if err == nil {
+		fmt.Println("🤖 Generating with Claude AI...")
+		cmd := exec.Command(claudePath, "-p", aiPrompt)
+		output, err := cmd.Output()
+		if err == nil && len(output) > 0 {
+			return writeAIOutput(string(output), prompt)
+		}
+	}
+
+	// Try Gemini CLI
+	geminiPath, err := exec.LookPath("gemini")
+	if err == nil {
+		fmt.Println("🤖 Generating with Gemini AI...")
+		cmd := exec.Command(geminiPath, "-p", aiPrompt)
+		output, err := cmd.Output()
+		if err == nil && len(output) > 0 {
+			return writeAIOutput(string(output), prompt)
+		}
+	}
+
+	return false
+}
+
+func writeAIOutput(code string, prompt string) bool {
+	// Clean up the output — strip markdown fences if present
+	code = strings.TrimSpace(code)
+	if strings.HasPrefix(code, "```") {
+		lines := strings.Split(code, "\n")
+		// Remove first and last lines (fences)
+		if len(lines) > 2 {
+			lines = lines[1 : len(lines)-1]
+			if strings.TrimSpace(lines[len(lines)-1]) == "```" {
+				lines = lines[:len(lines)-1]
+			}
+			code = strings.Join(lines, "\n")
+		}
+	}
+
+	filename := "app.quill"
+	if err := os.WriteFile(filename, []byte(code+"\n"), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", filename, err)
+		return false
+	}
+
+	fmt.Printf("\n  Created %s\n", filename)
+	fmt.Println("\nDone! Run: quill run app.quill")
+	return true
 }
 
 func scaffoldDiscordBot() {
