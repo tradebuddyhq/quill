@@ -1004,6 +1004,8 @@ pre.code-block code,
   user-select: none;
   min-width: 3rem;
   overflow: hidden;
+  white-space: pre;
+  display: block;
 }
 
 .playground-editor {

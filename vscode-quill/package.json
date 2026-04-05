@@ -1,8 +1,8 @@
 {
   "name": "quill-lang",
   "displayName": "Quill by TradeBuddy",
-  "description": "Syntax highlighting and snippets for the Quill programming language",
-  "version": "0.1.3",
+  "description": "Syntax highlighting, snippets, and run support for the Quill programming language",
+  "version": "0.2.0",
   "publisher": "tradebuddyhq",
   "repository": {
     "type": "git",
@@ -12,6 +12,8 @@
     "vscode": "^1.80.0"
   },
   "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:quill"],
+  "main": "./extension.js",
   "contributes": {
     "languages": [{
       "id": "quill",
@@ -31,6 +33,40 @@
     "snippets": [{
       "language": "quill",
       "path": "./snippets/quill.json"
-    }]
+    }],
+    "commands": [
+      {
+        "command": "quill.run",
+        "title": "Quill: Run Current File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "quill.build",
+        "title": "Quill: Build Current File",
+        "icon": "$(package)"
+      },
+      {
+        "command": "quill.init",
+        "title": "Quill: Initialize Project",
+        "icon": "$(file-add)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "quill.run",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorLangId == quill"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "quill.run",
+          "when": "resourceLangId == quill",
+          "group": "navigation"
+        }
+      ]
+    }
   }
 }

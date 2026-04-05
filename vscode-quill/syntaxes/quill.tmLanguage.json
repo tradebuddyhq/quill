@@ -11,6 +11,10 @@
     { "include": "#keywords-declaration" },
     { "include": "#keywords-statement" },
     { "include": "#keywords-operator" },
+    { "include": "#keywords-async" },
+    { "include": "#keywords-type" },
+    { "include": "#keywords-server" },
+    { "include": "#keywords-test" },
     { "include": "#special" },
     { "include": "#function-call" },
     { "include": "#operators" }
@@ -58,31 +62,55 @@
     "booleans": {
       "patterns": [{
         "name": "constant.language.boolean.quill",
-        "match": "\\b(yes|no|true|false)\\b"
+        "match": "\\b(yes|no|true|false|nothing)\\b"
       }]
     },
     "keywords-control": {
       "patterns": [{
         "name": "keyword.control.quill",
-        "match": "\\b(if|otherwise|for|each|in|while|give|back)\\b"
+        "match": "\\b(if|otherwise|for|each|in|while|give|back|match|when|loop|repeat|select|cancel|yield)\\b"
       }]
     },
     "keywords-declaration": {
       "patterns": [{
         "name": "keyword.declaration.quill",
-        "match": "\\b(to|describe|test)\\b"
+        "match": "\\b(to|describe|test|trait|type)\\b"
       }]
     },
     "keywords-statement": {
       "patterns": [{
         "name": "keyword.other.quill",
-        "match": "\\b(say|expect|use|new|as)\\b"
+        "match": "\\b(say|expect|use|new|as|set|mock)\\b"
       }]
     },
     "keywords-operator": {
       "patterns": [{
         "name": "keyword.operator.word.quill",
-        "match": "\\b(is|are|and|or|not|greater|less|than|equal|contains|await)\\b"
+        "match": "\\b(is|are|and|or|not|greater|less|than|equal|contains)\\b"
+      }]
+    },
+    "keywords-async": {
+      "patterns": [{
+        "name": "keyword.control.async.quill",
+        "match": "\\b(spawn|await|parallel|race|channel|send|receive)\\b"
+      }]
+    },
+    "keywords-type": {
+      "patterns": [{
+        "name": "support.type.quill",
+        "match": "\\b(Partial|Omit|Pick|Record|Readonly|Required)\\b"
+      }]
+    },
+    "keywords-server": {
+      "patterns": [{
+        "name": "keyword.other.server.quill",
+        "match": "\\b(server|database|route|respond|websocket|broadcast|deploy)\\b"
+      }]
+    },
+    "keywords-test": {
+      "patterns": [{
+        "name": "keyword.other.test.quill",
+        "match": "\\b(private|public)\\b"
       }]
     },
     "special": {
@@ -103,6 +131,9 @@
       "patterns": [{
         "name": "keyword.operator.arithmetic.quill",
         "match": "[+\\-*/%]"
+      }, {
+        "name": "keyword.operator.pipe.quill",
+        "match": "\\|"
       }, {
         "name": "punctuation.accessor.quill",
         "match": "\\."

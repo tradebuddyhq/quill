@@ -61,8 +61,81 @@
   },
   "Web Server": {
     "prefix": "server",
-    "body": ["server is createServer()", "server.get(\"/\", \"${1:Hello!}\")", "server.listen(${2:3000})", "say \"Running on port ${2:3000}\""],
-    "description": "Simple web server"
+    "body": [
+      "server on port ${1:3000}:",
+      "  route \"GET\" \"/${2:}\":",
+      "    respond \"${3:Hello, World!}\"",
+      "",
+      "  route \"GET\" \"/api/${4:data}\":",
+      "    respond ${5:result}"
+    ],
+    "description": "Server with routes"
+  },
+  "Route Handler": {
+    "prefix": "route",
+    "body": [
+      "route \"${1:GET}\" \"/${2:path}\":",
+      "  ${3:body}",
+      "  respond ${4:result}"
+    ],
+    "description": "Route handler"
+  },
+  "Database": {
+    "prefix": "database",
+    "body": [
+      "database \"${1:mydb}\":",
+      "  ${2:users} are collection:",
+      "    ${3:name} is text",
+      "    ${4:email} is text"
+    ],
+    "description": "Database definition"
+  },
+  "Component": {
+    "prefix": "component",
+    "body": [
+      "describe ${1:MyComponent}:",
+      "  state:",
+      "    ${2:count} is ${3:0}",
+      "",
+      "  to render:",
+      "    ${4:say my count}"
+    ],
+    "description": "Component with state and render"
+  },
+  "Spawn Task": {
+    "prefix": "spawn",
+    "body": ["spawn ${1:task}"],
+    "description": "Spawn an async task"
+  },
+  "Channel": {
+    "prefix": "channel",
+    "body": [
+      "${1:ch} is channel",
+      "send ${2:value} to ${1:ch}",
+      "${3:result} is receive from ${1:ch}"
+    ],
+    "description": "Channel declaration with send/receive"
+  },
+  "Mock": {
+    "prefix": "mock",
+    "body": [
+      "mock ${1:functionName}:",
+      "  give back ${2:value}"
+    ],
+    "description": "Mock a function in tests"
+  },
+  "Match Block": {
+    "prefix": "match",
+    "body": [
+      "match ${1:value}:",
+      "  when ${2:pattern1}:",
+      "    ${3:body1}",
+      "  when ${4:pattern2}:",
+      "    ${5:body2}",
+      "  otherwise:",
+      "    ${6:default_body}"
+    ],
+    "description": "Match/when pattern matching"
   },
   "Use Import": {
     "prefix": "use",
