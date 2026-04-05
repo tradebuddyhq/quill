@@ -442,6 +442,66 @@ img { max-width: 100%; }
   line-height: 2;
   color: var(--text-primary);
   overflow-x: auto;
+  text-align: left;
+}
+
+.quickstart-steps {
+  max-width: 640px;
+  margin: 40px auto 0;
+  text-align: left;
+}
+
+.quickstart-step {
+  margin-bottom: 36px;
+}
+
+.quickstart-step h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.quickstart-step p {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.quickstart-step a {
+  color: var(--green);
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #000;
+  font-weight: 700;
+  font-size: 15px;
+  margin-right: 12px;
+  vertical-align: middle;
+}
+
+.step-hint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.step-hint kbd {
+  background: var(--card-bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 
 /* ---- Code Comparison Section ---- */

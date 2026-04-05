@@ -140,21 +140,39 @@ names = [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>]
   <section class="quickstart">
     <div class="container">
       <p class="section-overline">Quick Start</p>
-      <h2 class="section-title">Get started in seconds</h2>
-      <div class="quickstart-box">
-        <div class="code-header">Terminal</div>
-        <pre><span class="cmt"># Install Quill via npm</span>
-npm install -g @tradebuddyhq/quill
+      <h2 class="section-title">Start coding in 3 steps</h2>
 
-<span class="cmt"># Write your first program</span>
-echo '<span class="kw">say</span> <span class="str">"Hello, World!"</span>' > hello.quill
+      <div class="quickstart-steps">
+        <div class="quickstart-step">
+          <div class="step-number">1</div>
+          <h3>Install Quill</h3>
+          <div class="quickstart-box">
+            <div class="code-header">Terminal</div>
+            <pre>npm install -g @tradebuddyhq/quill</pre>
+          </div>
+        </div>
 
-<span class="cmt"># Run it</span>
-quill run hello.quill
+        <div class="quickstart-step">
+          <div class="step-number">2</div>
+          <h3>Set up your editor</h3>
+          <p>Install the <a href="https://marketplace.visualstudio.com/items?itemName=tradebuddyhq.quill-lang" target="_blank"><strong>Quill extension</strong></a> in VS Code for syntax highlighting, snippets, and one-click run.</p>
+        </div>
 
-<span class="cmt"># Or use VS Code: install "Quill by TradeBuddy" extension</span>
-<span class="cmt"># Open any .quill file and press Cmd+Shift+R to run</span></pre>
+        <div class="quickstart-step">
+          <div class="step-number">3</div>
+          <h3>Write and run</h3>
+          <div class="quickstart-box">
+            <div class="code-header">hello.quill</div>
+            <pre><span class="kw">say</span> <span class="str">"Hello, World!"</span></pre>
+          </div>
+          <div class="quickstart-box" style="margin-top: 12px;">
+            <div class="code-header">Terminal</div>
+            <pre>quill run hello.quill</pre>
+          </div>
+          <p class="step-hint">Or press <kbd>Cmd+Shift+R</kbd> in VS Code to run instantly.</p>
+        </div>
       </div>
+
     </div>
   </section>
 
