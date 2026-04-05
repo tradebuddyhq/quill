@@ -1206,6 +1206,8 @@ editor.addEventListener('keydown', (e) => {
 
   // Enter with auto-indent
   if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
     const currentLine = getLineAt(value, start);
     const currentIndent = getIndent(currentLine);
     const trimmedLine = currentLine.trim();
@@ -1213,16 +1215,18 @@ editor.addEventListener('keydown', (e) => {
     if (trimmedLine.endsWith(':') || BLOCK_STARTERS.test(trimmedLine)) {
       newIndent = currentIndent + INDENT;
     }
-    if (newIndent.length > 0) {
-      // Let the browser insert the newline, then inject indent after
-      setTimeout(() => {
-        const pos = editor.selectionStart;
-        const val = editor.value;
-        editor.value = val.substring(0, pos) + newIndent + val.substring(pos);
-        editor.selectionStart = editor.selectionEnd = pos + newIndent.length;
-        updateLineNumbers();
-      }, 0);
-    }
+    const insertion = '\n' + newIndent;
+    const newValue = value.substring(0, start) + insertion + value.substring(end);
+    const newPos = start + insertion.length;
+    // Use native setter to bypass any framework interference
+    const nativeSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+    nativeSetter.call(editor, newValue);
+    editor.selectionStart = editor.selectionEnd = newPos;
+    updateLineNumbers();
+    // Debug: flash green border to confirm handler fired
+    editor.style.borderLeft = '3px solid #1EB969';
+    setTimeout(() => { editor.style.borderLeft = ''; }, 300);
+    return false;
   }
 
   // Auto-close brackets and quotes
