@@ -1,0 +1,115 @@
+-- Trade Buddy API Client
+-- A complete API wrapper for mytradebuddy.com, written in Quill
+-- Run: quill run examples/tradebuddy/client.quill
+
+base_url is "https://mytradebuddy.com/api"
+
+-- ─── Authentication ───
+
+to login email password:
+  response is await postJSON("{base_url}/auth.php?action=login", {email: email, password: password})
+  if response.success:
+    say "Logged in as {email}"
+    give back response.token
+  otherwise:
+    say "Login failed: {response.error}"
+    give back nothing
+
+to signup name email password:
+  response is await postJSON("{base_url}/auth.php?action=signup", {name: name, email: email, password: password})
+  if response.success:
+    say "Account created for {name}"
+    give back response.token
+  otherwise:
+    say "Signup failed: {response.error}"
+    give back nothing
+
+-- ─── Listings ───
+
+to fetch_listings:
+  data is await fetchJSON("{base_url}/listings.php")
+  give back data.listings
+
+to search_listings query:
+  all_listings is await fetch_listings()
+  q is lower(query)
+  results is filter(all_listings, with item: contains(lower(item.title), q))
+  give back results
+
+to listings_by_category category:
+  all_listings is await fetch_listings()
+  cat is lower(category)
+  results is filter(all_listings, with item: lower(item.category) is cat)
+  give back results
+
+to listings_by_type listing_type:
+  all_listings is await fetch_listings()
+  results is filter(all_listings, with item: item.type is listing_type)
+  give back results
+
+-- ─── Display Helpers ───
+
+to show_listing item:
+  type_label is item.type
+  price_text is ""
+  if item.price is greater than 0:
+    price_text is " - AED {item.price}"
+  say "[{type_label}] {item.title}{price_text}"
+  say "  Category: {item.category}"
+  if length(item.description) is greater than 0:
+    desc is truncate(item.description, 80)
+    say "  {desc}"
+  say ""
+
+to show_listings items:
+  count is length(items)
+  if count is 0:
+    say "No listings found."
+    give back nothing
+  say "{count} listing(s) found:"
+  say ""
+  for each item in items:
+    show_listing(item)
+
+-- ─── Statistics ───
+
+to marketplace_stats:
+  listings is await fetch_listings()
+  total is length(listings)
+
+  sell_count is countWhere(listings, with i: i.type is "Sell")
+  donate_count is countWhere(listings, with i: i.type is "Donate")
+  wanted_count is countWhere(listings, with i: i.type is "Wanted")
+
+  categories is unique(map_list(listings, with i: i.category))
+  cat_count is length(categories)
+
+  say "── Trade Buddy Marketplace Stats ──"
+  say ""
+  say "Total listings: {total}"
+  say "  For sale:     {sell_count}"
+  say "  Donations:    {donate_count}"
+  say "  Wanted:       {wanted_count}"
+  say ""
+  say "Categories active: {cat_count}"
+  for each cat in categories:
+    cat_items is filter(listings, with i: i.category is cat)
+    say "  {cat}: {length(cat_items)}"
+  say ""
+
+-- ─── Demo ───
+
+say "Trade Buddy API Client (Quill)"
+say "=============================="
+say ""
+
+-- Fetch and display all listings
+say "Fetching marketplace listings..."
+say ""
+all is await fetch_listings()
+show_listings(all)
+
+-- Show stats
+await marketplace_stats()
+
+say "Done!"

@@ -1,0 +1,80 @@
+-- Trade Buddy API Tests
+-- Verify the Trade Buddy API works correctly using Quill's built-in test framework
+-- Run: quill test examples/tradebuddy/test.quill
+
+api_url is "https://mytradebuddy.com/api"
+
+-- ─── API Response Tests ───
+
+test "listings endpoint returns success":
+  data is await fetchJSON("{api_url}/listings.php")
+  expect data.success is yes
+
+test "listings response contains a list":
+  data is await fetchJSON("{api_url}/listings.php")
+  expect isList(data.listings) is yes
+
+test "each listing has required fields":
+  data is await fetchJSON("{api_url}/listings.php")
+  for each item in data.listings:
+    expect isText(item.title) is yes
+    expect isText(item.type) is yes
+    expect isText(item.category) is yes
+    expect isText(item.id) is yes
+
+test "listing types are valid":
+  data is await fetchJSON("{api_url}/listings.php")
+  valid_types are ["Sell", "Donate", "Wanted"]
+  for each item in data.listings:
+    expect includes(valid_types, item.type) is yes
+
+test "sell listings have a price":
+  data is await fetchJSON("{api_url}/listings.php")
+  sells is filter(data.listings, with i: i.type is "Sell")
+  for each item in sells:
+    expect isNumber(item.price) is yes
+
+-- ─── Data Integrity Tests ───
+
+test "no duplicate listing IDs":
+  data is await fetchJSON("{api_url}/listings.php")
+  ids is map_list(data.listings, with i: i.id)
+  expect length(unique(ids)) is length(ids)
+
+test "listings are sorted newest first":
+  data is await fetchJSON("{api_url}/listings.php")
+  if length(data.listings) is greater than 1:
+    first is data.listings[0].createdAt
+    second is data.listings[1].createdAt
+    expect first is greater than second or first is second
+
+-- ─── Auth Tests ───
+
+test "login with invalid credentials fails":
+  response is await postJSON("{api_url}/auth.php?action=login", {email: "fake@test.com", password: "wrong"})
+  expect response.success is no
+
+test "signup without name fails":
+  response is await postJSON("{api_url}/auth.php?action=signup", {email: "test@test.com", password: "1234"})
+  expect response.success is no
+
+-- ─── Helper Function Tests ───
+
+to count_by_type listings type_name:
+  give back countWhere(listings, with i: i.type is type_name)
+
+test "count_by_type helper works":
+  sample are [{type: "Sell"}, {type: "Donate"}, {type: "Sell"}]
+  expect count_by_type(sample, "Sell") is 2
+  expect count_by_type(sample, "Donate") is 1
+  expect count_by_type(sample, "Wanted") is 0
+
+to format_price amount:
+  if amount is 0:
+    give back "Free"
+  give back "AED {amount}"
+
+test "format_price works":
+  expect format_price(0) is "Free"
+  expect format_price(25.5) is "AED 25.5"
+  expect format_price(100) is "AED 100"

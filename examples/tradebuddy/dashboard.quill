@@ -1,0 +1,131 @@
+-- Trade Buddy Dashboard Server
+-- A live web dashboard for the Trade Buddy marketplace, built entirely in Quill
+-- Run: quill run examples/tradebuddy/dashboard.quill
+-- Then open http://localhost:4001
+
+api_url is "https://mytradebuddy.com/api"
+
+to build_css:
+  s is "* { margin: 0; padding: 0; box-sizing: border-box; }"
+  s is s + " body { font-family: -apple-system, sans-serif; background: #0D1117; color: #E6EDF3; }"
+  s is s + " nav { display: flex; align-items: center; gap: 12px; padding: 16px 32px; border-bottom: 1px solid #30363D; }"
+  s is s + " .logo { color: #1EB969; font-weight: 700; font-size: 20px; }"
+  s is s + " .badge { background: #30363D; color: #8B949E; font-size: 11px; padding: 3px 10px; border-radius: 12px; }"
+  s is s + " .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }"
+  s is s + " h1 { font-size: 28px; margin-bottom: 8px; }"
+  s is s + " .subtitle { color: #8B949E; margin-bottom: 32px; }"
+  s is s + " .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }"
+  s is s + " .stat { background: #161B22; border: 1px solid #30363D; border-radius: 12px; padding: 24px; }"
+  s is s + " .stat-label { color: #8B949E; font-size: 13px; margin-bottom: 4px; }"
+  s is s + " .stat-value { font-size: 32px; font-weight: 700; }"
+  s is s + " .stat-value.green { color: #1EB969; }"
+  s is s + " .stat-value.blue { color: #198CD7; }"
+  s is s + " .stat-value.purple { color: #D2A8FF; }"
+  s is s + " .stat-value.orange { color: #FFA657; }"
+  s is s + " .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }"
+  s is s + " .listing { background: #161B22; border: 1px solid #30363D; border-radius: 10px; padding: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }"
+  s is s + " .listing:hover { border-color: #484F58; }"
+  s is s + " .listing-title { font-weight: 600; margin-bottom: 4px; }"
+  s is s + " .listing-meta { color: #8B949E; font-size: 13px; }"
+  s is s + " .tag { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }"
+  s is s + " .tag-sell { background: rgba(30,185,105,0.12); color: #1EB969; }"
+  s is s + " .tag-donate { background: rgba(210,168,255,0.12); color: #D2A8FF; }"
+  s is s + " .tag-wanted { background: rgba(255,166,87,0.12); color: #FFA657; }"
+  s is s + " .price { font-size: 18px; font-weight: 700; color: #1EB969; }"
+  s is s + " .empty { text-align: center; padding: 60px; color: #484F58; }"
+  s is s + " .footer { text-align: center; padding: 40px; color: #484F58; font-size: 13px; border-top: 1px solid #30363D; margin-top: 40px; }"
+  s is s + " .quill-badge { display: inline-block; background: rgba(30,185,105,0.08); border: 1px solid rgba(30,185,105,0.2); color: #1EB969; padding: 4px 12px; border-radius: 6px; font-size: 12px; margin-top: 8px; }"
+  s is s + " @media (max-width: 768px) { .stats { grid-template-columns: repeat(2, 1fr); } }"
+  give back s
+
+to build_dashboard:
+  -- Fetch live data from Trade Buddy API
+  data is await fetchJSON("{api_url}/listings.php")
+  listings is data.listings
+
+  total is length(listings)
+  sell_count is countWhere(listings, with i: i.type is "Sell")
+  donate_count is countWhere(listings, with i: i.type is "Donate")
+  wanted_count is countWhere(listings, with i: i.type is "Wanted")
+  categories is unique(map_list(listings, with i: i.category))
+  cat_count is length(categories)
+
+  css is build_css()
+
+  h is "<!DOCTYPE html><html lang='en'><head>"
+  h is h + "<meta charset='UTF-8'>"
+  h is h + "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+  h is h + "<title>Trade Buddy Dashboard</title>"
+  h is h + "<style>" + css + "</style>"
+  h is h + "</head><body>"
+
+  -- Nav
+  h is h + "<nav>"
+  h is h + "<span class='logo'>Trade Buddy</span>"
+  h is h + "<span class='badge'>Live Dashboard</span>"
+  h is h + "</nav>"
+
+  -- Content
+  h is h + "<div class='container'>"
+  h is h + "<h1>Marketplace Dashboard</h1>"
+  h is h + "<p class='subtitle'>Live data from the Trade Buddy API, rendered by a Quill server.</p>"
+
+  -- Stats grid
+  h is h + "<div class='stats'>"
+  h is h + "<div class='stat'><div class='stat-label'>Total Listings</div><div class='stat-value green'>{total}</div></div>"
+  h is h + "<div class='stat'><div class='stat-label'>For Sale</div><div class='stat-value blue'>{sell_count}</div></div>"
+  h is h + "<div class='stat'><div class='stat-label'>Donations</div><div class='stat-value purple'>{donate_count}</div></div>"
+  h is h + "<div class='stat'><div class='stat-label'>Wanted</div><div class='stat-value orange'>{wanted_count}</div></div>"
+  h is h + "</div>"
+
+  -- Listings
+  h is h + "<div class='section-title'>Recent Listings</div>"
+
+  if total is 0:
+    h is h + "<div class='empty'>No listings yet. Be the first to post on Trade Buddy!</div>"
+  otherwise:
+    -- Show up to 20 listings
+    shown is slice(listings, 0, 20)
+    for each item in shown:
+      tag_class is "tag-sell"
+      if item.type is "Donate":
+        tag_class is "tag-donate"
+      if item.type is "Wanted":
+        tag_class is "tag-wanted"
+
+      price_html is ""
+      if item.price is greater than 0:
+        price_html is "<div class='price'>AED {item.price}</div>"
+      otherwise:
+        price_html is "<div class='listing-meta'>Free</div>"
+
+      desc is truncate(item.description, 60)
+      h is h + "<div class='listing'>"
+      h is h + "<div>"
+      h is h + "<div class='listing-title'>{item.title}</div>"
+      h is h + "<div class='listing-meta'><span class='tag {tag_class}'>{item.type}</span> {item.category} &middot; {desc}</div>"
+      h is h + "</div>"
+      h is h + price_html
+      h is h + "</div>"
+
+  -- Footer
+  h is h + "<div class='footer'>"
+  h is h + "<p>Powered by the Trade Buddy API</p>"
+  h is h + "<div class='quill-badge'>Built with Quill</div>"
+  h is h + "</div>"
+
+  h is h + "</div></body></html>"
+  give back h
+
+-- API endpoint for raw JSON
+to api_handler:
+  data is await fetchJSON("{api_url}/listings.php")
+  give back toJSON(data)
+
+-- Start server
+server is createServer()
+server.get("/", build_dashboard)
+server.get("/api/data", api_handler)
+server.listen(4001)
+say "Trade Buddy Dashboard running at http://localhost:4001"
+say "API proxy at http://localhost:4001/api/data"
