@@ -51,6 +51,7 @@
       <h4>Guides</h4>
       <ul>
         <li><a href="/docs/discord" class="active">Discord Bots</a></li>
+        <li><a href="/docs/web">Web Servers</a></li>
       </ul>
       <h4>Reference</h4>
       <ul>
@@ -434,6 +435,118 @@ CMD ["node", "bot.js"]</code></pre>
 
       <pre><code>docker build -t my-bot .
 docker run -d --env-file .env my-bot</code></pre>
+
+      <!-- ============================================ -->
+      <!-- REAL-WORLD EXAMPLE                           -->
+      <!-- ============================================ -->
+
+      <h2 id="real-world-example">Real-World Example: Quill Community Bot</h2>
+
+      <p>This is the actual bot running in the <a href="https://discord.gg/9rRyGRrh8E" target="_blank">Quill Discord server</a>. It uses slash commands to help users learn Quill &mdash; with code examples, syntax references, and links to docs. The full source is on <a href="https://github.com/tradebuddyhq/quill-bot" target="_blank">GitHub</a>.</p>
+
+      <pre><code><span class="cmt">-- Quill Discord Bot</span>
+<span class="cmt">-- A helper bot for the Quill programming language community</span>
+
+<span class="kw">use</span> <span class="str">"discord.js"</span> <span class="kw">as</span> Discord
+<span class="kw">use</span> <span class="str">"fs"</span> <span class="kw">as</span> fs
+
+<span class="cmt">-- Load environment variables</span>
+token <span class="kw">is</span> process.env.DISCORD_TOKEN
+
+<span class="cmt">-- Create the bot</span>
+client <span class="kw">is</span> <span class="kw">new</span> Discord.Client({
+  intents: [
+    Discord.GatewayIntentBits.Guilds,
+    Discord.GatewayIntentBits.GuildMessages,
+    Discord.GatewayIntentBits.MessageContent
+  ]
+})
+
+<span class="cmt">-- Bot is ready</span>
+client <span class="kw">on</span> <span class="str">"ready"</span> <span class="kw">with</span>:
+  <span class="kw">say</span> <span class="str">"Quill Bot is online as {client.user.tag}!"</span>
+
+<span class="cmt">-- Handle slash commands</span>
+client <span class="kw">on</span> <span class="str">"interactionCreate"</span> <span class="kw">with</span> interaction:
+  <span class="kw">if</span> interaction.isChatInputCommand() <span class="kw">is</span> false:
+    <span class="kw">give back</span> nothing
+
+  command <span class="kw">is</span> interaction.commandName
+
+  <span class="kw">if</span> command <span class="kw">is</span> <span class="str">"ping"</span>:
+    interaction.reply(<span class="str">"Pong! 🏓"</span>)
+
+  <span class="kw">if</span> command <span class="kw">is</span> <span class="str">"help"</span>:
+    embed <span class="kw">is</span> <span class="kw">new</span> Discord.EmbedBuilder()
+    embed.setTitle(<span class="str">"Quill — Code that reads like English"</span>)
+    embed.setColor(<span class="num">0x1EB969</span>)
+    embed.setDescription(<span class="str">"Quill is a beginner-friendly programming language that compiles to JavaScript."</span>)
+    embed.addFields(
+      { name: <span class="str">"📖 Getting Started"</span>, value: <span class="str">"`npm install -g @tradebuddyhq/quill`\nThen create a `.quill` file and run `quill run file.quill`"</span>, inline: false },
+      { name: <span class="str">"🌐 Playground"</span>, value: <span class="str">"[Try Quill in your browser](https://quill.tradebuddy.dev/playground)"</span>, inline: true },
+      { name: <span class="str">"📚 Docs"</span>, value: <span class="str">"[Read the docs](https://quill.tradebuddy.dev/docs)"</span>, inline: true },
+      { name: <span class="str">"💻 GitHub"</span>, value: <span class="str">"[View source](https://github.com/tradebuddyhq/quill)"</span>, inline: true }
+    )
+    embed.setFooter({ text: <span class="str">"Quill by Trade Buddy"</span> })
+    interaction.reply({ embeds: [embed] })
+
+  <span class="kw">if</span> command <span class="kw">is</span> <span class="str">"example"</span>:
+    topic <span class="kw">is</span> interaction.options.getString(<span class="str">"topic"</span>)
+
+    <span class="kw">if</span> topic <span class="kw">is</span> <span class="str">"hello"</span>:
+      interaction.reply(<span class="str">"```\n-- Hello World in Quill\nsay \"Hello, World!\"\n```"</span>)
+
+    <span class="kw">if</span> topic <span class="kw">is</span> <span class="str">"variables"</span>:
+      interaction.reply(<span class="str">"```\n-- Variables in Quill\nname is \"Arhan\"\nage is 16\nsay \"My name is {name} and I'm {age}\"\n```"</span>)
+
+    <span class="kw">if</span> topic <span class="kw">is</span> <span class="str">"functions"</span>:
+      interaction.reply(<span class="str">"```\n-- Functions in Quill\nto greet name:\n  say \"Hello, {name}!\"\n\ngreet(\"World\")\n```"</span>)
+
+    <span class="kw">if</span> topic <span class="kw">is</span> <span class="str">"loops"</span>:
+      interaction.reply(<span class="str">"```\n-- Loops in Quill\ncolors are [\"red\", \"green\", \"blue\"]\nfor each color in colors:\n  say \"I like {color}\"\n```"</span>)
+
+    <span class="kw">if</span> topic <span class="kw">is</span> <span class="str">"conditions"</span>:
+      interaction.reply(<span class="str">"```\n-- Conditions in Quill\nage is 18\nif age is greater than 16:\n  say \"You can drive\"\notherwise:\n  say \"Too young to drive\"\n```"</span>)
+
+    <span class="kw">if</span> topic <span class="kw">is</span> <span class="str">"testing"</span>:
+      interaction.reply(<span class="str">"```\n-- Testing in Quill\nto add a b:\n  give back a + b\n\ntest \"addition\":\n  expect add(2, 3) is 5\n  expect add(-1, 1) is 0\n```"</span>)
+
+    <span class="kw">if</span> topic <span class="kw">is</span> <span class="str">"discord"</span>:
+      interaction.reply(<span class="str">"```\n-- Discord bot in Quill\nuse \"discord.js\" as Discord\n\nbot is createBot(process.env.TOKEN)\n\nbot on \"ready\" with:\n  say \"Bot is online!\"\n\nbot on \"messageCreate\" with msg:\n  if msg.content is \"!hello\":\n    msg.reply(\"Hello from Quill!\")\n\nbot.login(process.env.TOKEN)\n```"</span>)
+
+  <span class="kw">if</span> command <span class="kw">is</span> <span class="str">"syntax"</span>:
+    keyword <span class="kw">is</span> interaction.options.getString(<span class="str">"keyword"</span>)
+
+    <span class="kw">if</span> keyword <span class="kw">is</span> <span class="str">"say"</span>:
+      interaction.reply(<span class="str">"**`say`** — Print to the console\n```\nsay \"Hello, World!\"\nsay \"2 + 2 = {2 + 2}\"\n```"</span>)
+
+    <span class="kw">if</span> keyword <span class="kw">is</span> <span class="str">"is"</span>:
+      interaction.reply(<span class="str">"**`is`** — Assign a variable or check equality\n```\nname is \"Quill\"    -- assignment\nif name is \"Quill\":  -- comparison\n  say \"correct!\"\n```"</span>)
+
+    <span class="kw">if</span> keyword <span class="kw">is</span> <span class="str">"to"</span>:
+      interaction.reply(<span class="str">"**`to`** — Define a function\n```\nto greet name:\n  say \"Hello, {name}!\"\n\nto add a b:\n  give back a + b\n```"</span>)
+
+    <span class="kw">if</span> keyword <span class="kw">is</span> <span class="str">"if"</span>:
+      interaction.reply(<span class="str">"**`if` / `otherwise`** — Conditionals\n```\nif age is greater than 18:\n  say \"adult\"\notherwise if age is greater than 12:\n  say \"teen\"\notherwise:\n  say \"child\"\n```"</span>)
+
+    <span class="kw">if</span> keyword <span class="kw">is</span> <span class="str">"for"</span>:
+      interaction.reply(<span class="str">"**`for each`** — Loop over a list\n```\nfor each item in items:\n  say item\n```"</span>)
+
+    <span class="kw">if</span> keyword <span class="kw">is</span> <span class="str">"test"</span>:
+      interaction.reply(<span class="str">"**`test` / `expect`** — Built-in testing\n```\ntest \"my feature\":\n  expect 2 + 2 is 4\n  expect length(\"hello\") is 5\n```"</span>)
+
+    <span class="kw">if</span> keyword <span class="kw">is</span> <span class="str">"use"</span>:
+      interaction.reply(<span class="str">"**`use`** — Import a module\n```\nuse \"discord.js\" as Discord\nuse \"fs\" as fs\n```"</span>)
+
+    <span class="kw">if</span> keyword <span class="kw">is</span> <span class="str">"give back"</span>:
+      interaction.reply(<span class="str">"**`give back`** — Return a value from a function\n```\nto double n:\n  give back n * 2\n```"</span>)
+
+<span class="cmt">-- Login</span>
+client.login(token)</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Try it out!</strong> Join the <a href="https://discord.gg/9rRyGRrh8E" target="_blank">Quill Discord server</a> and use <code>/help</code>, <code>/example</code>, or <code>/syntax</code> to see this bot in action.
+      </div>
 
       <!-- ============================================ -->
       <!-- NEXT STEPS                                   -->

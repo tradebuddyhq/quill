@@ -955,9 +955,13 @@ func (s *BroadcastStatement) nodeType() string { return "Broadcast" }
 func (s *BroadcastStatement) stmtNode()        {}
 
 // OnStatement represents "object on "event" with [params]:" event handler syntax.
+// For route handlers (Express), Method and Path are used instead of Event:
+//   app on get "/" with req res:  =>  app.get("/", (req, res) => { ... })
 type OnStatement struct {
 	Object Expression
 	Event  string
+	Method string // HTTP method for route handlers: "get", "post", "put", "delete", "patch", "use"
+	Path   string // route path for route handlers: "/", "/api/users", etc.
 	Params []string
 	Body   []Statement
 	Line   int

@@ -749,3 +749,42 @@ if it fails error:
 		}
 	}
 }
+
+func TestGenerateRouteHandler(t *testing.T) {
+	input := "app on get \"/\" with req res:\n  say \"Hello!\"\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, `app.get("/",`) {
+		t.Errorf("expected app.get(\"/\", ...), got:\n%s", output)
+	}
+	if !strings.Contains(output, "(req, res) =>") {
+		t.Errorf("expected (req, res) => callback, got:\n%s", output)
+	}
+}
+
+func TestGenerateRouteHandlerPost(t *testing.T) {
+	input := "app on post \"/api/data\" with req res:\n  say req.body\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, `app.post("/api/data",`) {
+		t.Errorf("expected app.post(\"/api/data\", ...), got:\n%s", output)
+	}
+	if !strings.Contains(output, "(req, res) =>") {
+		t.Errorf("expected (req, res) => callback, got:\n%s", output)
+	}
+}
+
+func TestGenerateRouteHandlerDelete(t *testing.T) {
+	input := "app on delete \"/api/items/:id\" with req res:\n  say \"deleted\"\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, `app.delete("/api/items/:id",`) {
+		t.Errorf("expected app.delete(\"/api/items/:id\", ...), got:\n%s", output)
+	}
+}

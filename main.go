@@ -178,6 +178,9 @@ func main() {
 	case "discord":
 		scaffoldDiscordBot()
 
+	case "web":
+		scaffoldWebServer()
+
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
 
@@ -1308,6 +1311,7 @@ func printUsage() {
 	fmt.Println("  quill db create <name>       Create new migration files")
 	fmt.Println("  quill generate \"<prompt>\"    Generate app from template")
 	fmt.Println("  quill discord [name]         Scaffold a new Discord bot project")
+	fmt.Println("  quill web [name]             Scaffold a new Express web server project")
 	fmt.Println("  quill version                Show version")
 	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
@@ -1608,4 +1612,103 @@ bot.js
 	fmt.Println("  npm install")
 	fmt.Println("  # Add your bot token to .env")
 	fmt.Println("  quill run bot.quill")
+}
+
+func scaffoldWebServer() {
+	projectName := "my-web-server"
+	if len(os.Args) >= 3 {
+		projectName = os.Args[2]
+	}
+
+	// Create project directory
+	if err := os.MkdirAll(projectName, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Create package.json
+	packageJSON := fmt.Sprintf(`{
+  "name": "%s",
+  "version": "1.0.0",
+  "description": "A web server built with Quill",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "quill run server.quill"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+`, projectName)
+
+	// Create .env file
+	envFile := `# Web Server Configuration
+PORT=3000
+`
+
+	// Create server.quill
+	serverQuill := `-- Web Server built with Quill
+-- A simple API server using Express
+
+use "express" as express
+
+app is createServer()
+
+-- Home route
+app on get "/" with req res:
+  res.send("Hello from Quill!")
+
+-- JSON API example
+app on get "/api/status" with req res:
+  res.json({status: "ok", message: "Server is running"})
+
+-- Route with URL parameters
+app on get "/api/users/:id" with req res:
+  userId is req.params.id
+  res.json({id: userId, name: "User {userId}"})
+
+-- POST route example
+app on post "/api/data" with req res:
+  body is req.body
+  say "Received: {JSON.stringify(body)}"
+  res.json({received: body})
+
+-- Start the server
+port is process.env.PORT
+if port is nothing:
+  port is 3000
+
+app.listen(port, with:
+  say "Server running at http://localhost:{port}"
+)
+`
+
+	// Create .gitignore
+	gitignore := `node_modules/
+.env
+server.js
+`
+
+	files := map[string]string{
+		"package.json": packageJSON,
+		".env":         envFile,
+		"server.quill": serverQuill,
+		".gitignore":   gitignore,
+	}
+
+	for name, content := range files {
+		path := filepath.Join(projectName, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", path, err)
+			continue
+		}
+		fmt.Printf("  Created %s/%s\n", projectName, name)
+	}
+
+	fmt.Printf("\nWeb server project created in ./%s\n", projectName)
+	fmt.Println("\nNext steps:")
+	fmt.Printf("  cd %s\n", projectName)
+	fmt.Println("  npm install")
+	fmt.Println("  quill run server.quill")
 }

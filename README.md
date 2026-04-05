@@ -201,6 +201,7 @@ mount Counter to "#app"
 | `quill db create` | Create a new migration file |
 | `quill generate "description"` | AI-powered project scaffolding |
 | `quill discord my-bot` | Scaffold a Discord bot project |
+| `quill web my-api` | Scaffold an Express web server project |
 | `quill help` | Show help |
 
 ## Language Reference
@@ -881,6 +882,44 @@ node bot.js
 ```
 
 See the [Discord Bots documentation](https://quill.tradebuddy.dev/docs/discord) for slash commands, event handling, and deployment tips.
+
+## Web Servers
+
+Quill makes it easy to build web servers and REST APIs with Express.
+
+**Scaffold a new project:**
+```bash
+quill web my-api
+cd my-api
+```
+
+**Example server:**
+```
+use "express" as express
+
+app is createServer()
+
+app on get "/" with req res:
+  res.send("Hello from Quill!")
+
+app on get "/api/status" with req res:
+  res.json({status: "ok"})
+
+app on post "/api/data" with req res:
+  res.json({received: req.body})
+
+app.listen(3000, with:
+  say "Server running at http://localhost:3000"
+)
+```
+
+**Build and run:**
+```bash
+quill build server.quill
+node server.js
+```
+
+See the [Web Servers documentation](https://quill.tradebuddy.dev/docs/web) for routes, middleware, JSON APIs, and deployment.
 
 ## Concurrency
 

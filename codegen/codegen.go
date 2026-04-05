@@ -94,6 +94,12 @@ func (g *Generator) Generate(program *ast.Program) string {
 		out.WriteString("\n")
 	}
 
+	// Include web server runtime if Express-related code is detected
+	if strings.Contains(userCodeStr, "createServer(") {
+		out.WriteString(stdlib.WebRuntime)
+		out.WriteString("\n")
+	}
+
 	// Include Result runtime if error propagation features are used
 	if g.needsResultRuntime || strings.Contains(userCodeStr, "Success(") || strings.Contains(userCodeStr, "__propagate(") || strings.Contains(userCodeStr, "__tryResult(") {
 		out.WriteString(resultRuntime)
@@ -492,7 +498,13 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 	case *ast.OnStatement:
 		var out strings.Builder
 		params := strings.Join(s.Params, ", ")
-		out.WriteString(fmt.Sprintf("%s%s.on(\"%s\", ", prefix, g.genExpr(s.Object), s.Event))
+		if s.Method != "" {
+			// Route handler: app.get("/path", (req, res) => { ... })
+			out.WriteString(fmt.Sprintf("%s%s.%s(\"%s\", ", prefix, g.genExpr(s.Object), s.Method, s.Path))
+		} else {
+			// Event handler: obj.on("event", ...)
+			out.WriteString(fmt.Sprintf("%s%s.on(\"%s\", ", prefix, g.genExpr(s.Object), s.Event))
+		}
 		if len(s.Params) > 0 {
 			out.WriteString(fmt.Sprintf("(%s) => {\n", params))
 		} else {

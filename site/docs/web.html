@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Servers - Quill</title>
+  <meta name="description" content="Build web servers and APIs with Quill using Express. Clean route syntax, JSON APIs, middleware, and deployment.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="/docs/getting-started">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="/docs/language">Language guide</a></li>
+      </ul>
+      <h4>Web Servers</h4>
+      <ul>
+        <li><a href="/docs/web" class="active">Overview</a></li>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#quick-start">Quick start</a></li>
+        <li><a href="#routes">Routes</a></li>
+        <li><a href="#json-apis">JSON APIs</a></li>
+        <li><a href="#middleware">Middleware</a></li>
+        <li><a href="#static-files">Static files</a></li>
+        <li><a href="#deployment">Deployment</a></li>
+      </ul>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/docs/discord">Discord Bots</a></li>
+        <li><a href="/docs/web" class="active">Web Servers</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/tools">Tools</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Building Web Servers with Quill</h1>
+      <p>Quill makes it easy to build web servers and REST APIs with readable syntax. Under the hood, Quill compiles to JavaScript and uses <a href="https://expressjs.com" target="_blank">Express</a> &mdash; so you get a battle-tested HTTP framework with Quill's English-like code style.</p>
+
+      <!-- ============================================ -->
+      <!-- PREREQUISITES                                -->
+      <!-- ============================================ -->
+
+      <h2 id="prerequisites">Prerequisites</h2>
+
+      <p>Before you start, make sure you have:</p>
+
+      <ol>
+        <li>
+          <strong>Node.js</strong> (version 16 or later) &mdash; <a href="https://nodejs.org" target="_blank">download from nodejs.org</a>. Check your version with <code>node --version</code>.
+        </li>
+        <li>
+          <strong>Quill</strong> installed &mdash; see the <a href="/docs/getting-started">Getting Started</a> guide.
+        </li>
+      </ol>
+
+      <!-- ============================================ -->
+      <!-- QUICK START                                  -->
+      <!-- ============================================ -->
+
+      <h2 id="quick-start">Quick Start</h2>
+
+      <p>The fastest way to get a web server running is with the built-in scaffolding command:</p>
+
+      <pre><code>quill web my-api
+cd my-api</code></pre>
+
+      <p>This creates a new project with the following structure:</p>
+
+      <pre><code>my-api/
+  server.quill       <span class="cmt">-- Your server code</span>
+  package.json       <span class="cmt">-- Node.js dependencies (express)</span>
+  .env               <span class="cmt">-- Configuration (port, etc.)</span>
+  .gitignore         <span class="cmt">-- Keeps .env and build output out of version control</span></code></pre>
+
+      <p><strong>Step 1:</strong> Install dependencies:</p>
+
+      <pre><code>npm install</code></pre>
+
+      <p><strong>Step 2:</strong> Run the server:</p>
+
+      <pre><code>quill run server.quill</code></pre>
+
+      <p>Your server should start on <code>http://localhost:3000</code>. Open it in your browser to see "Hello from Quill!".</p>
+
+      <p>Or build and run with Node directly:</p>
+
+      <pre><code>quill build server.quill
+node server.js</code></pre>
+
+      <!-- ============================================ -->
+      <!-- ROUTES                                       -->
+      <!-- ============================================ -->
+
+      <h2 id="routes">Routes</h2>
+
+      <p>Quill uses the <code>on</code> keyword with an HTTP method to define routes. The syntax is clean and readable:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"express"</span> <span class="kw">as</span> express
+
+app <span class="kw">is</span> createServer()
+
+<span class="cmt">-- GET request</span>
+app <span class="kw">on</span> get <span class="str">"/"</span> <span class="kw">with</span> req res:
+  res.send(<span class="str">"Hello from Quill!"</span>)
+
+<span class="cmt">-- POST request</span>
+app <span class="kw">on</span> post <span class="str">"/api/items"</span> <span class="kw">with</span> req res:
+  item <span class="kw">is</span> req.body
+  res.json({created: item})
+
+<span class="cmt">-- PUT request</span>
+app <span class="kw">on</span> put <span class="str">"/api/items/:id"</span> <span class="kw">with</span> req res:
+  id <span class="kw">is</span> req.params.id
+  res.json({updated: id})
+
+<span class="cmt">-- DELETE request</span>
+app <span class="kw">on</span> delete <span class="str">"/api/items/:id"</span> <span class="kw">with</span> req res:
+  id <span class="kw">is</span> req.params.id
+  res.json({deleted: id})
+
+app.listen(<span class="num">3000</span>)</code></pre>
+
+      <p>This compiles to standard Express code:</p>
+
+      <pre><code>app.get("/", (req, res) => { ... });
+app.post("/api/items", (req, res) => { ... });
+app.put("/api/items/:id", (req, res) => { ... });
+app.delete("/api/items/:id", (req, res) => { ... });</code></pre>
+
+      <h3>URL parameters</h3>
+
+      <p>Use <code>:param</code> syntax in route paths to capture URL parameters. Access them via <code>req.params</code>:</p>
+
+      <pre><code>app <span class="kw">on</span> get <span class="str">"/users/:id"</span> <span class="kw">with</span> req res:
+  userId <span class="kw">is</span> req.params.id
+  res.json({id: userId})</code></pre>
+
+      <h3>Query parameters</h3>
+
+      <p>Access query string parameters via <code>req.query</code>:</p>
+
+      <pre><code><span class="cmt">-- GET /search?q=quill&limit=10</span>
+app <span class="kw">on</span> get <span class="str">"/search"</span> <span class="kw">with</span> req res:
+  query <span class="kw">is</span> req.query.q
+  limit <span class="kw">is</span> req.query.limit
+  res.json({query: query, limit: limit})</code></pre>
+
+      <!-- ============================================ -->
+      <!-- JSON APIs                                    -->
+      <!-- ============================================ -->
+
+      <h2 id="json-apis">JSON APIs</h2>
+
+      <p>The <code>createServer()</code> helper automatically configures JSON body parsing so you can build APIs right away.</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"express"</span> <span class="kw">as</span> express
+
+app <span class="kw">is</span> createServer()
+
+<span class="cmt">-- In-memory store</span>
+todos <span class="kw">are</span> []
+
+<span class="cmt">-- List all todos</span>
+app <span class="kw">on</span> get <span class="str">"/api/todos"</span> <span class="kw">with</span> req res:
+  res.json(todos)
+
+<span class="cmt">-- Create a todo</span>
+app <span class="kw">on</span> post <span class="str">"/api/todos"</span> <span class="kw">with</span> req res:
+  todo <span class="kw">is</span> req.body
+  todos.push(todo)
+  res.status(<span class="num">201</span>).json(todo)
+
+<span class="cmt">-- Status codes</span>
+app <span class="kw">on</span> get <span class="str">"/api/health"</span> <span class="kw">with</span> req res:
+  res.status(<span class="num">200</span>).json({status: <span class="str">"healthy"</span>})
+
+app.listen(<span class="num">3000</span>, <span class="kw">with</span>:
+  say <span class="str">"API running at http://localhost:3000"</span>
+)</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> The <code>createServer()</code> helper creates an Express app with <code>express.json()</code> and <code>express.urlencoded()</code> middleware pre-configured. If you need more control, create the app manually with <code>express()</code>.
+      </div>
+
+      <h3 id="manual-setup">Manual setup</h3>
+
+      <p>If you prefer to configure Express yourself:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"express"</span> <span class="kw">as</span> express
+
+app <span class="kw">is</span> express()
+app.use(express.json())
+
+app <span class="kw">on</span> get <span class="str">"/"</span> <span class="kw">with</span> req res:
+  res.send(<span class="str">"Hello!"</span>)
+
+app.listen(<span class="num">3000</span>)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- MIDDLEWARE                                    -->
+      <!-- ============================================ -->
+
+      <h2 id="middleware">Middleware</h2>
+
+      <p>Express middleware can be added using the standard <code>app.use()</code> call syntax:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"express"</span> <span class="kw">as</span> express
+<span class="kw">use</span> <span class="str">"cors"</span> <span class="kw">as</span> cors
+
+app <span class="kw">is</span> createServer()
+
+<span class="cmt">-- Enable CORS</span>
+app.use(cors())
+
+<span class="cmt">-- Custom logging middleware</span>
+app.use(<span class="kw">with</span> req res next:
+  say <span class="str">"{req.method} {req.url}"</span>
+)
+
+<span class="cmt">-- Your routes here...</span>
+app <span class="kw">on</span> get <span class="str">"/"</span> <span class="kw">with</span> req res:
+  res.send(<span class="str">"Hello!"</span>)
+
+app.listen(<span class="num">3000</span>)</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Note:</strong> For inline middleware with the <code>with</code> callback syntax, the callback takes a single expression. For multi-line middleware, define it as a function and pass it to <code>app.use()</code>.
+      </div>
+
+      <!-- ============================================ -->
+      <!-- STATIC FILES                                 -->
+      <!-- ============================================ -->
+
+      <h2 id="static-files">Static Files</h2>
+
+      <p>Serve static files (HTML, CSS, images) from a directory:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"express"</span> <span class="kw">as</span> express
+
+<span class="cmt">-- Option 1: Use the createServer helper</span>
+app <span class="kw">is</span> createServer({static: <span class="str">"public"</span>})
+
+<span class="cmt">-- Option 2: Manual setup</span>
+app <span class="kw">is</span> express()
+app.use(express.static(<span class="str">"public"</span>))
+
+app.listen(<span class="num">3000</span>)</code></pre>
+
+      <p>Place your files in a <code>public/</code> directory:</p>
+
+      <pre><code>my-api/
+  public/
+    index.html
+    style.css
+    logo.png
+  server.quill
+  package.json</code></pre>
+
+      <!-- ============================================ -->
+      <!-- FULL EXAMPLE                                 -->
+      <!-- ============================================ -->
+
+      <h2 id="full-example">Full Example: REST API</h2>
+
+      <p>Here is a complete REST API with CRUD routes:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"express"</span> <span class="kw">as</span> express
+
+app <span class="kw">is</span> createServer()
+
+<span class="cmt">-- In-memory data store</span>
+items <span class="kw">are</span> []
+nextId <span class="kw">is</span> <span class="num">1</span>
+
+<span class="cmt">-- List all items</span>
+app <span class="kw">on</span> get <span class="str">"/api/items"</span> <span class="kw">with</span> req res:
+  res.json(items)
+
+<span class="cmt">-- Get a single item</span>
+app <span class="kw">on</span> get <span class="str">"/api/items/:id"</span> <span class="kw">with</span> req res:
+  id <span class="kw">is</span> Number(req.params.id)
+  item <span class="kw">is</span> items.find(<span class="kw">with</span> i: i.id <span class="kw">is</span> id)
+  <span class="kw">if</span> item:
+    res.json(item)
+  <span class="kw">otherwise</span>:
+    res.status(<span class="num">404</span>).json({error: <span class="str">"Not found"</span>})
+
+<span class="cmt">-- Create an item</span>
+app <span class="kw">on</span> post <span class="str">"/api/items"</span> <span class="kw">with</span> req res:
+  item <span class="kw">is</span> {id: nextId, name: req.body.name}
+  nextId <span class="kw">is</span> nextId + <span class="num">1</span>
+  items.push(item)
+  res.status(<span class="num">201</span>).json(item)
+
+<span class="cmt">-- Delete an item</span>
+app <span class="kw">on</span> delete <span class="str">"/api/items/:id"</span> <span class="kw">with</span> req res:
+  id <span class="kw">is</span> Number(req.params.id)
+  items <span class="kw">is</span> items.filter(<span class="kw">with</span> i: i.id <span class="kw">is not</span> id)
+  res.json({deleted: id})
+
+<span class="cmt">-- Start the server</span>
+port <span class="kw">is</span> process.env.PORT
+<span class="kw">if</span> port <span class="kw">is</span> nothing:
+  port <span class="kw">is</span> <span class="num">3000</span>
+
+app.listen(port, <span class="kw">with</span>:
+  say <span class="str">"API running at http://localhost:{port}"</span>
+)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- DEPLOYMENT                                   -->
+      <!-- ============================================ -->
+
+      <h2 id="deployment">Deployment</h2>
+
+      <p>Once your server is working locally, deploy it to production.</p>
+
+      <h3>Build for production</h3>
+
+      <pre><code>quill build server.quill</code></pre>
+
+      <p>This produces a <code>server.js</code> file that runs on any system with Node.js.</p>
+
+      <h3>Use environment variables</h3>
+
+      <p>Never hardcode secrets or configuration. Use environment variables:</p>
+
+      <pre><code><span class="cmt">-- Read the port from the environment</span>
+port <span class="kw">is</span> process.env.PORT
+<span class="kw">if</span> port <span class="kw">is</span> nothing:
+  port <span class="kw">is</span> <span class="num">3000</span>
+
+app.listen(port)</code></pre>
+
+      <h3>Keep the server running</h3>
+
+      <p>Use a process manager like <strong>pm2</strong>:</p>
+
+      <pre><code><span class="cmt"># Install pm2</span>
+npm install -g pm2
+
+<span class="cmt"># Start the server</span>
+pm2 start server.js --name my-api
+
+<span class="cmt"># View logs</span>
+pm2 logs my-api
+
+<span class="cmt"># Restart after updates</span>
+quill build server.quill
+pm2 restart my-api</code></pre>
+
+      <h3>Hosting options</h3>
+
+      <ul>
+        <li><strong>Railway</strong> &mdash; deploy from Git, free tier available</li>
+        <li><strong>Fly.io</strong> &mdash; deploy with a Dockerfile, generous free tier</li>
+        <li><strong>Render</strong> &mdash; simple web service deployment</li>
+        <li><strong>A VPS</strong> (DigitalOcean, Linode, Vultr) &mdash; full control, starts around $5/month</li>
+        <li><strong>Vercel</strong> &mdash; serverless functions (compile with <code>quill build</code> first)</li>
+      </ul>
+
+      <h3>Using Docker</h3>
+
+      <pre><code>FROM node:20-slim
+WORKDIR /app
+COPY package.json .
+RUN npm install --production
+COPY server.js .
+EXPOSE 3000
+CMD ["node", "server.js"]</code></pre>
+
+      <p>Build and run:</p>
+
+      <pre><code>docker build -t my-api .
+docker run -d -p 3000:3000 --env-file .env my-api</code></pre>
+
+      <!-- ============================================ -->
+      <!-- NEXT STEPS                                   -->
+      <!-- ============================================ -->
+
+      <h2>Next Steps</h2>
+
+      <ul>
+        <li>Read the <a href="/docs/stdlib">standard library</a> reference for the <code>createServer</code> helper.</li>
+        <li>Explore the <a href="https://expressjs.com" target="_blank">Express documentation</a> for the full API (middleware, error handling, templating).</li>
+        <li>Check out the <a href="/docs/examples">Examples</a> page for more Quill programs.</li>
+        <li>Join the <a href="https://discord.gg/9rRyGRrh8E" target="_blank">Quill Discord community</a> to share your project and get help.</li>
+      </ul>
+
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+        <li><a href="https://discord.gg/9rRyGRrh8E" target="_blank">Discord</a></li>
+        <li><a href="https://tradebuddy.dev" target="_blank">tradebuddy.dev</a></li>
+      </ul>
+      <p>Built with care by <a href="https://tradebuddy.dev" target="_blank">Trade Buddy</a>. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

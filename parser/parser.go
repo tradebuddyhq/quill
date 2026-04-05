@@ -729,7 +729,9 @@ func (p *Parser) isOnStatement() bool {
 	return p.pos+offset < len(p.tokens) && p.tokens[p.pos+offset].Type == lexer.TOKEN_ON
 }
 
-// parseOnStatement parses: object on "event" with [params]: <block>
+// parseOnStatement parses:
+//   object on "event" with [params]: <block>            (event handler)
+//   object on get|post|put|delete|patch|use "/" with [params]: <block>  (route handler)
 func (p *Parser) parseOnStatement() *ast.OnStatement {
 	line := p.current().Line
 	// Parse the object expression (ident or ident.field.field...)
@@ -740,6 +742,28 @@ func (p *Parser) parseOnStatement() *ast.OnStatement {
 		objExpr = &ast.DotExpr{Object: objExpr, Field: field.Value}
 	}
 	p.expect(lexer.TOKEN_ON) // consume "on"
+
+	// Check if this is a route handler: on get|post|put|delete|patch "path"
+	httpMethods := map[string]bool{"get": true, "post": true, "put": true, "delete": true, "patch": true}
+	if p.check(lexer.TOKEN_IDENT) && httpMethods[p.current().Value] {
+		method := p.advance().Value
+		path := p.expect(lexer.TOKEN_STRING).Value
+		params := []string{}
+		if p.check(lexer.TOKEN_WITH) {
+			p.advance() // consume "with"
+			for p.check(lexer.TOKEN_IDENT) {
+				params = append(params, p.advance().Value)
+				if p.check(lexer.TOKEN_COMMA) {
+					p.advance()
+				}
+			}
+		}
+		p.expect(lexer.TOKEN_COLON)
+		p.expect(lexer.TOKEN_NEWLINE)
+		body := p.parseBlock()
+		return &ast.OnStatement{Object: objExpr, Method: method, Path: path, Params: params, Body: body, Line: line}
+	}
+
 	event := p.expect(lexer.TOKEN_STRING).Value
 	p.expect(lexer.TOKEN_WITH) // consume "with"
 	params := []string{}
