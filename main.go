@@ -175,6 +175,9 @@ func main() {
 		}
 		generateApp(os.Args[2])
 
+	case "discord":
+		scaffoldDiscordBot()
+
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
 
@@ -1304,6 +1307,7 @@ func printUsage() {
 	fmt.Println("  quill db status              Show migration status")
 	fmt.Println("  quill db create <name>       Create new migration files")
 	fmt.Println("  quill generate \"<prompt>\"    Generate app from template")
+	fmt.Println("  quill discord [name]         Scaffold a new Discord bot project")
 	fmt.Println("  quill version                Show version")
 	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
@@ -1513,4 +1517,95 @@ func generateApp(prompt string) {
 	}
 
 	fmt.Println("\nDone! Run: quill run app.quill")
+}
+
+func scaffoldDiscordBot() {
+	projectName := "my-discord-bot"
+	if len(os.Args) >= 3 {
+		projectName = os.Args[2]
+	}
+
+	// Create project directory
+	if err := os.MkdirAll(projectName, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Create package.json
+	packageJSON := fmt.Sprintf(`{
+  "name": "%s",
+  "version": "1.0.0",
+  "description": "A Discord bot built with Quill",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "quill run bot.quill"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1"
+  }
+}
+`, projectName)
+
+	// Create .env file
+	envFile := `# Discord Bot Token
+# Get your token from https://discord.com/developers/applications
+DISCORD_TOKEN=your_bot_token_here
+`
+
+	// Create bot.quill
+	botQuill := `-- Discord Bot built with Quill
+-- Replace the token or use environment variables
+
+use "discord.js" as Discord
+
+intents is [Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.MessageContent]
+
+options is {intents: intents}
+bot is new Discord.Client(options)
+
+bot on "ready" with:
+  say "Bot is online as {bot.user.tag}!"
+
+bot on "messageCreate" with msg:
+  if msg.author.bot:
+    give back nothing
+
+  if msg.content is "!ping":
+    msg.reply("Pong!")
+
+  if msg.content is "!hello":
+    msg.reply("Hello from Quill!")
+
+bot.login(process.env.DISCORD_TOKEN)
+`
+
+	// Create .gitignore
+	gitignore := `node_modules/
+.env
+bot.js
+`
+
+	files := map[string]string{
+		"package.json": packageJSON,
+		".env":         envFile,
+		"bot.quill":    botQuill,
+		".gitignore":   gitignore,
+	}
+
+	for name, content := range files {
+		path := filepath.Join(projectName, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", path, err)
+			continue
+		}
+		fmt.Printf("  Created %s/%s\n", projectName, name)
+	}
+
+	fmt.Printf("\nDiscord bot project created in ./%s\n", projectName)
+	fmt.Println("\nNext steps:")
+	fmt.Printf("  cd %s\n", projectName)
+	fmt.Println("  npm install")
+	fmt.Println("  # Add your bot token to .env")
+	fmt.Println("  quill run bot.quill")
 }

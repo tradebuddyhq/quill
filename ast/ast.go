@@ -953,3 +953,15 @@ type BroadcastStatement struct {
 
 func (s *BroadcastStatement) nodeType() string { return "Broadcast" }
 func (s *BroadcastStatement) stmtNode()        {}
+
+// OnStatement represents "object on "event" with [params]:" event handler syntax.
+type OnStatement struct {
+	Object Expression
+	Event  string
+	Params []string
+	Body   []Statement
+	Line   int
+}
+
+func (s *OnStatement) nodeType() string { return "On" }
+func (s *OnStatement) stmtNode()        {}

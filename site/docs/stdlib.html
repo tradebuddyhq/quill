@@ -62,6 +62,7 @@
         <li><a href="#iterators">Iterators &amp; lazy evaluation</a></li>
         <li><a href="#recipes">Recipes</a></li>
         <li><a href="#tagged-template-tags">Tagged template tags</a></li>
+        <li><a href="#discord-bots">Discord bots</a></li>
         <li><a href="#result-type">Result type helpers</a></li>
       </ul>
       <h4>Ecosystem Packages</h4>
@@ -1379,6 +1380,48 @@ logger.info(<span class="str">"Application starting..."</span>)
 server.use(Log.middleware())
 server.listen(<span class="num">3000</span>)
 logger.info(<span class="str">"Server ready"</span>, {port: <span class="num">3000</span>})</code></pre>
+
+    <h2 id="discord-bots">Discord Bots</h2>
+    <p>Quill makes it easy to build Discord bots using the <code>discord.js</code> npm package. Use the <code>use</code> statement to import the library and the <code>on</code> event handler syntax for clean, readable bot code.</p>
+
+    <div class="callout callout-tip">
+      <strong>Quick start:</strong> Run <code>quill discord my-bot</code> to scaffold a full Discord bot project with package.json, .env, and a starter bot.quill file.
+    </div>
+
+    <h3>Setting up a Discord bot</h3>
+    <pre><code><span class="kw">use</span> <span class="str">"discord.js"</span> <span class="kw">as</span> Discord
+
+intents <span class="kw">is</span> [Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.MessageContent]
+
+options <span class="kw">is</span> {intents: intents}
+bot <span class="kw">is</span> <span class="kw">new</span> Discord.Client(options)</code></pre>
+
+    <h3>Handling events</h3>
+    <p>Use the <code>on</code> keyword to register event handlers. The <code>with</code> keyword introduces callback parameters.</p>
+
+    <pre><code>bot <span class="kw">on</span> <span class="str">"ready"</span> <span class="kw">with</span>:
+  <span class="kw">say</span> <span class="str">"Bot is online as {bot.user.tag}!"</span>
+
+bot <span class="kw">on</span> <span class="str">"messageCreate"</span> <span class="kw">with</span> msg:
+  <span class="kw">if</span> msg.author.bot:
+    <span class="kw">give back</span> nothing
+
+  <span class="kw">if</span> msg.content <span class="kw">is</span> <span class="str">"!hello"</span>:
+    msg.reply(<span class="str">"Hello from Quill!"</span>)
+
+  <span class="kw">if</span> startsWith(msg.content, <span class="str">"!say "</span>):
+    text <span class="kw">is</span> msg.content.slice(<span class="num">5</span>)
+    msg.reply(text)</code></pre>
+
+    <h3>Starting the bot</h3>
+    <pre><code>bot.login(<span class="str">"YOUR_BOT_TOKEN"</span>)</code></pre>
+
+    <p>For production, use environment variables instead of hardcoding tokens:</p>
+    <pre><code>bot.login(process.env.DISCORD_TOKEN)</code></pre>
+
+    <h3>Helper function</h3>
+    <p>Quill also provides a <code>createBot</code> helper that creates a Discord client with common intents pre-configured:</p>
+    <pre><code>bot <span class="kw">is</span> createBot(process.env.DISCORD_TOKEN)</code></pre>
 
     </main>
   </div>

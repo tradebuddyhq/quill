@@ -132,6 +132,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseDotAssignment()
 	case p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE):
 		return p.parseAssignment()
+	case p.isOnStatement():
+		return p.parseOnStatement()
 	default:
 		return p.parseExprStatement()
 	}
@@ -709,6 +711,48 @@ func (p *Parser) parseDotAssignment() ast.Statement {
 	value := p.parseExpression()
 	p.consumeNewline()
 	return &ast.DotAssignStatement{Object: obj, Field: field, Value: value, Line: line}
+}
+
+// isOnStatement checks if the current position is an "on" event handler pattern:
+// ident on "event" with ... :  OR  ident.field on "event" with ... :
+func (p *Parser) isOnStatement() bool {
+	if !p.check(lexer.TOKEN_IDENT) {
+		return false
+	}
+	// Look ahead past possible dot chains to find "on"
+	offset := 1
+	for p.pos+offset+1 < len(p.tokens) &&
+		p.tokens[p.pos+offset].Type == lexer.TOKEN_DOT &&
+		p.tokens[p.pos+offset+1].Type == lexer.TOKEN_IDENT {
+		offset += 2
+	}
+	return p.pos+offset < len(p.tokens) && p.tokens[p.pos+offset].Type == lexer.TOKEN_ON
+}
+
+// parseOnStatement parses: object on "event" with [params]: <block>
+func (p *Parser) parseOnStatement() *ast.OnStatement {
+	line := p.current().Line
+	// Parse the object expression (ident or ident.field.field...)
+	objExpr := ast.Expression(&ast.Identifier{Name: p.advance().Value})
+	for p.check(lexer.TOKEN_DOT) {
+		p.advance() // consume "."
+		field := p.expect(lexer.TOKEN_IDENT)
+		objExpr = &ast.DotExpr{Object: objExpr, Field: field.Value}
+	}
+	p.expect(lexer.TOKEN_ON) // consume "on"
+	event := p.expect(lexer.TOKEN_STRING).Value
+	p.expect(lexer.TOKEN_WITH) // consume "with"
+	params := []string{}
+	for p.check(lexer.TOKEN_IDENT) {
+		params = append(params, p.advance().Value)
+		if p.check(lexer.TOKEN_COMMA) {
+			p.advance()
+		}
+	}
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+	return &ast.OnStatement{Object: objExpr, Event: event, Params: params, Body: body, Line: line}
 }
 
 func (p *Parser) parseExprStatement() *ast.ExprStatement {
@@ -1701,7 +1745,13 @@ func (p *Parser) parsePrimary() ast.Expression {
 
 	case lexer.TOKEN_NEW:
 		p.advance() // consume "new"
-		className := p.expect(lexer.TOKEN_IDENT)
+		className := p.expect(lexer.TOKEN_IDENT).Value
+		// Support dotted class names like Discord.Client
+		for p.check(lexer.TOKEN_DOT) {
+			p.advance() // consume "."
+			next := p.expect(lexer.TOKEN_IDENT)
+			className = className + "." + next.Value
+		}
 		args := []ast.Expression{}
 		if p.check(lexer.TOKEN_LPAREN) {
 			p.advance()
@@ -1714,7 +1764,7 @@ func (p *Parser) parsePrimary() ast.Expression {
 			}
 			p.expect(lexer.TOKEN_RPAREN)
 		}
-		return &ast.NewExpr{ClassName: className.Value, Args: args}
+		return &ast.NewExpr{ClassName: className, Args: args}
 
 	case lexer.TOKEN_RECEIVE:
 		p.advance() // consume "receive"

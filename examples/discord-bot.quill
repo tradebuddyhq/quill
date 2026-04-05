@@ -1,0 +1,26 @@
+-- Discord Bot Example
+-- Run: quill run examples/discord-bot.quill
+-- Make sure to install discord.js: npm install discord.js
+
+use "discord.js" as Discord
+
+intents is [Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.MessageContent]
+
+options is {intents: intents}
+bot is new Discord.Client(options)
+
+bot on "ready" with:
+  say "Bot is online as {bot.user.tag}!"
+
+bot on "messageCreate" with msg:
+  if msg.author.bot:
+    give back nothing
+
+  if msg.content is "!hello":
+    msg.reply("Hello from Quill!")
+
+  if startsWith(msg.content, "!say "):
+    text is msg.content.slice(5)
+    msg.reply(text)
+
+bot.login("YOUR_BOT_TOKEN")

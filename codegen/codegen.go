@@ -88,6 +88,12 @@ func (g *Generator) Generate(program *ast.Program) string {
 		out.WriteString("\n")
 	}
 
+	// Include Discord bot runtime if discord-related code is detected
+	if g.usesIdentifier(userCodeStr, "createBot") {
+		out.WriteString(stdlib.DiscordRuntime)
+		out.WriteString("\n")
+	}
+
 	// Include Result runtime if error propagation features are used
 	if g.needsResultRuntime || strings.Contains(userCodeStr, "Success(") || strings.Contains(userCodeStr, "__propagate(") || strings.Contains(userCodeStr, "__tryResult(") {
 		out.WriteString(resultRuntime)
@@ -482,6 +488,21 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.WebSocketBlock:
 		return g.genWebSocket(s, prefix)
+
+	case *ast.OnStatement:
+		var out strings.Builder
+		params := strings.Join(s.Params, ", ")
+		out.WriteString(fmt.Sprintf("%s%s.on(\"%s\", ", prefix, g.genExpr(s.Object), s.Event))
+		if len(s.Params) > 0 {
+			out.WriteString(fmt.Sprintf("(%s) => {\n", params))
+		} else {
+			out.WriteString("() => {\n")
+		}
+		g.indent++
+		out.WriteString(g.genBlock(s.Body))
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s});", prefix))
+		return out.String()
 
 	default:
 		return prefix + "/* unknown statement */"
