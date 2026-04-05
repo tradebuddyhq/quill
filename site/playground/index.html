@@ -1205,8 +1205,9 @@ editor.addEventListener('keydown', (e) => {
   }
 
   // Enter with auto-indent
-  if (e.key === 'Enter') {
+  if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
     e.preventDefault();
+    e.stopPropagation();
     const currentLine = getLineAt(value, start);
     const currentIndent = getIndent(currentLine);
     const trimmedLine = currentLine.trim();
@@ -1215,7 +1216,12 @@ editor.addEventListener('keydown', (e) => {
     if (trimmedLine.endsWith(':') || BLOCK_STARTERS.test(trimmedLine)) {
       newIndent = currentIndent + INDENT;
     }
-    insertText(editor, '\n' + newIndent);
+    const insertion = '\n' + newIndent;
+    const before = value.substring(0, start);
+    const after = value.substring(end);
+    editor.value = before + insertion + after;
+    const newPos = start + insertion.length;
+    editor.selectionStart = editor.selectionEnd = newPos;
     updateLineNumbers();
     return;
   }
@@ -1264,6 +1270,20 @@ editor.addEventListener('keydown', (e) => {
       setCursor(editor, start - 1);
       updateLineNumbers();
       return;
+    }
+  }
+});
+
+// Block browser's native Enter insertion — our keydown handler already handles it
+let enterHandled = false;
+editor.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) enterHandled = true;
+}, true); // capture phase
+editor.addEventListener('beforeinput', (e) => {
+  if (e.inputType === 'insertLineBreak' || (e.inputType === 'insertText' && e.data === '\n')) {
+    if (enterHandled) {
+      e.preventDefault();
+      enterHandled = false;
     }
   }
 });
