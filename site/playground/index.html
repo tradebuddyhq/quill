@@ -1068,20 +1068,197 @@ editor.addEventListener('scroll', () => {
   lineNumbers.scrollTop = editor.scrollTop;
 });
 
-// Tab key support
+// ---- IDE Features ----
+const INDENT = '  ';
+const AUTO_CLOSE = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
+// Quill keywords that start a block (next line should be indented)
+const BLOCK_STARTERS = /^(to |if |otherwise|for each |while |describe |it |test |match |class |trait |spawn |parallel|race|select|server|database|auth|websocket )/;
+
+function getLineAt(text, pos) {
+  const start = text.lastIndexOf('\n', pos - 1) + 1;
+  const end = text.indexOf('\n', pos);
+  return text.substring(start, end === -1 ? text.length : end);
+}
+
+function getIndent(line) {
+  const match = line.match(/^(\s*)/);
+  return match ? match[1] : '';
+}
+
+function insertText(textarea, text) {
+  // Use execCommand for undo support
+  document.execCommand('insertText', false, text);
+}
+
+function setCursor(textarea, pos) {
+  textarea.selectionStart = textarea.selectionEnd = pos;
+}
+
 editor.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab') {
-    e.preventDefault();
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(end);
-    editor.selectionStart = editor.selectionEnd = start + 2;
-    updateLineNumbers();
-  }
+  const { value, selectionStart: start, selectionEnd: end } = editor;
+  const hasSelection = start !== end;
+
   // Ctrl/Cmd + Enter to run
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
     e.preventDefault();
     runCode();
+    return;
+  }
+
+  // Ctrl/Cmd + / to toggle comment
+  if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+    e.preventDefault();
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const lineEnd = value.indexOf('\n', end);
+    const selEnd = lineEnd === -1 ? value.length : lineEnd;
+    const selectedText = value.substring(lineStart, selEnd);
+    const lines = selectedText.split('\n');
+    const allCommented = lines.every(l => l.trimStart().startsWith('-- ') || l.trim() === '');
+    const newLines = lines.map(l => {
+      if (l.trim() === '') return l;
+      if (allCommented) {
+        return l.replace(/^(\s*)-- /, '$1');
+      } else {
+        const indent = l.match(/^(\s*)/)[1];
+        return indent + '-- ' + l.trimStart();
+      }
+    });
+    editor.selectionStart = lineStart;
+    editor.selectionEnd = selEnd;
+    insertText(editor, newLines.join('\n'));
+    updateLineNumbers();
+    return;
+  }
+
+  // Ctrl/Cmd + D to duplicate line
+  if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+    e.preventDefault();
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const lineEnd = value.indexOf('\n', start);
+    const line = value.substring(lineStart, lineEnd === -1 ? value.length : lineEnd);
+    editor.selectionStart = lineEnd === -1 ? value.length : lineEnd;
+    editor.selectionEnd = editor.selectionStart;
+    insertText(editor, '\n' + line);
+    updateLineNumbers();
+    return;
+  }
+
+  // Ctrl/Cmd + Shift + K to delete line
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'K') {
+    e.preventDefault();
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    let lineEnd = value.indexOf('\n', start);
+    if (lineEnd === -1) lineEnd = value.length;
+    else lineEnd += 1; // include the newline
+    editor.selectionStart = lineStart;
+    editor.selectionEnd = lineEnd;
+    insertText(editor, '');
+    updateLineNumbers();
+    return;
+  }
+
+  // Tab / Shift+Tab for indent/dedent
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    if (hasSelection) {
+      // Multi-line indent/dedent
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+      const lineEnd = value.indexOf('\n', end - 1);
+      const selEnd = lineEnd === -1 ? value.length : lineEnd;
+      const selectedText = value.substring(lineStart, selEnd);
+      const lines = selectedText.split('\n');
+      let newLines;
+      if (e.shiftKey) {
+        newLines = lines.map(l => l.startsWith(INDENT) ? l.substring(INDENT.length) : l.replace(/^\s/, ''));
+      } else {
+        newLines = lines.map(l => INDENT + l);
+      }
+      editor.selectionStart = lineStart;
+      editor.selectionEnd = selEnd;
+      insertText(editor, newLines.join('\n'));
+      editor.selectionStart = lineStart;
+      editor.selectionEnd = lineStart + newLines.join('\n').length;
+    } else if (e.shiftKey) {
+      // Dedent current line
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+      const line = getLineAt(value, start);
+      if (line.startsWith(INDENT)) {
+        const cursorOffset = start - lineStart;
+        const lineEnd = value.indexOf('\n', start);
+        editor.selectionStart = lineStart;
+        editor.selectionEnd = lineEnd === -1 ? value.length : lineEnd;
+        insertText(editor, line.substring(INDENT.length));
+        setCursor(editor, lineStart + Math.max(0, cursorOffset - INDENT.length));
+      }
+    } else {
+      insertText(editor, INDENT);
+    }
+    updateLineNumbers();
+    return;
+  }
+
+  // Enter with auto-indent
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const currentLine = getLineAt(value, start);
+    const currentIndent = getIndent(currentLine);
+    const trimmedLine = currentLine.trim();
+    // Add extra indent after block starters or lines ending with ':'
+    let newIndent = currentIndent;
+    if (trimmedLine.endsWith(':') || BLOCK_STARTERS.test(trimmedLine)) {
+      newIndent = currentIndent + INDENT;
+    }
+    insertText(editor, '\n' + newIndent);
+    updateLineNumbers();
+    return;
+  }
+
+  // Auto-close brackets and quotes
+  if (AUTO_CLOSE[e.key]) {
+    const closing = AUTO_CLOSE[e.key];
+    // For quotes, don't auto-close if the char before is a word char
+    if (e.key === '"' || e.key === "'") {
+      if (start > 0 && /\w/.test(value[start - 1])) return;
+      // If next char is the same quote, just skip over it
+      if (value[start] === e.key) {
+        e.preventDefault();
+        setCursor(editor, start + 1);
+        return;
+      }
+    }
+    // If next char is the same closing bracket, skip over it
+    if ((e.key === ')' || e.key === ']' || e.key === '}') && value[start] === e.key) {
+      e.preventDefault();
+      setCursor(editor, start + 1);
+      return;
+    }
+    if (!hasSelection) {
+      e.preventDefault();
+      insertText(editor, e.key + closing);
+      setCursor(editor, start + 1);
+    }
+    return;
+  }
+
+  // Skip over closing brackets/quotes
+  if ((e.key === ')' || e.key === ']' || e.key === '}' || e.key === '"' || e.key === "'") && value[start] === e.key) {
+    e.preventDefault();
+    setCursor(editor, start + 1);
+    return;
+  }
+
+  // Backspace: delete matching pair
+  if (e.key === 'Backspace' && !hasSelection && start > 0) {
+    const before = value[start - 1];
+    const after = value[start];
+    if (AUTO_CLOSE[before] && AUTO_CLOSE[before] === after) {
+      e.preventDefault();
+      editor.selectionStart = start - 1;
+      editor.selectionEnd = start + 1;
+      insertText(editor, '');
+      updateLineNumbers();
+      return;
+    }
   }
 });
 
