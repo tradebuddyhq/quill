@@ -122,23 +122,155 @@
     lineNumbers.style.transform = 'translateY(' + (-editor.scrollTop) + 'px)';
   });
 
-  // Tab key support
-  editor.addEventListener('keydown', function (e) {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const start = this.selectionStart;
-      const end = this.selectionEnd;
-      this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
-      this.selectionStart = this.selectionEnd = start + 2;
-      updateLineNumbers();
-    }
-  });
+  // ---- IDE Features ----
+  const INDENT = '  ';
+  const AUTO_CLOSE = { '(': ')', '[': ']', '{': '}', '"': '"', "'": "'" };
+  const BLOCK_STARTERS = /^(to |if |otherwise|for each |while |describe |it |test |match |class |trait |spawn |parallel|race|select|server|database|auth|websocket )/;
 
-  // Ctrl/Cmd + Enter to run
-  document.addEventListener('keydown', function (e) {
+  function getLineAt(text, pos) {
+    const start = text.lastIndexOf('\n', pos - 1) + 1;
+    const end = text.indexOf('\n', pos);
+    return text.substring(start, end === -1 ? text.length : end);
+  }
+
+  function getIndent(line) {
+    const match = line.match(/^(\s*)/);
+    return match ? match[1] : '';
+  }
+
+  editor.addEventListener('keydown', function (e) {
+    const val = this.value;
+    const start = this.selectionStart;
+    const end = this.selectionEnd;
+    const hasSelection = start !== end;
+
+    // Ctrl/Cmd + Enter to run
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       run();
+      return;
+    }
+
+    // Ctrl/Cmd + / to toggle comment
+    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+      e.preventDefault();
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      const lineEnd = val.indexOf('\n', end);
+      const selEnd = lineEnd === -1 ? val.length : lineEnd;
+      const lines = val.substring(lineStart, selEnd).split('\n');
+      const allCommented = lines.every(function(l) { return l.trimStart().startsWith('-- ') || l.trim() === ''; });
+      const newLines = lines.map(function(l) {
+        if (l.trim() === '') return l;
+        if (allCommented) return l.replace(/^(\s*)-- /, '$1');
+        return l.match(/^(\s*)/)[1] + '-- ' + l.trimStart();
+      });
+      const newText = newLines.join('\n');
+      editor.value = val.substring(0, lineStart) + newText + val.substring(selEnd);
+      editor.selectionStart = lineStart;
+      editor.selectionEnd = lineStart + newText.length;
+      updateLineNumbers();
+      return;
+    }
+
+    // Ctrl/Cmd + D to duplicate line
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault();
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      const lineEnd = val.indexOf('\n', start);
+      const lineEndPos = lineEnd === -1 ? val.length : lineEnd;
+      const line = val.substring(lineStart, lineEndPos);
+      editor.value = val.substring(0, lineEndPos) + '\n' + line + val.substring(lineEndPos);
+      editor.selectionStart = editor.selectionEnd = lineEndPos + 1 + line.length;
+      updateLineNumbers();
+      return;
+    }
+
+    // Enter with auto-indent
+    if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      const currentLine = getLineAt(val, start);
+      const currentIndent = getIndent(currentLine);
+      const trimmedLine = currentLine.trim();
+      var newIndent = currentIndent;
+      if (trimmedLine.endsWith(':') || BLOCK_STARTERS.test(trimmedLine)) {
+        newIndent = currentIndent + INDENT;
+      }
+      const insertion = '\n' + newIndent;
+      editor.value = val.substring(0, start) + insertion + val.substring(end);
+      editor.selectionStart = editor.selectionEnd = start + insertion.length;
+      updateLineNumbers();
+      return;
+    }
+
+    // Tab / Shift+Tab
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      if (hasSelection) {
+        const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+        const lineEnd = val.indexOf('\n', end - 1);
+        const selEnd = lineEnd === -1 ? val.length : lineEnd;
+        const lines = val.substring(lineStart, selEnd).split('\n');
+        var newLines;
+        if (e.shiftKey) {
+          newLines = lines.map(function(l) { return l.startsWith(INDENT) ? l.substring(INDENT.length) : l.replace(/^\s/, ''); });
+        } else {
+          newLines = lines.map(function(l) { return INDENT + l; });
+        }
+        const newText = newLines.join('\n');
+        editor.value = val.substring(0, lineStart) + newText + val.substring(selEnd);
+        editor.selectionStart = lineStart;
+        editor.selectionEnd = lineStart + newText.length;
+      } else if (e.shiftKey) {
+        const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+        const line = getLineAt(val, start);
+        if (line.startsWith(INDENT)) {
+          const cursorOffset = start - lineStart;
+          const lineEnd = val.indexOf('\n', start);
+          const lineEndPos = lineEnd === -1 ? val.length : lineEnd;
+          editor.value = val.substring(0, lineStart) + line.substring(INDENT.length) + val.substring(lineEndPos);
+          editor.selectionStart = editor.selectionEnd = lineStart + Math.max(0, cursorOffset - INDENT.length);
+        }
+      } else {
+        editor.value = val.substring(0, start) + INDENT + val.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + INDENT.length;
+      }
+      updateLineNumbers();
+      return;
+    }
+
+    // Auto-close brackets and quotes
+    if (AUTO_CLOSE[e.key]) {
+      const closing = AUTO_CLOSE[e.key];
+      if (e.key === '"' || e.key === "'") {
+        if (start > 0 && /\w/.test(val[start - 1])) return;
+        if (val[start] === e.key) { e.preventDefault(); editor.selectionStart = editor.selectionEnd = start + 1; return; }
+      }
+      if (!hasSelection) {
+        e.preventDefault();
+        editor.value = val.substring(0, start) + e.key + closing + val.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + 1;
+      }
+      return;
+    }
+
+    // Skip over closing brackets/quotes
+    if ((e.key === ')' || e.key === ']' || e.key === '}' || e.key === '"' || e.key === "'") && val[start] === e.key) {
+      e.preventDefault();
+      editor.selectionStart = editor.selectionEnd = start + 1;
+      return;
+    }
+
+    // Backspace: delete matching pair
+    if (e.key === 'Backspace' && !hasSelection && start > 0) {
+      const before = val[start - 1];
+      const after = val[start];
+      if (AUTO_CLOSE[before] && AUTO_CLOSE[before] === after) {
+        e.preventDefault();
+        editor.value = val.substring(0, start - 1) + val.substring(start + 1);
+        editor.selectionStart = editor.selectionEnd = start - 1;
+        updateLineNumbers();
+        return;
+      }
     }
   });
 
