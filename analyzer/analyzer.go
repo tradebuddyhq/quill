@@ -200,6 +200,14 @@ func (a *Analyzer) analyzeStmt(stmt ast.Statement) {
 		}
 		a.inTest = false
 
+	case *ast.MockStatement:
+		if !a.inTest {
+			a.addDiagnostic(s.Line, Warning, "'mock' used outside of a test block", "wrap in a 'test' block")
+		}
+		for _, stmt := range s.Body {
+			a.analyzeStmt(stmt)
+		}
+
 	case *ast.ExpectStatement:
 		if !a.inTest {
 			a.addDiagnostic(s.Line, Warning, "'expect' used outside of a test block", "wrap in a 'test' block")

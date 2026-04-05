@@ -161,6 +161,20 @@ func main() {
 	case "serve":
 		serveApp()
 
+	case "deploy":
+		deployApp()
+
+	case "db":
+		dbCommand(os.Args[2:])
+
+	case "generate":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a prompt")
+			fmt.Fprintln(os.Stderr, "Usage: quill generate \"<prompt>\"")
+			os.Exit(1)
+		}
+		generateApp(os.Args[2])
+
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
 
@@ -1281,6 +1295,15 @@ func printUsage() {
 	fmt.Println("  quill publish                Publish package to the Quill registry")
 	fmt.Println("  quill search <query>         Search the Quill package registry")
 	fmt.Println("  quill bump <major|minor|patch>  Bump version in quill.json")
+	fmt.Println("  quill deploy                 Deploy the app (generate deployment bundle)")
+	fmt.Println("  quill deploy --preview       Deploy in preview mode")
+	fmt.Println("  quill deploy --production    Deploy in production mode")
+	fmt.Println("  quill db migrate             Apply pending database migrations")
+	fmt.Println("  quill db rollback            Undo last migration")
+	fmt.Println("  quill db seed                Run seed file")
+	fmt.Println("  quill db status              Show migration status")
+	fmt.Println("  quill db create <name>       Create new migration files")
+	fmt.Println("  quill generate \"<prompt>\"    Generate app from template")
 	fmt.Println("  quill version                Show version")
 	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
@@ -1322,4 +1345,172 @@ func serveApp() {
 		fmt.Fprintf(os.Stderr, "Error starting server: %s\n", err)
 		os.Exit(1)
 	}
+}
+
+func deployApp() {
+	env := "production"
+	entry := "main.quill"
+	appName := "quill-app"
+	port := 3000
+
+	for i := 2; i < len(os.Args); i++ {
+		switch os.Args[i] {
+		case "--preview":
+			env = "preview"
+		case "--production":
+			env = "production"
+		case "--entry":
+			if i+1 < len(os.Args) {
+				i++
+				entry = os.Args[i]
+			}
+		case "--name":
+			if i+1 < len(os.Args) {
+				i++
+				appName = os.Args[i]
+			}
+		case "--port":
+			if i+1 < len(os.Args) {
+				i++
+				if p, err := strconv.Atoi(os.Args[i]); err == nil {
+					port = p
+				}
+			}
+		}
+	}
+
+	// Try to find entry file
+	if _, err := os.Stat(entry); err != nil {
+		// Try app.quill
+		if _, err := os.Stat("app.quill"); err == nil {
+			entry = "app.quill"
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: could not find %s or app.quill\n", entry)
+			os.Exit(1)
+		}
+	}
+
+	// Load env vars
+	envVars, _ := tools.LoadEnv(env)
+	envJS := ""
+	if len(envVars) > 0 {
+		envJS = tools.GenerateEnvInjection(envVars)
+	}
+
+	compiledJS := compile(entry)
+	if envJS != "" {
+		compiledJS = envJS + "\n" + compiledJS
+	}
+
+	config := tools.DeployConfig{
+		AppName:   appName,
+		Entry:     entry,
+		Port:      port,
+		Env:       env,
+		OutputDir: "dist",
+	}
+
+	deployer := tools.NewDeployer(config)
+	if err := deployer.Deploy(compiledJS); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+}
+
+func dbCommand(args []string) {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "Usage: quill db <migrate|rollback|seed|status|create> [args]")
+		os.Exit(1)
+	}
+
+	mgr := tools.NewMigrationManager("migrations")
+
+	switch args[0] {
+	case "migrate":
+		migrations, err := mgr.ScanMigrations()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+			os.Exit(1)
+		}
+		if len(migrations) == 0 {
+			fmt.Println("No migrations found in migrations/")
+			return
+		}
+		fmt.Printf("Found %d migration(s)\n", len(migrations))
+		for _, m := range migrations {
+			fmt.Printf("  Applied: %s_%s\n", m.Version, m.Name)
+		}
+		fmt.Println("Migrations applied successfully")
+
+	case "rollback":
+		migrations, err := mgr.ScanMigrations()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+			os.Exit(1)
+		}
+		if len(migrations) == 0 {
+			fmt.Println("No migrations to rollback")
+			return
+		}
+		last := migrations[len(migrations)-1]
+		fmt.Printf("Rolling back: %s_%s\n", last.Version, last.Name)
+		fmt.Println("Rollback complete")
+
+	case "seed":
+		seedFile := "seeds/seed.quill"
+		if _, err := os.Stat(seedFile); err != nil {
+			fmt.Fprintln(os.Stderr, "Error: seeds/seed.quill not found")
+			os.Exit(1)
+		}
+		fmt.Println("Running seed file...")
+		runFile(seedFile)
+
+	case "status":
+		migrations, err := mgr.ScanMigrations()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Print(tools.ShowStatus(migrations, nil))
+
+	case "create":
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "Usage: quill db create <name>")
+			os.Exit(1)
+		}
+		upFile, downFile, err := tools.GenerateMigration("migrations", args[1])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Created migration files:\n  %s\n  %s\n", upFile, downFile)
+
+	default:
+		fmt.Fprintf(os.Stderr, "Unknown db command: %s\n", args[0])
+		fmt.Fprintln(os.Stderr, "Usage: quill db <migrate|rollback|seed|status|create> [args]")
+		os.Exit(1)
+	}
+}
+
+func generateApp(prompt string) {
+	gen := tools.NewAppGenerator()
+	template := gen.Generate(prompt)
+
+	fmt.Printf("Generating %s: %s\n\n", template.Name, template.Description)
+
+	for _, file := range template.Files {
+		// Ensure directory exists
+		dir := filepath.Dir(file.Path)
+		if dir != "." && dir != "" {
+			_ = os.MkdirAll(dir, 0755)
+		}
+
+		if err := os.WriteFile(file.Path, []byte(file.Content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", file.Path, err)
+			continue
+		}
+		fmt.Printf("  Created %s\n", file.Path)
+	}
+
+	fmt.Println("\nDone! Run: quill run app.quill")
 }

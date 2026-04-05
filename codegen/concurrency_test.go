@@ -11,11 +11,11 @@ func TestSpawnGeneratesAsyncFunction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(output, "async function fetchData()") {
-		t.Errorf("expected async function declaration, got:\n%s", output)
+	if !strings.Contains(output, "__abort_fetchData = new AbortController()") {
+		t.Errorf("expected AbortController declaration, got:\n%s", output)
 	}
-	if !strings.Contains(output, "let __task_fetchData = fetchData();") {
-		t.Errorf("expected task invocation, got:\n%s", output)
+	if !strings.Contains(output, "__task_fetchData = (async (signal)") {
+		t.Errorf("expected async IIFE with signal, got:\n%s", output)
 	}
 }
 

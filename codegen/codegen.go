@@ -11,11 +11,13 @@ import (
 )
 
 type Generator struct {
-	indent    int
-	declared  map[string]bool
-	browser   bool
-	SourceMap *SourceMap
-	genLine   int // current generated line number (0-based)
+	indent               int
+	declared             map[string]bool
+	browser              bool
+	SourceMap            *SourceMap
+	genLine              int      // current generated line number (0-based)
+	needsResultRuntime   bool     // inject Result type runtime helpers
+	taggedTemplatesUsed  []string // track which tagged template tags are used
 }
 
 func New() *Generator {
@@ -83,6 +85,21 @@ func (g *Generator) Generate(program *ast.Program) string {
 	}
 	if g.usesIdentifier(userCodeStr, "Log") {
 		out.WriteString(stdlib.GetLoggingRuntime())
+		out.WriteString("\n")
+	}
+
+	// Include Result runtime if error propagation features are used
+	if g.needsResultRuntime || strings.Contains(userCodeStr, "Success(") || strings.Contains(userCodeStr, "__propagate(") || strings.Contains(userCodeStr, "__tryResult(") {
+		out.WriteString(resultRuntime)
+		out.WriteString("\n")
+	}
+
+	// Include tagged template runtime functions
+	g.injectTagRuntimes(&out)
+
+	// Include decorator runtime if decorators are used
+	if g.hasDecorators(program) {
+		out.WriteString(decoratorRuntime)
 		out.WriteString("\n")
 	}
 
@@ -158,7 +175,15 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		g.indent++
 		body := g.genBlock(s.Body)
 		g.indent--
-		return fmt.Sprintf("%sfor (const %s of %s) {\n%s%s}", prefix, s.Variable, g.genExpr(s.Iterable), body, prefix)
+		varPart := s.Variable
+		if s.DestructurePattern != nil {
+			varPart = g.genPattern(s.DestructurePattern)
+		}
+		awaitPart := ""
+		if s.IsAsync {
+			awaitPart = "await "
+		}
+		return fmt.Sprintf("%sfor %s(const %s of %s) {\n%s%s}", prefix, awaitPart, varPart, g.genExpr(s.Iterable), body, prefix)
 
 	case *ast.WhileStatement:
 		g.addStmtMapping(s.Line)
@@ -209,6 +234,18 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		}
 		g.indent++
 		innerPrefix := strings.Repeat("  ", g.indent)
+
+		// Emit private field declarations (JS requires # fields to be declared)
+		for i, prop := range s.Properties {
+			vis := ""
+			if i < len(s.PropertyVisibilities) {
+				vis = s.PropertyVisibilities[i]
+			}
+			if vis == "private" {
+				dout.WriteString(fmt.Sprintf("%s#%s;\n", innerPrefix, prop.Name))
+			}
+		}
+
 		// Constructor
 		dout.WriteString(fmt.Sprintf("%sconstructor() {\n", innerPrefix))
 		if s.Extends != "" {
@@ -219,15 +256,31 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		}
 		g.indent++
 		propPrefix := strings.Repeat("  ", g.indent)
-		for _, prop := range s.Properties {
-			dout.WriteString(fmt.Sprintf("%sthis.%s = %s;\n", propPrefix, prop.Name, g.genExpr(prop.Value)))
+		for i, prop := range s.Properties {
+			vis := ""
+			if i < len(s.PropertyVisibilities) {
+				vis = s.PropertyVisibilities[i]
+			}
+			if vis == "private" {
+				dout.WriteString(fmt.Sprintf("%sthis.#%s = %s;\n", propPrefix, prop.Name, g.genExpr(prop.Value)))
+			} else {
+				dout.WriteString(fmt.Sprintf("%sthis.%s = %s;\n", propPrefix, prop.Name, g.genExpr(prop.Value)))
+			}
 		}
 		g.indent--
 		dout.WriteString(fmt.Sprintf("%s}\n", innerPrefix))
 		// Methods
-		for _, method := range s.Methods {
+		for i, method := range s.Methods {
+			vis := ""
+			if i < len(s.MethodVisibilities) {
+				vis = s.MethodVisibilities[i]
+			}
 			params := strings.Join(method.Params, ", ")
-			dout.WriteString(fmt.Sprintf("%s%s(%s) {\n", innerPrefix, method.Name, params))
+			if vis == "private" {
+				dout.WriteString(fmt.Sprintf("%s#%s(%s) {\n", innerPrefix, method.Name, params))
+			} else {
+				dout.WriteString(fmt.Sprintf("%s%s(%s) {\n", innerPrefix, method.Name, params))
+			}
 			g.indent++
 			for _, stmt := range method.Body {
 				dout.WriteString(g.genStmt(stmt))
@@ -278,7 +331,32 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 %s  }
 %s})();`, prefix, prefix, prefix, body, prefix, s.Name, prefix, prefix, prefix, s.Name, prefix, prefix)
 
+	case *ast.MockStatement:
+		var mout strings.Builder
+		mout.WriteString(fmt.Sprintf("%sconst __mock_%s_calls = [];\n", prefix, s.FuncName))
+		mout.WriteString(fmt.Sprintf("%sconst __original_%s = typeof %s !== 'undefined' ? %s : undefined;\n", prefix, s.FuncName, s.FuncName, s.FuncName))
+		params := strings.Join(s.Params, ", ")
+		mout.WriteString(fmt.Sprintf("%svar %s = function(%s) {\n", prefix, s.FuncName, params))
+		args := s.Params
+		argsArray := "[]"
+		if len(args) > 0 {
+			argsArray = "[" + strings.Join(args, ", ") + "]"
+		}
+		mout.WriteString(fmt.Sprintf("%s  __mock_%s_calls.push({args: %s});\n", prefix, s.FuncName, argsArray))
+		g.indent += 2
+		for _, stmt := range s.Body {
+			mout.WriteString(g.genStmt(stmt))
+			mout.WriteString("\n")
+		}
+		g.indent -= 2
+		mout.WriteString(fmt.Sprintf("%s};\n", prefix))
+		return mout.String()
+
 	case *ast.ExpectStatement:
+		if ma, ok := s.Expr.(*ast.MockAssertionExpr); ok {
+			return fmt.Sprintf(`%sif (__mock_%s_calls.length !== %d) throw new Error("Expected %s to be called %d time(s), was called " + __mock_%s_calls.length + " time(s)");`,
+				prefix, ma.FuncName, ma.Count, ma.FuncName, ma.Count, ma.FuncName)
+		}
 		exprStr := g.genExpr(s.Expr)
 		return fmt.Sprintf(`%sif (!(%s)) throw new Error("Expected %s to be true");`, prefix, exprStr, escapeJS(exprStr))
 
@@ -339,6 +417,10 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 	case *ast.MountStatement:
 		return g.genMount(s, prefix)
 
+	case *ast.CancelStatement:
+		g.addStmtMapping(s.Line)
+		return fmt.Sprintf("%s__abort_%s.abort();", prefix, s.Target)
+
 	case *ast.SpawnStatement:
 		g.addStmtMapping(s.Line)
 		return g.genSpawn(s, prefix)
@@ -385,6 +467,21 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.AuthBlockStatement:
 		return prefix + "/* auth block — use 'quill run' for full-stack mode */"
+
+	case *ast.TypeAliasStatement:
+		return g.genTypeAlias(s, prefix)
+
+	case *ast.DecoratedFuncDefinition:
+		return g.genDecoratedFunc(s, prefix)
+
+	case *ast.DecoratedRouteDefinition:
+		return g.genDecoratedRoute(s, prefix)
+
+	case *ast.BroadcastStatement:
+		return fmt.Sprintf("%sfor (const __c of __ws_clients) { if (__c !== client && __c.readyState === 1) { __c.send(%s); } }", prefix, g.genExpr(s.Value))
+
+	case *ast.WebSocketBlock:
+		return g.genWebSocket(s, prefix)
 
 	default:
 		return prefix + "/* unknown statement */"
@@ -452,6 +549,41 @@ func (g *Generator) genMatch(s *ast.MatchStatement, prefix string) string {
 			} else {
 				out.WriteString(fmt.Sprintf(" else if %s {\n%s%s}", condition, bodyStr, innerPrefix))
 			}
+		} else if objPat, ok := c.Pattern.(*ast.ObjectMatchPattern); ok {
+			// Object destructuring pattern
+			var conditions []string
+			var bindings []string
+			for _, f := range objPat.Fields {
+				if f.Value != nil {
+					conditions = append(conditions, fmt.Sprintf("%s.%s === %s", matchVar, f.Key, g.genExpr(f.Value)))
+				} else {
+					// Just bind the field
+					bindings = append(bindings, f.Key)
+				}
+			}
+			condition := "true"
+			if len(conditions) > 0 {
+				condition = strings.Join(conditions, " && ")
+			}
+			if c.Guard != nil {
+				condition = fmt.Sprintf("(%s && %s)", condition, g.genExpr(c.Guard))
+			}
+
+			// Inject bindings at the top of the body
+			g.indent++
+			bindPrefix := strings.Repeat("  ", g.indent)
+			var bindStr string
+			for _, b := range bindings {
+				bindStr += fmt.Sprintf("%sconst %s = %s.%s;\n", bindPrefix, b, matchVar, b)
+			}
+			bodyStr = bindStr + bodyStr
+			g.indent--
+
+			if i == 0 {
+				out.WriteString(fmt.Sprintf("%sif (%s) {\n%s%s}", innerPrefix, condition, bodyStr, innerPrefix))
+			} else {
+				out.WriteString(fmt.Sprintf(" else if (%s) {\n%s%s}", condition, bodyStr, innerPrefix))
+			}
 		} else if c.Pattern == nil {
 			// otherwise case
 			if i == 0 {
@@ -482,33 +614,102 @@ func (g *Generator) genMatch(s *ast.MatchStatement, prefix string) string {
 func (g *Generator) genDefine(s *ast.DefineStatement, prefix string) string {
 	var out strings.Builder
 
-	// Generate as a frozen object with variant constructors
-	out.WriteString(fmt.Sprintf("%sconst %s = Object.freeze({\n", prefix, s.Name))
-	g.indent++
-	innerPrefix := strings.Repeat("  ", g.indent)
-
-	for i, variant := range s.Variants {
-		if len(variant.Fields) == 0 {
-			// Simple enum variant: Color.Red = { type: "Color", variant: "Red", toString() }
-			out.WriteString(fmt.Sprintf("%s%s: Object.freeze({ type: \"%s\", variant: \"%s\", toString() { return \"%s.%s\"; } })", innerPrefix, variant.Name, s.Name, variant.Name, s.Name, variant.Name))
-		} else {
-			// Algebraic variant with fields: Result.Ok(value) = { type: "Result", variant: "Ok", value }
-			params := strings.Join(variant.Fields, ", ")
-			fieldAssignments := make([]string, len(variant.Fields))
-			for j, field := range variant.Fields {
-				fieldAssignments[j] = fmt.Sprintf("%s: %s", field, field)
-			}
-			out.WriteString(fmt.Sprintf("%s%s: (%s) => Object.freeze({ type: \"%s\", variant: \"%s\", %s, toString() { return \"%s.%s(\" + [%s].join(\", \") + \")\"; } })",
-				innerPrefix, variant.Name, params, s.Name, variant.Name, strings.Join(fieldAssignments, ", "), s.Name, variant.Name, params))
+	// Check if any variant has an associated value (enum with values + methods)
+	hasValues := false
+	for _, v := range s.Variants {
+		if v.Value != nil {
+			hasValues = true
+			break
 		}
-		if i < len(s.Variants)-1 {
-			out.WriteString(",")
-		}
-		out.WriteString("\n")
 	}
 
-	g.indent--
-	out.WriteString(fmt.Sprintf("%s});\n", prefix))
+	if hasValues && len(s.Methods) > 0 {
+		// Generate class-based enum with methods
+		enumClassName := s.Name + "Enum"
+		out.WriteString(fmt.Sprintf("%sconst %s = (() => {\n", prefix, s.Name))
+		g.indent++
+		ip := strings.Repeat("  ", g.indent)
+		out.WriteString(fmt.Sprintf("%sclass %s {\n", ip, enumClassName))
+		g.indent++
+		ip2 := strings.Repeat("  ", g.indent)
+		out.WriteString(fmt.Sprintf("%sconstructor(name, value) { this.name = name; this.value = value; Object.freeze(this); }\n", ip2))
+		for _, method := range s.Methods {
+			params := strings.Join(method.Params, ", ")
+			out.WriteString(fmt.Sprintf("%s%s(%s) {\n", ip2, method.Name, params))
+			g.indent++
+			for _, stmt := range method.Body {
+				out.WriteString(g.genStmt(stmt))
+				out.WriteString("\n")
+			}
+			g.indent--
+			out.WriteString(fmt.Sprintf("%s}\n", ip2))
+		}
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s}\n", ip))
+		out.WriteString(fmt.Sprintf("%sreturn Object.freeze({\n", ip))
+		g.indent++
+		ip3 := strings.Repeat("  ", g.indent)
+		for i, variant := range s.Variants {
+			valStr := "undefined"
+			if variant.Value != nil {
+				valStr = g.genExpr(variant.Value)
+			}
+			out.WriteString(fmt.Sprintf("%s%s: new %s(\"%s\", %s)", ip3, variant.Name, enumClassName, variant.Name, valStr))
+			if i < len(s.Variants)-1 {
+				out.WriteString(",")
+			}
+			out.WriteString("\n")
+		}
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s});\n", ip))
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s})();\n", prefix))
+	} else if hasValues {
+		// Enum with values but no methods
+		out.WriteString(fmt.Sprintf("%sconst %s = Object.freeze({\n", prefix, s.Name))
+		g.indent++
+		innerPrefix := strings.Repeat("  ", g.indent)
+		for i, variant := range s.Variants {
+			valStr := "undefined"
+			if variant.Value != nil {
+				valStr = g.genExpr(variant.Value)
+			}
+			out.WriteString(fmt.Sprintf("%s%s: Object.freeze({ type: \"%s\", variant: \"%s\", name: \"%s\", value: %s, toString() { return \"%s.%s\"; } })",
+				innerPrefix, variant.Name, s.Name, variant.Name, variant.Name, valStr, s.Name, variant.Name))
+			if i < len(s.Variants)-1 {
+				out.WriteString(",")
+			}
+			out.WriteString("\n")
+		}
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s});\n", prefix))
+	} else {
+		// Original behavior: frozen object with variant constructors
+		out.WriteString(fmt.Sprintf("%sconst %s = Object.freeze({\n", prefix, s.Name))
+		g.indent++
+		innerPrefix := strings.Repeat("  ", g.indent)
+
+		for i, variant := range s.Variants {
+			if len(variant.Fields) == 0 {
+				out.WriteString(fmt.Sprintf("%s%s: Object.freeze({ type: \"%s\", variant: \"%s\", toString() { return \"%s.%s\"; } })", innerPrefix, variant.Name, s.Name, variant.Name, s.Name, variant.Name))
+			} else {
+				params := strings.Join(variant.Fields, ", ")
+				fieldAssignments := make([]string, len(variant.Fields))
+				for j, field := range variant.Fields {
+					fieldAssignments[j] = fmt.Sprintf("%s: %s", field, field)
+				}
+				out.WriteString(fmt.Sprintf("%s%s: (%s) => Object.freeze({ type: \"%s\", variant: \"%s\", %s, toString() { return \"%s.%s(\" + [%s].join(\", \") + \")\"; } })",
+					innerPrefix, variant.Name, params, s.Name, variant.Name, strings.Join(fieldAssignments, ", "), s.Name, variant.Name, params))
+			}
+			if i < len(s.Variants)-1 {
+				out.WriteString(",")
+			}
+			out.WriteString("\n")
+		}
+
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s});\n", prefix))
+	}
 
 	// Add helper: is<Variant> functions
 	for _, variant := range s.Variants {
@@ -636,12 +837,15 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		return "null"
 
 	case *ast.ObjectLiteral:
-		if len(e.Keys) == 0 {
+		if len(e.Keys) == 0 && len(e.ComputedProperties) == 0 {
 			return "{}"
 		}
-		pairs := make([]string, len(e.Keys))
+		var pairs []string
 		for i, key := range e.Keys {
-			pairs[i] = fmt.Sprintf("%s: %s", key, g.genExpr(e.Values[i]))
+			pairs = append(pairs, fmt.Sprintf("%s: %s", key, g.genExpr(e.Values[i])))
+		}
+		for _, cp := range e.ComputedProperties {
+			pairs = append(pairs, fmt.Sprintf("[%s]: %s", g.genExpr(cp.KeyExpr), g.genExpr(cp.Value)))
 		}
 		return "{ " + strings.Join(pairs, ", ") + " }"
 
@@ -671,6 +875,20 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 			return fmt.Sprintf("(typeof %s === \"%s\")", exprCode, e.TypeName)
 		}
 
+	case *ast.PropagateExpr:
+		inner := g.genExpr(e.Expr)
+		g.needsResultRuntime = true
+		return fmt.Sprintf("__propagate(%s)", inner)
+
+	case *ast.TryExpression:
+		inner := g.genExpr(e.Expr)
+		g.needsResultRuntime = true
+		return fmt.Sprintf("__tryResult(%s)", inner)
+
+	case *ast.ObjectMatchPattern:
+		// This should not be reached directly in genExpr, handled in genMatch
+		return "/* object match pattern */"
+
 	case *ast.PipeExpr:
 		// x | fn  becomes  fn(x)
 		// x | fn(a, b)  becomes  fn(x, a, b)
@@ -689,8 +907,54 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 			return fmt.Sprintf("%s(%s)", g.genExpr(e.Right), leftCode)
 		}
 
+	case *ast.TaggedTemplateExpr:
+		// Convert Quill {x} to JS ${x} in the template
+		converted := e.Template
+		converted = strings.ReplaceAll(converted, "{", "${")
+		g.taggedTemplatesUsed = append(g.taggedTemplatesUsed, e.Tag)
+		return fmt.Sprintf("%s`%s`", e.Tag, converted)
+
+	case *ast.MockAssertionExpr:
+		// This is handled at the ExpectStatement level, but provide a fallback
+		return fmt.Sprintf("__mock_%s_calls.length === %d", e.FuncName, e.Count)
+
 	default:
 		return "undefined"
+	}
+}
+
+// --- Tagged template runtimes ---
+
+func (g *Generator) injectTagRuntimes(out *strings.Builder) {
+	injected := map[string]bool{}
+	for _, tag := range g.taggedTemplatesUsed {
+		if injected[tag] {
+			continue
+		}
+		injected[tag] = true
+		switch tag {
+		case "query":
+			out.WriteString(`function query(strings, ...values) {
+  let text = strings[0];
+  const params = [];
+  for (let i = 0; i < values.length; i++) {
+    params.push(values[i]);
+    text += '$' + (i + 1) + strings[i + 1];
+  }
+  return { text, values: params };
+}
+`)
+		case "html":
+			out.WriteString(`function html(strings, ...values) {
+  return strings.reduce((r, s, i) => r + (values[i-1] || '') + s);
+}
+`)
+		case "css":
+			out.WriteString(`function css(strings, ...values) {
+  return strings.reduce((r, s, i) => r + (values[i-1] || '') + s);
+}
+`)
+		}
 	}
 }
 
@@ -769,11 +1033,11 @@ func (g *Generator) genPattern(p ast.DestructurePattern) string {
 
 func (g *Generator) genSpawn(s *ast.SpawnStatement, prefix string) string {
 	var out strings.Builder
+	out.WriteString(fmt.Sprintf("%sconst __abort_%s = new AbortController();\n", prefix, s.Name))
 	g.indent++
 	body := g.genBlock(s.Body)
 	g.indent--
-	out.WriteString(fmt.Sprintf("%sasync function %s() {\n%s%s}\n", prefix, s.Name, body, prefix))
-	out.WriteString(fmt.Sprintf("%slet __task_%s = %s();", prefix, s.Name, s.Name))
+	out.WriteString(fmt.Sprintf("%sconst __task_%s = (async (signal) => {\n%s%s})(__abort_%s.signal);", prefix, s.Name, body, prefix, s.Name))
 	return out.String()
 }
 
@@ -789,7 +1053,11 @@ func (g *Generator) genParallel(s *ast.ParallelBlock, prefix string) string {
 			g.declared[assign.Name] = true
 		}
 	}
-	out.WriteString(fmt.Sprintf("%slet [%s] = await Promise.all([\n", prefix, strings.Join(names, ", ")))
+	promiseMethod := "Promise.all"
+	if s.IsSettled {
+		promiseMethod = "Promise.allSettled"
+	}
+	out.WriteString(fmt.Sprintf("%slet [%s] = await %s([\n", prefix, strings.Join(names, ", "), promiseMethod))
 	for i, expr := range exprs {
 		comma := ","
 		if i == len(exprs)-1 {
@@ -891,12 +1159,25 @@ const channelRuntime = `class __QuillChannel {
 }
 `
 
+// resultRuntime provides Success/Error Result type helpers and propagation.
+const resultRuntime = `function Success(value) { return { __isOk: true, value }; }
+function __QuillError(message) { return { __isErr: true, message }; }
+function __propagate(val) {
+  if (val instanceof Error || val?.__isErr) return val;
+  return val?.__isOk ? val.value : val;
+}
+function __tryResult(fn) {
+  try { const r = fn; if (r?.__isErr) return r; return r; } catch(e) { return __QuillError(e.message); }
+}
+`
+
 // hasAsyncConstructs checks if the program uses any concurrency constructs that need async IIFE.
 func (g *Generator) hasAsyncConstructs(program *ast.Program) bool {
 	for _, stmt := range program.Statements {
 		switch stmt.(type) {
 		case *ast.SpawnStatement, *ast.ParallelBlock, *ast.RaceBlock,
-			*ast.ChannelStatement, *ast.SendStatement, *ast.SelectStatement:
+			*ast.ChannelStatement, *ast.SendStatement, *ast.SelectStatement,
+			*ast.CancelStatement:
 			return true
 		}
 	}
@@ -1121,6 +1402,190 @@ func (g *Generator) stmtUsesGenerators(stmt ast.Statement) bool {
 		return true
 	case *ast.FuncDefinition:
 		if g.bodyContainsYield(s.Body) {
+			return true
+		}
+	}
+	return false
+}
+
+// --- Type Alias Code Generation ---
+
+func (g *Generator) genTypeAlias(s *ast.TypeAliasStatement, prefix string) string {
+	args := ""
+	if len(s.Args) > 0 {
+		args = ", [" + strings.Join(s.Args, ", ") + "]"
+	}
+	return fmt.Sprintf("%s// type %s = %s<%s%s> (erased at runtime)", prefix, s.Name, s.Utility, s.BaseType, args)
+}
+
+// --- Decorator Code Generation ---
+
+const decoratorRuntime = `function authenticated(req) {
+  return req.headers && req.headers.authorization;
+}
+function rateLimit(max) {
+  const counts = new Map();
+  return function(req) {
+    const ip = req.socket && req.socket.remoteAddress || 'unknown';
+    const count = (counts.get(ip) || 0) + 1;
+    counts.set(ip, count);
+    return count <= max;
+  };
+}
+function log(fn) {
+  return function(...args) {
+    console.log('[' + fn.name + '] called with', args);
+    const result = fn.apply(this, args);
+    console.log('[' + fn.name + '] returned', result);
+    return result;
+  };
+}
+`
+
+func (g *Generator) genDecoratedFunc(s *ast.DecoratedFuncDefinition, prefix string) string {
+	var out strings.Builder
+	// Generate the function itself as a let-bound function expression
+	params := strings.Join(s.Func.Params, ", ")
+	g.indent++
+	body := g.genBlock(s.Func.Body)
+	g.indent--
+	out.WriteString(fmt.Sprintf("%slet %s = function(%s) {\n%s%s};\n", prefix, s.Func.Name, params, body, prefix))
+	g.declared[s.Func.Name] = true
+	// Apply decorators in reverse order (innermost first)
+	for i := len(s.Decorators) - 1; i >= 0; i-- {
+		dec := s.Decorators[i]
+		if len(dec.Args) > 0 {
+			args := make([]string, len(dec.Args))
+			for j, a := range dec.Args {
+				args[j] = g.genExpr(a)
+			}
+			out.WriteString(fmt.Sprintf("%s%s = %s(%s)(%s);\n", prefix, s.Func.Name, dec.Name, strings.Join(args, ", "), s.Func.Name))
+		} else {
+			out.WriteString(fmt.Sprintf("%s%s = %s(%s);\n", prefix, s.Func.Name, dec.Name, s.Func.Name))
+		}
+	}
+	return out.String()
+}
+
+func (g *Generator) genDecoratedRoute(s *ast.DecoratedRouteDefinition, prefix string) string {
+	var out strings.Builder
+	// Comment showing decorators
+	decNames := make([]string, len(s.Decorators))
+	for i, d := range s.Decorators {
+		decNames[i] = "@" + d.Name
+	}
+	out.WriteString(fmt.Sprintf("%s// %s\n", prefix, strings.Join(decNames, " ")))
+	out.WriteString(fmt.Sprintf("%sif (method === '%s' && url.pathname === '%s') {\n", prefix, s.Route.Method, s.Route.Path))
+	g.indent++
+	innerPrefix := strings.Repeat("  ", g.indent)
+	// Generate middleware checks
+	for _, dec := range s.Decorators {
+		if len(dec.Args) > 0 {
+			args := make([]string, len(dec.Args))
+			for j, a := range dec.Args {
+				args[j] = g.genExpr(a)
+			}
+			out.WriteString(fmt.Sprintf("%sif (!%s(%s)(req)) { res.writeHead(429); res.end('Too Many Requests'); return; }\n", innerPrefix, dec.Name, strings.Join(args, ", ")))
+		} else {
+			out.WriteString(fmt.Sprintf("%sif (!%s(req)) { res.writeHead(401); res.end('Unauthorized'); return; }\n", innerPrefix, dec.Name))
+		}
+	}
+	// Handler body
+	for _, stmt := range s.Route.Body {
+		out.WriteString(g.genStmt(stmt))
+		out.WriteString("\n")
+	}
+	g.indent--
+	out.WriteString(fmt.Sprintf("%s}", prefix))
+	return out.String()
+}
+
+// hasDecorators checks if the program uses any decorator features.
+func (g *Generator) hasDecorators(program *ast.Program) bool {
+	for _, stmt := range program.Statements {
+		switch stmt.(type) {
+		case *ast.DecoratedFuncDefinition, *ast.DecoratedRouteDefinition:
+			return true
+		}
+	}
+	return false
+}
+
+// --- WebSocket Code Generation ---
+
+func (g *Generator) genWebSocket(s *ast.WebSocketBlock, prefix string) string {
+	var out strings.Builder
+	out.WriteString(fmt.Sprintf("%sconst WebSocket = require('ws');\n", prefix))
+	out.WriteString(fmt.Sprintf("%sconst __wss = new WebSocket.Server({ noServer: true });\n", prefix))
+	out.WriteString(fmt.Sprintf("%sconst __ws_clients = new Set();\n", prefix))
+	out.WriteString(fmt.Sprintf("%sserver.on('upgrade', (request, socket, head) => {\n", prefix))
+	g.indent++
+	innerPrefix := strings.Repeat("  ", g.indent)
+	out.WriteString(fmt.Sprintf("%sif (request.url === '%s') {\n", innerPrefix, s.Path))
+	g.indent++
+	innerPrefix2 := strings.Repeat("  ", g.indent)
+	out.WriteString(fmt.Sprintf("%s__wss.handleUpgrade(request, socket, head, (ws) => {\n", innerPrefix2))
+	out.WriteString(fmt.Sprintf("%s  __wss.emit('connection', ws, request);\n", innerPrefix2))
+	out.WriteString(fmt.Sprintf("%s});\n", innerPrefix2))
+	g.indent--
+	out.WriteString(fmt.Sprintf("%s}\n", innerPrefix))
+	g.indent--
+	out.WriteString(fmt.Sprintf("%s});\n", prefix))
+
+	// Connection handler
+	out.WriteString(fmt.Sprintf("%s__wss.on('connection', (%s) => {\n", prefix, s.ConnectVar))
+	g.indent++
+	innerPrefix = strings.Repeat("  ", g.indent)
+	out.WriteString(fmt.Sprintf("%s__ws_clients.add(%s);\n", innerPrefix, s.ConnectVar))
+
+	// OnConnect body
+	if len(s.OnConnect) > 0 {
+		for _, stmt := range s.OnConnect {
+			out.WriteString(g.genStmt(stmt))
+			out.WriteString("\n")
+		}
+	}
+
+	// OnMessage handler
+	if len(s.OnMessage) > 0 {
+		out.WriteString(fmt.Sprintf("%s%s.on('message', (%s) => {\n", innerPrefix, s.ConnectVar, s.DataVar))
+		g.indent++
+		for _, stmt := range s.OnMessage {
+			out.WriteString(g.genStmt(stmt))
+			out.WriteString("\n")
+		}
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s});\n", innerPrefix))
+	}
+
+	// OnClose handler
+	if len(s.OnClose) > 0 {
+		out.WriteString(fmt.Sprintf("%s%s.on('close', () => {\n", innerPrefix, s.ConnectVar))
+		g.indent++
+		closePrefix := strings.Repeat("  ", g.indent)
+		out.WriteString(fmt.Sprintf("%s__ws_clients.delete(%s);\n", closePrefix, s.ConnectVar))
+		for _, stmt := range s.OnClose {
+			out.WriteString(g.genStmt(stmt))
+			out.WriteString("\n")
+		}
+		g.indent--
+		out.WriteString(fmt.Sprintf("%s});\n", innerPrefix))
+	}
+
+	g.indent--
+	out.WriteString(fmt.Sprintf("%s});\n", prefix))
+	return out.String()
+}
+
+// hasWebSockets checks if the program uses WebSocket features.
+func (g *Generator) hasWebSockets(program *ast.Program) bool {
+	for _, stmt := range program.Statements {
+		if srv, ok := stmt.(*ast.ServerBlockStatement); ok {
+			if len(srv.WebSockets) > 0 {
+				return true
+			}
+		}
+		if _, ok := stmt.(*ast.WebSocketBlock); ok {
 			return true
 		}
 	}

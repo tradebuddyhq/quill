@@ -354,10 +354,10 @@ func TestTokenizeListLiteral(t *testing.T) {
 }
 
 func TestTokenizeUnexpectedCharacter(t *testing.T) {
-	l := New("x is @invalid")
+	l := New("x is ~invalid")
 	_, err := l.Tokenize()
 	if err == nil {
-		t.Error("expected error for unexpected character '@'")
+		t.Error("expected error for unexpected character '~'")
 	}
 }
 

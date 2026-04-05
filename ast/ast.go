@@ -60,10 +60,12 @@ func (s *IfStatement) nodeType() string { return "If" }
 func (s *IfStatement) stmtNode()        {}
 
 type ForEachStatement struct {
-	Variable string
-	Iterable Expression
-	Body     []Statement
-	Line     int
+	Variable   string
+	Iterable   Expression
+	Body       []Statement
+	IsAsync    bool
+	DestructurePattern DestructurePattern // optional: for destructuring in for-each
+	Line       int
 }
 
 func (s *ForEachStatement) nodeType() string { return "ForEach" }
@@ -132,6 +134,27 @@ type ExpectStatement struct {
 
 func (s *ExpectStatement) nodeType() string { return "Expect" }
 func (s *ExpectStatement) stmtNode()        {}
+
+// MockStatement represents a mock block in a test: mock <func> with <params>: <body>
+type MockStatement struct {
+	FuncName string
+	Params   []string
+	Body     []Statement
+	Line     int
+}
+
+func (s *MockStatement) nodeType() string { return "Mock" }
+func (s *MockStatement) stmtNode()        {}
+
+// MockAssertionExpr represents an assertion like: fetchJSON was called 1 time
+type MockAssertionExpr struct {
+	FuncName   string
+	AssertType string // "called"
+	Count      int
+}
+
+func (e *MockAssertionExpr) nodeType() string { return "MockAssertion" }
+func (e *MockAssertionExpr) exprNode()        {}
 
 // --- Expressions ---
 
@@ -238,11 +261,13 @@ func (e *IndexExpr) exprNode()        {}
 // --- New nodes for classes, async, etc. ---
 
 type DescribeStatement struct {
-	Name       string
-	Extends    string // parent class name (optional)
-	Properties []AssignStatement
-	Methods    []FuncDefinition
-	Line       int
+	Name                 string
+	Extends              string // parent class name (optional)
+	Properties           []AssignStatement
+	Methods              []FuncDefinition
+	PropertyVisibilities []string // parallel to Properties: "public", "private", or ""
+	MethodVisibilities   []string // parallel to Methods: "public", "private", or ""
+	Line                 int
 }
 
 func (s *DescribeStatement) nodeType() string { return "Describe" }
@@ -310,13 +335,32 @@ func (e *NothingLiteral) exprNode()        {}
 
 // --- Object/Map literal ---
 
+// ComputedProperty represents a computed property in an object literal: {[expr]: value}
+type ComputedProperty struct {
+	KeyExpr Expression
+	Value   Expression
+}
+
 type ObjectLiteral struct {
-	Keys   []string
-	Values []Expression
+	Keys               []string
+	Values             []Expression
+	ComputedProperties []ComputedProperty
 }
 
 func (e *ObjectLiteral) nodeType() string { return "Object" }
 func (e *ObjectLiteral) exprNode()        {}
+
+// --- Tagged template expression ---
+
+type TaggedTemplateExpr struct {
+	Tag         string
+	Template    string
+	Expressions []Expression
+	Line        int
+}
+
+func (e *TaggedTemplateExpr) nodeType() string { return "TaggedTemplate" }
+func (e *TaggedTemplateExpr) exprNode()        {}
 
 // --- Lambda/Arrow function ---
 
@@ -396,12 +440,14 @@ func (s *MatchStatement) stmtNode()        {}
 
 type EnumVariant struct {
 	Name   string
-	Fields []string // optional fields for algebraic data types
+	Fields []string     // optional fields for algebraic data types
+	Value  Expression   // optional associated value (e.g., OK is 200)
 }
 
 type DefineStatement struct {
 	Name     string
 	Variants []EnumVariant
+	Methods  []FuncDefinition // methods defined on the enum
 	Line     int
 }
 
@@ -435,6 +481,40 @@ type TypedAssignStatement struct {
 
 func (s *TypedAssignStatement) nodeType() string { return "TypedAssign" }
 func (s *TypedAssignStatement) stmtNode()        {}
+
+// --- Error Propagation ---
+
+// PropagateExpr represents an expression followed by ? (auto-propagate errors).
+type PropagateExpr struct {
+	Expr Expression
+}
+
+func (e *PropagateExpr) nodeType() string { return "Propagate" }
+func (e *PropagateExpr) exprNode()        {}
+
+// TryExpression wraps an expression with try semantics.
+type TryExpression struct {
+	Expr Expression
+}
+
+func (e *TryExpression) nodeType() string { return "TryExpr" }
+func (e *TryExpression) exprNode()        {}
+
+// --- Destructured Match Pattern ---
+
+// ObjectMatchPattern represents a {key: value, ...} pattern in match/when.
+type ObjectMatchPattern struct {
+	Fields []ObjectMatchField
+}
+
+func (e *ObjectMatchPattern) nodeType() string { return "ObjectMatchPattern" }
+func (e *ObjectMatchPattern) exprNode()        {}
+
+// ObjectMatchField represents a single field in an object match pattern.
+type ObjectMatchField struct {
+	Key   string
+	Value Expression // if non-nil, checks equality; if nil, just binds the key
+}
 
 // --- Reactive UI Framework ---
 
@@ -564,10 +644,20 @@ type AwaitExpression struct {
 func (e *AwaitExpression) nodeType() string { return "AwaitExpr" }
 func (e *AwaitExpression) exprNode()        {}
 
+// CancelStatement represents cancelling a spawned task.
+type CancelStatement struct {
+	Target string
+	Line   int
+}
+
+func (s *CancelStatement) nodeType() string { return "Cancel" }
+func (s *CancelStatement) stmtNode()        {}
+
 // ParallelBlock represents a parallel: block with multiple task assignments.
 type ParallelBlock struct {
-	Tasks []Statement // assignments inside the block
-	Line  int
+	Tasks     []Statement // assignments inside the block
+	IsSettled bool        // if true, use Promise.allSettled
+	Line      int
 }
 
 func (s *ParallelBlock) nodeType() string { return "Parallel" }
@@ -755,9 +845,10 @@ type ModelDef struct {
 
 // ServerBlockStatement represents a server: top-level block.
 type ServerBlockStatement struct {
-	Port   int
-	Routes []RouteDefinition
-	Line   int
+	Port       int
+	Routes     []RouteDefinition
+	WebSockets []WebSocketBlock
+	Line       int
 }
 
 func (s *ServerBlockStatement) nodeType() string { return "ServerBlock" }
@@ -792,3 +883,73 @@ type RespondStatement struct {
 
 func (s *RespondStatement) nodeType() string { return "Respond" }
 func (s *RespondStatement) stmtNode()        {}
+
+// --- Type Utilities ---
+
+// TypeAliasStatement represents "type X is Partial of Y" etc.
+type TypeAliasStatement struct {
+	Name     string
+	BaseType string
+	Utility  string   // "Partial", "Omit", "Pick", "Record", "Readonly", "Required"
+	Args     []string // extra args like field names for Omit/Pick, or key/value types for Record
+	Line     int
+}
+
+func (s *TypeAliasStatement) nodeType() string { return "TypeAlias" }
+func (s *TypeAliasStatement) stmtNode()        {}
+
+// --- Decorators ---
+
+// Decorator represents a @name or @name(args) annotation.
+type Decorator struct {
+	Name string
+	Args []Expression
+	Line int
+}
+
+// DecoratedFuncDefinition is a function with decorators.
+type DecoratedFuncDefinition struct {
+	Decorators []Decorator
+	Func       *FuncDefinition
+	Line       int
+}
+
+func (s *DecoratedFuncDefinition) nodeType() string { return "DecoratedFunc" }
+func (s *DecoratedFuncDefinition) stmtNode()        {}
+
+// DecoratedRouteDefinition is a route with decorators.
+type DecoratedRouteDefinition struct {
+	Decorators []Decorator
+	Route      RouteDefinition
+	Line       int
+}
+
+func (s *DecoratedRouteDefinition) nodeType() string { return "DecoratedRoute" }
+func (s *DecoratedRouteDefinition) stmtNode()        {}
+
+// --- WebSocket ---
+
+// WebSocketBlock represents a websocket handler block inside a server.
+type WebSocketBlock struct {
+	Path       string
+	OnConnect  []Statement
+	OnMessage  []Statement
+	OnClose    []Statement
+	ConnectVar string
+	MessageVar string
+	DataVar    string
+	CloseVar   string
+	Line       int
+}
+
+func (s *WebSocketBlock) nodeType() string { return "WebSocket" }
+func (s *WebSocketBlock) stmtNode()        {}
+
+// BroadcastStatement represents "broadcast <expr>".
+type BroadcastStatement struct {
+	Value Expression
+	Line  int
+}
+
+func (s *BroadcastStatement) nodeType() string { return "Broadcast" }
+func (s *BroadcastStatement) stmtNode()        {}

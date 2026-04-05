@@ -53,7 +53,8 @@ func isBlockStatement(stmt ast.Statement) bool {
 	switch stmt.(type) {
 	case *ast.IfStatement, *ast.ForEachStatement, *ast.WhileStatement,
 		*ast.FuncDefinition, *ast.DescribeStatement, *ast.TestBlock,
-		*ast.TryCatchStatement, *ast.MatchStatement, *ast.DefineStatement:
+		*ast.TryCatchStatement, *ast.MatchStatement, *ast.DefineStatement,
+		*ast.MockStatement:
 		return true
 	}
 	return false
@@ -133,6 +134,11 @@ func (f *Formatter) formatStmt(stmt ast.Statement) {
 
 	case *ast.TestBlock:
 		f.output.WriteString(fmt.Sprintf("%stest \"%s\":", f.prefix(), s.Name))
+		f.formatBlock(s.Body)
+
+	case *ast.MockStatement:
+		params := strings.Join(s.Params, ", ")
+		f.output.WriteString(fmt.Sprintf("%smock %s with %s:", f.prefix(), s.FuncName, params))
 		f.formatBlock(s.Body)
 
 	case *ast.ExpectStatement:
@@ -311,6 +317,9 @@ func (f *Formatter) formatExpr(expr ast.Expression) string {
 
 	case *ast.PipeExpr:
 		return fmt.Sprintf("%s | %s", f.formatExpr(e.Left), f.formatExpr(e.Right))
+
+	case *ast.MockAssertionExpr:
+		return fmt.Sprintf("%s was called %d time", e.FuncName, e.Count)
 
 	default:
 		return "???"

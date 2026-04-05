@@ -76,10 +76,25 @@ var keywords = map[string]TokenType{
 	"self":      TOKEN_SELF,
 	"yield":     TOKEN_YIELD,
 	"loop":      TOKEN_LOOP,
+	"mock":      TOKEN_MOCK,
 	"server":    TOKEN_SERVER,
 	"route":     TOKEN_ROUTE,
 	"database":  TOKEN_DATABASE,
 	"respond":   TOKEN_RESPOND,
+	"cancel":    TOKEN_CANCEL,
+	"settled":   TOKEN_SETTLED,
+	"private":   TOKEN_PRIVATE,
+	"public":    TOKEN_PUBLIC,
+	"type":      TOKEN_TYPE,
+	"Partial":   TOKEN_PARTIAL,
+	"Omit":      TOKEN_OMIT,
+	"Pick":      TOKEN_PICK,
+	"Record":    TOKEN_RECORD,
+	"Readonly":  TOKEN_READONLY,
+	"Required":  TOKEN_REQUIRED,
+	"websocket": TOKEN_WEBSOCKET,
+	"on":        TOKEN_ON,
+	"broadcast": TOKEN_BROADCAST,
 }
 
 type Lexer struct {
@@ -209,6 +224,19 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 
 		case ch == '|':
 			l.addToken(TOKEN_PIPE, "|")
+			l.advance()
+
+		case ch == '?':
+			l.addToken(TOKEN_QUESTION, "?")
+			l.advance()
+
+		case ch == '`':
+			if err := l.readBacktickString(); err != nil {
+				return nil, err
+			}
+
+		case ch == '@':
+			l.addToken(TOKEN_AT, "@")
 			l.advance()
 
 		case ch == '{':
@@ -349,6 +377,34 @@ func (l *Lexer) readIdentOrKeyword() {
 	} else {
 		l.addToken(TOKEN_IDENT, word)
 	}
+}
+
+func (l *Lexer) readBacktickString() error {
+	l.addToken(TOKEN_BACKTICK, "`")
+	l.pos++ // skip opening backtick
+	l.col++
+	start := l.pos
+	startLine := l.line
+
+	for l.pos < len(l.source) && l.source[l.pos] != '`' {
+		if l.source[l.pos] == '\n' {
+			l.line++
+			l.col = 0
+		}
+		l.pos++
+		l.col++
+	}
+
+	if l.pos >= len(l.source) {
+		return fmt.Errorf("line %d: unterminated backtick string (started on line %d)", l.line, startLine)
+	}
+
+	value := l.source[start:l.pos]
+	l.addToken(TOKEN_STRING, value)
+	l.pos++ // skip closing backtick
+	l.col++
+	l.addToken(TOKEN_BACKTICK, "`")
+	return nil
 }
 
 func isDigit(ch byte) bool {

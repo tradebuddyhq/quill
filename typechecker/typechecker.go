@@ -70,6 +70,14 @@ type ClassInfo struct {
 	Methods map[string]FuncSig
 }
 
+// TypeAliasInfo stores information about a type alias.
+type TypeAliasInfo struct {
+	Name     string
+	BaseType string
+	Utility  string
+	Args     []string
+}
+
 // Checker performs type checking on Quill ASTs.
 type Checker struct {
 	diagnostics []TypeDiagnostic
@@ -80,6 +88,7 @@ type Checker struct {
 	enums       map[string]EnumInfo   // enum name -> enum info
 	classes     map[string]ClassInfo  // class name -> class info
 	narrowings  map[string]Type       // temporary type narrowings (for type narrowing in if blocks)
+	typeAliases map[string]TypeAliasInfo // type alias name -> info
 }
 
 // FuncSig represents a function signature.
@@ -99,10 +108,11 @@ func New() *Checker {
 			"text": true, "number": true, "boolean": true,
 			"list": true, "object": true, "nothing": true, "any": true,
 		},
-		traits:     make(map[string]TraitInfo),
-		enums:      make(map[string]EnumInfo),
-		classes:    make(map[string]ClassInfo),
-		narrowings: make(map[string]Type),
+		traits:      make(map[string]TraitInfo),
+		enums:       make(map[string]EnumInfo),
+		classes:     make(map[string]ClassInfo),
+		narrowings:  make(map[string]Type),
+		typeAliases: make(map[string]TypeAliasInfo),
 	}
 }
 
@@ -181,6 +191,21 @@ func (c *Checker) Check(program *ast.Program) []TypeDiagnostic {
 				traitInfo.Methods = append(traitInfo.Methods, methodSig)
 			}
 			c.traits[s.Name] = traitInfo
+
+		case *ast.TypeAliasStatement:
+			c.types[s.Name] = true
+			c.typeAliases[s.Name] = TypeAliasInfo{
+				Name:     s.Name,
+				BaseType: s.BaseType,
+				Utility:  s.Utility,
+				Args:     s.Args,
+			}
+			// Validate that base type is known
+			if !c.types[s.BaseType] && s.Utility != "Record" {
+				c.addWarning(s.Line, fmt.Sprintf("type alias %q references unknown base type %q", s.Name, s.BaseType))
+			}
+			// For Omit/Pick, validate field names could be checked if we had class info
+			// For Record, register as a known type without base type check
 		}
 	}
 
@@ -373,6 +398,11 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 			c.checkStmt(stmt)
 		}
 
+	case *ast.MockStatement:
+		for _, stmt := range s.Body {
+			c.checkStmt(stmt)
+		}
+
 	case *ast.ExpectStatement:
 		c.inferType(s.Expr)
 
@@ -408,6 +438,27 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 		// nothing to type check
 	case *ast.ContinueStatement:
 		// nothing to type check
+	case *ast.TypeAliasStatement:
+		// Already registered in first pass
+	case *ast.DecoratedFuncDefinition:
+		// Check the inner function
+		c.checkStmt(s.Func)
+	case *ast.DecoratedRouteDefinition:
+		for _, stmt := range s.Route.Body {
+			c.checkStmt(stmt)
+		}
+	case *ast.WebSocketBlock:
+		for _, stmt := range s.OnConnect {
+			c.checkStmt(stmt)
+		}
+		for _, stmt := range s.OnMessage {
+			c.checkStmt(stmt)
+		}
+		for _, stmt := range s.OnClose {
+			c.checkStmt(stmt)
+		}
+	case *ast.BroadcastStatement:
+		c.inferType(s.Value)
 	}
 }
 
@@ -551,6 +602,8 @@ func (c *Checker) inferType(expr ast.Expression) Type {
 		return Type{Name: "any"}
 	case *ast.SpreadExpr:
 		return c.inferType(e.Expr)
+	case *ast.MockAssertionExpr:
+		return Type{Name: "boolean"}
 	default:
 		return Type{Name: "any"}
 	}

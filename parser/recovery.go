@@ -100,7 +100,7 @@ func isStatementStart(t lexer.TokenType) bool {
 		lexer.TOKEN_EXPECT, lexer.TOKEN_DESCRIBE, lexer.TOKEN_TRY,
 		lexer.TOKEN_BREAK, lexer.TOKEN_CONTINUE, lexer.TOKEN_FROM,
 		lexer.TOKEN_MATCH, lexer.TOKEN_DEFINE, lexer.TOKEN_COMPONENT,
-		lexer.TOKEN_MOUNT, lexer.TOKEN_IDENT:
+		lexer.TOKEN_MOUNT, lexer.TOKEN_MOCK, lexer.TOKEN_IDENT:
 		return true
 	}
 	return false

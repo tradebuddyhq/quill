@@ -95,9 +95,26 @@ const (
 	TOKEN_USING
 	TOKEN_SELF
 
+	// Cancel keyword
+	TOKEN_CANCEL
+	// Question mark operator
+	TOKEN_QUESTION
+	// Settled keyword
+	TOKEN_SETTLED
+
+	// Visibility keywords
+	TOKEN_PRIVATE
+	TOKEN_PUBLIC
+
 	// Iterator/generator keywords
 	TOKEN_YIELD
 	TOKEN_LOOP
+
+	// Mock keyword
+	TOKEN_MOCK
+
+	// Template literal
+	TOKEN_BACKTICK
 
 	// Full-stack keywords
 	TOKEN_SERVER
@@ -116,6 +133,23 @@ const (
 	TOKEN_SLASH
 	TOKEN_MODULO
 	TOKEN_DOT
+
+	// Type utility keywords
+	TOKEN_TYPE
+	TOKEN_PARTIAL
+	TOKEN_OMIT
+	TOKEN_PICK
+	TOKEN_RECORD
+	TOKEN_READONLY
+	TOKEN_REQUIRED
+
+	// Decorator
+	TOKEN_AT
+
+	// WebSocket keywords
+	TOKEN_WEBSOCKET
+	TOKEN_ON
+	TOKEN_BROADCAST
 
 	// Delimiters
 	TOKEN_COLON
@@ -204,8 +238,15 @@ var tokenNames = map[TokenType]string{
 	TOKEN_WHERE:     "where",
 	TOKEN_USING:     "using",
 	TOKEN_SELF:      "self",
+	TOKEN_CANCEL:    "cancel",
+	TOKEN_QUESTION:  "?",
+	TOKEN_SETTLED:   "settled",
+	TOKEN_PRIVATE:   "private",
+	TOKEN_PUBLIC:    "public",
 	TOKEN_YIELD:     "yield",
 	TOKEN_LOOP:      "loop",
+	TOKEN_MOCK:      "mock",
+	TOKEN_BACKTICK:  "`",
 	TOKEN_SERVER:    "server",
 	TOKEN_ROUTE:     "route",
 	TOKEN_DATABASE:  "database",
@@ -226,6 +267,17 @@ var tokenNames = map[TokenType]string{
 	TOKEN_RPAREN:    ")",
 	TOKEN_LBRACKET:  "[",
 	TOKEN_RBRACKET:  "]",
+	TOKEN_TYPE:      "type",
+	TOKEN_PARTIAL:   "Partial",
+	TOKEN_OMIT:      "Omit",
+	TOKEN_PICK:      "Pick",
+	TOKEN_RECORD:    "Record",
+	TOKEN_READONLY:  "Readonly",
+	TOKEN_REQUIRED:  "Required",
+	TOKEN_AT:        "@",
+	TOKEN_WEBSOCKET: "websocket",
+	TOKEN_ON:        "on",
+	TOKEN_BROADCAST: "broadcast",
 }
 
 func (t TokenType) String() string {
