@@ -181,6 +181,9 @@ func main() {
 	case "web":
 		scaffoldWebServer()
 
+	case "worker":
+		scaffoldWorker()
+
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
 
@@ -1312,6 +1315,7 @@ func printUsage() {
 	fmt.Println("  quill generate \"<prompt>\"    AI-powered app generation (Claude/Gemini)")
 	fmt.Println("  quill discord [name]         Scaffold a new Discord bot project")
 	fmt.Println("  quill web [name]             Scaffold a new Express web server project")
+	fmt.Println("  quill worker [name]          Scaffold a new Cloudflare Worker project")
 	fmt.Println("  quill version                Show version")
 	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
@@ -1786,4 +1790,93 @@ server.js
 	fmt.Printf("  cd %s\n", projectName)
 	fmt.Println("  npm install")
 	fmt.Println("  quill run server.quill")
+}
+
+func scaffoldWorker() {
+	projectName := "my-worker"
+	if len(os.Args) >= 3 {
+		projectName = os.Args[2]
+	}
+
+	// Create project directory
+	if err := os.MkdirAll(projectName, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Create package.json
+	packageJSON := fmt.Sprintf(`{
+  "name": "%s",
+  "version": "1.0.0",
+  "description": "A Cloudflare Worker built with Quill",
+  "main": "worker.js",
+  "scripts": {
+    "build": "quill build worker.quill",
+    "dev": "quill build worker.quill && npx wrangler dev worker.js",
+    "deploy": "quill build worker.quill && npx wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
+`, projectName)
+
+	// Create wrangler.toml
+	wranglerToml := fmt.Sprintf(`name = "%s"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+`, projectName)
+
+	// Create worker.quill
+	workerQuill := `-- Cloudflare Worker
+-- Built with Quill
+
+worker on fetch with request:
+  url is new URL(request.url)
+  path is url.pathname
+
+  if path is "/":
+    respond html "<h1>Hello from Quill!</h1>"
+
+  if path is "/api/hello":
+    name is url.searchParams.get("name")
+    if name is nothing:
+      name is "World"
+    respond json { message: "Hello, {name}!" }
+
+  respond "Not found" status 404
+`
+
+	// Create .gitignore
+	gitignore := `node_modules/
+worker.js
+.wrangler/
+`
+
+	files := map[string]string{
+		"package.json":  packageJSON,
+		"wrangler.toml": wranglerToml,
+		"worker.quill":  workerQuill,
+		".gitignore":    gitignore,
+	}
+
+	for name, content := range files {
+		path := filepath.Join(projectName, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", path, err)
+			continue
+		}
+		fmt.Printf("  Created %s/%s\n", projectName, name)
+	}
+
+	fmt.Printf("\nCloudflare Worker project created in ./%s\n", projectName)
+	fmt.Println("\nNext steps:")
+	fmt.Printf("  cd %s\n", projectName)
+	fmt.Println("  npm install")
+	fmt.Println("  npm run dev          # Start local dev server")
+	fmt.Println("  npm run deploy       # Deploy to Cloudflare")
+	fmt.Println("\nFor KV storage, add bindings to wrangler.toml:")
+	fmt.Println("  [[kv_namespaces]]")
+	fmt.Println("  binding = \"MY_KV\"")
+	fmt.Println("  id = \"your-namespace-id\"")
 }

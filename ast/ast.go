@@ -874,11 +874,12 @@ type AuthBlockStatement struct {
 func (s *AuthBlockStatement) nodeType() string { return "AuthBlock" }
 func (s *AuthBlockStatement) stmtNode()        {}
 
-// RespondStatement represents "respond with <expr> [status <code>]".
+// RespondStatement represents "respond [json|html] <expr> [status <code>]".
 type RespondStatement struct {
-	Value      Expression
-	StatusCode int // default 200
-	Line       int
+	Value       Expression
+	ContentType string // "json", "html", or "" (plain text)
+	StatusCode  int    // default 200
+	Line        int
 }
 
 func (s *RespondStatement) nodeType() string { return "Respond" }
@@ -1006,3 +1007,15 @@ type OnStatement struct {
 
 func (s *OnStatement) nodeType() string { return "On" }
 func (s *OnStatement) stmtNode()        {}
+
+// WorkerHandler represents a Cloudflare Worker fetch handler:
+//   worker on fetch with request [env]:
+//     ...body...
+type WorkerHandler struct {
+	Params []string // e.g. ["request"] or ["request", "env"]
+	Body   []Statement
+	Line   int
+}
+
+func (s *WorkerHandler) nodeType() string { return "WorkerHandler" }
+func (s *WorkerHandler) stmtNode()        {}

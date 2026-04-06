@@ -365,6 +365,71 @@ app.listen(portNum, with:
   console.log(`  ${DIM}quill run server.quill${RESET}\n`);
 }
 
+// ---- Scaffold: Cloudflare Worker ----
+function cmdWorker() {
+  const projectName = process.argv[3] || 'my-worker';
+
+  if (fs.existsSync(projectName)) {
+    error(`Directory "${projectName}" already exists.`);
+    process.exit(1);
+  }
+
+  fs.mkdirSync(projectName, { recursive: true });
+
+  // package.json
+  fs.writeFileSync(path.join(projectName, 'package.json'), JSON.stringify({
+    name: projectName,
+    version: '1.0.0',
+    description: 'A Cloudflare Worker built with Quill',
+    main: 'worker.js',
+    scripts: {
+      build: 'quill build worker.quill',
+      dev: 'quill build worker.quill && npx wrangler dev worker.js',
+      deploy: 'quill build worker.quill && npx wrangler deploy'
+    },
+    devDependencies: { wrangler: '^3.0.0' }
+  }, null, 2) + '\n');
+
+  // wrangler.toml
+  fs.writeFileSync(path.join(projectName, 'wrangler.toml'), `name = "${projectName}"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+`);
+
+  // worker.quill
+  fs.writeFileSync(path.join(projectName, 'worker.quill'), `-- Cloudflare Worker
+-- Built with Quill
+
+worker on fetch with request:
+  url is new URL(request.url)
+  path is url.pathname
+
+  if path is "/":
+    respond html "<h1>Hello from Quill!</h1>"
+
+  if path is "/api/hello":
+    name is url.searchParams.get("name")
+    if name is nothing:
+      name is "World"
+    respond json { message: "Hello, {name}!" }
+
+  respond "Not found" status 404
+`);
+
+  // .gitignore
+  fs.writeFileSync(path.join(projectName, '.gitignore'), `node_modules/
+worker.js
+.wrangler/
+`);
+
+  console.log(`\n${GREEN}${BOLD}Created Cloudflare Worker project: ${projectName}${RESET}\n`);
+  console.log(`  ${DIM}cd ${projectName}${RESET}`);
+  console.log(`  ${DIM}npm install${RESET}`);
+  console.log(`  ${DIM}npm run dev${RESET}              ${DIM}# Start local dev server${RESET}`);
+  console.log(`  ${DIM}npm run deploy${RESET}           ${DIM}# Deploy to Cloudflare${RESET}\n`);
+  console.log(`${DIM}Docs: https://quill.tradebuddy.dev/docs/workers${RESET}`);
+}
+
 // ---- AI Generate ----
 function cmdGenerate(prompt) {
   const { execSync } = require('child_process');
@@ -648,6 +713,7 @@ ${BOLD}Usage:${RESET}
 ${BOLD}Scaffolding:${RESET}
   quill discord [name]         Scaffold a Discord bot project
   quill web [name]             Scaffold an Express web server project
+  quill worker [name]          Scaffold a Cloudflare Worker project
   quill generate "<prompt>"    AI-powered app generation (Claude/Gemini)
   quill deploy                 Generate Dockerfile for deployment
 
@@ -709,6 +775,9 @@ switch (cmd) {
     break;
   case 'web':
     cmdWeb();
+    break;
+  case 'worker':
+    cmdWorker();
     break;
   case 'generate':
     if (!args[1]) { error('Missing prompt. Usage: quill generate "<prompt>"'); process.exit(1); }

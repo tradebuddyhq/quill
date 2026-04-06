@@ -157,6 +157,9 @@ const (
 	TOKEN_REPLY
 	TOKEN_EMBED
 
+	// Worker keywords
+	TOKEN_WORKER
+
 	// Delimiters
 	TOKEN_COLON
 	TOKEN_COMMA
@@ -288,6 +291,7 @@ var tokenNames = map[TokenType]string{
 	TOKEN_DESCRIBED:   "described",
 	TOKEN_REPLY:       "reply",
 	TOKEN_EMBED:       "embed",
+	TOKEN_WORKER:      "worker",
 }
 
 func (t TokenType) String() string {

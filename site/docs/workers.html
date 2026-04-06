@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloudflare Workers - Quill</title>
+  <meta name="description" content="Build Cloudflare Workers with Quill. Deploy serverless APIs at the edge with readable syntax.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="/docs/getting-started">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="/docs/language">Language guide</a></li>
+      </ul>
+      <h4>Cloudflare Workers</h4>
+      <ul>
+        <li><a href="/docs/workers" class="active">Overview</a></li>
+        <li><a href="#getting-started">Getting started</a></li>
+        <li><a href="#routing">Routing</a></li>
+        <li><a href="#json-apis">JSON APIs</a></li>
+        <li><a href="#kv-storage">KV Storage</a></li>
+        <li><a href="#deployment">Deployment</a></li>
+      </ul>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/docs/discord">Discord Bots</a></li>
+        <li><a href="/docs/web">Web Servers</a></li>
+        <li><a href="/docs/workers" class="active">Cloudflare Workers</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/tools">Tools</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Cloudflare Workers with Quill</h1>
+      <p>Quill makes it easy to build Cloudflare Workers &mdash; serverless functions that run at the edge, close to your users. With the <code>worker on fetch</code> syntax, you can build a full API in 15 lines of readable code.</p>
+
+      <!-- ============================================ -->
+      <!-- GETTING STARTED                              -->
+      <!-- ============================================ -->
+
+      <h2 id="getting-started">Getting Started</h2>
+
+      <p>The fastest way to start is with the scaffold command:</p>
+
+      <pre><code>quill worker my-api
+cd my-api
+npm install</code></pre>
+
+      <p>This creates a project with:</p>
+      <ul>
+        <li><code>worker.quill</code> &mdash; your worker source code</li>
+        <li><code>wrangler.toml</code> &mdash; Cloudflare configuration</li>
+        <li><code>package.json</code> &mdash; with wrangler as a dev dependency</li>
+      </ul>
+
+      <p>Build and run locally:</p>
+
+      <pre><code>npm run dev</code></pre>
+
+      <p>This compiles your Quill code to JavaScript and starts a local Wrangler dev server.</p>
+
+      <h3>Manual setup</h3>
+
+      <p>If you prefer to set things up yourself:</p>
+
+      <ol>
+        <li>Create a <code>worker.quill</code> file</li>
+        <li>Compile it: <code>quill build worker.quill</code></li>
+        <li>Create a <code>wrangler.toml</code> pointing to <code>worker.js</code></li>
+        <li>Run with <code>npx wrangler dev worker.js</code></li>
+      </ol>
+
+      <!-- ============================================ -->
+      <!-- BASIC WORKER                                 -->
+      <!-- ============================================ -->
+
+      <h2 id="basic-worker">Your First Worker</h2>
+
+      <p>A minimal Cloudflare Worker in Quill:</p>
+
+      <pre><code>worker on fetch with request:
+  respond "Hello from Quill!"</code></pre>
+
+      <p>This compiles to a standard Cloudflare Worker using ES modules:</p>
+
+      <pre><code>export default {
+  async fetch(request) {
+    return new Response("Hello from Quill!");
+  }
+};</code></pre>
+
+      <!-- ============================================ -->
+      <!-- ROUTING                                      -->
+      <!-- ============================================ -->
+
+      <h2 id="routing">Routing</h2>
+
+      <p>Use the standard <code>URL</code> API and <code>if</code> statements for routing:</p>
+
+      <pre><code>worker on fetch with request:
+  url is new URL(request.url)
+  path is url.pathname
+
+  if path is "/":
+    respond html "&lt;h1&gt;Welcome!&lt;/h1&gt;"
+
+  if path is "/about":
+    respond html "&lt;h1&gt;About Us&lt;/h1&gt;"
+
+  respond "Not found" status 404</code></pre>
+
+      <p>You can use <code>starts with</code> for prefix matching by using JavaScript's <code>startsWith</code> method in expressions.</p>
+
+      <!-- ============================================ -->
+      <!-- JSON APIs                                    -->
+      <!-- ============================================ -->
+
+      <h2 id="json-apis">JSON APIs</h2>
+
+      <p>Return JSON responses with the <code>respond json</code> keyword:</p>
+
+      <pre><code>worker on fetch with request:
+  url is new URL(request.url)
+  path is url.pathname
+
+  if path is "/api/hello":
+    name is url.searchParams.get("name")
+    if name is nothing:
+      name is "World"
+    respond json { message: "Hello, {name}!" }
+
+  if path is "/api/status":
+    respond json { status: "ok", version: "1.0.0" }
+
+  respond json { error: "Not found" } status 404</code></pre>
+
+      <p>The <code>respond json</code> keyword automatically:</p>
+      <ul>
+        <li>Serializes the object with <code>JSON.stringify()</code></li>
+        <li>Sets the <code>Content-Type: application/json</code> header</li>
+      </ul>
+
+      <h3>Response types</h3>
+
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="text-align: left; padding: 8px;">Quill syntax</th>
+            <th style="text-align: left; padding: 8px;">Content-Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>respond "text"</code></td>
+            <td style="padding: 8px;">text/plain (default)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>respond json { ... }</code></td>
+            <td style="padding: 8px;">application/json</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>respond html "&lt;h1&gt;...&lt;/h1&gt;"</code></td>
+            <td style="padding: 8px;">text/html</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Add a status code with the <code>status</code> keyword:</p>
+      <pre><code>respond "Not found" status 404
+respond json { error: "Unauthorized" } status 401</code></pre>
+
+      <!-- ============================================ -->
+      <!-- KV STORAGE                                   -->
+      <!-- ============================================ -->
+
+      <h2 id="kv-storage">KV Storage</h2>
+
+      <p>Cloudflare Workers KV is a key-value store available at the edge. To use it, add the <code>env</code> parameter to your worker handler:</p>
+
+      <pre><code>worker on fetch with request env:
+  url is new URL(request.url)
+  path is url.pathname
+
+  if path is "/get":
+    key is url.searchParams.get("key")
+    value is await env.MY_KV.get(key)
+    if value is nothing:
+      respond json { error: "Key not found" } status 404
+    respond json { key: key, value: value }
+
+  if path is "/set":
+    key is url.searchParams.get("key")
+    val is url.searchParams.get("value")
+    await env.MY_KV.put(key, val)
+    respond json { success: yes }
+
+  respond "Not found" status 404</code></pre>
+
+      <p>You also need to configure the KV binding in <code>wrangler.toml</code>:</p>
+
+      <pre><code>name = "my-worker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "MY_KV"
+id = "your-namespace-id"</code></pre>
+
+      <p>Create a KV namespace with the Wrangler CLI:</p>
+
+      <pre><code>npx wrangler kv:namespace create "MY_KV"</code></pre>
+
+      <p>This will output the namespace ID to paste into your <code>wrangler.toml</code>. See the <a href="https://developers.cloudflare.com/kv/" target="_blank">Cloudflare KV documentation</a> for more details.</p>
+
+      <!-- ============================================ -->
+      <!-- DEPLOYMENT                                   -->
+      <!-- ============================================ -->
+
+      <h2 id="deployment">Deployment</h2>
+
+      <p>Deploy your worker to Cloudflare's global network:</p>
+
+      <ol>
+        <li><strong>Build</strong> your Quill code: <code>quill build worker.quill</code></li>
+        <li><strong>Login</strong> to Cloudflare: <code>npx wrangler login</code></li>
+        <li><strong>Deploy</strong>: <code>npx wrangler deploy</code></li>
+      </ol>
+
+      <p>Or use the npm script:</p>
+
+      <pre><code>npm run deploy</code></pre>
+
+      <p>Your worker will be available at <code>https://your-worker.your-subdomain.workers.dev</code>.</p>
+
+      <p>For custom domains, see the <a href="https://developers.cloudflare.com/workers/configuration/routing/" target="_blank">Cloudflare Workers routing documentation</a>.</p>
+
+      <!-- ============================================ -->
+      <!-- NEXT STEPS                                   -->
+      <!-- ============================================ -->
+
+      <h2>Next Steps</h2>
+
+      <ul>
+        <li>Explore the <a href="https://developers.cloudflare.com/workers/" target="_blank">Cloudflare Workers documentation</a> for the full Workers API.</li>
+        <li>Learn about <a href="https://developers.cloudflare.com/workers/runtime-apis/kv/" target="_blank">Workers KV</a> for edge storage.</li>
+        <li>Check out the <a href="/docs/examples">Examples</a> page for more Quill programs.</li>
+        <li>Join the <a href="https://discord.gg/9rRyGRrh8E" target="_blank">Quill Discord community</a> to share your project and get help.</li>
+      </ul>
+
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+        <li><a href="https://discord.gg/9rRyGRrh8E" target="_blank">Discord</a></li>
+        <li><a href="https://tradebuddy.dev" target="_blank">tradebuddy.dev</a></li>
+      </ul>
+      <p>Built with care by <a href="https://tradebuddy.dev" target="_blank">Trade Buddy</a>. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

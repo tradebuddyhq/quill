@@ -202,6 +202,7 @@ mount Counter to "#app"
 | `quill generate "description"` | AI-powered project scaffolding |
 | `quill discord my-bot` | Scaffold a Discord bot project |
 | `quill web my-api` | Scaffold an Express web server project |
+| `quill worker my-api` | Scaffold a Cloudflare Worker project |
 | `quill help` | Show help |
 
 ## Language Reference
@@ -920,6 +921,39 @@ node server.js
 ```
 
 See the [Web Servers documentation](https://quill.tradebuddy.dev/docs/web) for routes, middleware, JSON APIs, and deployment.
+
+## Cloudflare Workers
+
+Quill compiles to Cloudflare Worker-compatible ES modules with the `worker on fetch` syntax.
+
+**Scaffold a new worker:**
+```bash
+quill worker my-api
+cd my-api
+```
+
+**Example worker:**
+```
+worker on fetch with request:
+  url is new URL(request.url)
+  path is url.pathname
+
+  if path is "/":
+    respond html "<h1>Hello from Quill!</h1>"
+
+  if path is "/api/hello":
+    respond json { message: "Hello!" }
+
+  respond "Not found" status 404
+```
+
+**Build and deploy:**
+```bash
+quill build worker.quill
+npx wrangler deploy
+```
+
+See the [Cloudflare Workers documentation](https://quill.tradebuddy.dev/docs/workers) for routing, JSON APIs, KV storage, and deployment.
 
 ## Concurrency
 

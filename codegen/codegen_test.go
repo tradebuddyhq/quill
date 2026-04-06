@@ -906,3 +906,73 @@ bot is Discord.bot(env("DISCORD_TOKEN"))
 		t.Errorf("expected .env loader, got:\n%s", output)
 	}
 }
+
+func TestGenerateWorkerFetch(t *testing.T) {
+	src := `worker on fetch with request:
+  respond "Hello from Quill!"
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		"export default {",
+		"async fetch(request)",
+		"return new Response(",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+
+	// Worker mode should NOT include Node.js runtime
+	if strings.Contains(output, "require(") {
+		t.Errorf("worker output should not contain require(), got:\n%s", output)
+	}
+}
+
+func TestGenerateRespondJson(t *testing.T) {
+	src := `worker on fetch with request:
+  respond json { message: "Hello!" }
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		"JSON.stringify(",
+		`"Content-Type": "application/json"`,
+		"return new Response(",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}
+
+func TestGenerateRespondStatus(t *testing.T) {
+	src := `worker on fetch with request:
+  respond "not found" status 404
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		"return new Response(",
+		"status: 404",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}

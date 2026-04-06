@@ -120,6 +120,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseCommand()
 	case p.check(lexer.TOKEN_REPLY):
 		return p.parseReply()
+	case p.check(lexer.TOKEN_WORKER):
+		return p.parseWorkerHandler()
+	case p.check(lexer.TOKEN_RESPOND):
+		return p.parseRespond()
 	case p.check(lexer.TOKEN_LBRACE):
 		// Check if this is a destructuring: {name, age} is expr
 		if p.isObjectDestructure() {
@@ -2165,7 +2169,17 @@ func (p *Parser) parseAuthBlock() ast.Statement {
 func (p *Parser) parseRespond() ast.Statement {
 	line := p.current().Line
 	p.advance() // consume "respond"
-	p.expect(lexer.TOKEN_WITH)
+
+	// Check for optional content type modifier: json, html
+	contentType := ""
+	if p.check(lexer.TOKEN_IDENT) && (p.current().Value == "json" || p.current().Value == "html") {
+		contentType = p.advance().Value
+	}
+
+	// Support legacy "respond with <expr>" syntax
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+	}
 
 	value := p.parseExpression()
 
@@ -2180,9 +2194,40 @@ func (p *Parser) parseRespond() ast.Statement {
 	p.consumeNewline()
 
 	return &ast.RespondStatement{
-		Value:      value,
-		StatusCode: statusCode,
-		Line:       line,
+		Value:       value,
+		ContentType: contentType,
+		StatusCode:  statusCode,
+		Line:        line,
+	}
+}
+
+func (p *Parser) parseWorkerHandler() *ast.WorkerHandler {
+	line := p.current().Line
+	p.advance() // consume "worker"
+	p.expect(lexer.TOKEN_ON) // consume "on"
+
+	// Expect "fetch" as identifier
+	fetchTok := p.expect(lexer.TOKEN_IDENT)
+	if fetchTok.Value != "fetch" {
+		panic(&ParseError{Line: line, Message: fmt.Sprintf("expected 'fetch' after 'worker on', got '%s'", fetchTok.Value)})
+	}
+
+	var params []string
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+		for p.check(lexer.TOKEN_IDENT) {
+			params = append(params, p.advance().Value)
+		}
+	}
+
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+
+	return &ast.WorkerHandler{
+		Params: params,
+		Body:   body,
+		Line:   line,
 	}
 }
 
