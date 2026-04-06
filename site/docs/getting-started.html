@@ -110,10 +110,84 @@ JavaScript is pretty good too
 Quill is the best!</code></pre>
 
       <h2 id="building">Building to JavaScript</h2>
-      <p>Quill compiles to JavaScript. You can output the compiled JS with:</p>
-      <pre><code>quill build hello.quill -o hello.js</code></pre>
-      <p>Then run it with Node.js or include it in a web page:</p>
+
+      <p>Quill compiles your <code>.quill</code> files to JavaScript. This is how you go from development to production.</p>
+
+      <h3>Compile a file</h3>
+      <pre><code><span class="cmt"># Compile hello.quill → hello.js</span>
+quill build hello.quill</code></pre>
+
+      <p>This creates a <code>hello.js</code> file in the same directory. You can then run it with Node.js:</p>
       <pre><code>node hello.js</code></pre>
+
+      <h3>How it works</h3>
+      <p>Quill is a compiled language. Your Quill source code is transformed into JavaScript, which runs anywhere JS runs &mdash; Node.js, browsers, Cloudflare Workers, etc.</p>
+
+      <pre><code><span class="cmt">-- greet.quill (your source code)</span>
+<span class="kw">to</span> greet name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+
+greet(<span class="str">"World"</span>)</code></pre>
+
+      <pre><code><span class="cmt">// greet.js (compiled output)</span>
+function greet(name) {
+  console.log(`Hello, ${name}!`);
+}
+
+greet("World");</code></pre>
+
+      <h3>Development vs Production</h3>
+
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Command</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">What it does</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">When to use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>quill run file.quill</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Compiles and runs immediately</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Development &amp; testing</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>quill build file.quill</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Compiles to <code>.js</code> file</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Production deployment</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>quill check file.quill</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Checks for errors without running</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Before committing code</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Deploying your app</h3>
+
+      <p>Once compiled, your <code>.js</code> file runs on any platform with Node.js:</p>
+
+      <pre><code><span class="cmt"># Build your Quill app</span>
+quill build server.quill
+
+<span class="cmt"># Run with Node.js</span>
+node server.js
+
+<span class="cmt"># Or use pm2 to keep it running</span>
+pm2 start server.js --name my-app</code></pre>
+
+      <p><strong>Discord bots:</strong> <code>quill build bot.quill</code> &rarr; <code>node bot.js</code> on any VPS</p>
+      <p><strong>Web servers:</strong> <code>quill build server.quill</code> &rarr; <code>node server.js</code> behind nginx</p>
+      <p><strong>Cloudflare Workers:</strong> <code>quill build worker.quill</code> &rarr; <code>npx wrangler deploy</code></p>
+
+      <h3>Generate a Dockerfile</h3>
+      <pre><code><span class="cmt"># Auto-generate a Dockerfile for your app</span>
+quill deploy</code></pre>
+      <p>This creates a production-ready <code>Dockerfile</code>. Build and run with:</p>
+      <pre><code>docker build -t my-app .
+docker run -d --env-file .env my-app</code></pre>
 
       <h2>Next steps</h2>
       <ul>
