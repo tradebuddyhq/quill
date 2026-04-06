@@ -21,18 +21,21 @@ type Generator struct {
 	needsAIRuntime       bool     // inject Anthropic SDK require and client
 	taggedTemplatesUsed  []string // track which tagged template tags are used
 	discordClientVar     string   // tracks the variable name for the Discord client
+	importedFiles        map[string]bool // tracks imported .quill files to prevent circular imports
 }
 
 func New() *Generator {
 	return &Generator{
-		declared: make(map[string]bool),
+		declared:      make(map[string]bool),
+		importedFiles: make(map[string]bool),
 	}
 }
 
 func NewBrowser() *Generator {
 	return &Generator{
-		declared: make(map[string]bool),
-		browser:  true,
+		declared:      make(map[string]bool),
+		browser:       true,
+		importedFiles: make(map[string]bool),
 	}
 }
 
@@ -154,7 +157,7 @@ func (g *Generator) Generate(program *ast.Program) string {
 		commandCode = g.genCommandRegistration(cmds)
 	}
 
-	needsAsync := strings.Contains(userCodeStr, "await ") || g.hasAsyncConstructs(program) || g.hasCommandStatements(program)
+	needsAsync := g.programContainsAwait(program) || g.hasAsyncConstructs(program) || g.hasCommandStatements(program)
 	if needsAsync {
 		g.genLine = preambleLines // (async () => {
 		out.WriteString("(async () => {\n")
@@ -264,9 +267,18 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.FuncDefinition:
 		g.addStmtMapping(s.Line)
+		// Save the current declared map and create a new scope for the function
+		outerDeclared := g.declared
+		g.declared = make(map[string]bool)
+		// Mark function params as declared in the new scope
+		for _, param := range s.Params {
+			g.declared[param] = true
+		}
 		g.indent++
 		body := g.genBlock(s.Body)
 		g.indent--
+		// Restore the outer scope
+		g.declared = outerDeclared
 		params := strings.Join(s.Params, ", ")
 		if g.bodyContainsYield(s.Body) {
 			return fmt.Sprintf("%sfunction* %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
@@ -368,16 +380,34 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.UseStatement:
 		if strings.HasSuffix(s.Path, ".quill") {
+			// Circular import protection
+			if g.importedFiles[s.Path] {
+				return fmt.Sprintf("%s// skipped circular import of %q", prefix, s.Path)
+			}
+			g.importedFiles[s.Path] = true
 			imported, err := os.ReadFile(s.Path)
 			if err != nil {
 				return fmt.Sprintf("%s// Error: could not import %q", prefix, s.Path)
 			}
 			l := lexer.New(string(imported))
-			tokens, _ := l.Tokenize()
+			tokens, err := l.Tokenize()
+			if err != nil {
+				return fmt.Sprintf("%s// Error: could not tokenize %q: %s", prefix, s.Path, err)
+			}
 			pr := parser.New(tokens)
-			prog, _ := pr.Parse()
-			importGen := New()
+			prog, err := pr.Parse()
+			if err != nil || prog == nil {
+				return fmt.Sprintf("%s// Error: could not parse %q", prefix, s.Path)
+			}
+			var importGen *Generator
+			if g.browser {
+				importGen = NewBrowser()
+			} else {
+				importGen = New()
+			}
 			importGen.indent = g.indent
+			// Share the importedFiles map to prevent circular imports across transitive imports
+			importGen.importedFiles = g.importedFiles
 			code := importGen.GenerateBody(prog)
 			return fmt.Sprintf("%s// imported from %q\n%s", prefix, s.Path, code)
 		}
@@ -385,6 +415,7 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		varName := strings.ReplaceAll(s.Path, "-", "_")
 		varName = strings.ReplaceAll(varName, "/", "_")
 		varName = strings.ReplaceAll(varName, "@", "")
+		varName = strings.ReplaceAll(varName, ".", "_")
 		if s.Alias != "" {
 			varName = s.Alias
 		}
@@ -472,6 +503,11 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 	case *ast.FromUseStatement:
 		names := strings.Join(s.Names, ", ")
 		if strings.HasSuffix(s.Path, ".quill") {
+			// Circular import protection
+			if g.importedFiles[s.Path] {
+				return fmt.Sprintf("%s// skipped circular import of %q", prefix, s.Path)
+			}
+			g.importedFiles[s.Path] = true
 			imported, err := os.ReadFile(s.Path)
 			if err != nil {
 				return fmt.Sprintf("%s// Error: could not import %q", prefix, s.Path)
@@ -493,6 +529,7 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 				importGen = New()
 			}
 			importGen.indent = g.indent
+			importGen.importedFiles = g.importedFiles
 			code := importGen.GenerateBody(prog)
 			return fmt.Sprintf("%s// imported from %q\n%s", prefix, s.Path, code)
 		}
@@ -897,14 +934,18 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 			// Convert {var} to ${var} for JS template literals
 			converted := e.Value
 			converted = strings.ReplaceAll(converted, "`", "\\`")
-			// Convert my.field to this.field inside interpolations
-			converted = strings.ReplaceAll(converted, "{my.", "{this.")
+			// Convert my.field to this.field only inside interpolation braces
+			converted = replaceMyInInterpolations(converted)
 			converted = convertInterpolation(converted)
 			return "`" + converted + "`"
 		}
-		// Escape any backticks and return as regular string
+		// Escape special characters and return as regular string
 		escaped := strings.ReplaceAll(e.Value, "\\", "\\\\")
 		escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+		escaped = strings.ReplaceAll(escaped, "\n", "\\n")
+		escaped = strings.ReplaceAll(escaped, "\r", "\\r")
+		escaped = strings.ReplaceAll(escaped, "\t", "\\t")
+		escaped = strings.ReplaceAll(escaped, "\x00", "\\0")
 		return `"` + escaped + `"`
 
 	case *ast.NumberLiteral:
@@ -1085,9 +1126,9 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		}
 
 	case *ast.TaggedTemplateExpr:
-		// Convert Quill {x} to JS ${x} in the template
-		converted := e.Template
-		converted = strings.ReplaceAll(converted, "{", "${")
+		// Convert Quill {x} interpolations to JS ${x} in the template
+		// Use the same smart conversion as regular string interpolation
+		converted := convertInterpolation(e.Template)
 		g.taggedTemplatesUsed = append(g.taggedTemplatesUsed, e.Tag)
 		return fmt.Sprintf("%s`%s`", e.Tag, converted)
 
@@ -1385,14 +1426,55 @@ function __tryResult(fn) {
 }
 `
 
+// programContainsAwait checks if any top-level statement in the program contains an await expression.
+func (g *Generator) programContainsAwait(program *ast.Program) bool {
+	return g.bodyContainsAwait(program.Statements)
+}
+
 // hasAsyncConstructs checks if the program uses any concurrency constructs that need async IIFE.
 func (g *Generator) hasAsyncConstructs(program *ast.Program) bool {
-	for _, stmt := range program.Statements {
-		switch stmt.(type) {
+	return g.stmtsHaveAsyncConstructs(program.Statements)
+}
+
+// stmtsHaveAsyncConstructs recursively checks statements for async constructs.
+func (g *Generator) stmtsHaveAsyncConstructs(stmts []ast.Statement) bool {
+	for _, stmt := range stmts {
+		switch s := stmt.(type) {
 		case *ast.SpawnStatement, *ast.ParallelBlock, *ast.RaceBlock,
 			*ast.ChannelStatement, *ast.SendStatement, *ast.SelectStatement,
 			*ast.CancelStatement, *ast.StreamStatement:
 			return true
+		case *ast.IfStatement:
+			if g.stmtsHaveAsyncConstructs(s.Body) {
+				return true
+			}
+			for _, elif := range s.ElseIfs {
+				if g.stmtsHaveAsyncConstructs(elif.Body) {
+					return true
+				}
+			}
+			if g.stmtsHaveAsyncConstructs(s.Else) {
+				return true
+			}
+		case *ast.WhileStatement:
+			if g.stmtsHaveAsyncConstructs(s.Body) {
+				return true
+			}
+		case *ast.ForEachStatement:
+			if g.stmtsHaveAsyncConstructs(s.Body) {
+				return true
+			}
+		case *ast.LoopStatement:
+			if g.stmtsHaveAsyncConstructs(s.Body) {
+				return true
+			}
+		case *ast.TryCatchStatement:
+			if g.stmtsHaveAsyncConstructs(s.TryBody) {
+				return true
+			}
+			if g.stmtsHaveAsyncConstructs(s.CatchBody) {
+				return true
+			}
 		}
 	}
 	return g.needsAIRuntime
@@ -1545,6 +1627,7 @@ func (g *Generator) generateWorker(program *ast.Program) string {
 			varName := strings.ReplaceAll(u.Path, "-", "_")
 			varName = strings.ReplaceAll(varName, "/", "_")
 			varName = strings.ReplaceAll(varName, "@", "")
+			varName = strings.ReplaceAll(varName, ".", "_")
 			if u.Alias != "" {
 				varName = u.Alias
 			}
@@ -1634,7 +1717,39 @@ func (g *Generator) genWorkerRespond(s *ast.RespondStatement, prefix string) str
 func escapeJS(s string) string {
 	s = strings.ReplaceAll(s, "\\", "\\\\")
 	s = strings.ReplaceAll(s, "\"", "\\\"")
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	s = strings.ReplaceAll(s, "\r", "\\r")
+	s = strings.ReplaceAll(s, "\t", "\\t")
+	s = strings.ReplaceAll(s, "\x00", "\\0")
 	return s
+}
+
+// replaceMyInInterpolations replaces "my." with "this." only inside {interpolation} braces.
+func replaceMyInInterpolations(s string) string {
+	var out strings.Builder
+	i := 0
+	for i < len(s) {
+		if s[i] == '{' {
+			// Find the matching closing brace
+			j := i + 1
+			for j < len(s) && s[j] != '}' {
+				j++
+			}
+			if j < len(s) {
+				content := s[i+1 : j]
+				// Replace my. with this. only inside the interpolation
+				content = strings.ReplaceAll(content, "my.", "this.")
+				out.WriteByte('{')
+				out.WriteString(content)
+				out.WriteByte('}')
+				i = j + 1
+				continue
+			}
+		}
+		out.WriteByte(s[i])
+		i++
+	}
+	return out.String()
 }
 
 // convertInterpolation converts {expr} to ${expr} for JS template literals.
@@ -1775,6 +1890,13 @@ func (g *Generator) bodyContainsYield(stmts []ast.Statement) bool {
 			}
 		case *ast.ForEachStatement:
 			if g.bodyContainsYield(s.Body) {
+				return true
+			}
+		case *ast.TryCatchStatement:
+			if g.bodyContainsYield(s.TryBody) {
+				return true
+			}
+			if g.bodyContainsYield(s.CatchBody) {
 				return true
 			}
 		}
@@ -1922,7 +2044,10 @@ func (g *Generator) stmtUsesGenerators(stmt ast.Statement) bool {
 	case *ast.YieldStatement:
 		return true
 	case *ast.LoopStatement:
-		return true
+		// Only return true if the loop body actually contains yield
+		if g.bodyContainsYield(s.Body) {
+			return true
+		}
 	case *ast.FuncDefinition:
 		if g.bodyContainsYield(s.Body) {
 			return true

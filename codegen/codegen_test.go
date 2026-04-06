@@ -1116,3 +1116,146 @@ func TestReservedWordsAsObjectKeys(t *testing.T) {
 		}
 	}
 }
+
+// --- Bug fix regression tests ---
+
+func TestVariableScopingPerFunction(t *testing.T) {
+	// Bug #3: variables in one function should not affect another
+	input := `to foo:
+  x is 1
+  say x
+
+to bar:
+  x is 2
+  say x
+`
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Both functions should declare x with "let"
+	count := strings.Count(output, "let x = ")
+	if count != 2 {
+		t.Errorf("expected 2 'let x = ' declarations (one per function), got %d in:\n%s", count, output)
+	}
+}
+
+func TestAsyncFunctionWithAwait(t *testing.T) {
+	// Bug #1: functions with await should be emitted as async
+	input := `to fetchData:
+  result is await fetch("http://example.com")
+  give back result
+`
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "async function fetchData") {
+		t.Errorf("expected 'async function fetchData', got:\n%s", output)
+	}
+}
+
+func TestStringEscaping(t *testing.T) {
+	// Bug #6: special characters should be escaped
+	gen := New()
+	expr := gen.genExpr(&ast.StringLiteral{Value: "line1\nline2\ttab\r"})
+	if !strings.Contains(expr, "\\n") {
+		t.Errorf("expected \\n in output, got: %s", expr)
+	}
+	if !strings.Contains(expr, "\\t") {
+		t.Errorf("expected \\t in output, got: %s", expr)
+	}
+	if !strings.Contains(expr, "\\r") {
+		t.Errorf("expected \\r in output, got: %s", expr)
+	}
+}
+
+func TestTaggedTemplateSmartConversion(t *testing.T) {
+	// Bug #11: tagged templates should not blindly replace all { with ${
+	gen := New()
+	expr := gen.genExpr(&ast.TaggedTemplateExpr{
+		Tag:      "css",
+		Template: ".container { color: {color}; }",
+	})
+	// Should contain ${color} for the interpolation
+	if !strings.Contains(expr, "${color}") {
+		t.Errorf("expected ${color} interpolation, got: %s", expr)
+	}
+	// CSS braces should be escaped, not turned into interpolation
+	if strings.Contains(expr, "${ color") || strings.Contains(expr, "${}") {
+		t.Errorf("CSS braces should not be converted to interpolation, got: %s", expr)
+	}
+}
+
+func TestFromUseKeywordImport(t *testing.T) {
+	// Bug #9: from imports should accept keywords as export names
+	input := `from "ws" use send`
+	l := lexer.New(input)
+	tokens, err := l.Tokenize()
+	if err != nil {
+		t.Fatalf("tokenize error: %v", err)
+	}
+	p := parser.New(tokens)
+	prog, err := p.Parse()
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+	gen := New()
+	output := gen.Generate(prog)
+	if !strings.Contains(output, "send") {
+		t.Errorf("expected 'send' in output, got:\n%s", output)
+	}
+}
+
+func TestPackageNameWithDots(t *testing.T) {
+	// Bug #10: package names with dots should produce valid JS variable names
+	input := `use "socket.io" as SocketIO`
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "SocketIO") {
+		t.Errorf("expected alias SocketIO to be used, got:\n%s", output)
+	}
+	// Without alias, dots should be replaced
+	input2 := `use "socket.io"`
+	output2, err := compile(input2)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(output2, "socket.io =") || strings.Contains(output2, "const socket.io") {
+		t.Errorf("expected dots to be replaced in variable name, got:\n%s", output2)
+	}
+}
+
+func TestYieldInTryCatch(t *testing.T) {
+	// Bug #12: bodyContainsYield should find yield inside try/catch
+	gen := New()
+	stmts := []ast.Statement{
+		&ast.TryCatchStatement{
+			TryBody: []ast.Statement{
+				&ast.YieldStatement{Value: &ast.NumberLiteral{Value: 1}},
+			},
+			CatchBody: []ast.Statement{},
+		},
+	}
+	if !gen.bodyContainsYield(stmts) {
+		t.Error("expected bodyContainsYield to find yield inside try/catch")
+	}
+}
+
+func TestLoopWithoutYieldNoIteratorRuntime(t *testing.T) {
+	// Bug #17: loops without yield should not inject iterator runtime
+	input := `to count:
+  loop:
+    say "hello"
+    break
+`
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(output, "__QuillLazy") || strings.Contains(output, "__quill_lazy") {
+		t.Errorf("loop without yield should not inject iterator runtime, got:\n%s", output)
+	}
+}

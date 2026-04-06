@@ -702,10 +702,10 @@ func (p *Parser) parseFromUse() *ast.FromUseStatement {
 	p.expect(lexer.TOKEN_USE) // "use"
 
 	names := []string{}
-	names = append(names, p.expect(lexer.TOKEN_IDENT).Value)
+	names = append(names, p.expectIdentOrKeyword().Value)
 	for p.check(lexer.TOKEN_COMMA) {
 		p.advance()
-		names = append(names, p.expect(lexer.TOKEN_IDENT).Value)
+		names = append(names, p.expectIdentOrKeyword().Value)
 	}
 
 	p.consumeNewline()

@@ -272,8 +272,12 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 
 func (l *Lexer) handleIndentation() {
 	indent := 0
-	for l.pos < len(l.source) && l.source[l.pos] == ' ' {
-		indent++
+	for l.pos < len(l.source) && (l.source[l.pos] == ' ' || l.source[l.pos] == '\t') {
+		if l.source[l.pos] == '\t' {
+			indent += 2 // 1 tab = 2 spaces
+		} else {
+			indent++
+		}
 		l.pos++
 		l.col++
 	}
