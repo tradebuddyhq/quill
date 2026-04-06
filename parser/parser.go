@@ -124,6 +124,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseWorkerHandler()
 	case p.check(lexer.TOKEN_RESPOND):
 		return p.parseRespond()
+	case p.isStreamStatement():
+		return p.parseStreamStatement()
 	case p.check(lexer.TOKEN_LBRACE):
 		// Check if this is a destructuring: {name, age} is expr
 		if p.isObjectDestructure() {
@@ -1753,6 +1755,10 @@ func (p *Parser) parsePrimary() ast.Expression {
 		return &ast.BoolLiteral{Value: false}
 
 	case lexer.TOKEN_IDENT:
+		// Check for "ask claude" expression
+		if tok.Value == "ask" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT && p.tokens[p.pos+1].Value == "claude" {
+			return p.parseAskExpression()
+		}
 		p.advance()
 		// Check for tagged template: identifier followed by backtick
 		if p.check(lexer.TOKEN_BACKTICK) {
@@ -1812,6 +1818,8 @@ func (p *Parser) parsePrimary() ast.Expression {
 		p.expect(lexer.TOKEN_FROM)
 		channelTok := p.expect(lexer.TOKEN_IDENT)
 		return &ast.ReceiveExpression{Channel: channelTok.Value, Line: tok.Line}
+
+	// ask is handled via IDENT check below
 
 	case lexer.TOKEN_MY:
 		p.advance()
@@ -2579,4 +2587,152 @@ func (p *Parser) parseWebSocketBlock() ast.WebSocketBlock {
 		p.advance()
 	}
 	return ws
+}
+
+// isStreamStatement checks if the current position is a "stream claude" statement.
+func (p *Parser) isStreamStatement() bool {
+	if p.pos+1 >= len(p.tokens) {
+		return false
+	}
+	cur := p.tokens[p.pos]
+	next := p.tokens[p.pos+1]
+	return cur.Type == lexer.TOKEN_IDENT && cur.Value == "stream" &&
+		next.Type == lexer.TOKEN_IDENT && next.Value == "claude"
+}
+
+// parseAskExpression parses: ask claude "prompt" [with model "x" max_tokens N system "y" temperature N]
+// or: ask claude <variable> (messages mode)
+func (p *Parser) parseAskExpression() *ast.AskExpression {
+	p.advance() // consume "ask"
+
+	// Expect provider name (currently only "claude")
+	provider := p.expect(lexer.TOKEN_IDENT).Value
+
+	// Parse the prompt or messages variable
+	var prompt ast.Expression
+	isMessages := false
+
+	if p.check(lexer.TOKEN_STRING) {
+		prompt = &ast.StringLiteral{Value: p.advance().Value}
+	} else if p.check(lexer.TOKEN_IDENT) {
+		// Variable reference — treat as messages array
+		prompt = &ast.Identifier{Name: p.advance().Value}
+		isMessages = true
+	} else {
+		p.error("expected a string prompt or variable after 'ask claude'")
+	}
+
+	// Parse optional "with" options
+	options := map[string]ast.Expression{}
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+		for {
+			optName := ""
+			if p.check(lexer.TOKEN_IDENT) {
+				optName = p.advance().Value
+			} else if p.check(lexer.TOKEN_MODEL) {
+				optName = p.advance().Value
+			} else {
+				break
+			}
+			switch optName {
+			case "model":
+				options["model"] = &ast.StringLiteral{Value: p.expect(lexer.TOKEN_STRING).Value}
+			case "max_tokens":
+				val, err := strconv.ParseFloat(p.expect(lexer.TOKEN_NUMBER).Value, 64)
+				if err != nil {
+					p.error("expected a number for max_tokens")
+				}
+				options["max_tokens"] = &ast.NumberLiteral{Value: val}
+			case "system":
+				options["system"] = &ast.StringLiteral{Value: p.expect(lexer.TOKEN_STRING).Value}
+			case "temperature":
+				val, err := strconv.ParseFloat(p.expect(lexer.TOKEN_NUMBER).Value, 64)
+				if err != nil {
+					p.error("expected a number for temperature")
+				}
+				options["temperature"] = &ast.NumberLiteral{Value: val}
+			default:
+				// Unknown option — stop parsing options
+				p.pos-- // back up
+				goto doneOptions
+			}
+		}
+	}
+doneOptions:
+
+	return &ast.AskExpression{
+		Provider:   provider,
+		Prompt:     prompt,
+		Options:    options,
+		IsMessages: isMessages,
+	}
+}
+
+// parseStreamStatement parses: stream claude "prompt": body
+func (p *Parser) parseStreamStatement() *ast.StreamStatement {
+	line := p.current().Line
+	p.advance() // consume "stream" (an IDENT)
+
+	provider := p.expect(lexer.TOKEN_IDENT).Value // consume "claude"
+
+	var prompt ast.Expression
+	if p.check(lexer.TOKEN_STRING) {
+		prompt = &ast.StringLiteral{Value: p.advance().Value}
+	} else if p.check(lexer.TOKEN_IDENT) {
+		prompt = &ast.Identifier{Name: p.advance().Value}
+	} else {
+		p.error("expected a string prompt or variable after 'stream claude'")
+	}
+
+	// Parse optional "with" options
+	options := map[string]ast.Expression{}
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+		for {
+			optName := ""
+			if p.check(lexer.TOKEN_IDENT) {
+				optName = p.advance().Value
+			} else if p.check(lexer.TOKEN_MODEL) {
+				optName = p.advance().Value
+			} else {
+				break
+			}
+			switch optName {
+			case "model":
+				options["model"] = &ast.StringLiteral{Value: p.expect(lexer.TOKEN_STRING).Value}
+			case "max_tokens":
+				val, err := strconv.ParseFloat(p.expect(lexer.TOKEN_NUMBER).Value, 64)
+				if err != nil {
+					p.error("expected a number for max_tokens")
+				}
+				options["max_tokens"] = &ast.NumberLiteral{Value: val}
+			case "system":
+				options["system"] = &ast.StringLiteral{Value: p.expect(lexer.TOKEN_STRING).Value}
+			case "temperature":
+				val, err := strconv.ParseFloat(p.expect(lexer.TOKEN_NUMBER).Value, 64)
+				if err != nil {
+					p.error("expected a number for temperature")
+				}
+				options["temperature"] = &ast.NumberLiteral{Value: val}
+			default:
+				p.pos-- // back up
+				goto doneStreamOptions
+			}
+		}
+	}
+doneStreamOptions:
+
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+
+	return &ast.StreamStatement{
+		Provider: provider,
+		Prompt:   prompt,
+		ChunkVar: "chunk",
+		Body:     body,
+		Options:  options,
+		Line:     line,
+	}
 }

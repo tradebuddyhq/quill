@@ -439,6 +439,47 @@ filename <span class="kw">is</span> arguments[<span class="num">0</span>]
       <div class="callout callout-tip">
         <strong>Try these!</strong> All of these examples can be run in the <a href="/playground">Playground</a>. Just copy-paste the code (without the syntax highlighting spans) and hit Run.
       </div>
+
+      <!-- AI Chatbot -->
+      <h2 id="ai-chatbot">AI Chatbot</h2>
+      <p>A conversational AI chatbot using Claude, in just a few lines:</p>
+      <pre><code>-- AI Chatbot
+-- Run: quill ai my-chatbot && cd my-chatbot && npm install
+
+use "readline" as readline
+
+rl is readline.createInterface({ input: process.stdin, output: process.stdout })
+
+messages are []
+
+to chat prompt:
+  messages.push({ role: "user", content: prompt })
+  answer is ask claude messages with system "You are a helpful assistant"
+  messages.push({ role: "assistant", content: answer })
+  say answer
+
+to askQuestion:
+  rl.question("You: ", with input:
+    if input is "exit":
+      rl.close()
+      give back nothing
+    chat(input)
+    askQuestion()
+  )
+
+say "Chatbot ready! Type 'exit' to quit."
+askQuestion()</code></pre>
+
+      <h3>Simple AI query</h3>
+      <pre><code>-- Ask Claude anything
+answer is ask claude "What are 3 fun facts about space?"
+say answer</code></pre>
+
+      <h3>Streaming AI response</h3>
+      <pre><code>-- Stream a long response token by token
+stream claude "Write a short story about a robot learning to paint":
+  say chunk</code></pre>
+
     </main>
   </div>
 

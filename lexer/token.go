@@ -160,6 +160,10 @@ const (
 	// Worker keywords
 	TOKEN_WORKER
 
+	// AI keywords
+	TOKEN_ASK
+	TOKEN_STREAM
+
 	// Delimiters
 	TOKEN_COLON
 	TOKEN_COMMA
@@ -292,6 +296,8 @@ var tokenNames = map[TokenType]string{
 	TOKEN_REPLY:       "reply",
 	TOKEN_EMBED:       "embed",
 	TOKEN_WORKER:      "worker",
+	TOKEN_ASK:         "ask",
+	TOKEN_STREAM:      "stream",
 }
 
 func (t TokenType) String() string {

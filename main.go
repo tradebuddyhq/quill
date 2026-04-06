@@ -184,6 +184,9 @@ func main() {
 	case "worker":
 		scaffoldWorker()
 
+	case "ai":
+		scaffoldAI()
+
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
 
@@ -1316,6 +1319,7 @@ func printUsage() {
 	fmt.Println("  quill discord [name]         Scaffold a new Discord bot project")
 	fmt.Println("  quill web [name]             Scaffold a new Express web server project")
 	fmt.Println("  quill worker [name]          Scaffold a new Cloudflare Worker project")
+	fmt.Println("  quill ai [name]              Scaffold a new AI app project (Claude)")
 	fmt.Println("  quill version                Show version")
 	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
@@ -1879,4 +1883,76 @@ worker.js
 	fmt.Println("  [[kv_namespaces]]")
 	fmt.Println("  binding = \"MY_KV\"")
 	fmt.Println("  id = \"your-namespace-id\"")
+}
+
+func scaffoldAI() {
+	projectName := "my-ai-app"
+	if len(os.Args) >= 3 {
+		projectName = os.Args[2]
+	}
+
+	// Create project directory
+	if err := os.MkdirAll(projectName, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Create package.json
+	packageJSON := fmt.Sprintf(`{
+  "name": "%s",
+  "version": "1.0.0",
+  "description": "An AI app built with Quill",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "quill run app.quill"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  }
+}
+`, projectName)
+
+	// Create app.quill
+	appQuill := `-- AI App built with Quill
+-- Powered by Claude
+
+answer is ask claude "What are 3 fun facts about programming?"
+say answer
+`
+
+	// Create .env.example
+	envExample := `# Get your API key from https://console.anthropic.com/
+ANTHROPIC_API_KEY=your-api-key-here
+`
+
+	// Create .gitignore
+	gitignore := `node_modules/
+.env
+*.js
+`
+
+	files := map[string]string{
+		"package.json": packageJSON,
+		"app.quill":    appQuill,
+		".env.example": envExample,
+		".gitignore":   gitignore,
+	}
+
+	for name, content := range files {
+		path := filepath.Join(projectName, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", path, err)
+			continue
+		}
+		fmt.Printf("  Created %s/%s\n", projectName, name)
+	}
+
+	fmt.Printf("\nAI app project created in ./%s\n", projectName)
+	fmt.Println("\nNext steps:")
+	fmt.Printf("  cd %s\n", projectName)
+	fmt.Println("  cp .env.example .env     # Add your Anthropic API key")
+	fmt.Println("  npm install")
+	fmt.Println("  quill run app.quill")
+	fmt.Println("\nGet an API key: https://console.anthropic.com/")
 }

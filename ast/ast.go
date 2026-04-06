@@ -1008,6 +1008,30 @@ type OnStatement struct {
 func (s *OnStatement) nodeType() string { return "On" }
 func (s *OnStatement) stmtNode()        {}
 
+// AskExpression represents an "ask claude" expression for AI queries.
+type AskExpression struct {
+	Provider   string            // "claude"
+	Prompt     Expression        // the prompt string or messages variable
+	Options    map[string]Expression // model, max_tokens, system, temperature
+	IsMessages bool              // true when argument is a variable (messages array)
+}
+
+func (e *AskExpression) nodeType() string { return "Ask" }
+func (e *AskExpression) exprNode()        {}
+
+// StreamStatement represents a "stream claude" statement for streaming AI responses.
+type StreamStatement struct {
+	Provider string
+	Prompt   Expression
+	ChunkVar string            // defaults to "chunk"
+	Body     []Statement
+	Options  map[string]Expression
+	Line     int
+}
+
+func (s *StreamStatement) nodeType() string { return "Stream" }
+func (s *StreamStatement) stmtNode()        {}
+
 // WorkerHandler represents a Cloudflare Worker fetch handler:
 //   worker on fetch with request [env]:
 //     ...body...

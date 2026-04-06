@@ -430,6 +430,54 @@ worker.js
   console.log(`${DIM}Docs: https://quill.tradebuddy.dev/docs/workers${RESET}`);
 }
 
+// ---- Scaffold: AI App ----
+function cmdAI() {
+  const projectName = process.argv[3] || 'my-ai-app';
+
+  if (fs.existsSync(projectName)) {
+    error(`Directory "${projectName}" already exists.`);
+    process.exit(1);
+  }
+
+  fs.mkdirSync(projectName, { recursive: true });
+
+  // package.json
+  fs.writeFileSync(path.join(projectName, 'package.json'), JSON.stringify({
+    name: projectName,
+    version: '1.0.0',
+    description: 'An AI app built with Quill',
+    main: 'app.js',
+    scripts: { start: 'node app.js', dev: 'quill run app.quill' },
+    dependencies: { '@anthropic-ai/sdk': '^0.39.0' }
+  }, null, 2) + '\n');
+
+  // app.quill
+  fs.writeFileSync(path.join(projectName, 'app.quill'), `-- AI App built with Quill
+-- Powered by Claude
+
+answer is ask claude "What are 3 fun facts about programming?"
+say answer
+`);
+
+  // .env.example
+  fs.writeFileSync(path.join(projectName, '.env.example'), `# Get your API key from https://console.anthropic.com/
+ANTHROPIC_API_KEY=your-api-key-here
+`);
+
+  // .gitignore
+  fs.writeFileSync(path.join(projectName, '.gitignore'), `node_modules/
+.env
+*.js
+`);
+
+  console.log(`\n${GREEN}${BOLD}Created AI app project: ${projectName}${RESET}\n`);
+  console.log(`  ${DIM}cd ${projectName}${RESET}`);
+  console.log(`  ${DIM}cp .env.example .env${RESET}       ${DIM}# Add your API key${RESET}`);
+  console.log(`  ${DIM}npm install${RESET}`);
+  console.log(`  ${DIM}quill run app.quill${RESET}\n`);
+  console.log(`${DIM}Get an API key: https://console.anthropic.com/${RESET}`);
+}
+
 // ---- AI Generate ----
 function cmdGenerate(prompt) {
   const { execSync } = require('child_process');
@@ -714,6 +762,7 @@ ${BOLD}Scaffolding:${RESET}
   quill discord [name]         Scaffold a Discord bot project
   quill web [name]             Scaffold an Express web server project
   quill worker [name]          Scaffold a Cloudflare Worker project
+  quill ai [name]              Scaffold an AI app project (Claude)
   quill generate "<prompt>"    AI-powered app generation (Claude/Gemini)
   quill deploy                 Generate Dockerfile for deployment
 
@@ -778,6 +827,9 @@ switch (cmd) {
     break;
   case 'worker':
     cmdWorker();
+    break;
+  case 'ai':
+    cmdAI();
     break;
   case 'generate':
     if (!args[1]) { error('Missing prompt. Usage: quill generate "<prompt>"'); process.exit(1); }

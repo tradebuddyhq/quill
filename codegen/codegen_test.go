@@ -976,3 +976,79 @@ func TestGenerateRespondStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestGenerateAskClaude(t *testing.T) {
+	src := `answer is ask claude "What is the capital of France?"
+say answer
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		`require("@anthropic-ai/sdk")`,
+		"__ai_client",
+		"messages.create",
+		`"claude-sonnet-4-20250514"`,
+		"max_tokens: 1024",
+		`"What is the capital of France?"`,
+		"content[0].text",
+		"async",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}
+
+func TestGenerateAskClaudeWithOptions(t *testing.T) {
+	src := `answer is ask claude "Summarize this" with model "claude-sonnet-4-20250514" max_tokens 500
+say answer
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		`"claude-sonnet-4-20250514"`,
+		"max_tokens: 500",
+		"__ai_client",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}
+
+func TestGenerateStreamClaude(t *testing.T) {
+	src := `stream claude "Write a poem about coding":
+  say chunk
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		`require("@anthropic-ai/sdk")`,
+		"__ai_client",
+		"messages.stream",
+		"for await",
+		"content_block_delta",
+		"__event.delta.text",
+		"const chunk",
+		"console.log(chunk)",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}

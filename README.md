@@ -90,6 +90,32 @@ component Counter:
 mount Counter to "#app"
 ```
 
+## AI built in
+
+Quill is the easiest language to build AI apps. No boilerplate, no setup:
+
+```
+-- One line to call Claude
+answer is ask claude "What is the capital of France?"
+say answer
+
+-- With options
+answer is ask claude "Summarize this" with system "Be concise" max_tokens 500
+
+-- Stream responses
+stream claude "Write a poem about coding":
+  say chunk
+```
+
+Scaffold a full AI project:
+```bash
+quill ai my-app
+cd my-app && npm install
+quill run app.quill
+```
+
+See the [AI docs](https://quill.tradebuddy.dev/docs/ai) for conversation history, streaming, and more.
+
 ## Features
 
 **Language**
@@ -139,6 +165,8 @@ mount Counter to "#app"
 - **Database migrations** — `quill db migrate`, `rollback`, `seed`, `status`, `create` for schema management
 - **Environment management** — auto-loads `.env` files, `env.require("KEY")`, `--env production`
 - **Testing mocks** — `mock fetchJSON with url:`, `expect func was called N times`
+- **Built-in AI syntax** — `ask claude "prompt"`, `stream claude "prompt":`, conversation history, options (model, max_tokens, system, temperature)
+- **AI project scaffolding** — `quill ai my-app` creates a ready-to-run AI project
 - **AI-powered generation** — `quill generate "build me a todo API"` uses Claude CLI or Gemini CLI for real AI code generation (falls back to templates if no AI CLI installed)
 - **Friendly error messages** — with source context and hints
 - **VS Code extension** — syntax highlighting, snippets, comment toggling
@@ -203,6 +231,7 @@ mount Counter to "#app"
 | `quill discord my-bot` | Scaffold a Discord bot project |
 | `quill web my-api` | Scaffold an Express web server project |
 | `quill worker my-api` | Scaffold a Cloudflare Worker project |
+| `quill ai my-app` | Scaffold an AI app project (Claude) |
 | `quill help` | Show help |
 
 ## Language Reference

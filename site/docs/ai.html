@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI with Claude - Quill</title>
+  <meta name="description" content="Build AI-powered apps with Quill and Claude. The easiest way to add AI to your projects.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="/docs/getting-started">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="/docs/language">Language guide</a></li>
+      </ul>
+      <h4>AI with Claude</h4>
+      <ul>
+        <li><a href="/docs/ai" class="active">Overview</a></li>
+        <li><a href="#getting-started">Getting started</a></li>
+        <li><a href="#ask-claude">ask claude</a></li>
+        <li><a href="#options">Options</a></li>
+        <li><a href="#conversations">Conversations</a></li>
+        <li><a href="#streaming">Streaming</a></li>
+        <li><a href="#chatbot-example">Chatbot example</a></li>
+        <li><a href="#cli-tool-example">CLI tool example</a></li>
+      </ul>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/docs/discord">Discord Bots</a></li>
+        <li><a href="/docs/web">Web Servers</a></li>
+        <li><a href="/docs/workers">Cloudflare Workers</a></li>
+        <li><a href="/docs/ai" class="active">AI with Claude</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/tools">Tools</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+
+      <h1>AI with Claude</h1>
+      <p style="font-size: 1.2em; color: var(--text-secondary); margin-top: -8px;">
+        Quill has built-in AI syntax that makes it the easiest language to build AI-powered apps.
+        Just write <code>ask claude</code> and you're done.
+      </p>
+
+      <!-- Getting Started -->
+      <h2 id="getting-started">Getting started</h2>
+      <p>The fastest way to start is with the scaffolding command:</p>
+      <pre><code>quill ai my-app
+cd my-app
+cp .env.example .env    -- add your API key
+npm install
+quill run app.quill</code></pre>
+
+      <p>This creates a project with the Anthropic SDK already configured.</p>
+
+      <h3>Manual setup</h3>
+      <ol>
+        <li>Install the Anthropic SDK: <code>npm install @anthropic-ai/sdk</code></li>
+        <li>Set your API key: <code>export ANTHROPIC_API_KEY=your-key</code> (or add it to a <code>.env</code> file)</li>
+        <li>Write your Quill code and run it</li>
+      </ol>
+      <p>Quill automatically loads <code>.env</code> files, so just create a <code>.env</code> file with:</p>
+      <pre><code>ANTHROPIC_API_KEY=sk-ant-...</code></pre>
+
+      <!-- ask claude -->
+      <h2 id="ask-claude">ask claude</h2>
+      <p>The <code>ask claude</code> expression sends a message to Claude and returns the response text. It's a single line of code:</p>
+      <pre><code>answer is ask claude "What is the capital of France?"
+say answer</code></pre>
+
+      <p>That's it. No imports, no client setup, no callbacks. Quill handles everything.</p>
+
+      <p>Under the hood, Quill automatically:</p>
+      <ul>
+        <li>Requires the <code>@anthropic-ai/sdk</code> package</li>
+        <li>Creates a client (reads <code>ANTHROPIC_API_KEY</code> from the environment)</li>
+        <li>Sends the message and extracts the response text</li>
+        <li>Wraps everything in an async context</li>
+      </ul>
+
+      <!-- Options -->
+      <h2 id="options">Options</h2>
+      <p>You can customize the request by adding <code>with</code> followed by options:</p>
+      <pre><code>answer is ask claude "Summarize this article" with model "claude-sonnet-4-20250514" max_tokens 500
+say answer</code></pre>
+
+      <h3>Available options</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+            <th style="padding: 8px;">Option</th>
+            <th style="padding: 8px;">Type</th>
+            <th style="padding: 8px;">Default</th>
+            <th style="padding: 8px;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>model</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;"><code>"claude-sonnet-4-20250514"</code></td>
+            <td style="padding: 8px;">Which Claude model to use</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>max_tokens</code></td>
+            <td style="padding: 8px;">number</td>
+            <td style="padding: 8px;">1024</td>
+            <td style="padding: 8px;">Maximum tokens in the response</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>system</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">(none)</td>
+            <td style="padding: 8px;">System prompt to set Claude's behavior</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>temperature</code></td>
+            <td style="padding: 8px;">number</td>
+            <td style="padding: 8px;">(API default)</td>
+            <td style="padding: 8px;">Randomness (0 = deterministic, 1 = creative)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>System prompts</h3>
+      <pre><code>answer is ask claude "Explain quantum computing" with system "You are a patient teacher who explains things simply" max_tokens 2000
+say answer</code></pre>
+
+      <!-- Conversations -->
+      <h2 id="conversations">Conversation history</h2>
+      <p>For multi-turn conversations, pass a messages variable instead of a string:</p>
+      <pre><code>messages are [
+  { role: "user", content: "Hi" },
+  { role: "assistant", content: "Hello! How can I help?" },
+  { role: "user", content: "What did I just say?" }
+]
+answer is ask claude messages
+say answer</code></pre>
+
+      <p>When you pass a variable (not a string literal), Quill treats it as a messages array and sends it directly to the API.</p>
+
+      <!-- Streaming -->
+      <h2 id="streaming">Streaming responses</h2>
+      <p>For long responses, stream them token-by-token with <code>stream claude</code>:</p>
+      <pre><code>stream claude "Write a poem about coding":
+  say chunk</code></pre>
+
+      <p>The <code>chunk</code> variable is automatically available inside the stream block. Each chunk contains a piece of the response as it arrives.</p>
+
+      <p>You can also use options with streaming:</p>
+      <pre><code>stream claude "Tell me a long story" with max_tokens 4000:
+  say chunk</code></pre>
+
+      <!-- Chatbot Example -->
+      <h2 id="chatbot-example">Example: building a chatbot</h2>
+      <p>Here's a complete interactive chatbot in Quill:</p>
+      <pre><code>-- AI Chatbot built with Quill
+
+use "readline" as readline
+
+rl is readline.createInterface({ input: process.stdin, output: process.stdout })
+
+messages are []
+
+to chat prompt:
+  messages.push({ role: "user", content: prompt })
+  answer is ask claude messages with system "You are a helpful assistant"
+  messages.push({ role: "assistant", content: answer })
+  say answer
+
+to askQuestion:
+  rl.question("You: ", with input:
+    if input is "exit":
+      rl.close()
+      give back nothing
+    chat(input)
+    askQuestion()
+  )
+
+say "Chatbot ready! Type 'exit' to quit."
+askQuestion()</code></pre>
+
+      <!-- CLI Tool Example -->
+      <h2 id="cli-tool-example">Example: AI-powered CLI tool</h2>
+      <pre><code>-- Code explainer CLI tool
+
+code is process.argv[2]
+
+if code is nothing:
+  say "Usage: quill run explain.quill 'your code here'"
+  process.exit(1)
+
+explanation is ask claude code with system "Explain the following code in simple terms. Be concise." max_tokens 500
+
+say "Explanation:"
+say explanation</code></pre>
+
+      <p>Run it: <code>quill run explain.quill "for (let i = 0; i &lt; 10; i++) { console.log(i); }"</code></p>
+
+      <div class="callout callout-tip" style="margin-top: 32px;">
+        <strong>Next steps</strong>
+        <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+          <li>Explore the <a href="/docs/examples">Examples page</a> for more AI patterns</li>
+          <li>Combine AI with <a href="/docs/web">web servers</a> to build AI APIs</li>
+          <li>Add AI to your <a href="/docs/discord">Discord bot</a></li>
+        </ul>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('nav-toggle')?.addEventListener('click', () => {
+      document.getElementById('nav-links')?.classList.toggle('show');
+    });
+  </script>
+
+</body>
+</html>
