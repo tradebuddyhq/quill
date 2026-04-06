@@ -271,6 +271,9 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		if g.bodyContainsYield(s.Body) {
 			return fmt.Sprintf("%sfunction* %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
 		}
+		if g.bodyContainsAwait(s.Body) {
+			return fmt.Sprintf("%sasync function %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
+		}
 		return fmt.Sprintf("%sfunction %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
 
 	case *ast.YieldStatement:
@@ -474,10 +477,21 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 				return fmt.Sprintf("%s// Error: could not import %q", prefix, s.Path)
 			}
 			l := lexer.New(string(imported))
-			tokens, _ := l.Tokenize()
+			tokens, err := l.Tokenize()
+			if err != nil {
+				return fmt.Sprintf("%s// Error: could not tokenize %q: %s", prefix, s.Path, err)
+			}
 			pr := parser.New(tokens)
-			prog, _ := pr.Parse()
-			importGen := New()
+			prog, err := pr.Parse()
+			if err != nil || prog == nil {
+				return fmt.Sprintf("%s// Error: could not parse %q", prefix, s.Path)
+			}
+			var importGen *Generator
+			if g.browser {
+				importGen = NewBrowser()
+			} else {
+				importGen = New()
+			}
 			importGen.indent = g.indent
 			code := importGen.GenerateBody(prog)
 			return fmt.Sprintf("%s// imported from %q\n%s", prefix, s.Path, code)
@@ -1764,6 +1778,102 @@ func (g *Generator) bodyContainsYield(stmts []ast.Statement) bool {
 				return true
 			}
 		}
+	}
+	return false
+}
+
+// bodyContainsAwait checks if a function body contains any await expressions (recursively).
+func (g *Generator) bodyContainsAwait(stmts []ast.Statement) bool {
+	for _, stmt := range stmts {
+		switch s := stmt.(type) {
+		case *ast.AssignStatement:
+			if g.exprContainsAwait(s.Value) {
+				return true
+			}
+		case *ast.SayStatement:
+			if g.exprContainsAwait(s.Value) {
+				return true
+			}
+		case *ast.ReturnStatement:
+			if g.exprContainsAwait(s.Value) {
+				return true
+			}
+		case *ast.ExprStatement:
+			if g.exprContainsAwait(s.Expr) {
+				return true
+			}
+		case *ast.IfStatement:
+			if g.exprContainsAwait(s.Condition) {
+				return true
+			}
+			if g.bodyContainsAwait(s.Body) {
+				return true
+			}
+			for _, elif := range s.ElseIfs {
+				if g.bodyContainsAwait(elif.Body) {
+					return true
+				}
+			}
+			if g.bodyContainsAwait(s.Else) {
+				return true
+			}
+		case *ast.WhileStatement:
+			if g.bodyContainsAwait(s.Body) {
+				return true
+			}
+		case *ast.ForEachStatement:
+			if g.bodyContainsAwait(s.Body) {
+				return true
+			}
+		case *ast.LoopStatement:
+			if g.bodyContainsAwait(s.Body) {
+				return true
+			}
+		case *ast.TryCatchStatement:
+			if g.bodyContainsAwait(s.TryBody) {
+				return true
+			}
+			if g.bodyContainsAwait(s.CatchBody) {
+				return true
+			}
+		case *ast.DotAssignStatement:
+			if g.exprContainsAwait(s.Value) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// exprContainsAwait checks if an expression tree contains any await expression.
+func (g *Generator) exprContainsAwait(expr ast.Expression) bool {
+	if expr == nil {
+		return false
+	}
+	switch e := expr.(type) {
+	case *ast.AwaitExpr:
+		return true
+	case *ast.AwaitExpression:
+		return true
+	case *ast.CallExpr:
+		if g.exprContainsAwait(e.Function) {
+			return true
+		}
+		for _, arg := range e.Args {
+			if g.exprContainsAwait(arg) {
+				return true
+			}
+		}
+	case *ast.DotExpr:
+		return g.exprContainsAwait(e.Object)
+	case *ast.IndexExpr:
+		return g.exprContainsAwait(e.Object) || g.exprContainsAwait(e.Index)
+	case *ast.BinaryExpr:
+		return g.exprContainsAwait(e.Left) || g.exprContainsAwait(e.Right)
+	case *ast.UnaryMinusExpr:
+		return g.exprContainsAwait(e.Operand)
+	case *ast.PipeExpr:
+		return g.exprContainsAwait(e.Left) || g.exprContainsAwait(e.Right)
 	}
 	return false
 }

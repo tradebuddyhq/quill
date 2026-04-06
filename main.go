@@ -208,6 +208,13 @@ func main() {
 func runFile(filename string) {
 	js := compile(filename)
 
+	// Resolve the source file's directory so node can find node_modules
+	absPath, err := filepath.Abs(filename)
+	if err != nil {
+		absPath = filename
+	}
+	sourceDir := filepath.Dir(absPath)
+
 	// Write to temp file
 	tmpFile, err := os.CreateTemp("", "quill-*.js")
 	if err != nil {
@@ -231,6 +238,7 @@ func runFile(filename string) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	cmd.Dir = sourceDir
 
 	if err := cmd.Run(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -1050,6 +1058,13 @@ func runFileWithFullStack(filename string) {
 		os.Exit(1)
 	}
 
+	// Resolve the source file's directory so node can find node_modules
+	absPath, err := filepath.Abs(filename)
+	if err != nil {
+		absPath = filename
+	}
+	sourceDir := filepath.Dir(absPath)
+
 	l := lexer.New(string(source))
 	tokens, err := l.Tokenize()
 	if err != nil {
@@ -1067,12 +1082,12 @@ func runFileWithFullStack(filename string) {
 	// Check if the program contains full-stack blocks
 	if hasFullStackBlocks(program) {
 		js := codegen.GenerateFullStackApp(program)
-		runJSCode(js)
+		runJSCodeInDir(js, sourceDir)
 	} else {
 		// Normal run
 		g := codegen.New()
 		js := g.Generate(program)
-		runJSCode(js)
+		runJSCodeInDir(js, sourceDir)
 	}
 }
 
@@ -1087,6 +1102,10 @@ func hasFullStackBlocks(program *ast.Program) bool {
 }
 
 func runJSCode(js string) {
+	runJSCodeInDir(js, "")
+}
+
+func runJSCodeInDir(js string, dir string) {
 	tmpFile, err := os.CreateTemp("", "quill-*.js")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: could not create temp file: %s\n", err)
@@ -1107,6 +1126,9 @@ func runJSCode(js string) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
+	if dir != "" {
+		cmd.Dir = dir
+	}
 
 	if err := cmd.Run(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {

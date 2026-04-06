@@ -138,7 +138,7 @@ func (p *Parser) parseStatement() ast.Statement {
 			return p.parseArrayDestructure()
 		}
 		return p.parseExprStatement()
-	case p.check(lexer.TOKEN_IDENT) && p.pos+3 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_DOT && p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT && (p.tokens[p.pos+3].Type == lexer.TOKEN_IS || p.tokens[p.pos+3].Type == lexer.TOKEN_ARE):
+	case p.check(lexer.TOKEN_IDENT) && p.pos+3 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_DOT && (p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT || isKeywordToken(p.tokens[p.pos+2].Type)) && (p.tokens[p.pos+3].Type == lexer.TOKEN_IS || p.tokens[p.pos+3].Type == lexer.TOKEN_ARE):
 		return p.parseDotAssignment()
 	case p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE):
 		return p.parseAssignment()
@@ -733,7 +733,7 @@ func (p *Parser) isOnStatement() bool {
 	offset := 1
 	for p.pos+offset+1 < len(p.tokens) &&
 		p.tokens[p.pos+offset].Type == lexer.TOKEN_DOT &&
-		p.tokens[p.pos+offset+1].Type == lexer.TOKEN_IDENT {
+		(p.tokens[p.pos+offset+1].Type == lexer.TOKEN_IDENT || isKeywordToken(p.tokens[p.pos+offset+1].Type)) {
 		offset += 2
 	}
 	return p.pos+offset < len(p.tokens) && p.tokens[p.pos+offset].Type == lexer.TOKEN_ON
@@ -748,7 +748,7 @@ func (p *Parser) parseOnStatement() *ast.OnStatement {
 	objExpr := ast.Expression(&ast.Identifier{Name: p.advance().Value})
 	for p.check(lexer.TOKEN_DOT) {
 		p.advance() // consume "."
-		field := p.expect(lexer.TOKEN_IDENT)
+		field := p.expectIdentOrKeyword()
 		objExpr = &ast.DotExpr{Object: objExpr, Field: field.Value}
 	}
 	p.expect(lexer.TOKEN_ON) // consume "on"
@@ -1700,7 +1700,7 @@ func (p *Parser) parsePostfix() ast.Expression {
 	for {
 		if p.check(lexer.TOKEN_DOT) {
 			p.advance() // consume "."
-			field := p.expect(lexer.TOKEN_IDENT)
+			field := p.expectIdentOrKeyword()
 			expr = &ast.DotExpr{Object: expr, Field: field.Value}
 		} else if p.check(lexer.TOKEN_LBRACKET) {
 			p.advance() // consume "["
@@ -1796,7 +1796,7 @@ func (p *Parser) parsePrimary() ast.Expression {
 		// Support dotted class names like Discord.Client
 		for p.check(lexer.TOKEN_DOT) {
 			p.advance() // consume "."
-			next := p.expect(lexer.TOKEN_IDENT)
+			next := p.expectIdentOrKeyword()
 			className = className + "." + next.Value
 		}
 		args := []ast.Expression{}
@@ -1824,7 +1824,7 @@ func (p *Parser) parsePrimary() ast.Expression {
 	case lexer.TOKEN_MY:
 		p.advance()
 		p.expect(lexer.TOKEN_DOT)
-		field := p.expect(lexer.TOKEN_IDENT)
+		field := p.expectIdentOrKeyword()
 		return &ast.DotExpr{Object: &ast.Identifier{Name: "this"}, Field: field.Value}
 
 	case lexer.TOKEN_LBRACKET:
@@ -1876,7 +1876,7 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 			val := p.parseExpression()
 			computed = append(computed, ast.ComputedProperty{KeyExpr: keyExpr, Value: val})
 		} else {
-			key := p.expect(lexer.TOKEN_IDENT)
+			key := p.expectIdentOrKeyword()
 			keys = append(keys, key.Value)
 			p.expect(lexer.TOKEN_COLON)
 			values = append(values, p.parseExpression())
@@ -1896,7 +1896,7 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 				val := p.parseExpression()
 				computed = append(computed, ast.ComputedProperty{KeyExpr: keyExpr, Value: val})
 			} else {
-				key := p.expect(lexer.TOKEN_IDENT)
+				key := p.expectIdentOrKeyword()
 				keys = append(keys, key.Value)
 				p.expect(lexer.TOKEN_COLON)
 				values = append(values, p.parseExpression())
@@ -2276,6 +2276,50 @@ func (p *Parser) expect(tokenType lexer.TokenType) lexer.Token {
 		p.error(fmt.Sprintf("expected %s but found %q", tokenType, p.current().Value))
 	}
 	return p.advance()
+}
+
+// isKeywordToken returns true if the token type is a keyword that can also
+// be used as an identifier in certain contexts (after a dot, as object key).
+func isKeywordToken(t lexer.TokenType) bool {
+	switch t {
+	case lexer.TOKEN_ON, lexer.TOKEN_USE, lexer.TOKEN_SEND, lexer.TOKEN_STATUS,
+		lexer.TOKEN_TYPE, lexer.TOKEN_FROM, lexer.TOKEN_SELECT, lexer.TOKEN_SERVER,
+		lexer.TOKEN_LOAD, lexer.TOKEN_AFTER, lexer.TOKEN_STATE,
+		lexer.TOKEN_ROUTE, lexer.TOKEN_PORT, lexer.TOKEN_MODEL, lexer.TOKEN_CONNECT,
+		lexer.TOKEN_HEAD, lexer.TOKEN_STYLE, lexer.TOKEN_FORM, lexer.TOKEN_LINK,
+		lexer.TOKEN_BROADCAST, lexer.TOKEN_CHANNEL, lexer.TOKEN_RECEIVE,
+		lexer.TOKEN_BUFFER, lexer.TOKEN_MATCH, lexer.TOKEN_RESPOND,
+		lexer.TOKEN_DATABASE, lexer.TOKEN_MOUNT, lexer.TOKEN_COMPONENT,
+		lexer.TOKEN_COMMAND, lexer.TOKEN_REPLY, lexer.TOKEN_EMBED,
+		lexer.TOKEN_WORKER, lexer.TOKEN_CANCEL, lexer.TOKEN_SETTLED,
+		lexer.TOKEN_SPAWN, lexer.TOKEN_TASK, lexer.TOKEN_PARALLEL, lexer.TOKEN_RACE,
+		lexer.TOKEN_DESCRIBE, lexer.TOKEN_NEW, lexer.TOKEN_TEST, lexer.TOKEN_EXPECT,
+		lexer.TOKEN_MOCK, lexer.TOKEN_TRAIT, lexer.TOKEN_WHERE, lexer.TOKEN_USING,
+		lexer.TOKEN_SELF, lexer.TOKEN_PRIVATE, lexer.TOKEN_PUBLIC,
+		lexer.TOKEN_YIELD, lexer.TOKEN_LOOP, lexer.TOKEN_DEFINE,
+		lexer.TOKEN_REDIRECT, lexer.TOKEN_WEBSOCKET, lexer.TOKEN_DESCRIBED,
+		lexer.TOKEN_IS, lexer.TOKEN_ARE, lexer.TOKEN_SAY, lexer.TOKEN_IF,
+		lexer.TOKEN_OTHERWISE, lexer.TOKEN_FOR, lexer.TOKEN_EACH, lexer.TOKEN_IN,
+		lexer.TOKEN_TO, lexer.TOKEN_GIVE, lexer.TOKEN_BACK, lexer.TOKEN_AND,
+		lexer.TOKEN_OR, lexer.TOKEN_NOT, lexer.TOKEN_GREATER, lexer.TOKEN_LESS,
+		lexer.TOKEN_THAN, lexer.TOKEN_EQUAL, lexer.TOKEN_CONTAINS,
+		lexer.TOKEN_WHILE, lexer.TOKEN_MY, lexer.TOKEN_AWAIT, lexer.TOKEN_AS,
+		lexer.TOKEN_TRY, lexer.TOKEN_FAILS, lexer.TOKEN_EXTENDS, lexer.TOKEN_WITH,
+		lexer.TOKEN_NOTHING, lexer.TOKEN_BREAK, lexer.TOKEN_CONTINUE,
+		lexer.TOKEN_WHEN, lexer.TOKEN_OF, lexer.TOKEN_YES, lexer.TOKEN_NO:
+		return true
+	}
+	return false
+}
+
+// expectIdentOrKeyword consumes the current token if it's an identifier or a
+// keyword that can be used as an identifier in this context, and returns it.
+func (p *Parser) expectIdentOrKeyword() lexer.Token {
+	if p.current().Type == lexer.TOKEN_IDENT || isKeywordToken(p.current().Type) {
+		return p.advance()
+	}
+	p.error(fmt.Sprintf("expected name but found %q", p.current().Value))
+	return p.advance() // unreachable
 }
 
 func (p *Parser) consumeNewline() {

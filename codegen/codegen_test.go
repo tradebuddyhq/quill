@@ -1052,3 +1052,67 @@ func TestGenerateStreamClaude(t *testing.T) {
 		}
 	}
 }
+
+func TestAwaitInFunctionAsync(t *testing.T) {
+	src := `to fetchData url:
+  data is await fetch(url)
+  give back data
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "async function fetchData(url)") {
+		t.Errorf("expected async function declaration, got:\n%s", output)
+	}
+	if !strings.Contains(output, "await fetch(url)") {
+		t.Errorf("expected await in function body, got:\n%s", output)
+	}
+}
+
+func TestReservedWordsAsDotAccess(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{`obj.send("hello")`, `obj.send("hello")`},
+		{`say obj.status`, `obj.status`},
+		{`say obj.type`, `obj.type`},
+		{`say obj.from`, `obj.from`},
+		{`say obj.select`, `obj.select`},
+		{`say obj.load`, `obj.load`},
+		{`say obj.after`, `obj.after`},
+		{`say obj.use`, `obj.use`},
+		{`say obj.on`, `obj.on`},
+		{`say obj.server`, `obj.server`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			output, err := compile(tt.input)
+			if err != nil {
+				t.Fatalf("unexpected error for %q: %v", tt.input, err)
+			}
+			if !strings.Contains(output, tt.expected) {
+				t.Errorf("expected output to contain %q, got:\n%s", tt.expected, output)
+			}
+		})
+	}
+}
+
+func TestReservedWordsAsObjectKeys(t *testing.T) {
+	src := `msg is {type: "message", from: "alice", status: 200}`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	checks := []string{
+		"type:",
+		"from:",
+		"status:",
+	}
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q, got:\n%s", check, output)
+		}
+	}
+}
