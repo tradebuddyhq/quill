@@ -1640,29 +1640,23 @@ DISCORD_TOKEN=your_bot_token_here
 
 	// Create bot.quill
 	botQuill := `-- Discord Bot built with Quill
--- Replace the token or use environment variables
 
 use "discord.js" as Discord
 
-intents is [Discord.GatewayIntentBits.Guilds, Discord.GatewayIntentBits.GuildMessages, Discord.GatewayIntentBits.MessageContent]
+bot is Discord.bot(env("DISCORD_TOKEN"))
 
-options is {intents: intents}
-bot is new Discord.Client(options)
+command "ping" described "Check if bot is alive":
+  reply "Pong!"
 
-bot on "ready" with:
-  say "Bot is online as {bot.user.tag}!"
+command "help" described "Learn about this bot":
+  reply embed "My Bot":
+    color green
+    description "A Discord bot built with Quill"
+    field "Ping" "Check if the bot is alive"
+    field "Hello" "Get a greeting"
 
-bot on "messageCreate" with msg:
-  if msg.author.bot:
-    give back nothing
-
-  if msg.content is "!ping":
-    msg.reply("Pong!")
-
-  if msg.content is "!hello":
-    msg.reply("Hello from Quill!")
-
-bot.login(process.env.DISCORD_TOKEN)
+command "hello" with user described "Greet someone":
+  reply "Hello, {user}!"
 `
 
 	// Create .gitignore

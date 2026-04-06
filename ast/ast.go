@@ -954,6 +954,43 @@ type BroadcastStatement struct {
 func (s *BroadcastStatement) nodeType() string { return "Broadcast" }
 func (s *BroadcastStatement) stmtNode()        {}
 
+// CommandStatement represents a Discord slash command declaration.
+type CommandStatement struct {
+	Name        string
+	Description string
+	Params      []string
+	Body        []Statement
+	Line        int
+}
+
+func (s *CommandStatement) nodeType() string { return "Command" }
+func (s *CommandStatement) stmtNode()        {}
+
+// EmbedField represents a single field directive in an embed literal.
+type EmbedField struct {
+	Type  string // "color", "field", "footer", "description", "thumbnail", "image"
+	Name  string // for "field" type: the field name
+	Value string // the value string
+}
+
+// EmbedLiteral represents an embed builder expression.
+type EmbedLiteral struct {
+	Title  string
+	Fields []EmbedField
+}
+
+func (e *EmbedLiteral) nodeType() string { return "Embed" }
+func (e *EmbedLiteral) exprNode()        {}
+
+// ReplyStatement represents a reply inside a command block.
+type ReplyStatement struct {
+	Value Expression
+	Line  int
+}
+
+func (s *ReplyStatement) nodeType() string { return "Reply" }
+func (s *ReplyStatement) stmtNode()        {}
+
 // OnStatement represents "object on "event" with [params]:" event handler syntax.
 // For route handlers (Express), Method and Path are used instead of Event:
 //   app on get "/" with req res:  =>  app.get("/", (req, res) => { ... })

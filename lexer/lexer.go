@@ -97,8 +97,12 @@ var keywords = map[string]TokenType{
 	"Readonly":  TOKEN_READONLY,
 	"Required":  TOKEN_REQUIRED,
 	"websocket": TOKEN_WEBSOCKET,
-	"on":        TOKEN_ON,
-	"broadcast": TOKEN_BROADCAST,
+	"on":          TOKEN_ON,
+	"broadcast":   TOKEN_BROADCAST,
+	"command":     TOKEN_COMMAND,
+	"described":   TOKEN_DESCRIBED,
+	"reply":       TOKEN_REPLY,
+	"embed":       TOKEN_EMBED,
 }
 
 type Lexer struct {

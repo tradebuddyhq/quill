@@ -151,6 +151,12 @@ const (
 	TOKEN_ON
 	TOKEN_BROADCAST
 
+	// Discord keywords
+	TOKEN_COMMAND
+	TOKEN_DESCRIBED
+	TOKEN_REPLY
+	TOKEN_EMBED
+
 	// Delimiters
 	TOKEN_COLON
 	TOKEN_COMMA
@@ -276,8 +282,12 @@ var tokenNames = map[TokenType]string{
 	TOKEN_REQUIRED:  "Required",
 	TOKEN_AT:        "@",
 	TOKEN_WEBSOCKET: "websocket",
-	TOKEN_ON:        "on",
-	TOKEN_BROADCAST: "broadcast",
+	TOKEN_ON:          "on",
+	TOKEN_BROADCAST:   "broadcast",
+	TOKEN_COMMAND:     "command",
+	TOKEN_DESCRIBED:   "described",
+	TOKEN_REPLY:       "reply",
+	TOKEN_EMBED:       "embed",
 }
 
 func (t TokenType) String() string {

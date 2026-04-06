@@ -264,87 +264,34 @@ function cmdDiscord() {
   }, null, 2) + '\n');
 
   // bot.quill
-  fs.writeFileSync(path.join(projectName, 'bot.quill'), `-- Discord Bot
--- Built with Quill
+  fs.writeFileSync(path.join(projectName, 'bot.quill'), `-- Discord Bot built with Quill
 
 use "discord.js" as Discord
 
--- Create the bot
-client is new Discord.Client({
-  intents: [
-    Discord.GatewayIntentBits.Guilds,
-    Discord.GatewayIntentBits.GuildMessages,
-    Discord.GatewayIntentBits.MessageContent
-  ]
-})
+bot is Discord.bot(env("DISCORD_TOKEN"))
 
--- Bot is ready
-client on "ready" with:
-  say "Bot is online as {client.user.tag}!"
+command "ping" described "Check if bot is alive":
+  reply "Pong!"
 
--- Handle messages
-client on "messageCreate" with msg:
-  if msg.author.bot:
-    give back nothing
+command "help" described "Learn about this bot":
+  reply embed "My Bot":
+    color green
+    description "A Discord bot built with Quill"
+    field "Ping" "Check if the bot is alive"
+    field "Hello" "Get a greeting"
 
-  if msg.content is "!ping":
-    msg.reply("Pong!")
-
-  if msg.content is "!hello":
-    msg.reply("Hello, {msg.author.username}!")
-
--- Login with your token
-client.login(process.env.DISCORD_TOKEN)
+command "hello" with user described "Greet someone":
+  reply "Hello, {user}!"
 `);
 
   // .env.example
   fs.writeFileSync(path.join(projectName, '.env.example'), `DISCORD_TOKEN=your-bot-token-here
-CLIENT_ID=your-client-id-here
 `);
 
   // .gitignore
   fs.writeFileSync(path.join(projectName, '.gitignore'), `node_modules/
 .env
 *.js
-!deploy-commands.js
-`);
-
-  // deploy-commands.js
-  fs.writeFileSync(path.join(projectName, 'deploy-commands.js'), `const { REST, Routes, SlashCommandBuilder } = require("discord.js");
-const fs = require("fs");
-
-// Load .env
-try {
-  const envFile = fs.readFileSync(".env", "utf-8");
-  envFile.split("\\n").forEach(line => {
-    const [key, ...rest] = line.split("=");
-    if (key && rest.length) process.env[key.trim()] = rest.join("=").trim();
-  });
-} catch (e) {}
-
-const commands = [
-  new SlashCommandBuilder()
-    .setName("ping")
-    .setDescription("Check if the bot is alive"),
-  new SlashCommandBuilder()
-    .setName("hello")
-    .setDescription("Get a greeting"),
-].map(cmd => cmd.toJSON());
-
-const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
-
-(async () => {
-  try {
-    console.log("Registering slash commands...");
-    await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID),
-      { body: commands }
-    );
-    console.log("Done! Slash commands registered.");
-  } catch (error) {
-    console.error("Error:", error);
-  }
-})();
 `);
 
   console.log(`\n${GREEN}${BOLD}Created Discord bot project: ${projectName}${RESET}\n`);

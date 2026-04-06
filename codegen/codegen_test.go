@@ -788,3 +788,121 @@ func TestGenerateRouteHandlerDelete(t *testing.T) {
 		t.Errorf("expected app.delete(\"/api/items/:id\", ...), got:\n%s", output)
 	}
 }
+
+func TestGenerateCommandStatement(t *testing.T) {
+	src := `use "discord.js" as Discord
+bot is Discord.bot(env("DISCORD_TOKEN"))
+
+command "ping" described "Check if bot is alive":
+  reply "Pong!"
+
+command "greet" with user described "Greet someone":
+  reply "Hello, {user}!"
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		"__quill_commands",
+		`setName("ping")`,
+		`setDescription("Check if bot is alive")`,
+		`setName("greet")`,
+		`setDescription("Greet someone")`,
+		`addStringOption`,
+		"interactionCreate",
+		"isChatInputCommand",
+		`interaction.reply("Pong!")`,
+		`interaction.reply`,
+		"applicationCommands",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}
+
+func TestGenerateEmbedLiteral(t *testing.T) {
+	src := `use "discord.js" as Discord
+bot is Discord.bot(env("DISCORD_TOKEN"))
+
+command "help" described "Show help":
+  reply embed "My Bot":
+    color green
+    description "A bot built with Quill"
+    field "Ping" "Check if alive"
+    footer "Footer text"
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		"EmbedBuilder()",
+		`setTitle("My Bot")`,
+		"setColor(0x1EB969)",
+		`setDescription("A bot built with Quill")`,
+		`addFields({ name: "Ping", value: "Check if alive" })`,
+		`setFooter({ text: "Footer text" })`,
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}
+
+func TestGenerateDiscordBot(t *testing.T) {
+	src := `use "discord.js" as Discord
+bot is Discord.bot(env("DISCORD_TOKEN"))
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	checks := []string{
+		"new Discord.Client",
+		"GatewayIntentBits.Guilds",
+		"GatewayIntentBits.GuildMessages",
+		"GatewayIntentBits.MessageContent",
+		"process.nextTick",
+		"process.env[",
+		".env",
+	}
+
+	for _, check := range checks {
+		if !strings.Contains(output, check) {
+			t.Errorf("expected output to contain %q\nGot:\n%s", check, output)
+		}
+	}
+}
+
+func TestGenerateEnvFunction(t *testing.T) {
+	src := `token is env("MY_TOKEN")`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, `process.env["MY_TOKEN"]`) {
+		t.Errorf("expected process.env access, got:\n%s", output)
+	}
+}
+
+func TestGenerateAutoEnvLoading(t *testing.T) {
+	src := `use "discord.js" as Discord
+bot is Discord.bot(env("DISCORD_TOKEN"))
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "readFileSync('.env'") {
+		t.Errorf("expected .env loader, got:\n%s", output)
+	}
+}

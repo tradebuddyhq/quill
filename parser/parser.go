@@ -116,6 +116,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseDecorated()
 	case p.check(lexer.TOKEN_BROADCAST):
 		return p.parseBroadcast()
+	case p.check(lexer.TOKEN_COMMAND):
+		return p.parseCommand()
+	case p.check(lexer.TOKEN_REPLY):
+		return p.parseReply()
 	case p.check(lexer.TOKEN_LBRACE):
 		// Check if this is a destructuring: {name, age} is expr
 		if p.isObjectDestructure() {
@@ -1756,6 +1760,15 @@ func (p *Parser) parsePrimary() ast.Expression {
 		p.advance()
 		return &ast.NothingLiteral{}
 
+	case lexer.TOKEN_EMBED:
+		// Check if this is an embed literal: embed "title":
+		if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_STRING {
+			return p.parseEmbedLiteral()
+		}
+		// Otherwise treat as identifier
+		p.advance()
+		return &ast.Identifier{Name: "embed"}
+
 	case lexer.TOKEN_WITH:
 		return p.parseLambda()
 
@@ -2371,6 +2384,109 @@ func (p *Parser) parseBroadcast() *ast.BroadcastStatement {
 	value := p.parseExpression()
 	p.consumeNewline()
 	return &ast.BroadcastStatement{Value: value, Line: line}
+}
+
+func (p *Parser) parseCommand() *ast.CommandStatement {
+	line := p.current().Line
+	p.advance() // consume "command"
+	name := p.expect(lexer.TOKEN_STRING).Value
+
+	var params []string
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+		for p.check(lexer.TOKEN_IDENT) {
+			params = append(params, p.advance().Value)
+		}
+	}
+
+	description := ""
+	if p.check(lexer.TOKEN_DESCRIBED) {
+		p.advance() // consume "described"
+		description = p.expect(lexer.TOKEN_STRING).Value
+	}
+
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+
+	return &ast.CommandStatement{
+		Name:        name,
+		Description: description,
+		Params:      params,
+		Body:        body,
+		Line:        line,
+	}
+}
+
+func (p *Parser) parseReply() *ast.ReplyStatement {
+	line := p.current().Line
+	p.advance() // consume "reply"
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.ReplyStatement{Value: value, Line: line}
+}
+
+func (p *Parser) parseEmbedLiteral() *ast.EmbedLiteral {
+	p.advance() // consume "embed"
+	title := p.expect(lexer.TOKEN_STRING).Value
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+
+	var fields []ast.EmbedField
+	p.expect(lexer.TOKEN_INDENT)
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		// Embed directives use identifiers as contextual keywords
+		if p.check(lexer.TOKEN_IDENT) {
+			directive := p.current().Value
+			switch directive {
+			case "color":
+				p.advance()
+				colorName := p.advance().Value
+				fields = append(fields, ast.EmbedField{Type: "color", Value: colorName})
+				p.consumeNewline()
+			case "field":
+				p.advance()
+				fieldName := p.expect(lexer.TOKEN_STRING).Value
+				fieldValue := p.expect(lexer.TOKEN_STRING).Value
+				fields = append(fields, ast.EmbedField{Type: "field", Name: fieldName, Value: fieldValue})
+				p.consumeNewline()
+			case "footer":
+				p.advance()
+				footerText := p.expect(lexer.TOKEN_STRING).Value
+				fields = append(fields, ast.EmbedField{Type: "footer", Value: footerText})
+				p.consumeNewline()
+			case "description":
+				p.advance()
+				descText := p.expect(lexer.TOKEN_STRING).Value
+				fields = append(fields, ast.EmbedField{Type: "description", Value: descText})
+				p.consumeNewline()
+			case "thumbnail":
+				p.advance()
+				url := p.expect(lexer.TOKEN_STRING).Value
+				fields = append(fields, ast.EmbedField{Type: "thumbnail", Value: url})
+				p.consumeNewline()
+			case "image":
+				p.advance()
+				url := p.expect(lexer.TOKEN_STRING).Value
+				fields = append(fields, ast.EmbedField{Type: "image", Value: url})
+				p.consumeNewline()
+			default:
+				p.advance() // skip unknown
+				p.consumeNewline()
+			}
+		} else {
+			p.advance() // skip unknown token
+			p.consumeNewline()
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+	return &ast.EmbedLiteral{Title: title, Fields: fields}
 }
 
 func (p *Parser) parseWebSocketBlock() ast.WebSocketBlock {
