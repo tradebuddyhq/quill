@@ -101,6 +101,8 @@
         <li><a href="#decorators">Decorators</a></li>
         <li><a href="#websockets">WebSockets</a></li>
         <li><a href="#testing-mocks">Testing mocks</a></li>
+        <li><a href="#scoping">Variable scoping</a></li>
+        <li><a href="#user-input">User input</a></li>
       </ul>
       <h4>Guides</h4>
       <ul>
@@ -1077,18 +1079,60 @@ result <span class="kw">is</span> <span class="str">"  hello  "</span> | upper |
 }</code></pre>
 
       <h3>Nested objects</h3>
-      <p>Objects can contain other objects:</p>
-      <pre><code>app <span class="kw">is</span> {
-  name: <span class="str">"MyApp"</span>,
-  database: {
+      <p>Objects can contain other objects. This is useful for organizing related settings together:</p>
+      <pre><code>config <span class="kw">is</span> {
+  db: {
     host: <span class="str">"localhost"</span>,
-    name: <span class="str">"mydb"</span>,
-    pool: <span class="num">5</span>
+    port: <span class="num">5432</span>
+  },
+  app: {
+    name: <span class="str">"MyApp"</span>,
+    debug: <span class="bool">yes</span>
   }
 }
 
-<span class="kw">say</span> app.database.host   <span class="cmt">-- localhost</span>
-<span class="kw">say</span> app.database.name   <span class="cmt">-- mydb</span></code></pre>
+<span class="kw">say</span> config.db.host   <span class="cmt">-- localhost</span>
+<span class="kw">say</span> config.db.port   <span class="cmt">-- 5432</span>
+<span class="kw">say</span> config.app.name  <span class="cmt">-- MyApp</span></code></pre>
+
+      <h3>Modifying properties</h3>
+      <p>You can change the value of a property after the object is created, just like reassigning a variable:</p>
+      <pre><code>user <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>}
+<span class="kw">say</span> user.name   <span class="cmt">-- Alice</span>
+
+<span class="cmt">-- Change the name</span>
+user.name <span class="kw">is</span> <span class="str">"Bob"</span>
+<span class="kw">say</span> user.name   <span class="cmt">-- Bob</span>
+
+<span class="cmt">-- Add a new property</span>
+user.email <span class="kw">is</span> <span class="str">"bob@example.com"</span>
+<span class="kw">say</span> user.email  <span class="cmt">-- bob@example.com</span></code></pre>
+
+      <h3>Accessing properties with bracket notation</h3>
+      <p>Besides dot notation (<code>user.name</code>), you can also use bracket notation with a string. This is useful when the property name is stored in a variable or contains special characters:</p>
+      <pre><code>user <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>}
+
+<span class="cmt">-- These two are the same:</span>
+<span class="kw">say</span> user.name         <span class="cmt">-- Alice</span>
+<span class="kw">say</span> user[<span class="str">"name"</span>]      <span class="cmt">-- Alice</span>
+
+<span class="cmt">-- Bracket notation lets you use a variable as the key</span>
+field <span class="kw">is</span> <span class="str">"age"</span>
+<span class="kw">say</span> user[field]       <span class="cmt">-- 30</span></code></pre>
+
+      <h3>Checking if a key exists</h3>
+      <p>To check whether an object has a particular property, you can check if the value is <code>nothing</code>:</p>
+      <pre><code>user <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>}
+
+<span class="kw">if</span> user.email <span class="kw">is</span> <span class="kw">nothing</span>:
+  <span class="kw">say</span> <span class="str">"No email on file"</span>
+
+<span class="kw">if</span> user.name <span class="kw">is not</span> <span class="kw">nothing</span>:
+  <span class="kw">say</span> <span class="str">"Name: {user.name}"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Create an object representing your favorite book with properties for <code>title</code>, <code>author</code>, and <code>pages</code>. Then print each property with <code>say</code>.
+      </div>
 
       <!-- ============================================================ -->
       <!-- SPREAD OPERATOR                                               -->
@@ -1143,6 +1187,39 @@ empty <span class="kw">are</span> []</code></pre>
 
 <span class="kw">for each</span> fruit <span class="kw">in</span> fruits:
   <span class="kw">say</span> <span class="str">"I like {fruit}"</span></code></pre>
+
+      <h3>Modifying elements</h3>
+      <p>You can change any item in a list by assigning to its index:</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+colors[<span class="num">0</span>] <span class="kw">is</span> <span class="str">"purple"</span>
+<span class="kw">say</span> colors   <span class="cmt">-- ["purple", "green", "blue"]</span></code></pre>
+
+      <h3>Adding items</h3>
+      <p>Use <code>push</code> to add an item to the end of a list:</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>]
+push(colors, <span class="str">"yellow"</span>)
+<span class="kw">say</span> colors   <span class="cmt">-- ["red", "green", "yellow"]</span></code></pre>
+
+      <h3>Removing items</h3>
+      <p>Use <code>pop</code> to remove the last item, or <code>splice</code> to remove items at a specific position:</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+
+<span class="cmt">-- Remove the last item</span>
+last <span class="kw">is</span> pop(colors)
+<span class="kw">say</span> last     <span class="cmt">-- blue</span>
+<span class="kw">say</span> colors   <span class="cmt">-- ["red", "green"]</span>
+
+<span class="cmt">-- Remove 1 item at index 0</span>
+colors.splice(<span class="num">0</span>, <span class="num">1</span>)
+<span class="kw">say</span> colors   <span class="cmt">-- ["green"]</span></code></pre>
+
+      <h3>Finding items</h3>
+      <p>Check if a list contains a specific item:</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+
+<span class="kw">say</span> includes(colors, <span class="str">"red"</span>)     <span class="cmt">-- true</span>
+<span class="kw">say</span> includes(colors, <span class="str">"yellow"</span>)  <span class="cmt">-- false</span>
+<span class="kw">say</span> indexOf(colors, <span class="str">"green"</span>)    <span class="cmt">-- 1</span></code></pre>
 
       <h3>Using dot notation</h3>
       <pre><code><span class="kw">say</span> <span class="str">"hello"</span>.length   <span class="cmt">-- 5</span></code></pre>
@@ -1403,6 +1480,33 @@ weather <span class="kw">is</span> <span class="kw">await</span> getWeather
 news <span class="kw">is</span> <span class="kw">await</span> getNews
 <span class="kw">say</span> <span class="str">"Weather: {weather.summary}"</span>
 <span class="kw">say</span> <span class="str">"Top headline: {news[0].title}"</span></code></pre>
+
+      <h3>Real-world example: fetching data from an API</h3>
+      <p>Here is a complete example that fetches JSON data from a web API and handles errors:</p>
+      <pre><code><span class="cmt">-- Fetch a list of users from an API</span>
+<span class="kw">try</span>:
+  response <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"https://jsonplaceholder.typicode.com/users"</span>)
+  users <span class="kw">is</span> <span class="kw">await</span> response.json()
+
+  <span class="kw">for each</span> user <span class="kw">in</span> users:
+    <span class="kw">say</span> <span class="str">"{user.name} - {user.email}"</span>
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Failed to fetch users: {error}"</span></code></pre>
+
+      <h3>Running multiple async operations</h3>
+      <p>When you need to fetch several pieces of data, you can use <code>parallel:</code> (covered below) or simply await them one by one:</p>
+      <pre><code><span class="cmt">-- Fetch user data and their posts at the same time</span>
+<span class="kw">try</span>:
+  <span class="kw">parallel</span>:
+    userRes <span class="kw">is</span> fetch(<span class="str">"https://api.example.com/user/1"</span>)
+    postsRes <span class="kw">is</span> fetch(<span class="str">"https://api.example.com/user/1/posts"</span>)
+
+  user <span class="kw">is</span> <span class="kw">await</span> userRes.json()
+  posts <span class="kw">is</span> <span class="kw">await</span> postsRes.json()
+
+  <span class="kw">say</span> <span class="str">"{user.name} has {length(posts)} posts"</span>
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Something went wrong: {error}"</span></code></pre>
 
       <!-- PARALLEL BLOCK -->
       <h3 id="parallel-block"><code>parallel:</code> — Doing multiple things at once</h3>
@@ -2021,6 +2125,90 @@ styles <span class="kw">is</span> css<span class="str">`
       <!-- ============================================================ -->
       <!-- NEXT STEPS                                                    -->
       <!-- ============================================================ -->
+
+      <!-- ============================================================ -->
+      <!-- VARIABLE SCOPING                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="scoping">Variable Scoping</h2>
+      <p><strong>What is scoping?</strong> Scoping is about where a variable can be seen and used in your program. A variable created inside a block (like a function, loop, or if statement) only exists inside that block. Once the block ends, the variable disappears.</p>
+
+      <p>Think of it like rooms in a house. A lamp in the bedroom can only light up the bedroom. Code in other rooms cannot see it.</p>
+
+      <h3>Function scope</h3>
+      <p>Variables created inside a function (including its parameters) are local to that function. Code outside the function cannot see them:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">greet</span> name:
+  message <span class="kw">is</span> <span class="str">"Hello, {name}!"</span>
+  <span class="kw">say</span> message
+
+greet(<span class="str">"Alice"</span>)   <span class="cmt">-- Hello, Alice!</span>
+<span class="cmt">-- say message     -- ERROR: message is not defined here</span>
+<span class="cmt">-- say name        -- ERROR: name is not defined here</span></code></pre>
+
+      <h3>Block scope (if / for / while)</h3>
+      <p>Variables defined inside <code>if</code>, <code>for each</code>, or <code>while</code> blocks are scoped to that block:</p>
+      <pre><code>score <span class="kw">is</span> <span class="num">85</span>
+
+<span class="kw">if</span> score <span class="kw">is greater than</span> <span class="num">80</span>:
+  grade <span class="kw">is</span> <span class="str">"A"</span>
+  <span class="kw">say</span> grade   <span class="cmt">-- A (works fine inside the block)</span>
+
+<span class="cmt">-- grade is not accessible here outside the if block</span></code></pre>
+
+      <h3>Outer variables are visible inside blocks</h3>
+      <p>Code inside a block <em>can</em> see and modify variables from the enclosing scope:</p>
+      <pre><code>total <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">for each</span> n <span class="kw">in</span> [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>]:
+  total <span class="kw">is</span> total + n   <span class="cmt">-- modifying the outer variable</span>
+
+<span class="kw">say</span> total   <span class="cmt">-- 60</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Rule of thumb:</strong> Define variables in the smallest scope you need them. If a variable is only used inside a loop, create it inside the loop. This keeps your code clean and avoids accidental name collisions.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- USER INPUT                                                    -->
+      <!-- ============================================================ -->
+
+      <h2 id="user-input">User Input</h2>
+      <p><strong>How do I get input from the user?</strong> Since Quill compiles to JavaScript, you can read input from the terminal using Node.js built-in modules. Quill provides a convenient way to do this.</p>
+
+      <h3>Reading a line of input</h3>
+      <p>Use the <code>ask</code> function to prompt the user and get their response:</p>
+      <pre><code>name <span class="kw">is</span> <span class="kw">await</span> ask(<span class="str">"What is your name? "</span>)
+<span class="kw">say</span> <span class="str">"Hello, {name}!"</span></code></pre>
+
+      <h3>Using input in a loop</h3>
+      <pre><code><span class="kw">say</span> <span class="str">"Type 'quit' to exit."</span>
+running <span class="kw">is</span> <span class="bool">yes</span>
+
+<span class="kw">while</span> running:
+  answer <span class="kw">is</span> <span class="kw">await</span> ask(<span class="str">"Enter a command: "</span>)
+  <span class="kw">if</span> answer <span class="kw">is</span> <span class="str">"quit"</span>:
+    <span class="kw">say</span> <span class="str">"Goodbye!"</span>
+    running <span class="kw">is</span> <span class="bool">no</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"You typed: {answer}"</span></code></pre>
+
+      <h3>Using readline directly</h3>
+      <p>If you need more control, you can use the Node.js <code>readline</code> module directly since Quill compiles to JavaScript:</p>
+      <pre><code><span class="kw">use</span> <span class="str">"readline"</span> <span class="kw">as</span> rl
+
+reader <span class="kw">is</span> rl.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
+
+reader.question(<span class="str">"How old are you? "</span>, <span class="kw">with</span> answer:
+  <span class="kw">say</span> <span class="str">"You are {answer} years old!"</span>
+  reader.close()
+)</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Note:</strong> The <code>ask</code> function requires <code>await</code> because reading user input is an asynchronous operation. The program pauses until the user types something and presses Enter.
+      </div>
 
       <h2 id="next-steps">Next Steps</h2>
       <p>Congratulations! You have learned the fundamentals of Quill. Here is where to go from here:</p>

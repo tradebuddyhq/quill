@@ -49,6 +49,9 @@
         <li><a href="#test-blocks">Test blocks</a></li>
         <li><a href="#expect">The expect keyword</a></li>
         <li><a href="#running">Running tests</a></li>
+        <li><a href="#async-tests">Async tests</a></li>
+        <li><a href="#best-practices">Best practices</a></li>
+        <li><a href="#organizing-tests">Organizing tests</a></li>
         <li><a href="/docs/tools">Tools</a></li>
         <li><a href="/docs/examples">Examples</a></li>
       </ul>
@@ -118,10 +121,25 @@
   <span class="kw">expect</span> <span class="kw">not</span> isEven(<span class="num">3</span>)</code></pre>
 
       <h2 id="running">Running tests</h2>
-      <p>Run your test file just like any Quill program:</p>
+      <p>There are two ways to run tests:</p>
+
+      <h3>Option 1: <code>quill run</code></h3>
+      <p>Run your test file like any Quill program. This runs all code in the file, including non-test code:</p>
       <pre><code>quill run tests.quill</code></pre>
-      <p>Or use the dedicated test command that only runs <code>test</code> blocks:</p>
+
+      <h3>Option 2: <code>quill test</code> (recommended)</h3>
+      <p>Use the dedicated test command that <strong>only runs test blocks</strong> and skips everything else. This is the best way to run tests because it gives you a clean summary:</p>
       <pre><code>quill test tests.quill</code></pre>
+
+      <p>You can also test all files in a directory:</p>
+      <pre><code><span class="cmt"># Test a specific file</span>
+quill test math_test.quill
+
+<span class="cmt"># Test all _test.quill files in the current directory</span>
+quill test
+
+<span class="cmt"># Test all files matching a pattern</span>
+quill test tests/</code></pre>
 
       <p>Example output:</p>
       <pre><code>  &#10003; addition
@@ -130,6 +148,24 @@
 
 3 passed, 0 failed</code></pre>
 
+      <h2 id="async-tests">Async tests</h2>
+      <p>If your code uses <code>await</code> (for example, fetching data from an API or reading a file), your tests can use <code>await</code> too. Just write <code>await</code> inside the test block as you normally would:</p>
+      <pre><code><span class="kw">to</span> <span class="fn">fetchUser</span> id:
+  response <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"https://api.example.com/users/{id}"</span>)
+  <span class="kw">give back</span> <span class="kw">await</span> response.json()
+
+<span class="kw">test</span> <span class="str">"fetch user returns valid data"</span>:
+  user <span class="kw">is</span> <span class="kw">await</span> fetchUser(<span class="num">1</span>)
+  <span class="kw">expect</span> user.name <span class="kw">is not</span> <span class="kw">nothing</span>
+  <span class="kw">expect</span> user.id <span class="kw">is</span> <span class="num">1</span>
+
+<span class="kw">test</span> <span class="str">"fetch user handles errors"</span>:
+  <span class="kw">try</span>:
+    user <span class="kw">is</span> <span class="kw">await</span> fetchUser(<span class="num">-1</span>)
+    <span class="kw">expect</span> user <span class="kw">is</span> <span class="kw">nothing</span>
+  <span class="kw">if it fails</span> error:
+    <span class="kw">expect</span> error <span class="kw">is not</span> <span class="kw">nothing</span></code></pre>
+
       <h2 id="best-practices">Best practices</h2>
       <ul>
         <li>Give each test a descriptive name that explains what it tests</li>
@@ -137,6 +173,46 @@
         <li>Test edge cases: zero, negative numbers, empty strings, empty lists</li>
         <li>Place test files alongside your code with a <code>_test</code> suffix (e.g., <code>math_test.quill</code>)</li>
       </ul>
+
+      <h2 id="organizing-tests">Organizing tests</h2>
+      <p>As your project grows, keep your tests organized so they are easy to find and maintain:</p>
+
+      <h3>Group related tests by feature</h3>
+      <p>Give each test file a clear name that matches the file it tests:</p>
+      <pre><code><span class="cmt">-- File structure:</span>
+<span class="cmt">-- math.quill           (your code)</span>
+<span class="cmt">-- math_test.quill      (tests for math.quill)</span>
+<span class="cmt">-- strings.quill        (your code)</span>
+<span class="cmt">-- strings_test.quill   (tests for strings.quill)</span></code></pre>
+
+      <h3>Use descriptive test names</h3>
+      <p>A good test name describes the scenario and expected result:</p>
+      <pre><code><span class="cmt">-- Bad: vague names</span>
+<span class="kw">test</span> <span class="str">"test 1"</span>:
+  <span class="kw">expect</span> add(<span class="num">2</span>, <span class="num">3</span>) <span class="kw">is</span> <span class="num">5</span>
+
+<span class="cmt">-- Good: descriptive names</span>
+<span class="kw">test</span> <span class="str">"add returns the sum of two positive numbers"</span>:
+  <span class="kw">expect</span> add(<span class="num">2</span>, <span class="num">3</span>) <span class="kw">is</span> <span class="num">5</span>
+
+<span class="kw">test</span> <span class="str">"add handles negative numbers"</span>:
+  <span class="kw">expect</span> add(<span class="num">-1</span>, <span class="num">-2</span>) <span class="kw">is</span> <span class="num">-3</span>
+
+<span class="kw">test</span> <span class="str">"add with zero returns the other number"</span>:
+  <span class="kw">expect</span> add(<span class="num">0</span>, <span class="num">5</span>) <span class="kw">is</span> <span class="num">5</span>
+  <span class="kw">expect</span> add(<span class="num">5</span>, <span class="num">0</span>) <span class="kw">is</span> <span class="num">5</span></code></pre>
+
+      <h3>Test one thing at a time</h3>
+      <p>Each test block should focus on a single behavior. If a test fails, you want to know exactly what broke:</p>
+      <pre><code><span class="cmt">-- Good: separate tests for separate behaviors</span>
+<span class="kw">test</span> <span class="str">"sort puts numbers in ascending order"</span>:
+  <span class="kw">expect</span> sort([<span class="num">3</span>, <span class="num">1</span>, <span class="num">2</span>]) <span class="kw">is</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+
+<span class="kw">test</span> <span class="str">"sort handles empty list"</span>:
+  <span class="kw">expect</span> sort([]) <span class="kw">is</span> []
+
+<span class="kw">test</span> <span class="str">"sort handles single item"</span>:
+  <span class="kw">expect</span> sort([<span class="num">42</span>]) <span class="kw">is</span> [<span class="num">42</span>]</code></pre>
 
       <h2>A complete test file</h2>
       <pre><code><span class="cmt">-- string_test.quill</span>

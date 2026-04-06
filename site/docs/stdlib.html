@@ -45,6 +45,7 @@
       <h4>Standard Library</h4>
       <ul>
         <li><a href="/docs/stdlib" class="active">Overview</a></li>
+        <li><a href="#toc">Quick reference</a></li>
         <li><a href="#lists">Working with lists</a></li>
         <li><a href="#text">Working with text</a></li>
         <li><a href="#math">Math &amp; numbers</a></li>
@@ -91,6 +92,63 @@
       <div class="callout callout-info">
         <strong>New to programming?</strong> Think of the standard library as a toolbox. Just like a carpenter has a hammer, saw, and measuring tape, Quill gives you ready-made tools for working with text, lists, numbers, files, and more. You don't need to build these tools yourself &mdash; they're already here for you.
       </div>
+
+      <!-- ============================================ -->
+      <!-- TABLE OF CONTENTS                            -->
+      <!-- ============================================ -->
+
+      <h2 id="toc">Quick Reference</h2>
+      <p>Jump to any category:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="text-align: left; padding: 8px;">Category</th>
+            <th style="text-align: left; padding: 8px;">Key Functions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#lists">Lists / Arrays</a></td>
+            <td style="padding: 8px;"><code>length</code>, <code>push</code>, <code>pop</code>, <code>sort</code>, <code>filter</code>, <code>map_list</code>, <code>find</code>, <code>includes</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#text">Strings / Text</a></td>
+            <td style="padding: 8px;"><code>trim</code>, <code>upper</code>, <code>lower</code>, <code>split</code>, <code>join</code>, <code>replace_text</code>, <code>startsWith</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#math">Numbers &amp; Math</a></td>
+            <td style="padding: 8px;"><code>round</code>, <code>floor</code>, <code>ceil</code>, <code>abs</code>, <code>random</code>, <code>randomInt</code>, <code>toNumber</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#objects">Objects</a></td>
+            <td style="padding: 8px;"><code>keys</code>, <code>values</code>, <code>entries</code>, <code>merge</code>, <code>pick</code>, <code>omit</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#type-checking">Type Checking</a></td>
+            <td style="padding: 8px;"><code>isNumber</code>, <code>isText</code>, <code>isList</code>, <code>isObject</code>, <code>isNothing</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#files">File I/O</a></td>
+            <td style="padding: 8px;"><code>readFile</code>, <code>writeFile</code>, <code>exists</code>, <code>listFiles</code>, <code>deleteFile</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#web-http">HTTP / Fetch</a></td>
+            <td style="padding: 8px;"><code>fetch</code>, <code>fetchJSON</code>, <code>serve</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#system">Environment</a></td>
+            <td style="padding: 8px;"><code>env</code>, <code>args</code>, <code>run</code>, <code>exit</code>, <code>platform</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#crypto">Crypto &amp; Encoding</a></td>
+            <td style="padding: 8px;"><code>hash</code>, <code>hmac</code>, <code>base64</code>, <code>uuid</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#date-time">Date &amp; Time</a></td>
+            <td style="padding: 8px;"><code>now</code>, <code>formatDate</code>, <code>parseDate</code>, <code>timeAgo</code></td>
+          </tr>
+        </tbody>
+      </table>
 
       <!-- ============================================ -->
       <!-- WORKING WITH LISTS                           -->
@@ -694,11 +752,30 @@ server.listen(<span class="num">3000</span>)
       <h2 id="system">System &amp; Environment</h2>
       <p>Interact with the operating system, run commands, and access environment variables.</p>
 
-      <h3><code>env(key)</code> / <code>setEnv(key, value)</code> &mdash; Environment variables</h3>
-      <p>Read and set environment variables. These are settings stored by your operating system.</p>
-      <pre><code><span class="kw">say</span> env(<span class="str">"HOME"</span>)       <span class="cmt">-- "/Users/alice"</span>
+      <h3><code>env(key)</code> / <code>env(key, default)</code> / <code>setEnv(key, value)</code> &mdash; Environment variables</h3>
+      <p>Read and set environment variables. These are settings stored by your operating system &mdash; things like API keys, database URLs, and configuration that changes between development and production.</p>
+      <pre><code><span class="cmt">-- Read an environment variable</span>
+<span class="kw">say</span> env(<span class="str">"HOME"</span>)       <span class="cmt">-- "/Users/alice"</span>
 <span class="kw">say</span> env(<span class="str">"PATH"</span>)       <span class="cmt">-- your system PATH</span>
+
+<span class="cmt">-- Provide a default value if the variable is not set</span>
+port <span class="kw">is</span> env(<span class="str">"PORT"</span>, <span class="str">"3000"</span>)
+<span class="kw">say</span> port   <span class="cmt">-- "3000" if PORT is not defined</span>
+
+<span class="cmt">-- Require a variable (throws an error if not set)</span>
+apiKey <span class="kw">is</span> env.require(<span class="str">"API_KEY"</span>)
+<span class="cmt">-- If API_KEY is not set, your program stops with an error message</span>
+
+<span class="cmt">-- Set an environment variable</span>
 setEnv(<span class="str">"MY_APP"</span>, <span class="str">"production"</span>)</code></pre>
+
+      <div class="callout callout-info">
+        <strong>.env files:</strong> Quill automatically loads variables from a <code>.env</code> file in your project directory. Create a file called <code>.env</code> with one variable per line:
+        <pre style="margin-top: 8px;"><code>API_KEY=sk-abc123
+DATABASE_URL=postgres://localhost/mydb
+PORT=3000</code></pre>
+        These variables are then available via <code>env("API_KEY")</code> etc. Never commit your <code>.env</code> file to version control &mdash; add it to <code>.gitignore</code>.
+      </div>
 
       <h3><code>args()</code> &mdash; Command-line arguments</h3>
       <p>Returns a list of arguments passed to your program.</p>

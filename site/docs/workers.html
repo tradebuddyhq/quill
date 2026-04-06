@@ -44,6 +44,7 @@
         <li><a href="#getting-started">Getting started</a></li>
         <li><a href="#routing">Routing</a></li>
         <li><a href="#json-apis">JSON APIs</a></li>
+        <li><a href="#json-api-example">Full API example</a></li>
         <li><a href="#kv-storage">KV Storage</a></li>
         <li><a href="#deployment">Deployment</a></li>
       </ul>
@@ -202,6 +203,50 @@ npm install</code></pre>
 respond json { error: "Unauthorized" } status 401</code></pre>
 
       <!-- ============================================ -->
+      <!-- JSON API WORKER EXAMPLE                      -->
+      <!-- ============================================ -->
+
+      <h2 id="json-api-example">Complete JSON API Example</h2>
+
+      <p>Here is a full example of a JSON API worker that manages a list of tasks. It handles GET and POST requests with proper error handling:</p>
+
+      <pre><code><span class="cmt">-- task-api.quill</span>
+<span class="cmt">-- A complete JSON API for managing tasks</span>
+
+worker on fetch with request env:
+  url is new URL(request.url)
+  path is url.pathname
+  method is request.method
+
+  <span class="cmt">-- GET /api/tasks -- list all tasks</span>
+  if path is "/api/tasks" and method is "GET":
+    tasks is await env.TASKS_KV.list()
+    items are []
+    for each key in tasks.keys:
+      value is await env.TASKS_KV.get(key.name)
+      push(items, parseJSON(value))
+    respond json { tasks: items, count: length(items) }
+
+  <span class="cmt">-- POST /api/tasks -- create a new task</span>
+  if path is "/api/tasks" and method is "POST":
+    body is await request.json()
+    if body.title is nothing:
+      respond json { error: "title is required" } status 400
+    id is uuid()
+    task is { id: id, title: body.title, done: no }
+    await env.TASKS_KV.put(id, toJSON(task))
+    respond json task status 201
+
+  <span class="cmt">-- GET /api/health -- health check</span>
+  if path is "/api/health":
+    respond json { status: "ok", timestamp: now() }
+
+  <span class="cmt">-- Catch-all for unknown routes</span>
+  respond json { error: "Not found", path: path } status 404</code></pre>
+
+      <p>This worker uses KV storage to persist tasks. See the KV Storage section below for how to configure it.</p>
+
+      <!-- ============================================ -->
       <!-- KV STORAGE                                   -->
       <!-- ============================================ -->
 
@@ -252,15 +297,60 @@ id = "your-namespace-id"</code></pre>
 
       <p>Deploy your worker to Cloudflare's global network:</p>
 
-      <ol>
-        <li><strong>Build</strong> your Quill code: <code>quill build worker.quill</code></li>
-        <li><strong>Login</strong> to Cloudflare: <code>npx wrangler login</code></li>
-        <li><strong>Deploy</strong>: <code>npx wrangler deploy</code></li>
-      </ol>
+      <h3>Step-by-step deployment</h3>
 
-      <p>Or use the npm script:</p>
+      <pre><code><span class="cmt"># 1. Install wrangler (if not already installed)</span>
+npm install -g wrangler
 
-      <pre><code>npm run deploy</code></pre>
+<span class="cmt"># 2. Log in to your Cloudflare account</span>
+npx wrangler login
+
+<span class="cmt"># 3. Build your Quill code to JavaScript</span>
+quill build worker.quill
+
+<span class="cmt"># 4. Test locally before deploying</span>
+npx wrangler dev worker.js
+
+<span class="cmt"># 5. Deploy to Cloudflare's network</span>
+npx wrangler deploy</code></pre>
+
+      <p>Or if you used <code>quill worker</code> to scaffold your project, simply run:</p>
+
+      <pre><code><span class="cmt"># Build and deploy in one step</span>
+npm run deploy</code></pre>
+
+      <h3>Useful wrangler commands</h3>
+
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border);">
+            <th style="text-align: left; padding: 8px;">Command</th>
+            <th style="text-align: left; padding: 8px;">What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>npx wrangler dev</code></td>
+            <td style="padding: 8px;">Start a local dev server for testing</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>npx wrangler deploy</code></td>
+            <td style="padding: 8px;">Deploy to production</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>npx wrangler tail</code></td>
+            <td style="padding: 8px;">View live logs from your deployed worker</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>npx wrangler kv:namespace create "MY_KV"</code></td>
+            <td style="padding: 8px;">Create a new KV namespace</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>npx wrangler secret put API_KEY</code></td>
+            <td style="padding: 8px;">Add a secret environment variable</td>
+          </tr>
+        </tbody>
+      </table>
 
       <p>Your worker will be available at <code>https://your-worker.your-subdomain.workers.dev</code>.</p>
 

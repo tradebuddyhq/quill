@@ -54,6 +54,11 @@
         <li><a href="#number-game">Number game</a></li>
         <li><a href="#text-analyzer">Text analyzer</a></li>
         <li><a href="#calculator">Calculator</a></li>
+        <li><a href="#objects-example">Working with objects</a></li>
+        <li><a href="#fetch-api">Fetching from an API</a></li>
+        <li><a href="#file-io">File I/O</a></li>
+        <li><a href="#error-handling">Error handling</a></li>
+        <li><a href="#cli-tool">CLI tool</a></li>
       </ul>
     </aside>
 
@@ -219,6 +224,217 @@ divide(<span class="num">5</span>, <span class="num">0</span>)
   <span class="kw">expect</span> multiply(<span class="num">3</span>, <span class="num">7</span>) <span class="kw">is</span> <span class="num">21</span>
   <span class="kw">expect</span> divide(<span class="num">15</span>, <span class="num">3</span>) <span class="kw">is</span> <span class="num">5</span>
   <span class="kw">expect</span> power(<span class="num">2</span>, <span class="num">8</span>) <span class="kw">is</span> <span class="num">256</span></code></pre>
+
+      <h2 id="objects-example">Working with Objects</h2>
+      <p>Create a student record, modify it, and display the results.</p>
+      <pre><code><span class="cmt">-- objects.quill</span>
+<span class="cmt">-- Create a student record</span>
+student <span class="kw">is</span> {
+  name: <span class="str">"Maya"</span>,
+  age: <span class="num">16</span>,
+  grade: <span class="str">"10th"</span>,
+  subjects: [<span class="str">"Math"</span>, <span class="str">"Science"</span>, <span class="str">"English"</span>],
+  scores: {
+    math: <span class="num">92</span>,
+    science: <span class="num">88</span>,
+    english: <span class="num">95</span>
+  }
+}
+
+<span class="cmt">-- Display the student info</span>
+<span class="kw">say</span> <span class="str">"--- Student Record ---"</span>
+<span class="kw">say</span> <span class="str">"Name: {student.name}"</span>
+<span class="kw">say</span> <span class="str">"Age: {student.age}"</span>
+<span class="kw">say</span> <span class="str">"Grade: {student.grade}"</span>
+<span class="kw">say</span> <span class="str">"Subjects: {join(student.subjects, ", ")}"</span>
+
+<span class="cmt">-- Calculate average score</span>
+scores <span class="kw">are</span> [student.scores.math, student.scores.science, student.scores.english]
+avg <span class="kw">is</span> sum(scores) / length(scores)
+<span class="kw">say</span> <span class="str">"Average score: {round(avg)}"</span>
+
+<span class="cmt">-- Modify the record</span>
+student.age <span class="kw">is</span> <span class="num">17</span>
+push(student.subjects, <span class="str">"History"</span>)
+student.scores.history <span class="kw">is</span> <span class="num">90</span>
+
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"--- Updated Record ---"</span>
+<span class="kw">say</span> <span class="str">"Age: {student.age}"</span>
+<span class="kw">say</span> <span class="str">"Subjects: {join(student.subjects, ", ")}"</span></code></pre>
+      <p><strong>Output:</strong></p>
+      <pre><code>--- Student Record ---
+Name: Maya
+Age: 16
+Grade: 10th
+Subjects: Math, Science, English
+Average score: 92
+
+--- Updated Record ---
+Age: 17
+Subjects: Math, Science, English, History</code></pre>
+
+      <h2 id="fetch-api">Fetching from an API</h2>
+      <p>Fetch JSON data from a public API and display it.</p>
+      <pre><code><span class="cmt">-- fetch-users.quill</span>
+<span class="kw">say</span> <span class="str">"Fetching users from API..."</span>
+
+<span class="kw">try</span>:
+  response <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"https://jsonplaceholder.typicode.com/users"</span>)
+  users <span class="kw">is</span> <span class="kw">await</span> response.json()
+
+  <span class="kw">say</span> <span class="str">"Found {length(users)} users:"</span>
+  <span class="kw">say</span> <span class="str">""</span>
+
+  <span class="kw">for each</span> user <span class="kw">in</span> users:
+    <span class="kw">say</span> <span class="str">"  {user.name} ({user.email})"</span>
+    <span class="kw">say</span> <span class="str">"    City: {user.address.city}"</span>
+
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Error fetching data: {error}"</span></code></pre>
+      <p><strong>Output:</strong></p>
+      <pre><code>Fetching users from API...
+Found 10 users:
+
+  Leanne Graham (Sincere@april.biz)
+    City: Gwenborough
+  Ervin Howell (Shanna@melissa.tv)
+    City: Wisokyburgh
+  ...</code></pre>
+
+      <h2 id="file-io">File I/O</h2>
+      <p>Read a file, process its contents, and write the results to a new file.</p>
+      <pre><code><span class="cmt">-- file-processor.quill</span>
+<span class="cmt">-- Write a sample input file first</span>
+writeFile(<span class="str">"input.txt"</span>, <span class="str">"hello world\nquill is great\nfoo bar baz"</span>)
+
+<span class="cmt">-- Read the file</span>
+content <span class="kw">is</span> readFile(<span class="str">"input.txt"</span>)
+<span class="kw">say</span> <span class="str">"--- Original ---"</span>
+<span class="kw">say</span> content
+
+<span class="cmt">-- Process each line: uppercase it and add a line number</span>
+fileLines <span class="kw">are</span> lines(content)
+result <span class="kw">are</span> []
+i <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">for each</span> line <span class="kw">in</span> fileLines:
+  i <span class="kw">is</span> i + <span class="num">1</span>
+  push(result, <span class="str">"{i}. {upper(line)}"</span>)
+
+<span class="cmt">-- Write the processed output</span>
+output <span class="kw">is</span> join(result, <span class="str">"\n"</span>)
+writeFile(<span class="str">"output.txt"</span>, output)
+
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"--- Processed ---"</span>
+<span class="kw">say</span> output
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"Saved to output.txt"</span></code></pre>
+      <p><strong>Output:</strong></p>
+      <pre><code>--- Original ---
+hello world
+quill is great
+foo bar baz
+
+--- Processed ---
+1. HELLO WORLD
+2. QUILL IS GREAT
+3. FOO BAR BAZ
+
+Saved to output.txt</code></pre>
+
+      <h2 id="error-handling">Error Handling</h2>
+      <p>Use <code>try</code> / <code>if it fails</code> to gracefully handle things that can go wrong.</p>
+      <pre><code><span class="cmt">-- error-handling.quill</span>
+
+<span class="kw">to</span> <span class="fn">safeDivide</span> a b:
+  <span class="kw">if</span> b <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">throw</span> <span class="str">"Cannot divide by zero!"</span>
+  <span class="kw">give back</span> a / b
+
+<span class="kw">to</span> <span class="fn">loadConfig</span> path:
+  <span class="kw">try</span>:
+    content <span class="kw">is</span> readFile(path)
+    <span class="kw">give back</span> parseJSON(content)
+  <span class="kw">if it fails</span> error:
+    <span class="kw">say</span> <span class="str">"Warning: Could not load {path}: {error}"</span>
+    <span class="kw">say</span> <span class="str">"Using default settings."</span>
+    <span class="kw">give back</span> {theme: <span class="str">"light"</span>, language: <span class="str">"en"</span>}
+
+<span class="cmt">-- Test safe division</span>
+<span class="kw">say</span> <span class="str">"--- Safe Division ---"</span>
+<span class="kw">try</span>:
+  <span class="kw">say</span> <span class="str">"10 / 2 = {safeDivide(10, 2)}"</span>
+  <span class="kw">say</span> <span class="str">"10 / 0 = {safeDivide(10, 0)}"</span>
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Caught error: {error}"</span>
+
+<span class="cmt">-- Test config loading</span>
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"--- Config Loading ---"</span>
+config <span class="kw">is</span> loadConfig(<span class="str">"settings.json"</span>)
+<span class="kw">say</span> <span class="str">"Theme: {config.theme}"</span></code></pre>
+      <p><strong>Output:</strong></p>
+      <pre><code>--- Safe Division ---
+10 / 2 = 5
+Caught error: Cannot divide by zero!
+
+--- Config Loading ---
+Warning: Could not load settings.json: File not found
+Using default settings.
+Theme: light</code></pre>
+
+      <h2 id="cli-tool">A Simple CLI Tool</h2>
+      <p>Build a command-line tool that takes arguments and does something useful.</p>
+      <pre><code><span class="cmt">-- wordcount.quill</span>
+<span class="cmt">-- A simple word counter tool</span>
+<span class="cmt">-- Usage: quill run wordcount.quill myfile.txt</span>
+
+arguments <span class="kw">are</span> args()
+
+<span class="kw">if</span> length(arguments) <span class="kw">is</span> <span class="num">0</span>:
+  <span class="kw">say</span> <span class="str">"Usage: quill run wordcount.quill &lt;filename&gt;"</span>
+  <span class="kw">say</span> <span class="str">"  Counts words, lines, and characters in a file."</span>
+  exit(<span class="num">1</span>)
+
+filename <span class="kw">is</span> arguments[<span class="num">0</span>]
+
+<span class="kw">try</span>:
+  content <span class="kw">is</span> readFile(filename)
+
+  <span class="cmt">-- Count lines</span>
+  fileLines <span class="kw">are</span> lines(content)
+  lineCount <span class="kw">is</span> length(fileLines)
+
+  <span class="cmt">-- Count words</span>
+  allWords <span class="kw">are</span> words(content)
+  wordCount <span class="kw">is</span> length(allWords)
+
+  <span class="cmt">-- Count characters</span>
+  charCount <span class="kw">is</span> length(content)
+
+  <span class="cmt">-- Find most common word</span>
+  counts <span class="kw">is</span> {}
+  <span class="kw">for each</span> w <span class="kw">in</span> allWords:
+    word <span class="kw">is</span> lower(w)
+    <span class="kw">if</span> counts[word] <span class="kw">is</span> <span class="kw">nothing</span>:
+      counts[word] <span class="kw">is</span> <span class="num">0</span>
+    counts[word] <span class="kw">is</span> counts[word] + <span class="num">1</span>
+
+  <span class="kw">say</span> <span class="str">"--- {filename} ---"</span>
+  <span class="kw">say</span> <span class="str">"  Lines:      {lineCount}"</span>
+  <span class="kw">say</span> <span class="str">"  Words:      {wordCount}"</span>
+  <span class="kw">say</span> <span class="str">"  Characters: {charCount}"</span>
+
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Error: {error}"</span>
+  exit(<span class="num">1</span>)</code></pre>
+      <p><strong>Output</strong> (when run on a sample file):</p>
+      <pre><code>--- readme.txt ---
+  Lines:      12
+  Words:      85
+  Characters: 523</code></pre>
 
       <div class="callout callout-tip">
         <strong>Try these!</strong> All of these examples can be run in the <a href="/playground">Playground</a>. Just copy-paste the code (without the syntax highlighting spans) and hit Run.
