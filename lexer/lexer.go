@@ -77,7 +77,7 @@ var keywords = map[string]TokenType{
 	"yield":     TOKEN_YIELD,
 	"loop":      TOKEN_LOOP,
 	"mock":      TOKEN_MOCK,
-	"server":    TOKEN_SERVER,
+	// "server" is no longer a global keyword — it is handled contextually
 	"route":     TOKEN_ROUTE,
 	"database":  TOKEN_DATABASE,
 	"respond":   TOKEN_RESPOND,

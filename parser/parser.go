@@ -142,11 +142,65 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseDotAssignment()
 	case p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE):
 		return p.parseAssignment()
+	case p.isBracketAssignment():
+		return p.parseBracketAssignment()
 	case p.isOnStatement():
 		return p.parseOnStatement()
 	default:
 		return p.parseExprStatement()
 	}
+}
+
+// isBracketAssignment detects patterns like `ident[expr] is value` or `ident.field[expr] is value`
+func (p *Parser) isBracketAssignment() bool {
+	if !p.check(lexer.TOKEN_IDENT) {
+		return false
+	}
+	// Scan ahead to find LBRACKET, then matching RBRACKET, then IS/ARE
+	i := p.pos + 1
+	// Skip dot accesses: ident.field.field
+	for i+1 < len(p.tokens) && p.tokens[i].Type == lexer.TOKEN_DOT {
+		i += 2 // skip dot and field
+	}
+	if i >= len(p.tokens) || p.tokens[i].Type != lexer.TOKEN_LBRACKET {
+		return false
+	}
+	// Find matching RBRACKET
+	depth := 1
+	i++
+	for i < len(p.tokens) && depth > 0 {
+		if p.tokens[i].Type == lexer.TOKEN_LBRACKET {
+			depth++
+		} else if p.tokens[i].Type == lexer.TOKEN_RBRACKET {
+			depth--
+		}
+		i++
+	}
+	if depth != 0 || i >= len(p.tokens) {
+		return false
+	}
+	return p.tokens[i].Type == lexer.TOKEN_IS || p.tokens[i].Type == lexer.TOKEN_ARE
+}
+
+func (p *Parser) parseBracketAssignment() ast.Statement {
+	line := p.current().Line
+	// Parse the object expression (identifier, possibly with dot accesses) up to the bracket
+	expr := p.parsePrimary()
+	// Handle dot accesses before the bracket
+	for p.check(lexer.TOKEN_DOT) {
+		p.advance() // consume "."
+		field := p.expectIdentOrKeyword()
+		expr = &ast.DotExpr{Object: expr, Field: field.Value}
+	}
+	// Parse the bracket access
+	p.expect(lexer.TOKEN_LBRACKET)
+	index := p.parseExpression()
+	p.expect(lexer.TOKEN_RBRACKET)
+	// Consume "is" or "are"
+	p.advance()
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.IndexAssignStatement{Object: expr, Index: index, Value: value, Line: line}
 }
 
 func (p *Parser) parseSay() *ast.SayStatement {
@@ -1855,6 +1909,20 @@ func (p *Parser) parseLambda() ast.Expression {
 	}
 
 	p.expect(lexer.TOKEN_COLON)
+
+	// Check if the body is a statement (e.g., say "hello") rather than an expression
+	if p.check(lexer.TOKEN_SAY) || p.check(lexer.TOKEN_GIVE) {
+		stmt := p.parseStatement()
+		return &ast.LambdaExpr{Params: params, BodyStatements: []ast.Statement{stmt}}
+	}
+
+	// Check for block body (indented)
+	if p.check(lexer.TOKEN_NEWLINE) && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_INDENT {
+		p.advance() // consume newline
+		body := p.parseBlock()
+		return &ast.LambdaExpr{Params: params, BodyStatements: body}
+	}
+
 	body := p.parseExpression()
 	return &ast.LambdaExpr{Params: params, Body: body}
 }

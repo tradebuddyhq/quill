@@ -1259,3 +1259,67 @@ func TestLoopWithoutYieldNoIteratorRuntime(t *testing.T) {
 		t.Errorf("loop without yield should not inject iterator runtime, got:\n%s", output)
 	}
 }
+
+func TestBracketAssignment(t *testing.T) {
+	src := `obj is {}
+obj["key"] is "value"
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, `obj["key"] = "value";`) {
+		t.Errorf("expected bracket assignment, got:\n%s", output)
+	}
+	if strings.Contains(output, `obj["key"] === "value"`) {
+		t.Errorf("bracket assignment should not produce comparison, got:\n%s", output)
+	}
+}
+
+func TestIsNothingCoversUndefined(t *testing.T) {
+	src := `x is 1
+if x is nothing:
+  say "gone"
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// The comparison should use loose equality == null to catch both null and undefined
+	if !strings.Contains(output, "(x == null)") {
+		t.Errorf("expected (x == null) with loose equality, got:\n%s", output)
+	}
+}
+
+func TestOuterVariableReassignment(t *testing.T) {
+	src := `x is 10
+to change:
+  x is 20
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Inside the function, x should be reassigned (no let), not redeclared
+	// Count occurrences of "let x"
+	count := strings.Count(output, "let x")
+	if count != 1 {
+		t.Errorf("expected exactly 1 'let x' declaration, got %d in:\n%s", count, output)
+	}
+	if !strings.Contains(output, "x = 20;") {
+		t.Errorf("expected bare reassignment 'x = 20;' inside function, got:\n%s", output)
+	}
+}
+
+func TestServerAsVariableName(t *testing.T) {
+	src := `server is "localhost"
+say server
+`
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, `let server = "localhost";`) {
+		t.Errorf("expected server as variable name, got:\n%s", output)
+	}
+}

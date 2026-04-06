@@ -268,8 +268,12 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 	case *ast.FuncDefinition:
 		g.addStmtMapping(s.Line)
 		// Save the current declared map and create a new scope for the function
+		// Copy the outer scope so the function knows about already-declared variables
 		outerDeclared := g.declared
 		g.declared = make(map[string]bool)
+		for k, v := range outerDeclared {
+			g.declared[k] = v
+		}
 		// Mark function params as declared in the new scope
 		for _, param := range s.Params {
 			g.declared[param] = true
@@ -309,6 +313,9 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.DotAssignStatement:
 		return fmt.Sprintf("%s%s.%s = %s;", prefix, s.Object, s.Field, g.genExpr(s.Value))
+
+	case *ast.IndexAssignStatement:
+		return fmt.Sprintf("%s%s[%s] = %s;", prefix, g.genExpr(s.Object), g.genExpr(s.Index), g.genExpr(s.Value))
 
 	case *ast.DescribeStatement:
 		var dout strings.Builder
@@ -978,10 +985,14 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 			return fmt.Sprintf("__contains(%s, %s)", g.genExpr(e.Left), g.genExpr(e.Right))
 		}
 		op := e.Operator
-		if op == "==" {
+		// For null comparisons, use == / != to catch both null and undefined
+		_, leftIsNothing := e.Left.(*ast.NothingLiteral)
+		_, rightIsNothing := e.Right.(*ast.NothingLiteral)
+		isNullComparison := leftIsNothing || rightIsNothing
+		if op == "==" && !isNullComparison {
 			op = "==="
 		}
-		if op == "!=" {
+		if op == "!=" && !isNullComparison {
 			op = "!=="
 		}
 		return fmt.Sprintf("(%s %s %s)", g.genExpr(e.Left), op, g.genExpr(e.Right))
@@ -1066,10 +1077,14 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 
 	case *ast.LambdaExpr:
 		params := strings.Join(e.Params, ", ")
-		body := g.genExpr(e.Body)
-		if len(e.Params) == 1 {
-			return fmt.Sprintf("(%s) => %s", params, body)
+		if len(e.BodyStatements) > 0 {
+			g.indent++
+			body := g.genBlock(e.BodyStatements)
+			g.indent--
+			prefix := strings.Repeat("  ", g.indent)
+			return fmt.Sprintf("(%s) => {\n%s%s}", params, body, prefix)
 		}
+		body := g.genExpr(e.Body)
 		return fmt.Sprintf("(%s) => %s", params, body)
 
 	case *ast.EmbedLiteral:

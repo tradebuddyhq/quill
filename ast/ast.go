@@ -283,6 +283,16 @@ type DotAssignStatement struct {
 func (s *DotAssignStatement) nodeType() string { return "DotAssign" }
 func (s *DotAssignStatement) stmtNode()        {}
 
+type IndexAssignStatement struct {
+	Object Expression
+	Index  Expression
+	Value  Expression
+	Line   int
+}
+
+func (s *IndexAssignStatement) nodeType() string { return "IndexAssign" }
+func (s *IndexAssignStatement) stmtNode()        {}
+
 type NewExpr struct {
 	ClassName string
 	Args      []Expression
@@ -365,8 +375,9 @@ func (e *TaggedTemplateExpr) exprNode()        {}
 // --- Lambda/Arrow function ---
 
 type LambdaExpr struct {
-	Params []string
-	Body   Expression
+	Params         []string
+	Body           Expression
+	BodyStatements []Statement // for statement-bodied lambdas (e.g., with: say "hello")
 }
 
 func (e *LambdaExpr) nodeType() string { return "Lambda" }
