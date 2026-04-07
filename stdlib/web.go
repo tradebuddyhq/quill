@@ -16,4 +16,30 @@ const createServer = (options) => {
   }
   return app;
 };
+
+const createSecureServer = (options) => {
+  const express = require("express");
+  const https = require("https");
+  const fs = require("fs");
+  const app = express();
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+  if (options && options.static) {
+    app.use(express.static(options.static));
+  }
+  const tlsOptions = {
+    key: fs.readFileSync(options.key || "key.pem"),
+    cert: fs.readFileSync(options.cert || "cert.pem")
+  };
+  if (options.ca) {
+    tlsOptions.ca = fs.readFileSync(options.ca);
+  }
+  const server = https.createServer(tlsOptions, app);
+  app.__httpsServer = server;
+  const originalListen = app.listen.bind(app);
+  app.listen = (port, cb) => {
+    return server.listen(port, cb);
+  };
+  return app;
+};
 `

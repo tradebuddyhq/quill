@@ -234,6 +234,8 @@ See the [AI docs](https://quill.tradebuddy.dev/docs/ai) for conversation history
 | `quill ai my-app` | Scaffold an AI app project (Claude) |
 | `quill expo my-app` | Scaffold an Expo / React Native app |
 | `quill build app.quill --expo` | Compile for Expo / React Native (JSX) |
+| `quill cli my-tool` | Scaffold a CLI tool project |
+| `quill site my-site` | Scaffold a static site project |
 | `quill help` | Show help |
 
 ## Language Reference
@@ -1038,6 +1040,55 @@ npx expo start
 Features: components with props, useState hooks, useEffect, StyleSheet, React Navigation (stack/tab/drawer), and all core React Native elements.
 
 See the [Expo documentation](https://quill.tradebuddy.dev/docs/expo) for the full guide.
+
+## Cron Jobs
+
+Schedule recurring tasks with natural syntax:
+
+```
+every 5 seconds:
+  say "tick"
+
+every 30 minutes:
+  data is await fetch("https://api.example.com/health")
+  say "Health check: " + data.status
+
+every 1 hour:
+  say "Hourly report"
+```
+
+## Built-in Crypto
+
+Hash, encrypt, and decrypt without any imports:
+
+```
+hashed is hash("my password")
+say hashed
+
+encrypted is encrypt("secret data", "my-password")
+decrypted is decrypt(encrypted, "my-password")
+
+keys is generateKeys()
+say keys.publicKey
+
+id is uuid()
+```
+
+## CLI Tools
+
+Build command-line tools with built-in argument parsing:
+
+```bash
+quill cli my-tool
+```
+
+```
+name is arg(0)
+verbose is hasFlag("verbose")
+output is flag("output")
+
+say colors.green("Hello, " + name + "!")
+```
 
 ## Concurrency
 

@@ -1323,3 +1323,72 @@ say server
 		t.Errorf("expected server as variable name, got:\n%s", output)
 	}
 }
+
+func TestGenerateEveryStatement(t *testing.T) {
+	output, err := compile("every 5 seconds:\n  say \"tick\"\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "setInterval(") {
+		t.Errorf("expected setInterval call, got:\n%s", output)
+	}
+	if !strings.Contains(output, "5000") {
+		t.Errorf("expected 5000ms interval, got:\n%s", output)
+	}
+}
+
+func TestGenerateEveryMinutes(t *testing.T) {
+	output, err := compile("every 2 minutes:\n  say \"check\"\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "setInterval(") {
+		t.Errorf("expected setInterval call, got:\n%s", output)
+	}
+	if !strings.Contains(output, "120000") {
+		t.Errorf("expected 120000ms interval, got:\n%s", output)
+	}
+}
+
+func TestCryptoRuntimeInjection(t *testing.T) {
+	output, err := compile("result is hash(\"hello\")\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__crypto") {
+		t.Errorf("expected __crypto runtime injection, got:\n%s", output)
+	}
+	if !strings.Contains(output, "createHash") {
+		t.Errorf("expected createHash in runtime, got:\n%s", output)
+	}
+}
+
+func TestBufferRuntimeInjection(t *testing.T) {
+	output, err := compile("encoded is toBase64(\"hello\")\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function toBase64") {
+		t.Errorf("expected toBase64 function in runtime, got:\n%s", output)
+	}
+}
+
+func TestCLIRuntimeInjection(t *testing.T) {
+	output, err := compile("name is arg(0)\nsay name\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function arg(index)") {
+		t.Errorf("expected arg(index) function in runtime, got:\n%s", output)
+	}
+}
+
+func TestSecureServerRuntimeInjection(t *testing.T) {
+	output, err := compile("app is createSecureServer({ key: \"key.pem\", cert: \"cert.pem\" })\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "createSecureServer") {
+		t.Errorf("expected createSecureServer in output, got:\n%s", output)
+	}
+}

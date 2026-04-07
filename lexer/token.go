@@ -169,6 +169,9 @@ const (
 	TOKEN_NAVIGATE
 	TOKEN_EFFECT
 
+	// Cron keywords
+	TOKEN_EVERY
+
 	// Delimiters
 	TOKEN_COLON
 	TOKEN_COMMA
@@ -306,6 +309,7 @@ var tokenNames = map[TokenType]string{
 	TOKEN_SCREEN:      "screen",
 	TOKEN_NAVIGATE:    "navigate",
 	TOKEN_EFFECT:      "effect",
+	TOKEN_EVERY:       "every",
 }
 
 func (t TokenType) String() string {

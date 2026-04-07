@@ -65,6 +65,12 @@
         <li><a href="#tagged-template-tags">Tagged template tags</a></li>
         <li><a href="#discord-bots">Discord bots</a></li>
         <li><a href="#result-type">Result type helpers</a></li>
+        <li><a href="#buffer">Buffer &amp; encoding</a></li>
+        <li><a href="#cli-tools">CLI tools</a></li>
+        <li><a href="#cron">Cron jobs</a></li>
+        <li><a href="#https-server">HTTPS server</a></li>
+        <li><a href="#secure-storage">Secure storage</a></li>
+        <li><a href="#webrtc">WebRTC</a></li>
       </ul>
       <h4>Ecosystem Packages</h4>
       <ul>
@@ -141,11 +147,35 @@
           </tr>
           <tr style="border-bottom: 1px solid var(--border);">
             <td style="padding: 8px;"><a href="#crypto">Crypto &amp; Encoding</a></td>
-            <td style="padding: 8px;"><code>hash</code>, <code>hmac</code>, <code>base64</code>, <code>uuid</code></td>
+            <td style="padding: 8px;"><code>hash</code>, <code>encrypt</code>, <code>decrypt</code>, <code>generateKeys</code>, <code>hmac</code>, <code>randomBytes</code>, <code>uuid</code></td>
           </tr>
           <tr style="border-bottom: 1px solid var(--border);">
             <td style="padding: 8px;"><a href="#date-time">Date &amp; Time</a></td>
             <td style="padding: 8px;"><code>now</code>, <code>formatDate</code>, <code>parseDate</code>, <code>timeAgo</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#buffer">Buffer &amp; Encoding</a></td>
+            <td style="padding: 8px;"><code>toBuffer</code>, <code>fromBuffer</code>, <code>toBase64</code>, <code>fromBase64</code>, <code>toHex</code>, <code>fromHex</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#cli-tools">CLI Tools</a></td>
+            <td style="padding: 8px;"><code>arg</code>, <code>args</code>, <code>flag</code>, <code>hasFlag</code>, <code>colors</code>, <code>exitWith</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#cron">Cron Jobs</a></td>
+            <td style="padding: 8px;"><code>every N seconds</code>, <code>every N minutes</code>, <code>every N hours</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#https-server">HTTPS Server</a></td>
+            <td style="padding: 8px;"><code>createSecureServer</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#secure-storage">Secure Storage</a></td>
+            <td style="padding: 8px;"><code>SecureStorage.set</code>, <code>SecureStorage.get</code>, <code>SecureStorage.remove</code>, <code>SecureStorage.clear</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#webrtc">WebRTC</a></td>
+            <td style="padding: 8px;"><code>createPeer</code>, <code>PeerConnection</code></td>
           </tr>
         </tbody>
       </table>
@@ -716,6 +746,33 @@ server.listen(<span class="num">3000</span>)
       <p>Encode and decode text for safe use in URLs.</p>
       <pre><code><span class="kw">say</span> encodeURL(<span class="str">"hello world &amp; more"</span>)   <span class="cmt">-- "hello%20world%20%26%20more"</span>
 <span class="kw">say</span> decodeURL(<span class="str">"hello%20world"</span>)        <span class="cmt">-- "hello world"</span></code></pre>
+
+      <h3><code>encrypt(data, password)</code> / <code>decrypt(encrypted, password)</code> &mdash; Symmetric encryption</h3>
+      <p>Encrypt and decrypt data using a password. Uses AES-256-GCM under the hood. No imports needed.</p>
+      <pre><code>encrypted <span class="kw">is</span> encrypt(<span class="str">"secret data"</span>, <span class="str">"my-password"</span>)
+<span class="kw">say</span> encrypted   <span class="cmt">-- encrypted string</span>
+
+decrypted <span class="kw">is</span> decrypt(encrypted, <span class="str">"my-password"</span>)
+<span class="kw">say</span> decrypted   <span class="cmt">-- "secret data"</span></code></pre>
+
+      <h3><code>generateKeys()</code> &mdash; Generate a public/private key pair</h3>
+      <p>Creates an RSA key pair for asymmetric encryption. Returns an object with <code>publicKey</code> and <code>privateKey</code>.</p>
+      <pre><code>keys <span class="kw">is</span> generateKeys()
+<span class="kw">say</span> keys.publicKey    <span class="cmt">-- PEM-encoded public key</span>
+<span class="kw">say</span> keys.privateKey   <span class="cmt">-- PEM-encoded private key</span></code></pre>
+
+      <h3><code>hmac(data, secret, algorithm)</code> &mdash; HMAC signature</h3>
+      <p>Creates an HMAC (Hash-based Message Authentication Code) for verifying data integrity and authenticity. Default algorithm is SHA-256.</p>
+      <pre><code>signature <span class="kw">is</span> hmac(<span class="str">"my data"</span>, <span class="str">"my-secret"</span>)
+<span class="kw">say</span> signature   <span class="cmt">-- hex-encoded HMAC</span>
+
+<span class="cmt">-- With a specific algorithm</span>
+sig <span class="kw">is</span> hmac(<span class="str">"my data"</span>, <span class="str">"my-secret"</span>, <span class="str">"sha512"</span>)</code></pre>
+
+      <h3><code>randomBytes(size)</code> &mdash; Generate random bytes</h3>
+      <p>Generates a buffer of cryptographically secure random bytes. Useful for generating tokens, salts, and nonces.</p>
+      <pre><code>token <span class="kw">is</span> randomBytes(<span class="num">32</span>)
+<span class="kw">say</span> toHex(token)   <span class="cmt">-- 64-character hex string</span></code></pre>
 
       <!-- ============================================ -->
       <!-- PATTERNS & REGEXP                            -->
@@ -1503,6 +1560,202 @@ bot <span class="kw">on</span> <span class="str">"messageCreate"</span> <span cl
     <h3>Helper function</h3>
     <p>Quill also provides a <code>createBot</code> helper that creates a Discord client with common intents pre-configured:</p>
     <pre><code>bot <span class="kw">is</span> createBot(process.env.DISCORD_TOKEN)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- BUFFER & ENCODING                            -->
+      <!-- ============================================ -->
+
+      <h2 id="buffer">Buffer &amp; Encoding</h2>
+      <p>Functions for converting between buffers, text, Base64, and hex representations. Useful when working with binary data, file contents, or network protocols.</p>
+
+      <h3><code>toBuffer(text)</code> &mdash; Convert text to a buffer</h3>
+      <p>Converts a string into a binary buffer (Uint8Array). Useful for binary operations and cryptography.</p>
+      <pre><code>buf <span class="kw">is</span> toBuffer(<span class="str">"hello"</span>)
+<span class="kw">say</span> buf   <span class="cmt">-- Uint8Array [104, 101, 108, 108, 111]</span></code></pre>
+
+      <h3><code>fromBuffer(buffer)</code> &mdash; Convert buffer to text</h3>
+      <p>Converts a binary buffer back into a string.</p>
+      <pre><code>buf <span class="kw">is</span> toBuffer(<span class="str">"hello"</span>)
+text <span class="kw">is</span> fromBuffer(buf)
+<span class="kw">say</span> text   <span class="cmt">-- "hello"</span></code></pre>
+
+      <h3><code>toBase64(data)</code> / <code>fromBase64(text)</code> &mdash; Base64 encoding</h3>
+      <p>Encode data to Base64 and decode Base64 back to the original. Works with both text and buffers.</p>
+      <pre><code>encoded <span class="kw">is</span> toBase64(<span class="str">"Hello, World!"</span>)
+<span class="kw">say</span> encoded   <span class="cmt">-- "SGVsbG8sIFdvcmxkIQ=="</span>
+
+original <span class="kw">is</span> fromBase64(encoded)
+<span class="kw">say</span> original   <span class="cmt">-- "Hello, World!"</span></code></pre>
+
+      <h3><code>toHex(data)</code> / <code>fromHex(text)</code> &mdash; Hex encoding</h3>
+      <p>Encode data as a hexadecimal string and decode hex strings back to the original data.</p>
+      <pre><code>hex <span class="kw">is</span> toHex(<span class="str">"hello"</span>)
+<span class="kw">say</span> hex   <span class="cmt">-- "68656c6c6f"</span>
+
+original <span class="kw">is</span> fromHex(hex)
+<span class="kw">say</span> original   <span class="cmt">-- "hello"</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- CLI TOOLS                                    -->
+      <!-- ============================================ -->
+
+      <h2 id="cli-tools">CLI Tools</h2>
+      <p>Built-in functions for building command-line tools. Parse arguments, flags, and add colored output with no imports needed.</p>
+
+      <div class="callout callout-tip">
+        <strong>Quick start:</strong> Run <code>quill cli my-tool</code> to scaffold a CLI tool project with argument parsing and help text.
+      </div>
+
+      <h3><code>arg(index)</code> &mdash; Get a positional argument</h3>
+      <p>Returns the positional argument at the given index (0-based). Returns <code>nothing</code> if the index is out of bounds.</p>
+      <pre><code><span class="cmt">-- If you run: quill run tool.quill hello world</span>
+<span class="kw">say</span> arg(<span class="num">0</span>)   <span class="cmt">-- "hello"</span>
+<span class="kw">say</span> arg(<span class="num">1</span>)   <span class="cmt">-- "world"</span>
+<span class="kw">say</span> arg(<span class="num">2</span>)   <span class="cmt">-- nothing</span></code></pre>
+
+      <h3><code>args()</code> &mdash; Get all arguments</h3>
+      <p>Returns a list of all positional arguments passed to the program.</p>
+      <pre><code><span class="cmt">-- If you run: quill run tool.quill a b c</span>
+<span class="kw">say</span> args()   <span class="cmt">-- ["a", "b", "c"]</span></code></pre>
+
+      <h3><code>flag(name)</code> &mdash; Get a named flag value</h3>
+      <p>Returns the value of a named flag (e.g. <code>--output file.txt</code>). Returns <code>nothing</code> if the flag is not present.</p>
+      <pre><code><span class="cmt">-- If you run: quill run tool.quill --output result.txt</span>
+output <span class="kw">is</span> flag(<span class="str">"output"</span>)
+<span class="kw">say</span> output   <span class="cmt">-- "result.txt"</span></code></pre>
+
+      <h3><code>hasFlag(name)</code> &mdash; Check if a flag is present</h3>
+      <p>Returns <code>yes</code> or <code>no</code> depending on whether the flag was passed.</p>
+      <pre><code><span class="cmt">-- If you run: quill run tool.quill --verbose</span>
+<span class="kw">if</span> hasFlag(<span class="str">"verbose"</span>):
+  <span class="kw">say</span> <span class="str">"Verbose mode enabled"</span></code></pre>
+
+      <h3><code>colors</code> &mdash; Colored terminal output</h3>
+      <p>An object with methods for coloring terminal text. Available colors: <code>red</code>, <code>green</code>, <code>blue</code>, <code>yellow</code>, <code>cyan</code>, <code>magenta</code>, <code>gray</code>, <code>bold</code>, <code>dim</code>, <code>underline</code>.</p>
+      <pre><code><span class="kw">say</span> colors.green(<span class="str">"Success!"</span>)
+<span class="kw">say</span> colors.red(<span class="str">"Error: something went wrong"</span>)
+<span class="kw">say</span> colors.bold(<span class="str">"Important message"</span>)
+<span class="kw">say</span> colors.yellow(<span class="str">"Warning: proceed with caution"</span>)</code></pre>
+
+      <h3><code>exitWith(code)</code> &mdash; Exit with a status code</h3>
+      <p>Exits the program with the given status code. Use <code>0</code> for success and any non-zero number for failure.</p>
+      <pre><code><span class="kw">if</span> hasFlag(<span class="str">"help"</span>):
+  <span class="kw">say</span> <span class="str">"Usage: my-tool [options]"</span>
+  exitWith(<span class="num">0</span>)
+
+<span class="kw">if</span> arg(<span class="num">0</span>) <span class="kw">is</span> nothing:
+  <span class="kw">say</span> colors.red(<span class="str">"Error: missing required argument"</span>)
+  exitWith(<span class="num">1</span>)</code></pre>
+
+      <!-- ============================================ -->
+      <!-- CRON JOBS                                    -->
+      <!-- ============================================ -->
+
+      <h2 id="cron">Cron Jobs</h2>
+      <p>Schedule recurring tasks using natural English syntax. No cron expression strings needed &mdash; just say how often you want something to run.</p>
+
+      <h3>Syntax: <code>every N seconds/minutes/hours</code></h3>
+      <p>Use the <code>every</code> keyword followed by a number and a time unit to schedule a recurring block of code.</p>
+      <pre><code><span class="kw">every</span> <span class="num">5</span> seconds:
+  <span class="kw">say</span> <span class="str">"tick"</span>
+
+<span class="kw">every</span> <span class="num">30</span> minutes:
+  data <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"https://api.example.com/health"</span>)
+  <span class="kw">say</span> <span class="str">"Health check: "</span> + data.status
+
+<span class="kw">every</span> <span class="num">1</span> hour:
+  <span class="kw">say</span> <span class="str">"Hourly report"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>How it works:</strong> Quill compiles <code>every</code> blocks into <code>setInterval</code> calls with the appropriate millisecond interval. The task runs in the background and does not block the rest of your program. You can use <code>await</code> inside cron blocks for async operations.
+      </div>
+
+      <!-- ============================================ -->
+      <!-- HTTPS SERVER                                 -->
+      <!-- ============================================ -->
+
+      <h2 id="https-server">HTTPS Server</h2>
+      <p>Create secure HTTPS servers with TLS certificates. Works just like <code>createServer()</code> but with encryption enabled.</p>
+
+      <h3><code>createSecureServer(options)</code> &mdash; Create an HTTPS server</h3>
+      <p>Creates a server that uses TLS encryption. You provide paths to your SSL certificate and private key.</p>
+      <pre><code>server <span class="kw">is</span> createSecureServer({
+  cert: readFile(<span class="str">"cert.pem"</span>),
+  key: readFile(<span class="str">"key.pem"</span>)
+})
+
+server.get(<span class="str">"/"</span>, <span class="str">"Hello over HTTPS!"</span>)
+server.listen(<span class="num">443</span>)</code></pre>
+
+      <div class="callout callout-info">
+        <strong>For development:</strong> You can generate a self-signed certificate for local testing. In production, use certificates from Let's Encrypt or your hosting provider.
+      </div>
+
+      <!-- ============================================ -->
+      <!-- SECURE STORAGE                               -->
+      <!-- ============================================ -->
+
+      <h2 id="secure-storage">Secure Storage</h2>
+      <p>Browser-side encrypted storage for sensitive data. Works like <code>localStorage</code> but encrypts values before storing them.</p>
+
+      <h3><code>SecureStorage.set(key, value, password)</code></h3>
+      <p>Encrypts and stores a value in the browser's local storage.</p>
+      <pre><code>SecureStorage.set(<span class="str">"token"</span>, <span class="str">"sk-abc123"</span>, <span class="str">"user-password"</span>)</code></pre>
+
+      <h3><code>SecureStorage.get(key, password)</code></h3>
+      <p>Retrieves and decrypts a value from secure storage. Returns <code>nothing</code> if the key does not exist or the password is wrong.</p>
+      <pre><code>token <span class="kw">is</span> SecureStorage.get(<span class="str">"token"</span>, <span class="str">"user-password"</span>)
+<span class="kw">say</span> token   <span class="cmt">-- "sk-abc123"</span></code></pre>
+
+      <h3><code>SecureStorage.remove(key)</code></h3>
+      <p>Removes an item from secure storage.</p>
+      <pre><code>SecureStorage.remove(<span class="str">"token"</span>)</code></pre>
+
+      <h3><code>SecureStorage.clear()</code></h3>
+      <p>Removes all items from secure storage.</p>
+      <pre><code>SecureStorage.clear()</code></pre>
+
+      <!-- ============================================ -->
+      <!-- WEBRTC                                       -->
+      <!-- ============================================ -->
+
+      <h2 id="webrtc">WebRTC</h2>
+      <p>Built-in peer-to-peer communication for real-time audio, video, and data channels. No external libraries needed.</p>
+
+      <h3><code>createPeer(options)</code> &mdash; Create a peer connection</h3>
+      <p>Creates a new WebRTC peer connection. You can optionally pass ICE server configuration.</p>
+      <pre><code>peer <span class="kw">is</span> createPeer({
+  iceServers: [{urls: <span class="str">"stun:stun.l.google.com:19302"</span>}]
+})</code></pre>
+
+      <h3>PeerConnection events</h3>
+      <p>Use the <code>on</code> keyword to handle peer connection events.</p>
+      <pre><code>peer <span class="kw">on</span> <span class="str">"connect"</span> <span class="kw">with</span>:
+  <span class="kw">say</span> <span class="str">"Connected to peer!"</span>
+
+peer <span class="kw">on</span> <span class="str">"data"</span> <span class="kw">with</span> message:
+  <span class="kw">say</span> <span class="str">"Received: "</span> + message
+
+peer <span class="kw">on</span> <span class="str">"stream"</span> <span class="kw">with</span> stream:
+  <span class="kw">say</span> <span class="str">"Got media stream"</span>
+
+peer <span class="kw">on</span> <span class="str">"close"</span> <span class="kw">with</span>:
+  <span class="kw">say</span> <span class="str">"Connection closed"</span></code></pre>
+
+      <h3>Sending data</h3>
+      <pre><code>peer.send(<span class="str">"Hello from Quill!"</span>)
+peer.send({type: <span class="str">"chat"</span>, text: <span class="str">"Hi there"</span>})</code></pre>
+
+      <h3>Signaling</h3>
+      <p>WebRTC requires a signaling mechanism to exchange connection info between peers. Use <code>peer.createOffer()</code> and <code>peer.createAnswer()</code> to generate SDP descriptions, and <code>peer.signal(data)</code> to process incoming signals.</p>
+      <pre><code><span class="cmt">-- Initiator side</span>
+offer <span class="kw">is</span> <span class="kw">await</span> peer.createOffer()
+<span class="cmt">-- Send offer to the other peer via your signaling server</span>
+
+<span class="cmt">-- Receiver side</span>
+peer.signal(offer)
+answer <span class="kw">is</span> <span class="kw">await</span> peer.createAnswer()
+<span class="cmt">-- Send answer back to initiator</span></code></pre>
 
     </main>
   </div>

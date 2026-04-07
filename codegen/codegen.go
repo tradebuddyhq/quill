@@ -132,8 +132,38 @@ func (g *Generator) Generate(program *ast.Program) string {
 	}
 
 	// Include web server runtime if Express-related code is detected
-	if strings.Contains(userCodeStr, "createServer(") {
+	if strings.Contains(userCodeStr, "createServer(") || strings.Contains(userCodeStr, "createSecureServer(") {
 		out.WriteString(stdlib.WebRuntime)
+		out.WriteString("\n")
+	}
+
+	// Include CLI runtime if arg/flag functions are used
+	if strings.Contains(userCodeStr, "arg(") || strings.Contains(userCodeStr, "args(") || strings.Contains(userCodeStr, "flag(") || strings.Contains(userCodeStr, "hasFlag(") || strings.Contains(userCodeStr, "colors.") || strings.Contains(userCodeStr, "exitWith(") {
+		out.WriteString(stdlib.GetCLIRuntime())
+		out.WriteString("\n")
+	}
+
+	// Include crypto runtime if crypto functions are used
+	if strings.Contains(userCodeStr, "hash(") || strings.Contains(userCodeStr, "encrypt(") || strings.Contains(userCodeStr, "decrypt(") || strings.Contains(userCodeStr, "generateKeys(") || strings.Contains(userCodeStr, "hmac(") || strings.Contains(userCodeStr, "randomBytes(") || strings.Contains(userCodeStr, "uuid(") {
+		out.WriteString(stdlib.GetCryptoRuntime())
+		out.WriteString("\n")
+	}
+
+	// Include buffer runtime if buffer functions are used
+	if strings.Contains(userCodeStr, "toBuffer(") || strings.Contains(userCodeStr, "fromBuffer(") || strings.Contains(userCodeStr, "toBase64(") || strings.Contains(userCodeStr, "fromBase64(") || strings.Contains(userCodeStr, "toHex(") || strings.Contains(userCodeStr, "fromHex(") || strings.Contains(userCodeStr, "concatBuffers(") {
+		out.WriteString(stdlib.GetBufferRuntime())
+		out.WriteString("\n")
+	}
+
+	// Include secure storage runtime if SecureStorage is used (browser mode)
+	if g.browser && strings.Contains(userCodeStr, "SecureStorage") {
+		out.WriteString(stdlib.GetSecureStorageRuntime())
+		out.WriteString("\n")
+	}
+
+	// Include WebRTC runtime if peer connection is used
+	if strings.Contains(userCodeStr, "createPeer(") || strings.Contains(userCodeStr, "PeerConnection") {
+		out.WriteString(stdlib.GetWebRTCRuntime())
 		out.WriteString("\n")
 	}
 
@@ -601,6 +631,22 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 			statusCode = 200
 		}
 		return fmt.Sprintf("%sres.writeHead(%d, {'Content-Type': 'application/json'}); res.end(JSON.stringify(%s));", prefix, statusCode, g.genExpr(s.Value))
+
+	case *ast.EveryStatement:
+		g.addStmtMapping(s.Line)
+		ms := s.Interval
+		switch s.Unit {
+		case "seconds":
+			ms = s.Interval * 1000
+		case "minutes":
+			ms = s.Interval * 60000
+		case "hours":
+			ms = s.Interval * 3600000
+		}
+		g.indent++
+		body := g.genBlock(s.Body)
+		g.indent--
+		return fmt.Sprintf("%ssetInterval(() => {\n%s%s}, %d);", prefix, body, prefix, ms)
 
 	case *ast.NavigateStatement:
 		g.addStmtMapping(s.Line)

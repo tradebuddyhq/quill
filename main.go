@@ -192,6 +192,12 @@ func main() {
 	case "expo":
 		scaffoldExpo()
 
+	case "cli":
+		scaffoldCLI()
+
+	case "site":
+		scaffoldSite()
+
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
 
@@ -1353,6 +1359,8 @@ func printUsage() {
 	fmt.Println("  quill worker [name]          Scaffold a new Cloudflare Worker project")
 	fmt.Println("  quill ai [name]              Scaffold a new AI app project (Claude)")
 	fmt.Println("  quill expo [name]            Scaffold a new Expo / React Native app")
+	fmt.Println("  quill cli [name]             Scaffold a new CLI tool project")
+	fmt.Println("  quill site [name]            Scaffold a static site project")
 	fmt.Println("  quill build <file> --expo          Compile for Expo / React Native (JSX)")
 	fmt.Println("  quill version                Show version")
 	fmt.Println("  quill help                   Show this help")
@@ -2213,4 +2221,248 @@ component DetailsScreen with route navigation:
 	fmt.Println("  quill build --expo screens/Details.quill")
 	fmt.Println("  npx expo start")
 	fmt.Println("\nOr scan the QR code with Expo Go on your phone!")
+}
+
+func scaffoldCLI() {
+	projectName := "my-cli-tool"
+	if len(os.Args) >= 3 {
+		projectName = os.Args[2]
+	}
+
+	if err := os.MkdirAll(projectName, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	packageJSON := fmt.Sprintf(`{
+  "name": "%s",
+  "version": "1.0.0",
+  "description": "A CLI tool built with Quill",
+  "bin": {
+    "%s": "./cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js",
+    "dev": "quill run cli.quill",
+    "build": "quill build cli.quill --standalone"
+  }
+}
+`, projectName, projectName)
+
+	cliQuill := `-- CLI Tool built with Quill
+
+name is arg(0)
+verbose is hasFlag("verbose")
+
+if name is nothing:
+  say colors.red("Error: please provide a name")
+  say ""
+  say "Usage: " + colors.bold("mytool <name> [--verbose]")
+  exitWith(1)
+
+say colors.green("Hello, " + name + "!")
+
+if verbose:
+  say colors.dim("Running in verbose mode...")
+  say colors.cyan("Args: ") + args().join(", ")
+
+-- Parse flags
+output is flag("output")
+if output is not nothing:
+  say "Output file: " + output
+`
+
+	gitignore := `node_modules/
+*.js
+`
+
+	files := map[string]string{
+		"package.json": packageJSON,
+		"cli.quill":    cliQuill,
+		".gitignore":   gitignore,
+	}
+
+	for name, content := range files {
+		path := filepath.Join(projectName, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", path, err)
+			continue
+		}
+		fmt.Printf("  Created %s/%s\n", projectName, name)
+	}
+
+	fmt.Printf("\nCLI tool project created in ./%s\n", projectName)
+	fmt.Println("\nNext steps:")
+	fmt.Printf("  cd %s\n", projectName)
+	fmt.Println("  quill run cli.quill world --verbose")
+	fmt.Println("  quill build cli.quill --standalone  # Create executable")
+}
+
+func scaffoldSite() {
+	projectName := "my-site"
+	if len(os.Args) >= 3 {
+		projectName = os.Args[2]
+	}
+
+	pagesDir := filepath.Join(projectName, "pages")
+	if err := os.MkdirAll(pagesDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	publicDir := filepath.Join(projectName, "public")
+	os.MkdirAll(publicDir, 0755)
+
+	packageJSON := fmt.Sprintf(`{
+  "name": "%s",
+  "version": "1.0.0",
+  "description": "A static site built with Quill",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js && npx serve dist"
+  }
+}
+`, projectName)
+
+	buildJS := `#!/usr/bin/env node
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+const pagesDir = path.join(__dirname, 'pages');
+const distDir = path.join(__dirname, 'dist');
+
+// Clean and create dist
+if (fs.existsSync(distDir)) fs.rmSync(distDir, { recursive: true });
+fs.mkdirSync(distDir, { recursive: true });
+
+// Copy public files
+const publicDir = path.join(__dirname, 'public');
+if (fs.existsSync(publicDir)) {
+  fs.readdirSync(publicDir).forEach(f => {
+    fs.copyFileSync(path.join(publicDir, f), path.join(distDir, f));
+  });
+}
+
+// Read layout template
+const layoutPath = path.join(__dirname, 'layout.html');
+let layout = fs.existsSync(layoutPath) ? fs.readFileSync(layoutPath, 'utf-8') : '<html><head><title>{{title}}</title><link rel="stylesheet" href="style.css"></head><body>{{content}}</body></html>';
+
+// Process each .quill page
+const pages = fs.readdirSync(pagesDir).filter(f => f.endsWith('.quill'));
+
+pages.forEach(page => {
+  const src = fs.readFileSync(path.join(pagesDir, page), 'utf-8');
+  const name = path.basename(page, '.quill');
+
+  // Extract title from first comment
+  const titleMatch = src.match(/^-- (.+)/);
+  const title = titleMatch ? titleMatch[1] : name;
+
+  // Compile to JS and execute to get HTML
+  try {
+    execSync('quill build ' + path.join(pagesDir, page) + ' --browser', { stdio: 'pipe' });
+    const jsPath = path.join(pagesDir, name + '.js');
+    if (fs.existsSync(jsPath)) {
+      // For static sites, we just generate the HTML template
+      let html = layout.replace('{{title}}', title).replace('{{content}}', '<div id="app"></div><script src="' + name + '.js"></script>');
+      fs.writeFileSync(path.join(distDir, name + '.html'), html);
+      fs.copyFileSync(jsPath, path.join(distDir, name + '.js'));
+      fs.unlinkSync(jsPath); // cleanup
+      const mapPath = jsPath + '.map';
+      if (fs.existsSync(mapPath)) fs.unlinkSync(mapPath);
+    }
+  } catch(e) {
+    console.error('Error building ' + page + ':', e.message);
+  }
+});
+
+console.log('Built ' + pages.length + ' pages -> dist/');
+`
+
+	layoutHTML := `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  {{content}}
+</body>
+</html>
+`
+
+	indexQuill := `-- Home
+-- A static site built with Quill
+
+component HomePage:
+  to render:
+    div:
+      h1: "Welcome to my site"
+      p: "Built with Quill"
+      a href "/about.html":
+        text: "About"
+
+mount HomePage "#app"
+`
+
+	aboutQuill := `-- About
+-- About page
+
+component AboutPage:
+  to render:
+    div:
+      h1: "About"
+      p: "This site was generated by Quill."
+      a href "/index.html":
+        text: "Home"
+
+mount AboutPage "#app"
+`
+
+	styleCSS := `body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  max-width: 640px;
+  margin: 40px auto;
+  padding: 0 20px;
+  line-height: 1.6;
+  color: #333;
+}
+h1 { color: #6C5CE7; }
+a { color: #6C5CE7; }
+`
+
+	gitignore := `node_modules/
+dist/
+*.js
+!build.js
+`
+
+	files := map[string]string{
+		"package.json":       packageJSON,
+		"build.js":           buildJS,
+		"layout.html":        layoutHTML,
+		"pages/index.quill":  indexQuill,
+		"pages/about.quill":  aboutQuill,
+		"public/style.css":   styleCSS,
+		".gitignore":         gitignore,
+	}
+
+	for name, content := range files {
+		path := filepath.Join(projectName, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", path, err)
+			continue
+		}
+		fmt.Printf("  Created %s/%s\n", projectName, name)
+	}
+
+	fmt.Printf("\nStatic site project created in ./%s\n", projectName)
+	fmt.Println("\nNext steps:")
+	fmt.Printf("  cd %s\n", projectName)
+	fmt.Println("  npm run build        # Build to dist/")
+	fmt.Println("  npx serve dist       # Preview locally")
+	fmt.Println("\nAdd pages in pages/*.quill, public assets in public/")
 }

@@ -107,6 +107,7 @@ var keywords = map[string]TokenType{
 	"screen":      TOKEN_SCREEN,
 	"navigate":    TOKEN_NAVIGATE,
 	"effect":      TOKEN_EFFECT,
+	"every":       TOKEN_EVERY,
 }
 
 type Lexer struct {

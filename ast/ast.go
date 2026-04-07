@@ -1100,6 +1100,19 @@ type NavigateStatement struct {
 func (s *NavigateStatement) nodeType() string { return "Navigate" }
 func (s *NavigateStatement) stmtNode()        {}
 
+// --- Cron Jobs ---
+
+// EveryStatement represents a scheduled task: every 5 minutes:
+type EveryStatement struct {
+	Interval int    // numeric interval
+	Unit     string // "seconds", "minutes", "hours"
+	Body     []Statement
+	Line     int
+}
+
+func (s *EveryStatement) nodeType() string { return "Every" }
+func (s *EveryStatement) stmtNode()        {}
+
 // WorkerHandler represents a Cloudflare Worker fetch handler:
 //   worker on fetch with request [env]:
 //     ...body...

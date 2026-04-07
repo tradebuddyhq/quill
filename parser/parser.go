@@ -127,6 +127,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseRespond()
 	case p.check(lexer.TOKEN_NAVIGATE):
 		return p.parseNavigateStmt()
+	case p.check(lexer.TOKEN_EVERY):
+		return p.parseEveryStatement()
 	case p.isStreamStatement():
 		return p.parseStreamStatement()
 	case p.check(lexer.TOKEN_LBRACE):
@@ -1082,6 +1084,47 @@ func (p *Parser) parseNavigateStmt() *ast.NavigateStatement {
 	}
 
 	return &ast.NavigateStatement{Screen: screen.Value, Params: params, Line: line}
+}
+
+// parseEveryStatement parses: every 5 seconds/minutes/hours:
+func (p *Parser) parseEveryStatement() *ast.EveryStatement {
+	line := p.current().Line
+	p.advance() // consume "every"
+
+	numTok := p.expect(lexer.TOKEN_NUMBER)
+	interval := int(0)
+	fmt.Sscanf(numTok.Value, "%d", &interval)
+
+	// Parse unit: seconds, minutes, hours, second, minute, hour
+	unitTok := p.expectIdentOrKeyword()
+	unit := unitTok.Value
+	// Normalize to plural
+	switch unit {
+	case "second":
+		unit = "seconds"
+	case "minute":
+		unit = "minutes"
+	case "hour":
+		unit = "hours"
+	}
+
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	var body []ast.Statement
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		body = append(body, p.parseStatement())
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return &ast.EveryStatement{Interval: interval, Unit: unit, Body: body, Line: line}
 }
 
 // parseNavigationBlock parses: app navigation: stack: screen "Home" component HomeScreen
@@ -2592,6 +2635,7 @@ func isKeywordToken(t lexer.TokenType) bool {
 		lexer.TOKEN_COMMAND, lexer.TOKEN_REPLY, lexer.TOKEN_EMBED,
 		lexer.TOKEN_WORKER, lexer.TOKEN_CANCEL, lexer.TOKEN_SETTLED,
 		lexer.TOKEN_SCREEN, lexer.TOKEN_NAVIGATE, lexer.TOKEN_EFFECT,
+		lexer.TOKEN_EVERY,
 		lexer.TOKEN_SPAWN, lexer.TOKEN_TASK, lexer.TOKEN_PARALLEL, lexer.TOKEN_RACE,
 		lexer.TOKEN_DESCRIBE, lexer.TOKEN_NEW, lexer.TOKEN_TEST, lexer.TOKEN_EXPECT,
 		lexer.TOKEN_MOCK, lexer.TOKEN_TRAIT, lexer.TOKEN_WHERE, lexer.TOKEN_USING,
