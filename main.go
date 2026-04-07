@@ -61,6 +61,8 @@ func main() {
 				target = "standalone"
 			case "--llvm", "--native":
 				target = "llvm"
+			case "--expo":
+				target = "expo"
 			}
 		}
 		buildFileWithTarget(os.Args[2], target)
@@ -187,6 +189,9 @@ func main() {
 	case "ai":
 		scaffoldAI()
 
+	case "expo":
+		scaffoldExpo()
+
 	case "version", "--version", "-v":
 		fmt.Printf("quill %s\n", version)
 
@@ -262,6 +267,11 @@ func buildFileWithTarget(filename string, target string) {
 
 	if target == "llvm" {
 		buildLLVM(filename, base)
+		return
+	}
+
+	if target == "expo" {
+		buildExpo(filename, base)
 		return
 	}
 
@@ -1342,6 +1352,8 @@ func printUsage() {
 	fmt.Println("  quill web [name]             Scaffold a new Express web server project")
 	fmt.Println("  quill worker [name]          Scaffold a new Cloudflare Worker project")
 	fmt.Println("  quill ai [name]              Scaffold a new AI app project (Claude)")
+	fmt.Println("  quill expo [name]            Scaffold a new Expo / React Native app")
+	fmt.Println("  quill build <file> --expo          Compile for Expo / React Native (JSX)")
 	fmt.Println("  quill version                Show version")
 	fmt.Println("  quill help                   Show this help")
 	fmt.Println()
@@ -1977,4 +1989,228 @@ ANTHROPIC_API_KEY=your-api-key-here
 	fmt.Println("  npm install")
 	fmt.Println("  quill run app.quill")
 	fmt.Println("\nGet an API key: https://console.anthropic.com/")
+}
+
+func buildExpo(filename string, base string) {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read %q\n", filename)
+		os.Exit(1)
+	}
+
+	l := lexer.New(string(source))
+	tokens, err := l.Tokenize()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	p := parser.New(tokens)
+	program, err := p.Parse()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	g := codegen.NewExpo()
+	jsx := g.Generate(program)
+
+	outFile := base + ".jsx"
+	if err := os.WriteFile(outFile, []byte(jsx), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not write output file: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Built %s -> %s (Expo / React Native)\n", filename, outFile)
+	fmt.Println("  Copy to your Expo project's screens/ or components/ directory")
+}
+
+func scaffoldExpo() {
+	projectName := "my-expo-app"
+	if len(os.Args) >= 3 {
+		projectName = os.Args[2]
+	}
+
+	// Create project directory and screens subdirectory
+	screensDir := filepath.Join(projectName, "screens")
+	if err := os.MkdirAll(screensDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Create package.json
+	packageJSON := fmt.Sprintf(`{
+  "name": "%s",
+  "version": "1.0.0",
+  "main": "App.js",
+  "scripts": {
+    "start": "expo start",
+    "build": "quill build --expo App.quill && for f in screens/*.quill; do quill build --expo \"$f\"; done",
+    "android": "expo start --android",
+    "ios": "expo start --ios"
+  },
+  "dependencies": {
+    "expo": "~50.0.0",
+    "expo-status-bar": "~1.11.1",
+    "react": "18.2.0",
+    "react-native": "0.73.4",
+    "@react-navigation/native": "^6.1.9",
+    "@react-navigation/native-stack": "^6.9.17",
+    "react-native-screens": "~3.29.0",
+    "react-native-safe-area-context": "4.8.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0"
+  }
+}
+`, projectName)
+
+	// Create App.quill with navigation
+	appQuill := `-- Expo App built with Quill
+-- Run: quill build --expo App.quill
+
+use navigation
+
+app navigation:
+  stack:
+    screen "Home" component HomeScreen
+    screen "Details" component DetailsScreen
+`
+
+	// Create Home screen
+	homeQuill := `-- Home Screen
+
+component HomeScreen with navigation:
+  state count is 0
+
+  to increment:
+    count is count + 1
+
+  to goToDetails:
+    navigate to "Details" with { count: count }
+
+  to render:
+    view style container:
+      text style title: "Welcome to Quill!"
+      text style subtitle: "You tapped {count} times"
+      button onPress increment style button:
+        text style buttonText: "Tap me"
+      button onPress goToDetails style link:
+        text style linkText: "See Details"
+
+  style native:
+    container:
+      flex is 1
+      align items is "center"
+      justify content is "center"
+      background color is "#f5f5f5"
+    title:
+      font size is 28
+      font weight is "bold"
+      margin bottom is 8
+    subtitle:
+      font size is 16
+      color is "#666"
+      margin bottom is 24
+    button:
+      background color is "#6C5CE7"
+      padding horizontal is 32
+      padding vertical is 14
+      border radius is 12
+      margin bottom is 12
+    buttonText:
+      color is "#fff"
+      font size is 16
+      font weight is "600"
+    link:
+      padding is 12
+    linkText:
+      color is "#6C5CE7"
+      font size is 16
+`
+
+	// Create Details screen
+	detailsQuill := `-- Details Screen
+
+component DetailsScreen with route navigation:
+  state liked is no
+
+  to toggleLike:
+    liked is not liked
+
+  to goBack:
+    navigate to "Home"
+
+  to render:
+    view style container:
+      text style title: "Details"
+      text: "Count from Home: {route.params.count}"
+      button onPress toggleLike style button:
+        if liked:
+          text style buttonText: "Liked!"
+        otherwise:
+          text style buttonText: "Like"
+      button onPress goBack style link:
+        text style linkText: "Go Back"
+
+  style native:
+    container:
+      flex is 1
+      align items is "center"
+      justify content is "center"
+      background color is "#fff"
+    title:
+      font size is 24
+      font weight is "bold"
+      margin bottom is 16
+    button:
+      background color is "#6C5CE7"
+      padding horizontal is 32
+      padding vertical is 14
+      border radius is 12
+      margin bottom is 12
+    buttonText:
+      color is "#fff"
+      font size is 16
+    link:
+      padding is 12
+    linkText:
+      color is "#6C5CE7"
+      font size is 16
+`
+
+	// Create .gitignore
+	gitignore := `node_modules/
+.expo/
+*.js
+!App.js
+*.jsx
+`
+
+	files := map[string]string{
+		"package.json":          packageJSON,
+		"App.quill":             appQuill,
+		"screens/Home.quill":    homeQuill,
+		"screens/Details.quill": detailsQuill,
+		".gitignore":            gitignore,
+	}
+
+	for name, content := range files {
+		path := filepath.Join(projectName, name)
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing %s: %s\n", path, err)
+			continue
+		}
+		fmt.Printf("  Created %s/%s\n", projectName, name)
+	}
+
+	fmt.Printf("\nExpo app project created in ./%s\n", projectName)
+	fmt.Println("\nNext steps:")
+	fmt.Printf("  cd %s\n", projectName)
+	fmt.Println("  npm install")
+	fmt.Println("  quill build --expo App.quill")
+	fmt.Println("  quill build --expo screens/Home.quill")
+	fmt.Println("  quill build --expo screens/Details.quill")
+	fmt.Println("  npx expo start")
+	fmt.Println("\nOr scan the QR code with Expo Go on your phone!")
 }

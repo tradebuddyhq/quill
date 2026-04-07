@@ -579,10 +579,14 @@ type LinkElement struct {
 // ComponentStatement represents a reactive UI component definition.
 type ComponentStatement struct {
 	Name       string
+	HasProps   bool              // true if component receives props (component X with props:)
+	Props      []string          // named prop declarations
 	States     []StateDeclaration
+	Effects    []EffectDeclaration // useEffect hooks (Expo mode)
 	Methods    []FuncDefinition
 	RenderBody []RenderElement
 	Styles     *StyleBlock
+	NativeStyles *NativeStyleBlock // React Native StyleSheet styles
 	Loader     *LoadFunction
 	Actions    []FormAction
 	Head       *HeadBlock
@@ -1042,6 +1046,59 @@ type StreamStatement struct {
 
 func (s *StreamStatement) nodeType() string { return "Stream" }
 func (s *StreamStatement) stmtNode()        {}
+
+// --- Expo / React Native ---
+
+// EffectDeclaration represents a useEffect hook inside a component.
+type EffectDeclaration struct {
+	Dependencies []string    // variable names to watch; empty = run once
+	Body         []Statement
+	Line         int
+}
+
+func (s *EffectDeclaration) nodeType() string { return "Effect" }
+func (s *EffectDeclaration) stmtNode()        {}
+
+// NativeStyleBlock represents React Native StyleSheet styles.
+type NativeStyleBlock struct {
+	Styles map[string][]NativeStyleProp // styleName -> properties
+	Line   int
+}
+
+// NativeStyleProp represents a single style property (e.g., flex is 1).
+type NativeStyleProp struct {
+	Name  string // camelCase RN property name
+	Value string // raw value
+}
+
+func (s *NativeStyleBlock) nodeType() string { return "NativeStyle" }
+func (s *NativeStyleBlock) stmtNode()        {}
+
+// NavigationBlock represents an app navigation structure.
+type NavigationBlock struct {
+	Type    string              // "stack", "tab", "drawer"
+	Screens []ScreenDefinition
+	Line    int
+}
+
+func (s *NavigationBlock) nodeType() string { return "Navigation" }
+func (s *NavigationBlock) stmtNode()        {}
+
+// ScreenDefinition represents a screen in navigation.
+type ScreenDefinition struct {
+	Name      string
+	Component string
+}
+
+// NavigateStatement represents navigate to "Screen" [with { params }].
+type NavigateStatement struct {
+	Screen string
+	Params Expression // optional object literal
+	Line   int
+}
+
+func (s *NavigateStatement) nodeType() string { return "Navigate" }
+func (s *NavigateStatement) stmtNode()        {}
 
 // WorkerHandler represents a Cloudflare Worker fetch handler:
 //   worker on fetch with request [env]:

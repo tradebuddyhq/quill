@@ -104,6 +104,9 @@ var keywords = map[string]TokenType{
 	"reply":       TOKEN_REPLY,
 	"embed":       TOKEN_EMBED,
 	"worker":      TOKEN_WORKER,
+	"screen":      TOKEN_SCREEN,
+	"navigate":    TOKEN_NAVIGATE,
+	"effect":      TOKEN_EFFECT,
 }
 
 type Lexer struct {

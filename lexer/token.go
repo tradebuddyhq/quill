@@ -164,6 +164,11 @@ const (
 	TOKEN_ASK
 	TOKEN_STREAM
 
+	// Expo / React Native keywords
+	TOKEN_SCREEN
+	TOKEN_NAVIGATE
+	TOKEN_EFFECT
+
 	// Delimiters
 	TOKEN_COLON
 	TOKEN_COMMA
@@ -298,6 +303,9 @@ var tokenNames = map[TokenType]string{
 	TOKEN_WORKER:      "worker",
 	TOKEN_ASK:         "ask",
 	TOKEN_STREAM:      "stream",
+	TOKEN_SCREEN:      "screen",
+	TOKEN_NAVIGATE:    "navigate",
+	TOKEN_EFFECT:      "effect",
 }
 
 func (t TokenType) String() string {

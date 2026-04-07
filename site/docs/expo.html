@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expo / React Native - Quill</title>
+  <meta name="description" content="Build mobile apps with Quill and Expo Go. Write React Native components in readable English-like syntax.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="/docs/getting-started">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="/docs/language">Language guide</a></li>
+      </ul>
+      <h4>Expo / React Native</h4>
+      <ul>
+        <li><a href="/docs/expo" class="active">Overview</a></li>
+        <li><a href="#getting-started">Getting started</a></li>
+        <li><a href="#components">Components</a></li>
+        <li><a href="#state">State &amp; Hooks</a></li>
+        <li><a href="#effects">Effects</a></li>
+        <li><a href="#styling">Styling</a></li>
+        <li><a href="#navigation">Navigation</a></li>
+        <li><a href="#elements">Element Reference</a></li>
+        <li><a href="#building">Building &amp; Running</a></li>
+      </ul>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/docs/discord">Discord Bots</a></li>
+        <li><a href="/docs/web">Web Servers</a></li>
+        <li><a href="/docs/workers">Cloudflare Workers</a></li>
+        <li><a href="/docs/ai">AI with Claude</a></li>
+        <li><a href="/docs/expo" class="active">Expo / React Native</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/tools">Tools</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Mobile Apps with Quill + Expo</h1>
+      <p>Quill compiles to React Native JSX, so you can build real mobile apps using Quill's readable syntax and test them instantly with <strong>Expo Go</strong> on your phone.</p>
+
+      <h2 id="getting-started">Getting Started</h2>
+
+      <p>Scaffold a new Expo project:</p>
+
+      <pre><code>quill expo my-app
+cd my-app
+npm install</code></pre>
+
+      <p>This creates a complete Expo project with Quill source files, navigation, and example screens.</p>
+
+      <h3>Project Structure</h3>
+
+      <pre><code>my-app/
+  App.quill              -- Navigation setup
+  screens/
+    Home.quill           -- Home screen component
+    Details.quill        -- Details screen component
+  package.json           -- Expo dependencies</code></pre>
+
+      <h3>Build and Run</h3>
+
+      <pre><code>-- Compile all Quill files to JSX
+quill build --expo App.quill
+quill build --expo screens/Home.quill
+quill build --expo screens/Details.quill
+
+-- Start Expo
+npx expo start</code></pre>
+
+      <p>Scan the QR code with <strong>Expo Go</strong> on your phone to see the app.</p>
+
+      <h2 id="components">Components</h2>
+
+      <p>Quill components map directly to React functional components. Each component can have state, methods, effects, and a render body.</p>
+
+      <pre><code>component HomeScreen:
+  state count is 0
+
+  to increment:
+    count is count + 1
+
+  to render:
+    view style container:
+      text style title: "Hello, Quill!"
+      text: "Count: {count}"
+      button onPress increment:
+        text: "Tap me"</code></pre>
+
+      <p>This compiles to a React functional component with <code>useState</code> hooks and JSX.</p>
+
+      <h3>Props</h3>
+
+      <p>Use <code>with</code> to receive props from navigation or parent components:</p>
+
+      <pre><code>-- Receive navigation and route props
+component ProfileScreen with navigation route:
+  to render:
+    view:
+      text: "User: {route.params.userId}"
+      button onPress goBack:
+        text: "Go Back"
+
+  to goBack:
+    navigate to "Home"</code></pre>
+
+      <h2 id="state">State &amp; Hooks</h2>
+
+      <p>State declarations become <code>useState</code> hooks. When you reassign a state variable inside a method, Quill automatically uses the setter function.</p>
+
+      <pre><code>component Counter:
+  state count is 0
+  state name is "World"
+
+  to increment:
+    count is count + 1      -- becomes setCount(count + 1)
+
+  to updateName:
+    name is "Quill"          -- becomes setName("Quill")
+
+  to render:
+    view:
+      text: "Hello, {name}! Count: {count}"</code></pre>
+
+      <h2 id="effects">Effects</h2>
+
+      <p>Use <code>use effect</code> for side effects (like React's <code>useEffect</code>):</p>
+
+      <pre><code>component DataScreen:
+  state data is nothing
+  state loading is yes
+
+  -- Run once on mount (empty deps)
+  use effect:
+    say "Component mounted"
+
+  -- Run when 'data' changes
+  use effect when [data]:
+    say "Data changed: {data}"
+
+  to render:
+    view:
+      if loading:
+        text: "Loading..."
+      otherwise:
+        text: "Data: {data}"</code></pre>
+
+      <h2 id="styling">Styling</h2>
+
+      <p>Use <code>style native:</code> blocks inside components. Properties use Quill's natural <code>is</code> syntax and multi-word properties become camelCase automatically.</p>
+
+      <pre><code>component StyledScreen:
+  to render:
+    view style container:
+      text style heading: "Styled App"
+      text style body: "React Native styles, written naturally."
+
+  style native:
+    container:
+      flex is 1
+      align items is "center"
+      justify content is "center"
+      background color is "#f0f0f0"
+    heading:
+      font size is 28
+      font weight is "bold"
+      color is "#333"
+      margin bottom is 12
+    body:
+      font size is 16
+      color is "#666"</code></pre>
+
+      <p>This compiles to <code>StyleSheet.create()</code> with proper camelCase property names:</p>
+      <pre><code>-- Generated:
+const styles = StyleSheet.create({
+  container: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f0f0f0" },
+  heading: { fontSize: 28, fontWeight: "bold", color: "#333", marginBottom: 12 },
+  ...
+});</code></pre>
+
+      <h3>Style Property Mapping</h3>
+
+      <table>
+        <thead><tr><th>Quill</th><th>React Native</th></tr></thead>
+        <tbody>
+          <tr><td><code>font size</code></td><td><code>fontSize</code></td></tr>
+          <tr><td><code>font weight</code></td><td><code>fontWeight</code></td></tr>
+          <tr><td><code>background color</code></td><td><code>backgroundColor</code></td></tr>
+          <tr><td><code>border radius</code></td><td><code>borderRadius</code></td></tr>
+          <tr><td><code>margin bottom</code></td><td><code>marginBottom</code></td></tr>
+          <tr><td><code>align items</code></td><td><code>alignItems</code></td></tr>
+          <tr><td><code>justify content</code></td><td><code>justifyContent</code></td></tr>
+          <tr><td><code>padding horizontal</code></td><td><code>paddingHorizontal</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="navigation">Navigation</h2>
+
+      <p>Set up React Navigation with the <code>app navigation:</code> block:</p>
+
+      <pre><code>-- App.quill
+app navigation:
+  stack:
+    screen "Home" component HomeScreen
+    screen "Profile" component ProfileScreen
+    screen "Settings" component SettingsScreen</code></pre>
+
+      <p>Navigate between screens inside components:</p>
+
+      <pre><code>-- Navigate to a screen
+navigate to "Profile"
+
+-- Navigate with parameters
+navigate to "Profile" with { userId: 42, name: "Arhan" }</code></pre>
+
+      <p>Access route params via props:</p>
+
+      <pre><code>component ProfileScreen with route:
+  to render:
+    view:
+      text: "User ID: {route.params.userId}"
+      text: "Name: {route.params.name}"</code></pre>
+
+      <h3>Tab Navigation</h3>
+
+      <pre><code>app navigation:
+  tab:
+    screen "Home" component HomeScreen
+    screen "Search" component SearchScreen
+    screen "Profile" component ProfileScreen</code></pre>
+
+      <h2 id="elements">Element Reference</h2>
+
+      <p>Quill maps its element names to React Native components:</p>
+
+      <table>
+        <thead><tr><th>Quill Element</th><th>React Native</th><th>Use For</th></tr></thead>
+        <tbody>
+          <tr><td><code>view</code></td><td><code>View</code></td><td>Container / layout</td></tr>
+          <tr><td><code>text</code></td><td><code>Text</code></td><td>Display text</td></tr>
+          <tr><td><code>scroll</code></td><td><code>ScrollView</code></td><td>Scrollable container</td></tr>
+          <tr><td><code>image</code></td><td><code>Image</code></td><td>Display images</td></tr>
+          <tr><td><code>input</code></td><td><code>TextInput</code></td><td>Text input field</td></tr>
+          <tr><td><code>button</code></td><td><code>TouchableOpacity</code></td><td>Tappable button</td></tr>
+          <tr><td><code>pressable</code></td><td><code>Pressable</code></td><td>Advanced pressable</td></tr>
+          <tr><td><code>flatlist</code></td><td><code>FlatList</code></td><td>Efficient long lists</td></tr>
+          <tr><td><code>safearea</code></td><td><code>SafeAreaView</code></td><td>Safe area wrapper</td></tr>
+          <tr><td><code>modal</code></td><td><code>Modal</code></td><td>Modal overlay</td></tr>
+          <tr><td><code>switch</code></td><td><code>Switch</code></td><td>Toggle switch</td></tr>
+          <tr><td><code>activity</code></td><td><code>ActivityIndicator</code></td><td>Loading spinner</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Event Handlers</h3>
+
+      <p>Attach handlers with <code>onPress</code>, <code>onChangeText</code>, etc.:</p>
+
+      <pre><code>button onPress handleTap:
+  text: "Tap me"
+
+input onChangeText updateName placeholder "Enter name"</code></pre>
+
+      <h2 id="building">Building &amp; Running</h2>
+
+      <h3>Compile a single file</h3>
+      <pre><code>quill build --expo screens/Home.quill
+-- Output: screens/Home.jsx</code></pre>
+
+      <h3>Compile all files</h3>
+      <pre><code>-- Build all screens
+for f in screens/*.quill; do quill build --expo "$f"; done
+
+-- Build the app entry point
+quill build --expo App.quill</code></pre>
+
+      <h3>Run with Expo</h3>
+      <pre><code>npx expo start</code></pre>
+
+      <p>Scan the QR code with Expo Go to see your app running on your phone.</p>
+
+      <h2>Full Example: Todo App</h2>
+
+      <pre><code>component TodoApp:
+  state todos are []
+  state newTodo is ""
+
+  to addTodo:
+    if newTodo is not equal to "":
+      todos is [...todos, { text: newTodo, done: no }]
+      newTodo is ""
+
+  to render:
+    view style container:
+      text style title: "My Todos"
+      view style inputRow:
+        input onChangeText setNewTodo value newTodo placeholder "Add a todo..." style input
+        button onPress addTodo style addButton:
+          text style addText: "+"
+      scroll:
+        for each todo in todos:
+          view style todoItem:
+            text: todo.text
+
+  style native:
+    container:
+      flex is 1
+      padding is 20
+      background color is "#fff"
+    title:
+      font size is 28
+      font weight is "bold"
+      margin bottom is 20
+    inputRow:
+      flex direction is "row"
+      margin bottom is 16
+    input:
+      flex is 1
+      border width is 1
+      border color is "#ddd"
+      border radius is 8
+      padding is 12
+      font size is 16
+    addButton:
+      background color is "#6C5CE7"
+      width is 48
+      height is 48
+      border radius is 24
+      align items is "center"
+      justify content is "center"
+      margin left is 8
+    addText:
+      color is "#fff"
+      font size is 24
+    todoItem:
+      padding is 16
+      border bottom width is 1
+      border bottom color is "#eee"</code></pre>
+
+      <div class="footer" style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #222;">
+        <p style="color: #888; font-size: 14px;">Quill compiles to React Native JSX. The generated code works with any Expo project.</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('nav-toggle')?.addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('show');
+    });
+  </script>
+
+</body>
+</html>

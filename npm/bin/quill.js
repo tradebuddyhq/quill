@@ -478,6 +478,161 @@ ANTHROPIC_API_KEY=your-api-key-here
   console.log(`${DIM}Get an API key: https://console.anthropic.com/${RESET}`);
 }
 
+// ---- Scaffold: Expo / React Native ----
+function cmdExpo() {
+  const projectName = process.argv[3] || 'my-expo-app';
+
+  if (fs.existsSync(projectName)) {
+    error(`Directory "${projectName}" already exists.`);
+    process.exit(1);
+  }
+
+  fs.mkdirSync(path.join(projectName, 'screens'), { recursive: true });
+
+  // package.json
+  fs.writeFileSync(path.join(projectName, 'package.json'), JSON.stringify({
+    name: projectName,
+    version: '1.0.0',
+    main: 'App.js',
+    scripts: {
+      start: 'expo start',
+      build: 'quill build --expo App.quill && for f in screens/*.quill; do quill build --expo "$f"; done',
+      android: 'expo start --android',
+      ios: 'expo start --ios'
+    },
+    dependencies: {
+      'expo': '~50.0.0',
+      'expo-status-bar': '~1.11.1',
+      'react': '18.2.0',
+      'react-native': '0.73.4',
+      '@react-navigation/native': '^6.1.9',
+      '@react-navigation/native-stack': '^6.9.17',
+      'react-native-screens': '~3.29.0',
+      'react-native-safe-area-context': '4.8.2'
+    },
+    devDependencies: { '@babel/core': '^7.20.0' }
+  }, null, 2) + '\n');
+
+  // App.quill
+  fs.writeFileSync(path.join(projectName, 'App.quill'), `-- Expo App built with Quill
+-- Run: quill build --expo App.quill
+
+use navigation
+
+app navigation:
+  stack:
+    screen "Home" component HomeScreen
+    screen "Details" component DetailsScreen
+`);
+
+  // screens/Home.quill
+  fs.writeFileSync(path.join(projectName, 'screens', 'Home.quill'), `-- Home Screen
+
+component HomeScreen with navigation:
+  state count is 0
+
+  to increment:
+    count is count + 1
+
+  to goToDetails:
+    navigate to "Details" with { count: count }
+
+  to render:
+    view style container:
+      text style title: "Welcome to Quill!"
+      text style subtitle: "You tapped {count} times"
+      button onPress increment style button:
+        text style buttonText: "Tap me"
+      button onPress goToDetails style link:
+        text style linkText: "See Details"
+
+  style native:
+    container:
+      flex is 1
+      align items is "center"
+      justify content is "center"
+      background color is "#f5f5f5"
+    title:
+      font size is 28
+      font weight is "bold"
+      margin bottom is 8
+    subtitle:
+      font size is 16
+      color is "#666"
+      margin bottom is 24
+    button:
+      background color is "#6C5CE7"
+      padding horizontal is 32
+      padding vertical is 14
+      border radius is 12
+      margin bottom is 12
+    buttonText:
+      color is "#fff"
+      font size is 16
+      font weight is "600"
+    link:
+      padding is 12
+    linkText:
+      color is "#6C5CE7"
+      font size is 16
+`);
+
+  // screens/Details.quill
+  fs.writeFileSync(path.join(projectName, 'screens', 'Details.quill'), `-- Details Screen
+
+component DetailsScreen with route navigation:
+  state liked is no
+
+  to toggleLike:
+    liked is not liked
+
+  to render:
+    view style container:
+      text style title: "Details"
+      text: "Count from Home: {route.params.count}"
+      button onPress toggleLike style button:
+        if liked:
+          text style buttonText: "Liked!"
+        otherwise:
+          text style buttonText: "Like"
+
+  style native:
+    container:
+      flex is 1
+      align items is "center"
+      justify content is "center"
+      background color is "#fff"
+    title:
+      font size is 24
+      font weight is "bold"
+      margin bottom is 16
+    button:
+      background color is "#6C5CE7"
+      padding horizontal is 32
+      padding vertical is 14
+      border radius is 12
+      margin bottom is 12
+    buttonText:
+      color is "#fff"
+      font size is 16
+`);
+
+  // .gitignore
+  fs.writeFileSync(path.join(projectName, '.gitignore'), `node_modules/
+.expo/
+*.jsx
+`);
+
+  console.log(`\n${GREEN}${BOLD}Created Expo app project: ${projectName}${RESET}\n`);
+  console.log(`  ${DIM}cd ${projectName}${RESET}`);
+  console.log(`  ${DIM}npm install${RESET}`);
+  console.log(`  ${DIM}quill build --expo App.quill${RESET}`);
+  console.log(`  ${DIM}quill build --expo screens/Home.quill${RESET}`);
+  console.log(`  ${DIM}quill build --expo screens/Details.quill${RESET}`);
+  console.log(`  ${DIM}npx expo start${RESET}\n`);
+  console.log(`${DIM}Scan the QR code with Expo Go on your phone!${RESET}`);
+}
+
 // ---- AI Generate ----
 function cmdGenerate(prompt) {
   const { execSync } = require('child_process');
@@ -763,6 +918,7 @@ ${BOLD}Scaffolding:${RESET}
   quill web [name]             Scaffold an Express web server project
   quill worker [name]          Scaffold a Cloudflare Worker project
   quill ai [name]              Scaffold an AI app project (Claude)
+  quill expo [name]            Scaffold an Expo / React Native app
   quill generate "<prompt>"    AI-powered app generation (Claude/Gemini)
   quill deploy                 Generate Dockerfile for deployment
 
@@ -830,6 +986,9 @@ switch (cmd) {
     break;
   case 'ai':
     cmdAI();
+    break;
+  case 'expo':
+    cmdExpo();
     break;
   case 'generate':
     if (!args[1]) { error('Missing prompt. Usage: quill generate "<prompt>"'); process.exit(1); }

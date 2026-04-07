@@ -5,6 +5,7 @@ import (
 	"quill/ast"
 	"quill/lexer"
 	"strconv"
+	"strings"
 )
 
 type ParseError struct {
@@ -124,6 +125,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseWorkerHandler()
 	case p.check(lexer.TOKEN_RESPOND):
 		return p.parseRespond()
+	case p.check(lexer.TOKEN_NAVIGATE):
+		return p.parseNavigateStmt()
 	case p.isStreamStatement():
 		return p.parseStreamStatement()
 	case p.check(lexer.TOKEN_LBRACE):
@@ -854,14 +857,28 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 	line := p.current().Line
 	p.advance() // consume "component"
 	name := p.expect(lexer.TOKEN_IDENT)
+
+	// Parse optional props: component MyScreen with navigation route:
+	var hasProps bool
+	var propNames []string
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+		hasProps = true
+		for (p.check(lexer.TOKEN_IDENT) || isKeywordToken(p.current().Type)) && !p.check(lexer.TOKEN_COLON) {
+			propNames = append(propNames, p.advance().Value)
+		}
+	}
+
 	p.expect(lexer.TOKEN_COLON)
 	p.expect(lexer.TOKEN_NEWLINE)
 	p.expect(lexer.TOKEN_INDENT)
 
 	var states []ast.StateDeclaration
+	var effects []ast.EffectDeclaration
 	var methods []ast.FuncDefinition
 	var renderBody []ast.RenderElement
 	var styles *ast.StyleBlock
+	var nativeStyles *ast.NativeStyleBlock
 	var loader *ast.LoadFunction
 	var actions []ast.FormAction
 	var head *ast.HeadBlock
@@ -873,8 +890,17 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 		}
 		if p.check(lexer.TOKEN_STATE) {
 			states = append(states, *p.parseStateDecl())
+		} else if p.check(lexer.TOKEN_USE) && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_EFFECT {
+			effect := p.parseEffectDecl()
+			effects = append(effects, *effect)
 		} else if p.check(lexer.TOKEN_STYLE) {
-			styles = p.parseStyleBlock()
+			// Check if next-next token is IDENT (native style) or selector (CSS style)
+			// For Expo components: "native style:" block
+			if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT && p.tokens[p.pos+1].Value == "native" {
+				nativeStyles = p.parseNativeStyleBlock()
+			} else {
+				styles = p.parseStyleBlock()
+			}
 		} else if p.check(lexer.TOKEN_HEAD) {
 			head = p.parseHeadBlock()
 		} else if p.check(lexer.TOKEN_TO) {
@@ -890,7 +916,7 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 			action := p.parseFormAction()
 			actions = append(actions, action)
 		} else {
-			p.error("expected state, style, head, method (to), form, or render inside component block")
+			p.error("expected state, style, head, method (to), form, effect, or render inside component block")
 		}
 	}
 	if p.check(lexer.TOKEN_DEDENT) {
@@ -898,16 +924,221 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 	}
 
 	return &ast.ComponentStatement{
-		Name:       name.Value,
-		States:     states,
-		Methods:    methods,
-		RenderBody: renderBody,
-		Styles:     styles,
-		Loader:     loader,
-		Actions:    actions,
-		Head:       head,
-		Line:       line,
+		Name:         name.Value,
+		HasProps:     hasProps,
+		Props:        propNames,
+		States:       states,
+		Effects:      effects,
+		Methods:      methods,
+		RenderBody:   renderBody,
+		Styles:       styles,
+		NativeStyles: nativeStyles,
+		Loader:       loader,
+		Actions:      actions,
+		Head:         head,
+		Line:         line,
 	}
+}
+
+// parseEffectDecl parses: use effect [when [dep1, dep2]]:
+func (p *Parser) parseEffectDecl() *ast.EffectDeclaration {
+	line := p.current().Line
+	p.advance() // consume "use"
+	p.advance() // consume "effect"
+
+	var deps []string
+	if p.check(lexer.TOKEN_WHEN) {
+		p.advance() // consume "when"
+		p.expect(lexer.TOKEN_LBRACKET)
+		for !p.check(lexer.TOKEN_RBRACKET) && !p.isAtEnd() {
+			dep := p.expect(lexer.TOKEN_IDENT)
+			deps = append(deps, dep.Value)
+			if p.check(lexer.TOKEN_COMMA) {
+				p.advance()
+			}
+		}
+		p.expect(lexer.TOKEN_RBRACKET)
+	}
+
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	var body []ast.Statement
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		body = append(body, p.parseStatement())
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return &ast.EffectDeclaration{Dependencies: deps, Body: body, Line: line}
+}
+
+// parseNativeStyleBlock parses: style native:
+func (p *Parser) parseNativeStyleBlock() *ast.NativeStyleBlock {
+	line := p.current().Line
+	p.advance() // consume "style"
+	p.advance() // consume "native"
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	styles := make(map[string][]ast.NativeStyleProp)
+
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+
+		// Parse style name (e.g., "container")
+		styleName := p.expectIdentOrKeyword()
+		p.expect(lexer.TOKEN_COLON)
+		p.expect(lexer.TOKEN_NEWLINE)
+		p.expect(lexer.TOKEN_INDENT)
+
+		var props []ast.NativeStyleProp
+		for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+			p.skipNewlines()
+			if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+				break
+			}
+
+			// Parse property: "font size is 24" or "background color is '#fff'"
+			var nameParts []string
+			for !p.check(lexer.TOKEN_IS) && !p.check(lexer.TOKEN_NEWLINE) && !p.isAtEnd() {
+				tok := p.advance()
+				nameParts = append(nameParts, tok.Value)
+			}
+
+			if p.check(lexer.TOKEN_IS) {
+				p.advance() // consume "is"
+				// Read value - could be string or number
+				var val string
+				if p.check(lexer.TOKEN_STRING) {
+					val = "\"" + p.advance().Value + "\""
+				} else if p.check(lexer.TOKEN_NUMBER) {
+					val = p.advance().Value
+				} else if p.check(lexer.TOKEN_YES) {
+					p.advance()
+					val = "true"
+				} else if p.check(lexer.TOKEN_NO) {
+					p.advance()
+					val = "false"
+				} else {
+					val = p.advance().Value
+				}
+
+				// Convert multi-word property to camelCase
+				propName := toCamelCase(nameParts)
+				props = append(props, ast.NativeStyleProp{Name: propName, Value: val})
+			}
+			p.consumeNewline()
+		}
+		if p.check(lexer.TOKEN_DEDENT) {
+			p.advance()
+		}
+
+		styles[styleName.Value] = props
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return &ast.NativeStyleBlock{Styles: styles, Line: line}
+}
+
+// toCamelCase converts ["font", "size"] to "fontSize"
+func toCamelCase(parts []string) string {
+	if len(parts) == 0 {
+		return ""
+	}
+	result := parts[0]
+	for i := 1; i < len(parts); i++ {
+		if len(parts[i]) > 0 {
+			result += strings.ToUpper(parts[i][:1]) + parts[i][1:]
+		}
+	}
+	return result
+}
+
+// parseNavigateStmt parses: navigate to "ScreenName" [with { params }]
+func (p *Parser) parseNavigateStmt() *ast.NavigateStatement {
+	line := p.current().Line
+	p.advance() // consume "navigate"
+	p.expect(lexer.TOKEN_TO) // consume "to"
+
+	screen := p.expect(lexer.TOKEN_STRING)
+
+	var params ast.Expression
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+		params = p.parseExpression()
+	}
+
+	return &ast.NavigateStatement{Screen: screen.Value, Params: params, Line: line}
+}
+
+// parseNavigationBlock parses: app navigation: stack: screen "Home" component HomeScreen
+func (p *Parser) parseNavigationBlock() *ast.NavigationBlock {
+	line := p.current().Line
+	p.advance() // consume "app"
+	p.advance() // consume "navigation" (consumed as ident)
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	navType := "stack"
+	var screens []ast.ScreenDefinition
+
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+
+		// Parse navigation type: stack: / tab: / drawer:
+		if p.check(lexer.TOKEN_IDENT) {
+			typeTok := p.advance()
+			navType = typeTok.Value
+			p.expect(lexer.TOKEN_COLON)
+			p.expect(lexer.TOKEN_NEWLINE)
+			p.expect(lexer.TOKEN_INDENT)
+
+			for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+				p.skipNewlines()
+				if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+					break
+				}
+				if p.check(lexer.TOKEN_SCREEN) {
+					p.advance() // consume "screen"
+					screenName := p.expect(lexer.TOKEN_STRING)
+					p.expect(lexer.TOKEN_COMPONENT)
+					compName := p.expect(lexer.TOKEN_IDENT)
+					screens = append(screens, ast.ScreenDefinition{
+						Name:      screenName.Value,
+						Component: compName.Value,
+					})
+					p.consumeNewline()
+				} else {
+					p.advance() // skip unknown
+				}
+			}
+			if p.check(lexer.TOKEN_DEDENT) {
+				p.advance()
+			}
+		}
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	return &ast.NavigationBlock{Type: navType, Screens: screens, Line: line}
 }
 
 func (p *Parser) parseStyleBlock() *ast.StyleBlock {
@@ -2360,6 +2591,7 @@ func isKeywordToken(t lexer.TokenType) bool {
 		lexer.TOKEN_DATABASE, lexer.TOKEN_MOUNT, lexer.TOKEN_COMPONENT,
 		lexer.TOKEN_COMMAND, lexer.TOKEN_REPLY, lexer.TOKEN_EMBED,
 		lexer.TOKEN_WORKER, lexer.TOKEN_CANCEL, lexer.TOKEN_SETTLED,
+		lexer.TOKEN_SCREEN, lexer.TOKEN_NAVIGATE, lexer.TOKEN_EFFECT,
 		lexer.TOKEN_SPAWN, lexer.TOKEN_TASK, lexer.TOKEN_PARALLEL, lexer.TOKEN_RACE,
 		lexer.TOKEN_DESCRIBE, lexer.TOKEN_NEW, lexer.TOKEN_TEST, lexer.TOKEN_EXPECT,
 		lexer.TOKEN_MOCK, lexer.TOKEN_TRAIT, lexer.TOKEN_WHERE, lexer.TOKEN_USING,

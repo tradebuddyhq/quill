@@ -15,6 +15,7 @@ type Generator struct {
 	declared             map[string]bool
 	browser              bool
 	workerMode           bool     // true when generating Cloudflare Worker output (ES modules)
+	expoMode             bool     // true when generating React Native / Expo output (JSX)
 	SourceMap            *SourceMap
 	genLine              int      // current generated line number (0-based)
 	needsResultRuntime   bool     // inject Result type runtime helpers
@@ -40,6 +41,11 @@ func NewBrowser() *Generator {
 }
 
 func (g *Generator) Generate(program *ast.Program) string {
+	// Expo mode: generate React Native / JSX output
+	if g.expoMode {
+		return g.generateExpo(program)
+	}
+
 	// If the program contains a worker handler, use worker mode (ES modules, no Node.js runtime)
 	if g.hasWorkerHandler(program) {
 		g.workerMode = true
@@ -595,6 +601,16 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 			statusCode = 200
 		}
 		return fmt.Sprintf("%sres.writeHead(%d, {'Content-Type': 'application/json'}); res.end(JSON.stringify(%s));", prefix, statusCode, g.genExpr(s.Value))
+
+	case *ast.NavigateStatement:
+		g.addStmtMapping(s.Line)
+		if s.Params != nil {
+			return fmt.Sprintf("%snavigation.navigate(\"%s\", %s);", prefix, s.Screen, g.genExpr(s.Params))
+		}
+		return fmt.Sprintf("%snavigation.navigate(\"%s\");", prefix, s.Screen)
+
+	case *ast.NavigationBlock:
+		return prefix + "/* navigation block — use 'quill build --expo' for Expo mode */"
 
 	case *ast.WorkerHandler:
 		g.addStmtMapping(s.Line)

@@ -232,6 +232,8 @@ See the [AI docs](https://quill.tradebuddy.dev/docs/ai) for conversation history
 | `quill web my-api` | Scaffold an Express web server project |
 | `quill worker my-api` | Scaffold a Cloudflare Worker project |
 | `quill ai my-app` | Scaffold an AI app project (Claude) |
+| `quill expo my-app` | Scaffold an Expo / React Native app |
+| `quill build app.quill --expo` | Compile for Expo / React Native (JSX) |
 | `quill help` | Show help |
 
 ## Language Reference
@@ -983,6 +985,59 @@ npx wrangler deploy
 ```
 
 See the [Cloudflare Workers documentation](https://quill.tradebuddy.dev/docs/workers) for routing, JSON APIs, KV storage, and deployment.
+
+## Expo / React Native
+
+Build mobile apps with Quill and test them with Expo Go on your phone.
+
+```
+quill expo my-app
+cd my-app
+npm install
+```
+
+Write components in Quill:
+
+```
+component HomeScreen:
+  state count is 0
+
+  to increment:
+    count is count + 1
+
+  to render:
+    view style container:
+      text style title: "Welcome to Quill!"
+      text: "Count: {count}"
+      button onPress increment style button:
+        text style buttonText: "Tap me"
+
+  style native:
+    container:
+      flex is 1
+      align items is "center"
+      justify content is "center"
+    title:
+      font size is 28
+      font weight is "bold"
+    button:
+      background color is "#6C5CE7"
+      padding is 14
+      border radius is 12
+    buttonText:
+      color is "#fff"
+```
+
+Compile and run:
+
+```
+quill build --expo screens/Home.quill
+npx expo start
+```
+
+Features: components with props, useState hooks, useEffect, StyleSheet, React Navigation (stack/tab/drawer), and all core React Native elements.
+
+See the [Expo documentation](https://quill.tradebuddy.dev/docs/expo) for the full guide.
 
 ## Concurrency
 
