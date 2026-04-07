@@ -642,6 +642,38 @@ count <span class="kw">is</span> <span class="num">0</span>
   <span class="kw">when</span> Error msg:
     <span class="kw">say</span> <span class="str">"Dashboard unavailable: {msg}"</span></code></pre>
 
+      <h3>Retry with backoff</h3>
+      <p>Network calls can fail temporarily. A retry pattern with increasing delays handles transient errors gracefully.</p>
+      <pre><code><span class="kw">to</span> <span class="fn">fetchWithRetry</span> url maxRetries -> Result <span class="kw">of</span> object:
+  retries <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">repeat forever</span>:
+    <span class="kw">try</span>:
+      data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(url)
+      <span class="kw">give back</span> Success(data)
+    <span class="kw">if it fails</span> err:
+      retries <span class="kw">is</span> retries + <span class="num">1</span>
+      <span class="kw">if</span> retries <span class="kw">is greater than</span> maxRetries:
+        <span class="kw">give back</span> Error(<span class="str">"Failed after {maxRetries} retries: {err}"</span>)
+      <span class="cmt">-- Exponential backoff: 1s, 2s, 4s, 8s...</span>
+      waitMs <span class="kw">is</span> <span class="num">1000</span> * (<span class="num">2</span> ** (retries - <span class="num">1</span>))
+      <span class="kw">say</span> <span class="str">"Retry {retries}/{maxRetries} in {waitMs}ms..."</span>
+      <span class="kw">await</span> delay(waitMs)
+
+<span class="cmt">-- Usage</span>
+result <span class="kw">is</span> <span class="kw">await</span> fetchWithRetry(<span class="str">"https://api.example.com/data"</span>, <span class="num">3</span>)</code></pre>
+
+      <h3>Cancellation pattern</h3>
+      <p>Cancel background tasks when they are no longer needed to avoid wasted resources.</p>
+      <pre><code><span class="kw">spawn task</span> poller:
+  <span class="kw">repeat forever</span>:
+    data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/status"</span>)
+    <span class="kw">say</span> <span class="str">"Status: {data.status}"</span>
+    <span class="kw">await</span> delay(<span class="num">5000</span>)
+
+<span class="cmt">-- Later, when the user navigates away:</span>
+<span class="kw">cancel</span> poller
+<span class="kw">say</span> <span class="str">"Polling stopped."</span></code></pre>
+
       <div class="callout callout-warn">
         <strong>Warning:</strong> Never ignore the result of an async operation. An unhandled rejection will crash your program silently. Always <code>await</code> or wrap in <code>try</code>/<code>if it fails</code>.
       </div>
@@ -1276,6 +1308,40 @@ top <span class="kw">is</span> topCustomers(<span class="str">"sales.csv"</span>
       <div class="callout callout-tip">
         <strong>Tip:</strong> Guard clauses put the error cases at the top and the "happy path" at the bottom, with zero nesting. The code reads like a checklist: reject bad input, then do the work.
       </div>
+
+      <h3>Destructuring in function parameters</h3>
+      <p>When a function takes an object, destructure in the signature to make it clear what fields are expected.</p>
+
+      <p><strong>Before:</strong></p>
+      <pre><code><span class="kw">to</span> <span class="fn">formatAddress</span> address:
+  <span class="kw">give back</span> <span class="str">"{address.street}, {address.city}, {address.state} {address.zip}"</span></code></pre>
+
+      <p><strong>After:</strong></p>
+      <pre><code><span class="kw">to</span> <span class="fn">formatAddress</span> {street, city, state, zip}:
+  <span class="kw">give back</span> <span class="str">"{street}, {city}, {state} {zip}"</span></code></pre>
+
+      <h3>Using <code>are</code> for readability</h3>
+      <p>Use <code>are</code> instead of <code>is</code> when the variable holds a collection. They work identically, but <code>are</code> reads more naturally.</p>
+      <pre><code><span class="cmt">-- Less readable</span>
+names <span class="kw">is</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Carol"</span>]
+
+<span class="cmt">-- More readable</span>
+names <span class="kw">are</span> [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Carol"</span>]</code></pre>
+
+      <h3>Chaining with <code>match</code> for control flow</h3>
+      <p>Use <code>match</code> to handle different shapes of data cleanly.</p>
+      <pre><code><span class="kw">to</span> <span class="fn">handleResponse</span> response:
+  <span class="kw">match</span> response:
+    <span class="kw">when</span> {status: <span class="num">200</span>, body}:
+      <span class="kw">give back</span> Success(parseJSON(body))
+    <span class="kw">when</span> {status: <span class="num">404</span>}:
+      <span class="kw">give back</span> Error(<span class="str">"Resource not found"</span>)
+    <span class="kw">when</span> {status: <span class="num">429</span>}:
+      <span class="kw">give back</span> Error(<span class="str">"Rate limited, try again later"</span>)
+    <span class="kw">when</span> {status} <span class="kw">if</span> status <span class="kw">is greater than</span> <span class="num">499</span>:
+      <span class="kw">give back</span> Error(<span class="str">"Server error: {status}"</span>)
+    <span class="kw">otherwise</span>:
+      <span class="kw">give back</span> Error(<span class="str">"Unexpected status: {response.status}"</span>)</code></pre>
 
       <h3>10 before/after comparisons</h3>
       <p>Here is a quick reference of common patterns showing verbose Quill versus idiomatic Quill.</p>
