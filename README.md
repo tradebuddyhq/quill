@@ -6,17 +6,16 @@ A beginner-friendly language that compiles to JavaScript
 
 ## Learn Quill
 
-New to Quill? Follow the learning path:
 
-1. **[Install Quill](https://quill.tradebuddy.dev/docs/getting-started)** — 5 minutes to get set up
-2. **[Learn Quill Tutorial](https://quill.tradebuddy.dev/docs/learn)** — 10 chapters, 10 projects, zero to mastery
-3. **[Patterns & Best Practices](https://quill.tradebuddy.dev/docs/patterns)** — write clean, professional code
-4. **[Debugging & Common Mistakes](https://quill.tradebuddy.dev/docs/debugging)** — read errors, use the debugger, avoid pitfalls
-5. **Build something real** — [Web Server](https://quill.tradebuddy.dev/docs/web) · [Discord Bot](https://quill.tradebuddy.dev/docs/discord) · [Mobile App](https://quill.tradebuddy.dev/docs/expo) · [AI App](https://quill.tradebuddy.dev/docs/ai)
+1. **[Install Quill](https://quill.tradebuddy.dev/docs/getting-started)**
+2. **[Learn Quill Tutorial](https://quill.tradebuddy.dev/docs/learn)**
+3. **[Patterns & Best Practices](https://quill.tradebuddy.dev/docs/patterns)**
+4. **[Debugging & Common Mistakes](https://quill.tradebuddy.dev/docs/debugging)**
+5. **Build something** — [Web Server](https://quill.tradebuddy.dev/docs/web) · [Discord Bot](https://quill.tradebuddy.dev/docs/discord) · [Mobile App](https://quill.tradebuddy.dev/docs/expo) · [AI App](https://quill.tradebuddy.dev/docs/ai)
 
 ## Community
 
-Join our [Discord](https://discord.gg/9rRyGRrh8E) for help and discussion. Visit [tradebuddy.dev](https://tradebuddy.dev) for more about the project
+Join our [Discord](https://discord.gg/9rRyGRrh8E) for help and discussion
 
 ## Quick Start
 
@@ -102,8 +101,6 @@ mount Counter to "#app"
 
 ## AI built in
 
-Quill is the easiest language to build AI apps. No boilerplate, no setup:
-
 ```
 -- One line to call Claude
 answer is ask claude "What is the capital of France?"
@@ -124,7 +121,7 @@ cd my-app && npm install
 quill run app.quill
 ```
 
-See the [AI docs](https://quill.tradebuddy.dev/docs/ai) for conversation history, streaming, and more.
+See the [AI docs](https://quill.tradebuddy.dev/docs/ai)
 
 ## Features
 
@@ -769,7 +766,7 @@ form action=handleSubmit:
 
 ### Full-Stack in One File
 
-Write your entire app — server, database, auth, and UI — in a single `.quill` file. No config files, no `package.json`, no `node_modules`, no webpack. Just `quill run app.quill`.
+Write your entire app (server, database, auth, and UI) in a single `.quill` file. No config files, no `package.json`, no `node_modules`, no webpack. Just `quill run app.quill`
 
 ```
 server:
@@ -800,15 +797,14 @@ Run it with one command:
 quill run app.quill
 ```
 
-That is it. Zero config. One file. Full-stack application.
 
 ## Ecosystem (Standard Library)
 
-Quill ships with high-level libraries for common backend tasks, all with English-like syntax.
+Quill ships with high-level libraries for common backend tasks
 
 ### Auth
 
-Built-in authentication with hashing, JWT tokens, and sessions.
+Built-in authentication with hashing, JWT tokens, and sessions
 
 ```
 use "auth"
@@ -827,7 +823,7 @@ app.use(Auth.session({secret: "keyboard-cat"}))
 
 ### ORM
 
-Database access with models, query builder, migrations, and transactions.
+Database access with models, query builder, migrations, and transactions
 
 ```
 use "db"
@@ -856,7 +852,7 @@ DB.transaction(with tx:
 
 ### Validation
 
-Schema-based validation with built-in rules and custom validators.
+Schema-based validation with built-in rules and custom validators
 
 ```
 use "validate"
@@ -882,7 +878,7 @@ otherwise:
 
 ### Logging
 
-Structured logging with levels, JSON output, colored console, and child loggers.
+Structured logging with levels, JSON output, colored console, and child loggers
 
 ```
 use "log"
@@ -904,8 +900,6 @@ app.use(logger.middleware())
 ```
 
 ## Discord Bots
-
-Quill makes it easy to build Discord bots with clean, readable syntax.
 
 **Scaffold a new bot:**
 ```bash
@@ -939,11 +933,11 @@ quill build bot.quill
 node bot.js
 ```
 
-See the [Discord Bots documentation](https://quill.tradebuddy.dev/docs/discord) for slash commands, event handling, and deployment tips.
+See the [Discord Bots documentation](https://quill.tradebuddy.dev/docs/discord)
 
 ## Web Servers
 
-Quill makes it easy to build web servers and REST APIs with Express.
+Quill makes it easy to build web servers and REST APIs with Express
 
 **Scaffold a new project:**
 ```bash
@@ -977,11 +971,11 @@ quill build server.quill
 node server.js
 ```
 
-See the [Web Servers documentation](https://quill.tradebuddy.dev/docs/web) for routes, middleware, JSON APIs, and deployment.
+See the [Web Servers documentation](https://quill.tradebuddy.dev/docs/web)
 
 ## Cloudflare Workers
 
-Quill compiles to Cloudflare Worker-compatible ES modules with the `worker on fetch` syntax.
+Quill compiles to Cloudflare Worker-compatible ES modules with the `worker on fetch` syntax
 
 **Scaffold a new worker:**
 ```bash
@@ -1010,11 +1004,11 @@ quill build worker.quill
 npx wrangler deploy
 ```
 
-See the [Cloudflare Workers documentation](https://quill.tradebuddy.dev/docs/workers) for routing, JSON APIs, KV storage, and deployment.
+See the [Cloudflare Workers documentation](https://quill.tradebuddy.dev/docs/workers)
 
 ## Expo / React Native
 
-Build mobile apps with Quill and test them with Expo Go on your phone.
+Build mobile apps with Quill and test them with Expo Go on your phone
 
 ```
 quill expo my-app
@@ -1063,7 +1057,7 @@ npx expo start
 
 Features: components with props, useState hooks, useEffect, StyleSheet, React Navigation (stack/tab/drawer), and all core React Native elements.
 
-See the [Expo documentation](https://quill.tradebuddy.dev/docs/expo) for the full guide.
+See the [Expo documentation](https://quill.tradebuddy.dev/docs/expo)
 
 ## Cron Jobs
 
@@ -1237,7 +1231,7 @@ peer.on("data", with msg:
 
 ## Concurrency
 
-Quill has built-in concurrency primitives: tasks, channels, parallel blocks, race blocks, and select.
+Quill has built-in concurrency primitives: tasks, channels, parallel blocks, race blocks, and select
 
 ```
 -- Spawn a background task
@@ -1314,7 +1308,7 @@ quill test --coverage-min 80         # Fail if coverage drops below 80%
 ```bash
 quill profile app.quill
 ```
-Outputs a function-level timing report showing where your program spends its time.
+Outputs a function-level timing report showing where your program spends its time
 
 ### Workspaces
 Monorepo support via `[workspace]` in quill.toml:
@@ -1329,19 +1323,19 @@ Automated code migration between Quill versions:
 ```bash
 quill fix --from v0.1 --to v0.3
 ```
-Rewrites deprecated syntax, renames changed functions, and updates import paths automatically.
+Rewrites deprecated syntax, renames changed functions, and updates import paths automatically
 
 ### Dev Server
 ```bash
 quill serve
 ```
-Starts a development server with hot reload, file-based routing, and SSR support. Perfect for web projects.
+Starts a development server with hot reload, file-based routing, and SSR support
 
 ### Deployment
 ```bash
 quill deploy
 ```
-Generates a production-ready Dockerfile and optimized bundle for your project. The output includes a multi-stage Docker build, minified assets, and a startup script.
+Generates a production-ready Dockerfile and optimized bundle for your project. The output includes a multi-stage Docker build, minified assets, and a startup script
 
 ### Database Migrations
 ```bash
@@ -1353,7 +1347,7 @@ quill db status                    # Show which migrations have run
 ```
 
 ### Environment Management
-Quill auto-loads `.env` files based on context. Use `env.require("KEY")` to fail fast if a variable is missing.
+Quill auto-loads `.env` files based on context. Use `env.require("KEY")` to fail fast if a variable is missing
 
 ```bash
 quill run app.quill --env production     # Loads .env.production
@@ -1379,13 +1373,13 @@ quill generate "chat"          # Real-time chat with WebSockets
 quill generate "crud user"     # CRUD endpoints for a user model
 ```
 
-> **Tip:** Install [Claude CLI](https://docs.anthropic.com/en/docs/claude-cli) or [Gemini CLI](https://github.com/google-gemini/gemini-cli) for AI-powered generation. No API key needed — it uses your local CLI auth.
+> **Tip:** Install [Claude CLI](https://docs.anthropic.com/en/docs/claude-cli) or [Gemini CLI](https://github.com/google-gemini/gemini-cli) for AI-powered generation. No need for an API key
 
 ## Stability
 
 ### Rust-Style Error Messages
 
-The parser recovers from errors and keeps going, collecting all problems in a single pass instead of stopping at the first one. Error messages include source context, underlines, and helpful hints.
+The parser recovers from errors and keeps going, collecting all problems in a single pass instead of stopping at the first one. Error messages include source context, underlines, and helpful hints
 
 ```
 error[E001]: type mismatch
