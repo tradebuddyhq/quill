@@ -131,7 +131,7 @@ See the [AI docs](https://quill.tradebuddy.dev/docs/ai) for conversation history
 - **Pipe operator** — `value | transform | format` for function chaining
 - **Lambdas** — `with x: x * 2` arrow-style anonymous functions
 - **Classes with inheritance** — `describe Dog extends Animal:` with `my` keyword, `private`/`public` visibility, JS `#` private fields
-- **Try/catch** — `try:` / `if it fails err:` error handling
+- **Try/catch** — `try:` / `if it fails err:` or `catch err:` error handling
 - **Error propagation** — Result type with `Success()`/`Error()`, `?` operator for auto-propagation, `try` expression
 - **Iterators & generators** — `yield`, `loop:` infinite loops, lazy evaluation chains
 - **Lazy evaluation** — `range(1, 1000000) | filter | map_list | take 10 | collect`
@@ -146,8 +146,16 @@ See the [AI docs](https://quill.tradebuddy.dev/docs/ai) for conversation history
 - **Decorators** — `@authenticated`, `@rateLimit(100)`, `@log` for annotating functions and classes
 - **Union types** — `number | text` for values that can be multiple types
 - **Nullable types** — `?number` shorthand for `number | nothing`
+- **Cron jobs** — `every 5 seconds:` / `every 1 minute:` / `every 2 hours:` scheduled tasks
 - **Reactive web framework** — Svelte-like `component`/`state`/`mount` with virtual DOM
 - **Full-stack in one file** — `server:`, `database:`, `component:` blocks in a single `.quill` file
+- **Built-in crypto** — hash, HMAC, AES-256, X25519 DH, HKDF, Argon2, RSA, secure random — zero dependencies
+- **Binary serialization** — `defineSchema`/`encode`/`decode` for compact binary encoding
+- **Buffer & encoding** — `toBuffer`, `toBase64`, `toHex`, `fromBase64`, `fromHex`
+- **HTTPS server** — `createSecureServer()` with TLS support
+- **Secure storage** — AES-GCM encrypted localStorage for browsers
+- **WebRTC** — `createPeer()` for P2P messaging
+- **Expo / React Native** — build mobile apps with `quill expo` and `--expo` build target
 
 **Tooling**
 - **Type checker** — `quill check` catches type errors before you run
@@ -330,6 +338,12 @@ try:
   data is parseJSON(raw)
   say data.name
 if it fails err:
+  say "Error: " + err
+
+-- Alternative syntax
+try:
+  data is parseJSON(raw)
+catch err:
   say "Error: " + err
 ```
 
@@ -1088,6 +1102,120 @@ verbose is hasFlag("verbose")
 output is flag("output")
 
 say colors.green("Hello, " + name + "!")
+```
+
+## Built-in Crypto
+
+Full cryptography support with no external dependencies:
+
+```
+-- Hashing & HMAC
+h is hash("hello")
+h is hash("hello", "sha512")
+mac is hmac("data", "secret-key")
+
+-- Encryption (password-based)
+encrypted is encrypt("secret message", "password123")
+original is decrypt(encrypted, "password123")
+
+-- AES-256-GCM / AES-256-CBC
+result is aesEncrypt("plaintext", keyHex, ivHex)
+plain is aesDecrypt(result.ciphertext, keyHex, result.iv, result.tag)
+
+-- Key generation
+keys is generateKeys()
+say keys.publicKey
+
+-- X25519 Diffie-Hellman
+alice is generateX25519Keys()
+bob is generateX25519Keys()
+shared is diffieHellman(alice.privateKey, bob.publicKey)
+
+-- HKDF key derivation
+derived is hkdf(inputKeyHex, saltHex, "context-info", 32)
+
+-- Password hashing (Argon2 / bcrypt)
+hashed is await argon2("password", "salt")
+valid is await argon2Verify(hashed, "password")
+
+-- Random & UUID
+bytes is randomBytes(32)
+id is uuid()
+n is secureRandomInt(1, 100)
+
+-- Timing-safe comparison
+same is constantTimeEqual(a, b)
+
+-- Secure memory erasure
+secureErase(sensitiveBuffer)
+```
+
+## Buffer & Encoding
+
+```
+buf is toBuffer("hello")
+text is fromBuffer(buf)
+b64 is toBase64("hello")
+original is fromBase64(b64)
+hex is toHex("hello")
+original is fromHex(hex)
+combined is concatBuffers(buf1, buf2)
+```
+
+## Binary Serialization
+
+Compact binary encoding with schema support (protobuf-like, no dependencies):
+
+```
+schema is defineSchema({
+  name: { type: "string", tag: 1 },
+  age: { type: "uint8", tag: 2 },
+  active: { type: "bool", tag: 3 }
+})
+
+encoded is encode(schema, { name: "Alice", age: 30, active: yes })
+decoded is decode(schema, encoded)
+say decoded.name
+```
+
+## HTTPS Server
+
+```
+server is createSecureServer("cert.pem", "key.pem")
+server.get("/", "Hello over TLS!")
+server.listen(443)
+```
+
+## Secure Storage
+
+Browser-side encrypted localStorage:
+
+```
+SecureStorage.set("token", "abc123", "my-password")
+token is SecureStorage.get("token", "my-password")
+SecureStorage.remove("token")
+SecureStorage.clear()
+```
+
+## WebRTC
+
+Peer-to-peer communication:
+
+```
+peer is createPeer({ initiator: yes })
+
+peer.on("signal", with data:
+  -- send signal data to other peer
+  sendToServer(data)
+)
+
+peer.on("connect", with:
+  peer.send("hello from peer!")
+)
+
+peer.on("data", with msg:
+  say "Got: " + msg
+)
 ```
 
 ## Concurrency
