@@ -38,6 +38,10 @@
       <ul>
         <li><a href="/docs/getting-started">Installation</a></li>
       </ul>
+      <h4>Tutorial</h4>
+      <ul>
+        <li><a href="/docs/learn">Learn Quill</a></li>
+      </ul>
       <h4>Language</h4>
       <ul>
         <li><a href="/docs/language">Language guide</a></li>
@@ -73,6 +77,12 @@
         <li><a href="#webrtc">WebRTC</a></li>
         <li><a href="#static-site">Static sites</a></li>
       </ul>
+      <h4>Learn More</h4>
+      <ul>
+        <li><a href="/docs/learn">Learn Quill (Tutorial)</a></li>
+        <li><a href="/docs/patterns">Patterns &amp; Best Practices</a></li>
+        <li><a href="/docs/debugging">Debugging &amp; Mistakes</a></li>
+      </ul>
       <h4>Ecosystem Packages</h4>
       <ul>
         <li><a href="#auth">Auth</a></li>
@@ -83,6 +93,11 @@
       <h4>Guides</h4>
       <ul>
         <li><a href="/docs/discord">Discord Bots</a></li>
+      </ul>
+      <h4>Level Up</h4>
+      <ul>
+        <li><a href="/docs/patterns">Patterns &amp; Best Practices</a></li>
+        <li><a href="/docs/debugging">Debugging &amp; Mistakes</a></li>
       </ul>
       <h4>Reference</h4>
       <ul>
@@ -1680,10 +1695,17 @@ output <span class="kw">is</span> flag(<span class="str">"output"</span>)
       <!-- ============================================ -->
 
       <h2 id="https-server">HTTPS Server</h2>
-      <p>Create secure HTTPS servers with TLS certificates. Works just like <code>createServer()</code> but with encryption enabled.</p>
+      <p>Create secure HTTPS servers with TLS certificates. Works just like <code>createServer()</code> but with encryption enabled. The <code>createSecureServer</code> function wraps Node's <code>https.createServer</code> and gives you the same routing API you already know from Quill's HTTP server.</p>
 
       <h3><code>createSecureServer(options)</code> &mdash; Create an HTTPS server</h3>
       <p>Creates a server that uses TLS encryption. You provide paths to your SSL certificate and private key.</p>
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>cert</code> &mdash; The contents of your PEM-encoded certificate file (string or Buffer)</li>
+        <li><code>key</code> &mdash; The contents of your PEM-encoded private key file (string or Buffer)</li>
+      </ul>
+      <p><strong>Returns:</strong> A server object with <code>.get()</code>, <code>.post()</code>, <code>.put()</code>, <code>.delete()</code>, <code>.use()</code>, and <code>.listen()</code> methods.</p>
+
       <pre><code>server <span class="kw">is</span> createSecureServer({
   cert: readFile(<span class="str">"cert.pem"</span>),
   key: readFile(<span class="str">"key.pem"</span>)
@@ -1692,8 +1714,78 @@ output <span class="kw">is</span> flag(<span class="str">"output"</span>)
 server.get(<span class="str">"/"</span>, <span class="str">"Hello over HTTPS!"</span>)
 server.listen(<span class="num">443</span>)</code></pre>
 
+      <div class="callout callout-tip">
+        <strong>Generating self-signed certs for development:</strong> Run this in your terminal to create a certificate valid for 365 days:
+        <pre><code>openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"</code></pre>
+        This creates <code>cert.pem</code> and <code>key.pem</code> in your current directory. Your browser will show a security warning &mdash; that is expected for self-signed certs.
+      </div>
+
+      <h3>Routes with handlers</h3>
+      <p>Define GET, POST, PUT, and DELETE routes with handler functions. Handlers receive a <code>request</code> object and return a response.</p>
+      <pre><code>server <span class="kw">is</span> createSecureServer({
+  cert: readFile(<span class="str">"cert.pem"</span>),
+  key: readFile(<span class="str">"key.pem"</span>)
+})
+
+<span class="cmt">-- GET route with a simple string response</span>
+server.get(<span class="str">"/"</span>, <span class="str">"Welcome to the secure API"</span>)
+
+<span class="cmt">-- GET route with a handler function</span>
+server.get(<span class="str">"/users/:id"</span>, <span class="kw">with</span> req:
+  user <span class="kw">is</span> <span class="kw">await</span> db.find(<span class="str">"users"</span>, req.params.id)
+  <span class="kw">respond</span> { status: <span class="num">200</span>, json: user }
+)
+
+<span class="cmt">-- POST route that reads the request body</span>
+server.post(<span class="str">"/users"</span>, <span class="kw">with</span> req:
+  newUser <span class="kw">is</span> <span class="kw">await</span> db.insert(<span class="str">"users"</span>, req.body)
+  <span class="kw">respond</span> { status: <span class="num">201</span>, json: newUser }
+)
+
+<span class="cmt">-- DELETE route</span>
+server.delete(<span class="str">"/users/:id"</span>, <span class="kw">with</span> req:
+  <span class="kw">await</span> db.remove(<span class="str">"users"</span>, req.params.id)
+  <span class="kw">respond</span> { status: <span class="num">204</span> }
+)
+
+server.listen(<span class="num">443</span>)</code></pre>
+
+      <h3>Middleware</h3>
+      <p>Use <code>.use()</code> to add middleware that runs before your route handlers. Middleware can inspect requests, add headers, or reject unauthorized access.</p>
+      <pre><code><span class="cmt">-- Logging middleware</span>
+server.use(<span class="kw">with</span> req, next:
+  <span class="kw">say</span> req.method + <span class="str">" "</span> + req.url
+  next()
+)
+
+<span class="cmt">-- Auth middleware</span>
+server.use(<span class="kw">with</span> req, next:
+  token <span class="kw">is</span> req.headers[<span class="str">"authorization"</span>]
+  <span class="kw">if</span> token <span class="kw">is</span> nothing:
+    <span class="kw">respond</span> { status: <span class="num">401</span>, json: { error: <span class="str">"Unauthorized"</span> } }
+  <span class="kw">otherwise</span>:
+    next()
+)
+
+<span class="cmt">-- CORS middleware</span>
+server.use(<span class="kw">with</span> req, next:
+  req.setHeader(<span class="str">"Access-Control-Allow-Origin"</span>, <span class="str">"*"</span>)
+  next()
+)</code></pre>
+
+      <h3>Using Let's Encrypt certificates</h3>
+      <p>In production, use real certificates from <a href="https://letsencrypt.org" target="_blank">Let's Encrypt</a>. After running <code>certbot</code>, point your server at the generated files:</p>
+      <pre><code><span class="cmt">-- Let's Encrypt certs (typically in /etc/letsencrypt/live/yourdomain/)</span>
+server <span class="kw">is</span> createSecureServer({
+  cert: readFile(<span class="str">"/etc/letsencrypt/live/example.com/fullchain.pem"</span>),
+  key: readFile(<span class="str">"/etc/letsencrypt/live/example.com/privkey.pem"</span>)
+})
+
+server.get(<span class="str">"/"</span>, <span class="str">"Hello from production!"</span>)
+server.listen(<span class="num">443</span>)</code></pre>
+
       <div class="callout callout-info">
-        <strong>For development:</strong> You can generate a self-signed certificate for local testing. In production, use certificates from Let's Encrypt or your hosting provider.
+        <strong>Certificate renewal:</strong> Let's Encrypt certificates expire every 90 days. Set up a cron job (<code>certbot renew</code>) and restart your server to pick up the new certs. You can use Quill's <code>every</code> block to watch for certificate changes and reload automatically.
       </div>
 
       <!-- ============================================ -->
@@ -1701,14 +1793,26 @@ server.listen(<span class="num">443</span>)</code></pre>
       <!-- ============================================ -->
 
       <h2 id="secure-storage">Secure Storage</h2>
-      <p>Browser-side encrypted storage for sensitive data. Works like <code>localStorage</code> but encrypts values before storing them.</p>
+      <p>Browser-side encrypted storage for sensitive data. Works like <code>localStorage</code> but encrypts values before storing them. Under the hood, SecureStorage uses <strong>AES-256-GCM</strong> authenticated encryption &mdash; values are encrypted with a key derived from your password via PBKDF2 (100,000 iterations). The IV and auth tag are stored alongside the ciphertext.</p>
 
       <h3><code>SecureStorage.set(key, value, password)</code></h3>
       <p>Encrypts and stores a value in the browser's local storage.</p>
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>key</code> &mdash; A string key to identify the stored item (stored in plain text)</li>
+        <li><code>value</code> &mdash; The value to encrypt and store (string or JSON-serializable object)</li>
+        <li><code>password</code> &mdash; The encryption password used to derive the AES key</li>
+      </ul>
       <pre><code>SecureStorage.set(<span class="str">"token"</span>, <span class="str">"sk-abc123"</span>, <span class="str">"user-password"</span>)</code></pre>
 
       <h3><code>SecureStorage.get(key, password)</code></h3>
       <p>Retrieves and decrypts a value from secure storage. Returns <code>nothing</code> if the key does not exist or the password is wrong.</p>
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>key</code> &mdash; The key to look up</li>
+        <li><code>password</code> &mdash; The same password used when calling <code>set()</code></li>
+      </ul>
+      <p><strong>Returns:</strong> The decrypted value, or <code>nothing</code> on failure.</p>
       <pre><code>token <span class="kw">is</span> SecureStorage.get(<span class="str">"token"</span>, <span class="str">"user-password"</span>)
 <span class="kw">say</span> token   <span class="cmt">-- "sk-abc123"</span></code></pre>
 
@@ -1719,6 +1823,39 @@ server.listen(<span class="num">443</span>)</code></pre>
       <h3><code>SecureStorage.clear()</code></h3>
       <p>Removes all items from secure storage.</p>
       <pre><code>SecureStorage.clear()</code></pre>
+
+      <h3>Practical example: storing and retrieving an API token</h3>
+      <pre><code><span class="cmt">-- After the user logs in, store their API token securely</span>
+<span class="kw">say</span> <span class="str">"Enter a password to protect your token:"</span>
+password <span class="kw">is</span> <span class="kw">await</span> promptPassword()
+
+SecureStorage.set(<span class="str">"api-token"</span>, user.apiToken, password)
+<span class="kw">say</span> <span class="str">"Token saved securely."</span>
+
+<span class="cmt">-- Later, retrieve the token</span>
+password <span class="kw">is</span> <span class="kw">await</span> promptPassword()
+token <span class="kw">is</span> SecureStorage.get(<span class="str">"api-token"</span>, password)
+
+<span class="kw">if</span> token <span class="kw">is</span> nothing:
+  <span class="kw">say</span> <span class="str">"Wrong password or token not found."</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Token retrieved, making API call..."</span>
+  result <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"https://api.example.com/data"</span>, {
+    headers: { authorization: <span class="str">"Bearer "</span> + token }
+  })</code></pre>
+
+      <h3>Error handling when password is wrong</h3>
+      <p>When you provide the wrong password, <code>SecureStorage.get()</code> returns <code>nothing</code> rather than throwing an error. This means AES-GCM authentication failed and the data could not be decrypted. Always check the return value:</p>
+      <pre><code>result <span class="kw">is</span> SecureStorage.get(<span class="str">"api-token"</span>, userInput)
+
+<span class="kw">if</span> result <span class="kw">is</span> nothing:
+  <span class="kw">say</span> <span class="str">"Decryption failed. Check your password and try again."</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Decrypted value: "</span> + result</code></pre>
+
+      <div class="callout callout-info">
+        <strong>When to use SecureStorage vs server-side storage:</strong> Use SecureStorage when you need to keep secrets on the client (e.g., API tokens, encryption keys) without exposing them in plain text in localStorage. However, if your threat model includes malicious JavaScript on the same origin, server-side storage with HTTP-only cookies is stronger. SecureStorage is best for protecting data at rest on the user's device &mdash; for example, an offline-first app that stores credentials locally.
+      </div>
 
       <!-- ============================================ -->
       <!-- WEBRTC                                       -->
@@ -1814,24 +1951,119 @@ hashed <span class="kw">is</span> <span class="kw">await</span> argon2(password,
   <span class="kw">say</span> <span class="str">"Login successful"</span></code></pre>
 
       <h3><code>bcryptHash(password, rounds)</code> &mdash; bcrypt Password Hashing</h3>
-      <p>Hashes a password using bcrypt with configurable rounds (default 12). Returns a salt:hash string. Use this when you need bcrypt compatibility.</p>
+      <p>Hashes a password using bcrypt with configurable rounds. Returns a string containing the algorithm identifier, cost factor, salt, and hash &mdash; everything needed to verify later.</p>
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>password</code> &mdash; The plain-text password to hash (string)</li>
+        <li><code>rounds</code> &mdash; The cost factor (number of iterations = 2^rounds). Default is <code>12</code>. Higher values are slower but more resistant to brute force. Recommended values:
+          <ul>
+            <li><code>10</code> &mdash; Fast, suitable for low-security or high-throughput scenarios</li>
+            <li><code>12</code> &mdash; Good default for most applications (about 250ms per hash)</li>
+            <li><code>14</code> &mdash; Stronger, suitable for high-security applications (about 1 second per hash)</li>
+          </ul>
+        </li>
+      </ul>
+      <p><strong>Returns:</strong> A bcrypt hash string (e.g., <code>$2b$12$...</code>).</p>
       <pre><code>hashed <span class="kw">is</span> <span class="kw">await</span> bcryptHash(password, <span class="num">12</span>)</code></pre>
 
       <h3><code>bcryptVerify(hashed, password)</code> &mdash; Verify bcrypt Password</h3>
-      <p>Verifies a password against a bcrypt hash. Returns <code>true</code> or <code>false</code>.</p>
+      <p>Verifies a password against a bcrypt hash. The round count and salt are read from the hash string automatically.</p>
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>hashed</code> &mdash; The bcrypt hash string returned by <code>bcryptHash()</code></li>
+        <li><code>password</code> &mdash; The plain-text password to check</li>
+      </ul>
+      <p><strong>Returns:</strong> <code>true</code> if the password matches, <code>false</code> otherwise.</p>
       <pre><code>isValid <span class="kw">is</span> <span class="kw">await</span> bcryptVerify(storedHash, userPassword)</code></pre>
 
+      <h3>Full signup and login flow</h3>
+      <pre><code><span class="cmt">-- SIGNUP: hash the password and store it</span>
+signup <span class="kw">is</span> <span class="kw">with</span> username, password:
+  hashed <span class="kw">is</span> <span class="kw">await</span> bcryptHash(password, <span class="num">12</span>)
+  <span class="kw">await</span> db.insert(<span class="str">"users"</span>, {
+    username: username,
+    passwordHash: hashed
+  })
+  <span class="kw">say</span> <span class="str">"Account created for "</span> + username
+
+<span class="cmt">-- LOGIN: retrieve the hash and verify</span>
+login <span class="kw">is</span> <span class="kw">with</span> username, password:
+  user <span class="kw">is</span> <span class="kw">await</span> db.findOne(<span class="str">"users"</span>, { username: username })
+  <span class="kw">if</span> user <span class="kw">is</span> nothing:
+    <span class="kw">say</span> <span class="str">"User not found"</span>
+    <span class="kw">respond</span> <span class="kw">false</span>
+
+  isValid <span class="kw">is</span> <span class="kw">await</span> bcryptVerify(user.passwordHash, password)
+  <span class="kw">if</span> isValid:
+    <span class="kw">say</span> <span class="str">"Login successful"</span>
+    <span class="kw">respond</span> <span class="kw">true</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Incorrect password"</span>
+    <span class="kw">respond</span> <span class="kw">false</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>bcrypt vs Argon2 &mdash; which should you use?</strong>
+        <ul>
+          <li><strong>Argon2</strong> (use <code>argon2()</code> / <code>argon2Verify()</code>) is the modern recommendation. It is memory-hard, which makes GPU-based attacks expensive. Use Argon2 for new projects.</li>
+          <li><strong>bcrypt</strong> is battle-tested and widely supported. Use it when you need compatibility with existing systems that already store bcrypt hashes, or when working with libraries/APIs that expect bcrypt format.</li>
+        </ul>
+        Both are far better than plain SHA-256 or MD5 for password storage. Never store passwords with a simple hash function.
+      </div>
+
       <h3><code>hmacBuffer(data, key, algorithm)</code> &mdash; HMAC as Buffer</h3>
-      <p>Like <code>hmac()</code> but returns a raw Buffer instead of a hex string. Useful when chaining crypto operations.</p>
+      <p>Like <code>hmac()</code> but returns a raw Buffer instead of a hex string. Useful when chaining crypto operations that expect binary input.</p>
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>data</code> &mdash; The data to authenticate (string or Buffer)</li>
+        <li><code>key</code> &mdash; The HMAC key (string or Buffer)</li>
+        <li><code>algorithm</code> &mdash; Hash algorithm: <code>"sha256"</code>, <code>"sha384"</code>, or <code>"sha512"</code></li>
+      </ul>
+      <p><strong>Returns:</strong> A Buffer containing the raw HMAC bytes.</p>
       <pre><code>macBuf <span class="kw">is</span> hmacBuffer(<span class="str">"data"</span>, key, <span class="str">"sha256"</span>)</code></pre>
 
       <h3><code>hkdfBuffer(inputKey, salt, info, outputLength)</code> &mdash; HKDF as Buffer</h3>
-      <p>Like <code>hkdf()</code> but returns a raw Buffer instead of a hex string.</p>
+      <p>Like <code>hkdf()</code> but returns a raw Buffer instead of a hex string. Use HKDF to derive one or more strong keys from a shared secret or master key.</p>
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>inputKey</code> &mdash; The input keying material (string or Buffer)</li>
+        <li><code>salt</code> &mdash; A non-secret random value (string or Buffer). Can be empty but should not be.</li>
+        <li><code>info</code> &mdash; Context string that binds the derived key to a specific purpose (e.g., <code>"encryption"</code>, <code>"signing"</code>)</li>
+        <li><code>outputLength</code> &mdash; Desired key length in bytes (e.g., <code>32</code> for AES-256)</li>
+      </ul>
+      <p><strong>Returns:</strong> A Buffer containing the derived key bytes.</p>
       <pre><code>keyBuf <span class="kw">is</span> hkdfBuffer(sharedSecret, salt, <span class="str">"encryption"</span>, <span class="num">32</span>)</code></pre>
 
       <h3><code>randomBytesBuffer(size)</code> &mdash; Random Bytes as Buffer</h3>
       <p>Like <code>randomBytes()</code> but returns a raw Buffer instead of a hex string. Useful for IV generation and key material.</p>
+      <p><strong>Parameters:</strong></p>
+      <ul>
+        <li><code>size</code> &mdash; Number of random bytes to generate</li>
+      </ul>
+      <p><strong>Returns:</strong> A Buffer of cryptographically secure random bytes.</p>
       <pre><code>iv <span class="kw">is</span> randomBytesBuffer(<span class="num">12</span>)   <span class="cmt">-- 12-byte IV for AES-GCM</span></code></pre>
+
+      <h3>Practical example: chaining Buffer variants for encryption</h3>
+      <p>The Buffer variants are designed to chain together. Here is a complete encrypt-then-send flow using <code>randomBytesBuffer</code> for the IV, <code>hkdfBuffer</code> to derive a key, and <code>aesEncrypt</code> to encrypt:</p>
+      <pre><code><span class="cmt">-- 1. Generate a random IV</span>
+iv <span class="kw">is</span> randomBytesBuffer(<span class="num">12</span>)
+
+<span class="cmt">-- 2. Derive an encryption key from a shared secret</span>
+salt <span class="kw">is</span> randomBytesBuffer(<span class="num">16</span>)
+encKey <span class="kw">is</span> hkdfBuffer(sharedSecret, salt, <span class="str">"encryption"</span>, <span class="num">32</span>)
+
+<span class="cmt">-- 3. Encrypt the message</span>
+result <span class="kw">is</span> aesEncrypt(plaintext, encKey, iv, <span class="str">"aes-256-gcm"</span>)
+
+<span class="cmt">-- 4. Compute a MAC over the ciphertext for additional integrity</span>
+macKey <span class="kw">is</span> hkdfBuffer(sharedSecret, salt, <span class="str">"signing"</span>, <span class="num">32</span>)
+mac <span class="kw">is</span> hmacBuffer(result.ciphertext, macKey, <span class="str">"sha256"</span>)
+
+<span class="cmt">-- 5. Send everything the receiver needs</span>
+<span class="kw">say</span> { salt: salt, iv: iv, ciphertext: result.ciphertext, tag: result.tag, mac: mac }</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Buffer vs hex string variants:</strong> Use the Buffer variants (<code>hmacBuffer</code>, <code>hkdfBuffer</code>, <code>randomBytesBuffer</code>) when you are passing the output directly into another crypto function &mdash; this avoids unnecessary hex-encode/decode round trips. Use the hex string variants (<code>hmac</code>, <code>hkdf</code>, <code>randomBytes</code>) when you need a human-readable representation for logging, storing in a database text column, or sending in JSON.
+      </div>
 
       <h3><code>constantTimeEqual(a, b)</code> &mdash; Timing-Safe Comparison</h3>
       <p>Compares two buffers in constant time to prevent timing attacks. Always use this instead of <code>is</code> when comparing secrets, MACs, or hashes.</p>
@@ -1865,7 +2097,19 @@ secureErase(key)   <span class="cmt">-- key is now all zeros</span></code></pre>
 <span class="kw">say</span> <span class="str">"Your code: "</span> + otp</code></pre>
 
       <h3><code>defineSchema(fields)</code> / <code>encode(schema, data)</code> / <code>decode(schema, buffer)</code> &mdash; Binary Serialization</h3>
-      <p>Compact binary serialization using tagged fields, similar to Protocol Buffers. Useful for efficient wire formats in encrypted messaging.</p>
+      <p>Compact binary serialization using tagged fields, similar to Protocol Buffers. Each field has a numeric tag and a type, so encoded messages are small, fast to parse, and forward-compatible.</p>
+
+      <h3>Supported types</h3>
+      <ul>
+        <li><code>uint8</code>, <code>uint16</code>, <code>uint32</code> &mdash; Unsigned integers (1, 2, or 4 bytes)</li>
+        <li><code>int8</code>, <code>int16</code>, <code>int32</code> &mdash; Signed integers (1, 2, or 4 bytes)</li>
+        <li><code>uint64</code> &mdash; Unsigned 64-bit integer (8 bytes, for timestamps and large counters)</li>
+        <li><code>float32</code>, <code>float64</code> &mdash; IEEE 754 floating point numbers</li>
+        <li><code>string</code> &mdash; UTF-8 encoded string (length-prefixed)</li>
+        <li><code>bytes</code> &mdash; Raw binary data as a Buffer (length-prefixed)</li>
+        <li><code>bool</code> &mdash; Boolean value (1 byte)</li>
+      </ul>
+
       <pre><code><span class="cmt">-- Define a message schema</span>
 MessageSchema <span class="kw">is</span> defineSchema({
   sender: { type: <span class="str">"string"</span>, tag: <span class="num">1</span> },
@@ -1879,30 +2123,115 @@ wire <span class="kw">is</span> encode(MessageSchema, { sender: <span class="str
 <span class="cmt">-- Decode from binary</span>
 msg <span class="kw">is</span> decode(MessageSchema, wire)</code></pre>
 
+      <h3>Practical example: encoding a chat message for wire transfer</h3>
+      <pre><code><span class="cmt">-- Define the schema for a chat message</span>
+ChatMessage <span class="kw">is</span> defineSchema({
+  fromUser:   { type: <span class="str">"string"</span>,  tag: <span class="num">1</span> },
+  toUser:     { type: <span class="str">"string"</span>,  tag: <span class="num">2</span> },
+  content:    { type: <span class="str">"string"</span>,  tag: <span class="num">3</span> },
+  sentAt:     { type: <span class="str">"uint64"</span>,  tag: <span class="num">4</span> },
+  isEdited:   { type: <span class="str">"bool"</span>,    tag: <span class="num">5</span> },
+  attachment: { type: <span class="str">"bytes"</span>,   tag: <span class="num">6</span> }
+})
+
+<span class="cmt">-- Encode and send over a WebSocket</span>
+outgoing <span class="kw">is</span> encode(ChatMessage, {
+  fromUser: <span class="str">"alice"</span>,
+  toUser: <span class="str">"bob"</span>,
+  content: <span class="str">"Hey, check out this file!"</span>,
+  sentAt: now(),
+  isEdited: <span class="kw">false</span>,
+  attachment: fileBytes
+})
+ws.send(outgoing)
+
+<span class="cmt">-- On the receiving end, decode the binary back into an object</span>
+ws <span class="kw">on</span> <span class="str">"message"</span> <span class="kw">with</span> data:
+  msg <span class="kw">is</span> decode(ChatMessage, data)
+  <span class="kw">say</span> msg.fromUser + <span class="str">": "</span> + msg.content</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Binary serialization vs JSON:</strong> Use <code>defineSchema</code> / <code>encode</code> / <code>decode</code> when you need compact payloads (binary is typically 2-10x smaller than JSON), when you are sending data over WebSockets or WebRTC data channels, or when you need to embed raw binary (like encrypted ciphertext) without Base64 overhead. Use JSON when readability matters, when debugging network traffic, or when interoperating with APIs that expect JSON.
+      </div>
+
       <h3><code>catch err:</code> &mdash; Error Handling Shorthand</h3>
-      <p>An alternative syntax for <code>if it fails err:</code>. Use <code>catch err:</code> after a <code>try:</code> block to handle errors concisely.</p>
-      <pre><code><span class="kw">try</span>:
+      <p>Quill provides two equivalent syntaxes for catching errors. Use whichever reads better in context.</p>
+
+      <h3>Both syntaxes side by side</h3>
+      <pre><code><span class="cmt">-- Syntax 1: try / if it fails</span>
+<span class="kw">try</span>:
+  data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://api.example.com/data"</span>)
+  <span class="kw">say</span> data
+<span class="kw">if it fails</span> err:
+  <span class="kw">say</span> <span class="str">"Request failed: "</span> + err
+
+<span class="cmt">-- Syntax 2: try / catch (shorthand, same behavior)</span>
+<span class="kw">try</span>:
   data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://api.example.com/data"</span>)
   <span class="kw">say</span> data
 <span class="kw">catch</span> err:
   <span class="kw">say</span> <span class="str">"Request failed: "</span> + err</code></pre>
+
+      <h3>Accessing error properties</h3>
+      <p>The <code>err</code> variable is an object with useful properties you can inspect:</p>
+      <pre><code><span class="kw">try</span>:
+  result <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"https://api.example.com/users"</span>)
+<span class="kw">catch</span> err:
+  <span class="kw">say</span> <span class="str">"Message: "</span> + err.message      <span class="cmt">-- Human-readable error text</span>
+  <span class="kw">say</span> <span class="str">"Name: "</span> + err.name             <span class="cmt">-- Error type (e.g., "TypeError")</span>
+  <span class="kw">say</span> <span class="str">"Stack: "</span> + err.stack           <span class="cmt">-- Full stack trace for debugging</span></code></pre>
+
+      <h3>Nested try/catch</h3>
+      <p>You can nest <code>try</code>/<code>catch</code> blocks to handle errors at different levels:</p>
+      <pre><code><span class="kw">try</span>:
+  user <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://api.example.com/user/1"</span>)
+
+  <span class="kw">try</span>:
+    <span class="kw">await</span> db.insert(<span class="str">"users"</span>, user)
+    <span class="kw">say</span> <span class="str">"Saved to database"</span>
+  <span class="kw">catch</span> dbErr:
+    <span class="kw">say</span> <span class="str">"Database error: "</span> + dbErr.message
+
+<span class="kw">catch</span> networkErr:
+  <span class="kw">say</span> <span class="str">"Network error: "</span> + networkErr.message</code></pre>
 
       <!-- ============================================ -->
       <!-- STATIC SITE GENERATOR                        -->
       <!-- ============================================ -->
 
       <h2 id="static-site">Static Site Generator</h2>
-      <p>Scaffold a static site project with a build pipeline, templating, and hot reload.</p>
+      <p>Scaffold a static site project with a build pipeline, templating, and hot reload. Quill compiles <code>.quill</code> template files into plain HTML, copies your static assets, and produces a <code>dist/</code> folder ready to deploy anywhere.</p>
 
       <h3>Scaffold a Project</h3>
       <pre><code>quill site my-site</code></pre>
-      <p>This creates a new directory with:</p>
-      <ul>
-        <li><code>pages/</code> &mdash; Quill template files (<code>.quill</code>) that compile to HTML</li>
-        <li><code>public/</code> &mdash; Static assets (CSS, images, fonts)</li>
-        <li><code>quill.toml</code> &mdash; Project configuration</li>
-        <li><code>build.quill</code> &mdash; Build script that compiles pages and copies assets</li>
-      </ul>
+      <p>This creates the following directory structure:</p>
+      <pre><code>my-site/
+  pages/
+    index.quill        <span class="cmt">-- Home page template</span>
+    about.quill         <span class="cmt">-- About page template</span>
+    _layout.quill       <span class="cmt">-- Shared layout (header, footer, nav)</span>
+  public/
+    css/
+      style.css         <span class="cmt">-- Your stylesheet</span>
+    images/             <span class="cmt">-- Image assets</span>
+    favicon.ico
+  quill.toml            <span class="cmt">-- Project configuration (site title, base URL)</span>
+  build.quill           <span class="cmt">-- Build script that compiles pages and copies assets</span></code></pre>
+
+      <h3>Example page template</h3>
+      <p>Pages are <code>.quill</code> files that use Quill's template syntax. Variables, loops, and components work inside templates:</p>
+      <pre><code><span class="cmt">-- pages/index.quill</span>
+layout <span class="kw">is</span> <span class="str">"_layout"</span>
+title <span class="kw">is</span> <span class="str">"Home"</span>
+
+content:
+  &lt;h1&gt;Welcome to {{ site.title }}&lt;/h1&gt;
+  &lt;p&gt;This site was built with Quill.&lt;/p&gt;
+
+  &lt;ul&gt;
+  <span class="kw">for each</span> post <span class="kw">in</span> posts:
+    &lt;li&gt;&lt;a href=<span class="str">"{{ post.url }}"</span>&gt;{{ post.title }}&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;</code></pre>
 
       <h3>Build &amp; Serve</h3>
       <pre><code><span class="cmt">-- Build the site to dist/</span>
@@ -1911,8 +2240,26 @@ quill run build.quill
 <span class="cmt">-- Or serve with hot reload during development</span>
 quill serve</code></pre>
 
+      <h3>Build output</h3>
+      <p>After running the build, your <code>dist/</code> folder contains plain HTML and copied assets, ready to deploy:</p>
+      <pre><code>dist/
+  index.html            <span class="cmt">-- Compiled from pages/index.quill</span>
+  about.html            <span class="cmt">-- Compiled from pages/about.quill</span>
+  css/
+    style.css           <span class="cmt">-- Copied from public/css/</span>
+  images/               <span class="cmt">-- Copied from public/images/</span>
+  favicon.ico           <span class="cmt">-- Copied from public/</span></code></pre>
+
+      <h3>Adding CSS and images</h3>
+      <p>Place CSS files in <code>public/css/</code> and images in <code>public/images/</code>. They are copied to <code>dist/</code> during the build. Reference them with root-relative paths in your templates:</p>
+      <pre><code><span class="cmt">-- In your _layout.quill</span>
+&lt;link rel=<span class="str">"stylesheet"</span> href=<span class="str">"/css/style.css"</span>&gt;
+
+<span class="cmt">-- In any page template</span>
+&lt;img src=<span class="str">"/images/logo.png"</span> alt=<span class="str">"Logo"</span>&gt;</code></pre>
+
       <div class="callout callout-info">
-        <strong>Tip:</strong> Use Quill's string interpolation and components to build reusable layouts, headers, and footers across your pages.
+        <strong>Tip:</strong> Use Quill's string interpolation and components to build reusable layouts, headers, and footers across your pages. The <code>_layout.quill</code> file wraps every page automatically &mdash; put your <code>&lt;head&gt;</code>, navigation, and footer there once.
       </div>
 
     </main>

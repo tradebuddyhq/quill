@@ -30,10 +30,10 @@
 
   <div class="container docs-layout">
     <aside class="docs-sidebar">
-      <h4>Getting Started</h4>
+      <h4>Start Here</h4>
       <ul>
         <li><a href="/docs/getting-started">Installation</a></li>
-        <li><a href="/docs/getting-started#first-program">First program</a></li>
+        <li><a href="/docs/learn" style="font-weight: 600; color: #1EB969;">Learn Quill (Tutorial)</a></li>
       </ul>
       <h4>Language</h4>
       <ul>
@@ -49,6 +49,11 @@
         <li><a href="/docs/workers">Cloudflare Workers</a></li>
         <li><a href="/docs/ai">AI with Claude</a></li>
         <li><a href="/docs/expo">Expo / React Native</a></li>
+      </ul>
+      <h4>Level Up</h4>
+      <ul>
+        <li><a href="/docs/patterns">Patterns &amp; Best Practices</a></li>
+        <li><a href="/docs/debugging">Debugging &amp; Common Mistakes</a></li>
       </ul>
       <h4>Reference</h4>
       <ul>
@@ -103,22 +108,60 @@
       </div>
 
       <!-- Learning Path -->
-      <h2>Learning Path</h2>
-      <p>If you are brand new to programming, we recommend reading the documentation in this order:</p>
-      <ol>
-        <li>
-          <strong><a href="/docs/language">Step 1: Language Basics</a></strong>
-          &mdash; Learn how to create variables, write functions, use loops, and make decisions with <code>if</code>/<code>otherwise</code>. This is the foundation for everything else.
-        </li>
-        <li>
-          <strong><a href="/docs/stdlib">Step 2: Standard Library</a></strong>
-          &mdash; Discover the built-in functions that come with Quill: math, text manipulation, lists, file handling, and more. These are your everyday tools.
-        </li>
-        <li>
-          <strong><a href="/docs/tools">Step 3: Developer Tools</a></strong>
-          &mdash; Learn how to run, build, format, test, and check your programs using the Quill command-line tools.
-        </li>
-      </ol>
+      <h2>Your Learning Path</h2>
+      <p>Follow this path from zero to mastery. Each step builds on the last.</p>
+
+      <div style="background: var(--bg-secondary); border-radius: 12px; padding: 24px; margin: 24px 0;">
+        <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px;">
+          <div style="background: #1EB969; color: #fff; font-weight: 700; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">1</div>
+          <div>
+            <strong><a href="/docs/getting-started">Install Quill</a></strong> <span style="color: var(--text-secondary);">(5 minutes)</span>
+            <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Get Quill on your computer and run your first program.</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px;">
+          <div style="background: #1EB969; color: #fff; font-weight: 700; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">2</div>
+          <div>
+            <strong><a href="/docs/learn">Learn Quill Tutorial</a></strong> <span style="color: var(--text-secondary);">(2&ndash;4 hours)</span>
+            <p style="margin: 4px 0 0 0; color: var(--text-secondary);">The main course. 10 chapters that take you from "Hello World" to building web servers, each with a hands-on project.</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px;">
+          <div style="background: #198CD7; color: #fff; font-weight: 700; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">3</div>
+          <div>
+            <strong><a href="/docs/language">Language Reference</a></strong> <span style="color: var(--text-secondary);">(bookmark for later)</span>
+            <p style="margin: 4px 0 0 0; color: var(--text-secondary);">The complete guide to every language feature. Come back here when you need to look something up.</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px;">
+          <div style="background: #198CD7; color: #fff; font-weight: 700; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">4</div>
+          <div>
+            <strong><a href="/docs/patterns">Patterns &amp; Best Practices</a></strong> <span style="color: var(--text-secondary);">(intermediate)</span>
+            <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Write clean, idiomatic, professional Quill code. Error handling, async patterns, security, and performance.</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px;">
+          <div style="background: #198CD7; color: #fff; font-weight: 700; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">5</div>
+          <div>
+            <strong><a href="/docs/debugging">Debugging &amp; Common Mistakes</a></strong> <span style="color: var(--text-secondary);">(essential)</span>
+            <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Learn to read error messages, use the debugger, and avoid the 15 most common pitfalls.</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 16px;">
+          <div style="background: #7C3AED; color: #fff; font-weight: 700; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">6</div>
+          <div>
+            <strong>Build Something Real</strong> <span style="color: var(--text-secondary);">(pick your path)</span>
+            <p style="margin: 4px 0 0 0; color: var(--text-secondary);">
+              <a href="/docs/web">Web Server</a> &middot;
+              <a href="/docs/discord">Discord Bot</a> &middot;
+              <a href="/docs/expo">Mobile App</a> &middot;
+              <a href="/docs/workers">Cloudflare Worker</a> &middot;
+              <a href="/docs/ai">AI App</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <p>Or, if you prefer to jump around, use the cards below to go straight to what interests you.</p>
 
       <!-- Feature Cards Grid -->
@@ -156,6 +199,22 @@
         <a href="/docs/discord" class="feature-card" style="text-decoration: none;">
           <h3>Discord Bots</h3>
           <p>Build Discord bots with readable Quill syntax. Scaffold a project with one command, handle events, and deploy.</p>
+        </a>
+        <a href="/docs/learn" class="feature-card" style="text-decoration: none; border: 2px solid #1EB969;">
+          <h3>Learn Quill (Tutorial)</h3>
+          <p>10 chapters, 10 projects. Go from zero to building web servers, components, and test suites &mdash; step by step.</p>
+        </a>
+        <a href="/docs/patterns" class="feature-card" style="text-decoration: none;">
+          <h3>Patterns &amp; Best Practices</h3>
+          <p>Write clean, professional code. Error handling, async patterns, security, performance, and idiomatic Quill.</p>
+        </a>
+        <a href="/docs/debugging" class="feature-card" style="text-decoration: none;">
+          <h3>Debugging &amp; Common Mistakes</h3>
+          <p>Read error messages, use the debugger, and avoid the 15 most common pitfalls every Quill programmer hits.</p>
+        </a>
+        <a href="/docs/expo" class="feature-card" style="text-decoration: none;">
+          <h3>Expo / React Native</h3>
+          <p>Build mobile apps for iOS and Android using Quill's component syntax with Expo Go.</p>
         </a>
       </div>
 

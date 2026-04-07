@@ -4,6 +4,16 @@ A beginner-friendly language that compiles to JavaScript
 
 [Website](https://quill.tradebuddy.dev) · [Playground](https://quill.tradebuddy.dev/playground) · [Docs](https://quill.tradebuddy.dev/docs/) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=tradebuddyhq.quill-lang)
 
+## Learn Quill
+
+New to Quill? Follow the learning path:
+
+1. **[Install Quill](https://quill.tradebuddy.dev/docs/getting-started)** — 5 minutes to get set up
+2. **[Learn Quill Tutorial](https://quill.tradebuddy.dev/docs/learn)** — 10 chapters, 10 projects, zero to mastery
+3. **[Patterns & Best Practices](https://quill.tradebuddy.dev/docs/patterns)** — write clean, professional code
+4. **[Debugging & Common Mistakes](https://quill.tradebuddy.dev/docs/debugging)** — read errors, use the debugger, avoid pitfalls
+5. **Build something real** — [Web Server](https://quill.tradebuddy.dev/docs/web) · [Discord Bot](https://quill.tradebuddy.dev/docs/discord) · [Mobile App](https://quill.tradebuddy.dev/docs/expo) · [AI App](https://quill.tradebuddy.dev/docs/ai)
+
 ## Community
 
 Join our [Discord](https://discord.gg/9rRyGRrh8E) for help and discussion. Visit [tradebuddy.dev](https://tradebuddy.dev) for more about the project

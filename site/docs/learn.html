@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learn Quill - Step-by-Step Tutorial</title>
+  <meta name="description" content="Go from zero to confident Quill programmer with 10 chapters and 10 hands-on projects. No prior experience required.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Tutorial</h4>
+      <ul>
+        <li><a href="#introduction">Introduction</a></li>
+      </ul>
+      <h4>Chapters</h4>
+      <ul>
+        <li><a href="#chapter-1">1. The Basics</a></li>
+        <li><a href="#chapter-2">2. Making Decisions</a></li>
+        <li><a href="#chapter-3">3. Loops &amp; Lists</a></li>
+        <li><a href="#chapter-4">4. Functions</a></li>
+        <li><a href="#chapter-5">5. Classes &amp; Objects</a></li>
+        <li><a href="#chapter-6">6. Files &amp; Data</a></li>
+        <li><a href="#chapter-7">7. Web Servers</a></li>
+        <li><a href="#chapter-8">8. Testing</a></li>
+        <li><a href="#chapter-9">9. Reactive Components</a></li>
+        <li><a href="#chapter-10">10. Advanced Patterns</a></li>
+      </ul>
+      <h4>Wrap Up</h4>
+      <ul>
+        <li><a href="#whats-next">What's Next</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/language">Language reference</a></li>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+
+      <!-- ============================================================ -->
+      <!-- INTRODUCTION                                                  -->
+      <!-- ============================================================ -->
+
+      <h1 id="introduction">Learn Quill &mdash; The Complete Tutorial</h1>
+      <p>Welcome! This page is your one-stop guide to learning Quill from scratch. By the time you finish, you will have built <strong>10 real projects</strong> and be confident writing Quill programs of any complexity.</p>
+
+      <h3>Why Quill?</h3>
+      <p>Quill is a programming language designed to read like plain English. Instead of cryptic symbols, you write <code>name is "Alice"</code> instead of <code>const name = "Alice";</code>. Under the hood, Quill compiles to JavaScript, so your programs can run anywhere &mdash; servers, browsers, mobile apps, and more.</p>
+
+      <h3>What you'll learn</h3>
+      <ul>
+        <li>Variables, data types, and output</li>
+        <li>Control flow (if/otherwise, pattern matching)</li>
+        <li>Loops, lists, and the pipe operator</li>
+        <li>Functions, lambdas, and error handling</li>
+        <li>Classes, inheritance, and visibility</li>
+        <li>File I/O and JSON</li>
+        <li>Web servers and REST APIs</li>
+        <li>Testing your code</li>
+        <li>Reactive frontend components</li>
+        <li>Async, concurrency, generics, and more</li>
+      </ul>
+
+      <h3>Prerequisites</h3>
+      <p>Just a computer. That is it. No prior programming experience is required. If you can type and follow instructions, you are ready.</p>
+
+      <div class="callout callout-info">
+        <strong>Before you begin:</strong> Make sure Quill is installed. Run <code>quill --version</code> in your terminal. If it is not installed, visit the <a href="/docs/getting-started">Getting Started</a> page for instructions. Alternatively, you can use the <a href="/playground">online playground</a> for every example on this page.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 1: THE BASICS                                         -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-1">Chapter 1: The Basics</h2>
+      <p>Every journey starts with the fundamentals. In this chapter you will learn how to store information, display it on screen, and understand the different kinds of data Quill can work with.</p>
+
+      <h3>Variables with <code>is</code> and <code>are</code></h3>
+      <p>A variable is a named container for a value. In Quill you create one with the word <code>is</code>:</p>
+      <pre><code>name <span class="kw">is</span> <span class="str">"Alice"</span>
+age <span class="kw">is</span> <span class="num">25</span>
+happy <span class="kw">is</span> <span class="bool">yes</span></code></pre>
+
+      <p>When storing a list of things, you can use <code>are</code> for natural readability. It works exactly the same as <code>is</code>:</p>
+      <pre><code>colors <span class="kw">are</span> [<span class="str">"red"</span>, <span class="str">"green"</span>, <span class="str">"blue"</span>]
+scores <span class="kw">are</span> [<span class="num">95</span>, <span class="num">87</span>, <span class="num">100</span>]</code></pre>
+
+      <h3>Printing with <code>say</code></h3>
+      <p>The <code>say</code> keyword prints a value to the screen:</p>
+      <pre><code><span class="kw">say</span> <span class="str">"Hello, World!"</span>
+<span class="kw">say</span> <span class="num">42</span>
+<span class="kw">say</span> name</code></pre>
+
+      <h3>Data types</h3>
+      <p>Quill has six core data types:</p>
+      <pre><code>greeting <span class="kw">is</span> <span class="str">"Hello"</span>            <span class="cmt">-- Text (string)</span>
+temperature <span class="kw">is</span> <span class="num">72.5</span>          <span class="cmt">-- Number (integer or decimal)</span>
+isRaining <span class="kw">is</span> <span class="bool">no</span>              <span class="cmt">-- Boolean (yes or no)</span>
+fruits <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"pear"</span>] <span class="cmt">-- List (ordered collection)</span>
+person <span class="kw">is</span> {name: <span class="str">"Bob"</span>, age: <span class="num">30</span>}  <span class="cmt">-- Object (named values)</span>
+result <span class="kw">is</span> <span class="kw">nothing</span>            <span class="cmt">-- Nothing (no value)</span></code></pre>
+
+      <h3>String interpolation</h3>
+      <p>You can embed variables and expressions inside strings using curly braces:</p>
+      <pre><code>name <span class="kw">is</span> <span class="str">"World"</span>
+<span class="kw">say</span> <span class="str">"Hello, {name}!"</span>           <span class="cmt">-- Hello, World!</span>
+<span class="kw">say</span> <span class="str">"2 + 2 = {2 + 2}"</span>          <span class="cmt">-- 2 + 2 = 4</span></code></pre>
+
+      <h3>Comments with <code>--</code></h3>
+      <p>Comments are notes for humans. Quill ignores them completely:</p>
+      <pre><code><span class="cmt">-- This line is ignored by Quill</span>
+<span class="kw">say</span> <span class="str">"This line runs"</span>  <span class="cmt">-- This part is ignored too</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Good comments explain <em>why</em> you did something, not <em>what</em> the code does. The code itself shows the "what."
+      </div>
+
+      <!-- Chapter 1 Project -->
+      <h3 id="project-1">Mini Project: Greeting Card Generator</h3>
+      <p><strong>What you'll build:</strong> A program that takes a name and age, then prints a beautifully formatted birthday message.</p>
+
+      <pre><code><span class="cmt">-- greeting-card.quill</span>
+<span class="cmt">-- A birthday greeting card generator</span>
+
+name <span class="kw">is</span> <span class="str">"Sarah"</span>
+age <span class="kw">is</span> <span class="num">28</span>
+favorite_color <span class="kw">is</span> <span class="str">"purple"</span>
+
+<span class="cmt">-- Build the card</span>
+border <span class="kw">is</span> <span class="str">"=================================="</span>
+<span class="kw">say</span> border
+<span class="kw">say</span> <span class="str">"    Happy Birthday, {name}!"</span>
+<span class="kw">say</span> border
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"  You are turning {age} today!"</span>
+<span class="kw">say</span> <span class="str">"  That is {age * 365} days of awesome."</span>
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"  Your favorite color is {favorite_color},"</span>
+<span class="kw">say</span> <span class="str">"  so here is a {favorite_color} cake for you!"</span>
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"  Wishing you an incredible year ahead."</span>
+<span class="kw">say</span> border</code></pre>
+
+      <p>Run it with <code>quill run greeting-card.quill</code> and you should see:</p>
+      <pre><code>==================================
+    Happy Birthday, Sarah!
+==================================
+
+  You are turning 28 today!
+  That is 10220 days of awesome.
+
+  Your favorite color is purple,
+  so here is a purple cake for you!
+
+  Wishing you an incredible year ahead.
+==================================</code></pre>
+
+      <p>You just wrote your first real program! It stores data in variables, does math, and formats output beautifully.</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Change the name and age to your own. Add a line that prints how old the person will be in 10 years. Add a second person and print a card for them too.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 2: MAKING DECISIONS                                   -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-2">Chapter 2: Making Decisions</h2>
+      <p>Programs need to make choices. Should we show a welcome message or an error? Is the user old enough? Does the password match? In this chapter you will learn how to write code that makes decisions.</p>
+
+      <h3>if / otherwise</h3>
+      <p>The most basic decision is "if this is true, do that":</p>
+      <pre><code>age <span class="kw">is</span> <span class="num">20</span>
+
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">17</span>:
+  <span class="kw">say</span> <span class="str">"You are an adult"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"You are a minor"</span></code></pre>
+
+      <p>You can chain multiple conditions with <code>otherwise if</code>:</p>
+      <pre><code>temp <span class="kw">is</span> <span class="num">35</span>
+
+<span class="kw">if</span> temp <span class="kw">is greater than</span> <span class="num">30</span>:
+  <span class="kw">say</span> <span class="str">"It's hot outside!"</span>
+<span class="kw">otherwise if</span> temp <span class="kw">is greater than</span> <span class="num">15</span>:
+  <span class="kw">say</span> <span class="str">"Nice weather"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"Bundle up!"</span></code></pre>
+
+      <h3>Comparisons</h3>
+      <p>Quill uses English-like comparisons:</p>
+      <pre><code><span class="cmt">-- Numeric comparisons</span>
+<span class="kw">if</span> score <span class="kw">is greater than</span> <span class="num">90</span>:
+  <span class="kw">say</span> <span class="str">"Excellent!"</span>
+
+<span class="kw">if</span> balance <span class="kw">is less than</span> <span class="num">0</span>:
+  <span class="kw">say</span> <span class="str">"Overdrawn!"</span>
+
+<span class="cmt">-- Equality</span>
+<span class="kw">if</span> color <span class="kw">is</span> <span class="str">"blue"</span>:
+  <span class="kw">say</span> <span class="str">"Great choice"</span>
+
+<span class="cmt">-- Contains (for strings and lists)</span>
+<span class="kw">if</span> email <span class="kw">contains</span> <span class="str">"@"</span>:
+  <span class="kw">say</span> <span class="str">"Looks like a valid email"</span></code></pre>
+
+      <h3>Combining conditions</h3>
+      <p>Use <code>and</code>, <code>or</code>, and <code>not</code> to combine conditions:</p>
+      <pre><code>age <span class="kw">is</span> <span class="num">25</span>
+hasLicense <span class="kw">is</span> <span class="bool">yes</span>
+
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">17</span> <span class="kw">and</span> hasLicense:
+  <span class="kw">say</span> <span class="str">"You can drive"</span>
+
+<span class="kw">if</span> <span class="kw">not</span> hasLicense:
+  <span class="kw">say</span> <span class="str">"You need a license first"</span>
+
+<span class="kw">if</span> day <span class="kw">is</span> <span class="str">"Saturday"</span> <span class="kw">or</span> day <span class="kw">is</span> <span class="str">"Sunday"</span>:
+  <span class="kw">say</span> <span class="str">"It's the weekend!"</span></code></pre>
+
+      <h3>Pattern matching with <code>match</code></h3>
+      <p>When you have many possible values to check, <code>match</code> is cleaner than a chain of if/otherwise:</p>
+      <pre><code>day <span class="kw">is</span> <span class="str">"Wednesday"</span>
+
+<span class="kw">match</span> day:
+  <span class="kw">when</span> <span class="str">"Monday"</span>:
+    <span class="kw">say</span> <span class="str">"Start of the work week"</span>
+  <span class="kw">when</span> <span class="str">"Friday"</span>:
+    <span class="kw">say</span> <span class="str">"TGIF!"</span>
+  <span class="kw">when</span> <span class="str">"Saturday"</span>:
+    <span class="kw">say</span> <span class="str">"Weekend vibes"</span>
+  <span class="kw">when</span> <span class="str">"Sunday"</span>:
+    <span class="kw">say</span> <span class="str">"Rest day"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Just another day"</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Use <code>match</code> when you are comparing one value against several possibilities. Use <code>if</code>/<code>otherwise</code> when you need complex conditions with <code>and</code>/<code>or</code>.
+      </div>
+
+      <!-- Chapter 2 Project -->
+      <h3 id="project-2">Mini Project: Grade Calculator</h3>
+      <p><strong>What you'll build:</strong> A program that takes a numeric score (0-100) and outputs a letter grade with a custom message, using pattern matching.</p>
+
+      <pre><code><span class="cmt">-- grade-calculator.quill</span>
+<span class="cmt">-- Converts a numeric score to a letter grade with feedback</span>
+
+score <span class="kw">is</span> <span class="num">87</span>
+studentName <span class="kw">is</span> <span class="str">"Jordan"</span>
+
+<span class="kw">say</span> <span class="str">"Grade Report for {studentName}"</span>
+<span class="kw">say</span> <span class="str">"Score: {score}/100"</span>
+<span class="kw">say</span> <span class="str">"---"</span>
+
+<span class="cmt">-- Determine the letter grade</span>
+grade <span class="kw">is</span> <span class="str">"F"</span>
+message <span class="kw">is</span> <span class="str">""</span>
+
+<span class="kw">if</span> score <span class="kw">is greater than</span> <span class="num">96</span>:
+  grade <span class="kw">is</span> <span class="str">"A+"</span>
+  message <span class="kw">is</span> <span class="str">"Outstanding! You are at the top of the class."</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">92</span>:
+  grade <span class="kw">is</span> <span class="str">"A"</span>
+  message <span class="kw">is</span> <span class="str">"Excellent work! Keep it up."</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">89</span>:
+  grade <span class="kw">is</span> <span class="str">"A-"</span>
+  message <span class="kw">is</span> <span class="str">"Great job! Almost perfect."</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">86</span>:
+  grade <span class="kw">is</span> <span class="str">"B+"</span>
+  message <span class="kw">is</span> <span class="str">"Very good! Just a bit more effort."</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">82</span>:
+  grade <span class="kw">is</span> <span class="str">"B"</span>
+  message <span class="kw">is</span> <span class="str">"Good work! Solid understanding."</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">79</span>:
+  grade <span class="kw">is</span> <span class="str">"B-"</span>
+  message <span class="kw">is</span> <span class="str">"Above average. Keep pushing!"</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">76</span>:
+  grade <span class="kw">is</span> <span class="str">"C+"</span>
+  message <span class="kw">is</span> <span class="str">"Not bad! Room for improvement."</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">72</span>:
+  grade <span class="kw">is</span> <span class="str">"C"</span>
+  message <span class="kw">is</span> <span class="str">"Average. You can do better!"</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">69</span>:
+  grade <span class="kw">is</span> <span class="str">"C-"</span>
+  message <span class="kw">is</span> <span class="str">"Below average. Let's study more."</span>
+<span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">59</span>:
+  grade <span class="kw">is</span> <span class="str">"D"</span>
+  message <span class="kw">is</span> <span class="str">"Barely passing. Time to focus."</span>
+<span class="kw">otherwise</span>:
+  grade <span class="kw">is</span> <span class="str">"F"</span>
+  message <span class="kw">is</span> <span class="str">"Did not pass. Don't give up!"</span>
+
+<span class="kw">say</span> <span class="str">"Letter Grade: {grade}"</span>
+<span class="kw">say</span> <span class="str">"Feedback: {message}"</span>
+
+<span class="cmt">-- Bonus: pass/fail summary using match</span>
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">match</span> grade:
+  <span class="kw">when</span> <span class="str">"A+"</span>:
+    <span class="kw">say</span> <span class="str">"*** HONOR ROLL ***"</span>
+  <span class="kw">when</span> <span class="str">"A"</span>:
+    <span class="kw">say</span> <span class="str">"*** HONOR ROLL ***"</span>
+  <span class="kw">when</span> <span class="str">"F"</span>:
+    <span class="kw">say</span> <span class="str">"*** SEE INSTRUCTOR ***"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Status: Passing"</span></code></pre>
+
+      <p>Run it: <code>quill run grade-calculator.quill</code></p>
+      <pre><code>Grade Report for Jordan
+Score: 87/100
+---
+Letter Grade: B+
+Feedback: Very good! Just a bit more effort.
+
+Status: Passing</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Change the score to different values and watch the output change. Add a <code>"D+"</code> and <code>"D-"</code> range. Add a second student and print both reports.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 3: LOOPS & LISTS                                      -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-3">Chapter 3: Loops &amp; Lists</h2>
+      <p>So far, every line of our code runs exactly once. But what if you need to do something 100 times? Or process every item in a list? That is where loops come in. This chapter also covers powerful list operations that let you transform data with minimal code.</p>
+
+      <h3><code>for each</code> loops</h3>
+      <p>The most common loop in Quill iterates over a list:</p>
+      <pre><code>fruits <span class="kw">are</span> [<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"cherry"</span>]
+
+<span class="kw">for each</span> fruit <span class="kw">in</span> fruits:
+  <span class="kw">say</span> <span class="str">"I like {fruit}"</span></code></pre>
+      <p>Output:</p>
+      <pre><code>I like apple
+I like banana
+I like cherry</code></pre>
+
+      <h3><code>while</code> loops</h3>
+      <p>A <code>while</code> loop keeps running as long as a condition is true:</p>
+      <pre><code>count <span class="kw">is</span> <span class="num">1</span>
+
+<span class="kw">while</span> count <span class="kw">is less than</span> <span class="num">6</span>:
+  <span class="kw">say</span> <span class="str">"Count: {count}"</span>
+  count <span class="kw">is</span> count + <span class="num">1</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Be careful with <code>while</code> loops. If the condition never becomes false, your program will run forever! Always make sure something inside the loop changes the condition.
+      </div>
+
+      <h3><code>range()</code></h3>
+      <p>Need to loop a specific number of times? Use <code>range()</code>:</p>
+      <pre><code><span class="kw">for each</span> i <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">5</span>):
+  <span class="kw">say</span> <span class="str">"Step {i}"</span></code></pre>
+      <pre><code>Step 1
+Step 2
+Step 3
+Step 4
+Step 5</code></pre>
+
+      <h3>List operations</h3>
+      <p>Quill has powerful built-in list operations:</p>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">5</span>, <span class="num">9</span>]
+
+<span class="cmt">-- Add an item</span>
+push(numbers, <span class="num">2</span>)
+
+<span class="cmt">-- Filter: keep only items that match a condition</span>
+big <span class="kw">is</span> filter(numbers, <span class="kw">with</span> n: n <span class="kw">is greater than</span> <span class="num">3</span>)
+<span class="kw">say</span> big  <span class="cmt">-- [4, 5, 9]</span>
+
+<span class="cmt">-- Map: transform every item</span>
+doubled <span class="kw">is</span> map_list(numbers, <span class="kw">with</span> n: n * <span class="num">2</span>)
+<span class="kw">say</span> doubled  <span class="cmt">-- [6, 2, 8, 2, 10, 18, 4]</span>
+
+<span class="cmt">-- Sort</span>
+sorted <span class="kw">is</span> sort(numbers)
+<span class="kw">say</span> sorted  <span class="cmt">-- [1, 1, 2, 3, 4, 5, 9]</span>
+
+<span class="cmt">-- Find: get the first item matching a condition</span>
+found <span class="kw">is</span> find(numbers, <span class="kw">with</span> n: n <span class="kw">is greater than</span> <span class="num">4</span>)
+<span class="kw">say</span> found  <span class="cmt">-- 5</span>
+
+<span class="cmt">-- Reduce: combine all items into one value</span>
+total <span class="kw">is</span> reduce(numbers, <span class="num">0</span>, <span class="kw">with</span> sum, n: sum + n)
+<span class="kw">say</span> total  <span class="cmt">-- 25</span></code></pre>
+
+      <h3>The pipe operator</h3>
+      <p>The pipe operator <code>|</code> lets you chain operations together, passing the result of one into the next. It reads left-to-right, like an assembly line:</p>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">3</span>, <span class="num">1</span>, <span class="num">4</span>, <span class="num">1</span>, <span class="num">5</span>, <span class="num">9</span>, <span class="num">2</span>, <span class="num">6</span>]
+
+result <span class="kw">is</span> numbers | filter(<span class="kw">with</span> n: n <span class="kw">is greater than</span> <span class="num">3</span>) | sort()
+<span class="kw">say</span> result  <span class="cmt">-- [4, 5, 6, 9]</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>How pipes work:</strong> The value on the left of <code>|</code> gets passed as the first argument to the function on the right. So <code>numbers | filter(...)</code> is the same as <code>filter(numbers, ...)</code>. This becomes incredibly powerful once you chain multiple operations.
+      </div>
+
+      <!-- Chapter 3 Project -->
+      <h3 id="project-3">Mini Project: To-Do List Manager</h3>
+      <p><strong>What you'll build:</strong> A to-do list program that can add tasks, remove tasks, list all tasks, filter by status, and count completed items.</p>
+
+      <pre><code><span class="cmt">-- todo.quill</span>
+<span class="cmt">-- A simple to-do list manager</span>
+
+todos <span class="kw">are</span> []
+
+<span class="cmt">-- Helper: add a new task</span>
+<span class="kw">to</span> addTask name:
+  push(todos, {name: name, done: <span class="bool">no</span>})
+  <span class="kw">say</span> <span class="str">"Added: {name}"</span>
+
+<span class="cmt">-- Helper: mark a task as done</span>
+<span class="kw">to</span> completeTask name:
+  <span class="kw">for each</span> todo <span class="kw">in</span> todos:
+    <span class="kw">if</span> todo.name <span class="kw">is</span> name:
+      todo.done <span class="kw">is</span> <span class="bool">yes</span>
+      <span class="kw">say</span> <span class="str">"Completed: {name}"</span>
+
+<span class="cmt">-- Helper: remove a task</span>
+<span class="kw">to</span> removeTask name:
+  todos <span class="kw">is</span> filter(todos, <span class="kw">with</span> t: t.name <span class="kw">is not</span> name)
+  <span class="kw">say</span> <span class="str">"Removed: {name}"</span>
+
+<span class="cmt">-- Helper: show all tasks</span>
+<span class="kw">to</span> showAll:
+  <span class="kw">say</span> <span class="str">""</span>
+  <span class="kw">say</span> <span class="str">"=== TO-DO LIST ==="</span>
+  <span class="kw">if</span> length(todos) <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">say</span> <span class="str">"  (empty)"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">for each</span> todo <span class="kw">in</span> todos:
+      status <span class="kw">is</span> <span class="str">"[ ]"</span>
+      <span class="kw">if</span> todo.done:
+        status <span class="kw">is</span> <span class="str">"[x]"</span>
+      <span class="kw">say</span> <span class="str">"  {status} {todo.name}"</span>
+
+<span class="cmt">-- Helper: show stats</span>
+<span class="kw">to</span> showStats:
+  total <span class="kw">is</span> length(todos)
+  completed <span class="kw">is</span> todos | filter(<span class="kw">with</span> t: t.done) | length()
+  pending <span class="kw">is</span> total - completed
+  <span class="kw">say</span> <span class="str">""</span>
+  <span class="kw">say</span> <span class="str">"Stats: {completed}/{total} completed, {pending} remaining"</span>
+
+<span class="cmt">-- Let's use it!</span>
+addTask(<span class="str">"Buy groceries"</span>)
+addTask(<span class="str">"Walk the dog"</span>)
+addTask(<span class="str">"Write Quill tutorial"</span>)
+addTask(<span class="str">"Clean the house"</span>)
+addTask(<span class="str">"Read a book"</span>)
+
+showAll()
+
+<span class="cmt">-- Complete some tasks</span>
+completeTask(<span class="str">"Buy groceries"</span>)
+completeTask(<span class="str">"Write Quill tutorial"</span>)
+
+<span class="cmt">-- Remove one</span>
+removeTask(<span class="str">"Clean the house"</span>)
+
+showAll()
+showStats()
+
+<span class="cmt">-- Filter: show only pending tasks</span>
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"=== PENDING ==="</span>
+pending <span class="kw">is</span> filter(todos, <span class="kw">with</span> t: <span class="kw">not</span> t.done)
+<span class="kw">for each</span> task <span class="kw">in</span> pending:
+  <span class="kw">say</span> <span class="str">"  - {task.name}"</span></code></pre>
+
+      <p>Run it: <code>quill run todo.quill</code></p>
+      <pre><code>Added: Buy groceries
+Added: Walk the dog
+Added: Write Quill tutorial
+Added: Clean the house
+Added: Read a book
+
+=== TO-DO LIST ===
+  [ ] Buy groceries
+  [ ] Walk the dog
+  [ ] Write Quill tutorial
+  [ ] Clean the house
+  [ ] Read a book
+Completed: Buy groceries
+Completed: Write Quill tutorial
+Removed: Clean the house
+
+=== TO-DO LIST ===
+  [x] Buy groceries
+  [ ] Walk the dog
+  [x] Write Quill tutorial
+  [ ] Read a book
+
+Stats: 2/4 completed, 2 remaining
+
+=== PENDING ===
+  - Walk the dog
+  - Read a book</code></pre>
+
+      <p>Look at that! You just built a functional task manager using lists, loops, objects, filtering, and pipes.</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Add a <code>showCompleted</code> function that only shows done tasks. Add a priority field (high/medium/low) to each task and sort by priority. Add a <code>clearCompleted</code> function that removes all done tasks at once.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 4: FUNCTIONS & ORGANIZATION                           -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-4">Chapter 4: Functions &amp; Organization</h2>
+      <p>Functions let you wrap up a block of code, give it a name, and reuse it. They are the building blocks of well-organized programs. In this chapter you will learn how to define functions, return values, use type annotations, write lambdas, handle errors, and import code from other files.</p>
+
+      <h3>Defining functions with <code>to</code></h3>
+      <p>In Quill, you define a function using the <code>to</code> keyword. Think of it as giving instructions: "to greet someone, do this..."</p>
+      <pre><code><span class="kw">to</span> greet name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+
+greet(<span class="str">"Alice"</span>)   <span class="cmt">-- Hello, Alice!</span>
+greet(<span class="str">"Bob"</span>)     <span class="cmt">-- Hello, Bob!</span></code></pre>
+
+      <h3>Returning values with <code>give back</code></h3>
+      <p>Functions can compute a result and give it back to the caller:</p>
+      <pre><code><span class="kw">to</span> double n:
+  <span class="kw">give back</span> n * <span class="num">2</span>
+
+result <span class="kw">is</span> double(<span class="num">5</span>)
+<span class="kw">say</span> result  <span class="cmt">-- 10</span></code></pre>
+
+      <h3>Type annotations</h3>
+      <p>You can add type annotations to make your functions self-documenting and catch errors early:</p>
+      <pre><code><span class="kw">to</span> add a <span class="kw">as</span> number, b <span class="kw">as</span> number -> number:
+  <span class="kw">give back</span> a + b
+
+<span class="kw">to</span> greet name <span class="kw">as</span> string -> string:
+  <span class="kw">give back</span> <span class="str">"Hello, {name}!"</span></code></pre>
+
+      <p>The <code>as</code> keyword declares the type of each parameter, and <code>-></code> declares the return type.</p>
+
+      <h3>Lambdas (anonymous functions)</h3>
+      <p>Sometimes you need a small throwaway function. Lambdas let you write one inline:</p>
+      <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+
+<span class="cmt">-- Lambda with "with" keyword</span>
+doubled <span class="kw">is</span> map_list(numbers, <span class="kw">with</span> x: x * <span class="num">2</span>)
+<span class="kw">say</span> doubled  <span class="cmt">-- [2, 4, 6, 8, 10]</span>
+
+<span class="cmt">-- Lambdas are great with filter</span>
+evens <span class="kw">is</span> filter(numbers, <span class="kw">with</span> x: x % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>)
+<span class="kw">say</span> evens  <span class="cmt">-- [2, 4]</span></code></pre>
+
+      <h3>Error handling with <code>try</code> / <code>catch</code></h3>
+      <p>Things go wrong sometimes. Error handling lets your program recover gracefully instead of crashing:</p>
+      <pre><code><span class="kw">try</span>:
+  result <span class="kw">is</span> riskyOperation()
+  <span class="kw">say</span> <span class="str">"It worked: {result}"</span>
+<span class="kw">catch</span> err:
+  <span class="kw">say</span> <span class="str">"Something went wrong: {err}"</span></code></pre>
+
+      <p>You can also use the alternative syntax <code>if it fails</code>:</p>
+      <pre><code><span class="kw">try</span>:
+  data <span class="kw">is</span> readFile(<span class="str">"config.json"</span>)
+<span class="kw">if it fails</span> err:
+  <span class="kw">say</span> <span class="str">"Could not read config: {err}"</span>
+  data <span class="kw">is</span> <span class="str">"{}"</span>  <span class="cmt">-- use empty default</span></code></pre>
+
+      <h3>Imports with <code>use</code></h3>
+      <p>As your programs grow, split them into multiple files:</p>
+      <pre><code><span class="cmt">-- math-helpers.quill</span>
+<span class="kw">to</span> square n:
+  <span class="kw">give back</span> n * n
+
+<span class="kw">to</span> cube n:
+  <span class="kw">give back</span> n * n * n</code></pre>
+      <pre><code><span class="cmt">-- main.quill</span>
+<span class="kw">use</span> <span class="str">"math-helpers.quill"</span>
+
+<span class="kw">say</span> square(<span class="num">5</span>)   <span class="cmt">-- 25</span>
+<span class="kw">say</span> cube(<span class="num">3</span>)     <span class="cmt">-- 27</span></code></pre>
+
+      <!-- Chapter 4 Project -->
+      <h3 id="project-4">Mini Project: Password Strength Checker</h3>
+      <p><strong>What you'll build:</strong> A program with multiple functions that analyze a password's strength, checking length, special characters, common passwords, and producing a final score.</p>
+
+      <pre><code><span class="cmt">-- password-checker.quill</span>
+<span class="cmt">-- A comprehensive password strength checker</span>
+
+<span class="cmt">-- List of common (bad) passwords</span>
+commonPasswords <span class="kw">are</span> [
+  <span class="str">"password"</span>, <span class="str">"123456"</span>, <span class="str">"qwerty"</span>, <span class="str">"abc123"</span>,
+  <span class="str">"password1"</span>, <span class="str">"letmein"</span>, <span class="str">"welcome"</span>, <span class="str">"admin"</span>
+]
+
+<span class="cmt">-- Check 1: Is it long enough?</span>
+<span class="kw">to</span> checkLength pw <span class="kw">as</span> string -> number:
+  len <span class="kw">is</span> length(pw)
+  <span class="kw">if</span> len <span class="kw">is greater than</span> <span class="num">15</span>:
+    <span class="kw">give back</span> <span class="num">3</span>
+  <span class="kw">otherwise if</span> len <span class="kw">is greater than</span> <span class="num">11</span>:
+    <span class="kw">give back</span> <span class="num">2</span>
+  <span class="kw">otherwise if</span> len <span class="kw">is greater than</span> <span class="num">7</span>:
+    <span class="kw">give back</span> <span class="num">1</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">give back</span> <span class="num">0</span>
+
+<span class="cmt">-- Check 2: Does it have special characters?</span>
+<span class="kw">to</span> checkSpecialChars pw <span class="kw">as</span> string -> number:
+  specials <span class="kw">are</span> [<span class="str">"!"</span>, <span class="str">"@"</span>, <span class="str">"#"</span>, <span class="str">"$"</span>, <span class="str">"%"</span>, <span class="str">"&"</span>, <span class="str">"*"</span>, <span class="str">"?"</span>]
+  score <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">for each</span> char <span class="kw">in</span> specials:
+    <span class="kw">if</span> pw <span class="kw">contains</span> char:
+      score <span class="kw">is</span> score + <span class="num">1</span>
+  <span class="kw">if</span> score <span class="kw">is greater than</span> <span class="num">2</span>:
+    <span class="kw">give back</span> <span class="num">3</span>
+  <span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">0</span>:
+    <span class="kw">give back</span> <span class="num">1</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">give back</span> <span class="num">0</span>
+
+<span class="cmt">-- Check 3: Is it a common password?</span>
+<span class="kw">to</span> checkCommon pw <span class="kw">as</span> string -> number:
+  lower <span class="kw">is</span> lowercase(pw)
+  found <span class="kw">is</span> find(commonPasswords, <span class="kw">with</span> p: p <span class="kw">is</span> lower)
+  <span class="kw">if</span> found <span class="kw">is not</span> <span class="kw">nothing</span>:
+    <span class="kw">give back</span> <span class="num">-5</span>    <span class="cmt">-- big penalty!</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">give back</span> <span class="num">2</span>
+
+<span class="cmt">-- Check 4: Does it have mixed case?</span>
+<span class="kw">to</span> checkMixedCase pw <span class="kw">as</span> string -> number:
+  hasUpper <span class="kw">is</span> pw <span class="kw">is not</span> lowercase(pw)
+  hasLower <span class="kw">is</span> pw <span class="kw">is not</span> uppercase(pw)
+  <span class="kw">if</span> hasUpper <span class="kw">and</span> hasLower:
+    <span class="kw">give back</span> <span class="num">2</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">give back</span> <span class="num">0</span>
+
+<span class="cmt">-- Main scoring function</span>
+<span class="kw">to</span> checkPassword pw <span class="kw">as</span> string:
+  <span class="kw">say</span> <span class="str">"Checking password: {pw}"</span>
+  <span class="kw">say</span> <span class="str">"---"</span>
+
+  lengthScore <span class="kw">is</span> checkLength(pw)
+  specialScore <span class="kw">is</span> checkSpecialChars(pw)
+  commonScore <span class="kw">is</span> checkCommon(pw)
+  caseScore <span class="kw">is</span> checkMixedCase(pw)
+
+  total <span class="kw">is</span> lengthScore + specialScore + commonScore + caseScore
+
+  <span class="kw">say</span> <span class="str">"  Length:      {lengthScore}/3"</span>
+  <span class="kw">say</span> <span class="str">"  Special:     {specialScore}/3"</span>
+  <span class="kw">say</span> <span class="str">"  Not common:  {commonScore}/2"</span>
+  <span class="kw">say</span> <span class="str">"  Mixed case:  {caseScore}/2"</span>
+  <span class="kw">say</span> <span class="str">"  -----"</span>
+  <span class="kw">say</span> <span class="str">"  Total:       {total}/10"</span>
+  <span class="kw">say</span> <span class="str">""</span>
+
+  <span class="kw">if</span> total <span class="kw">is greater than</span> <span class="num">7</span>:
+    <span class="kw">say</span> <span class="str">"  STRONG password!"</span>
+  <span class="kw">otherwise if</span> total <span class="kw">is greater than</span> <span class="num">4</span>:
+    <span class="kw">say</span> <span class="str">"  FAIR password. Could be better."</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"  WEAK password. Please choose a stronger one."</span>
+
+  <span class="kw">say</span> <span class="str">""</span>
+
+<span class="cmt">-- Test with different passwords</span>
+checkPassword(<span class="str">"password"</span>)
+checkPassword(<span class="str">"Hello123"</span>)
+checkPassword(<span class="str">"My$ecure#Pass!word99"</span>)</code></pre>
+
+      <p>Run it: <code>quill run password-checker.quill</code></p>
+      <pre><code>Checking password: password
+---
+  Length:      1/3
+  Special:     0/3
+  Not common:  -5/2
+  Mixed case:  0/2
+  -----
+  Total:       -4/10
+
+  WEAK password. Please choose a stronger one.
+
+Checking password: Hello123
+---
+  Length:      1/3
+  Special:     0/3
+  Not common:  2/2
+  Mixed case:  2/2
+  -----
+  Total:       5/10
+
+  FAIR password. Could be better.
+
+Checking password: My$ecure#Pass!word99
+---
+  Length:      3/3
+  Special:     3/3
+  Not common:  2/2
+  Mixed case:  2/2
+  -----
+  Total:       10/10
+
+  STRONG password!</code></pre>
+
+      <p>This is a serious program! Multiple functions, each with a clear responsibility, type annotations, and a scoring system that brings it all together.</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Add a <code>checkNumbers</code> function that gives points for having digits. Add a <code>checkRepeating</code> function that penalizes passwords like "aaaa". Make the output use emoji or ASCII art for the strength rating.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 5: CLASSES & OBJECTS                                  -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-5">Chapter 5: Classes &amp; Objects</h2>
+      <p>So far, you have used objects as simple containers: <code>{name: "Alice", age: 25}</code>. Classes take this further by letting you define blueprints for objects &mdash; complete with their own functions (called methods) and rules. This is called Object-Oriented Programming (OOP).</p>
+
+      <h3>Defining a class with <code>describe</code></h3>
+      <p>In Quill, you create a class with the <code>describe</code> keyword:</p>
+      <pre><code><span class="kw">describe</span> Animal:
+  <span class="kw">to</span> create name, sound:
+    <span class="kw">my</span> name <span class="kw">is</span> name
+    <span class="kw">my</span> sound <span class="kw">is</span> sound
+
+  <span class="kw">to</span> speak:
+    <span class="kw">say</span> <span class="str">"{my name} says {my sound}!"</span>
+
+dog <span class="kw">is</span> Animal(<span class="str">"Rex"</span>, <span class="str">"Woof"</span>)
+dog.speak()  <span class="cmt">-- Rex says Woof!</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Key concepts:</strong> The <code>create</code> method is the constructor &mdash; it runs when you create a new instance. The <code>my</code> keyword refers to the current instance's properties, like "my name" and "my sound."
+      </div>
+
+      <h3>Inheritance with <code>extends</code></h3>
+      <p>A class can inherit from another, getting all its properties and methods:</p>
+      <pre><code><span class="kw">describe</span> Dog <span class="kw">extends</span> Animal:
+  <span class="kw">to</span> create name:
+    <span class="kw">my</span> name <span class="kw">is</span> name
+    <span class="kw">my</span> sound <span class="kw">is</span> <span class="str">"Woof"</span>
+
+  <span class="kw">to</span> fetch item:
+    <span class="kw">say</span> <span class="str">"{my name} fetches the {item}!"</span>
+
+rex <span class="kw">is</span> Dog(<span class="str">"Rex"</span>)
+rex.speak()             <span class="cmt">-- Rex says Woof! (inherited)</span>
+rex.fetch(<span class="str">"ball"</span>)       <span class="cmt">-- Rex fetches the ball!</span></code></pre>
+
+      <h3>Private and public visibility</h3>
+      <p>By default, all properties and methods are public. Use <code>private</code> to hide them:</p>
+      <pre><code><span class="kw">describe</span> SecretBox:
+  <span class="kw">to</span> create:
+    <span class="kw">private</span> <span class="kw">my</span> secret <span class="kw">is</span> <span class="str">"hidden treasure"</span>
+
+  <span class="kw">to</span> hint:
+    <span class="kw">say</span> <span class="str">"The secret has {length(my secret)} characters"</span>
+
+box <span class="kw">is</span> SecretBox()
+box.hint()          <span class="cmt">-- The secret has 15 characters</span>
+<span class="cmt">-- box.secret would cause an error (it's private)</span></code></pre>
+
+      <!-- Chapter 5 Project -->
+      <h3 id="project-5">Mini Project: Bank Account System</h3>
+      <p><strong>What you'll build:</strong> An Account class with deposit, withdraw, transfer, and transaction history. This uses everything you have learned about classes.</p>
+
+      <pre><code><span class="cmt">-- bank.quill</span>
+<span class="cmt">-- A simple bank account system</span>
+
+<span class="kw">describe</span> Account:
+  <span class="kw">to</span> create owner <span class="kw">as</span> string, initialBalance <span class="kw">as</span> number:
+    <span class="kw">my</span> owner <span class="kw">is</span> owner
+    <span class="kw">private</span> <span class="kw">my</span> balance <span class="kw">is</span> initialBalance
+    <span class="kw">private</span> <span class="kw">my</span> history <span class="kw">are</span> []
+    push(<span class="kw">my</span> history, {type: <span class="str">"open"</span>, amount: initialBalance, note: <span class="str">"Account opened"</span>})
+
+  <span class="kw">to</span> getBalance -> number:
+    <span class="kw">give back</span> <span class="kw">my</span> balance
+
+  <span class="kw">to</span> deposit amount <span class="kw">as</span> number:
+    <span class="kw">if</span> amount <span class="kw">is less than</span> <span class="num">0</span>:
+      <span class="kw">say</span> <span class="str">"  Error: Cannot deposit a negative amount."</span>
+      <span class="kw">give back</span> <span class="bool">no</span>
+    <span class="kw">my</span> balance <span class="kw">is</span> <span class="kw">my</span> balance + amount
+    push(<span class="kw">my</span> history, {type: <span class="str">"deposit"</span>, amount: amount, note: <span class="str">"Deposit"</span>})
+    <span class="kw">say</span> <span class="str">"  Deposited ${amount}. New balance: ${my balance}"</span>
+    <span class="kw">give back</span> <span class="bool">yes</span>
+
+  <span class="kw">to</span> withdraw amount <span class="kw">as</span> number:
+    <span class="kw">if</span> amount <span class="kw">is greater than</span> <span class="kw">my</span> balance:
+      <span class="kw">say</span> <span class="str">"  Error: Insufficient funds. Balance: ${my balance}"</span>
+      <span class="kw">give back</span> <span class="bool">no</span>
+    <span class="kw">if</span> amount <span class="kw">is less than</span> <span class="num">0</span>:
+      <span class="kw">say</span> <span class="str">"  Error: Cannot withdraw a negative amount."</span>
+      <span class="kw">give back</span> <span class="bool">no</span>
+    <span class="kw">my</span> balance <span class="kw">is</span> <span class="kw">my</span> balance - amount
+    push(<span class="kw">my</span> history, {type: <span class="str">"withdraw"</span>, amount: amount, note: <span class="str">"Withdrawal"</span>})
+    <span class="kw">say</span> <span class="str">"  Withdrew ${amount}. New balance: ${my balance}"</span>
+    <span class="kw">give back</span> <span class="bool">yes</span>
+
+  <span class="kw">to</span> transfer amount <span class="kw">as</span> number, recipient:
+    <span class="kw">say</span> <span class="str">"  Transferring ${amount} from {my owner} to {recipient.owner}..."</span>
+    success <span class="kw">is</span> <span class="kw">my</span> withdraw(amount)
+    <span class="kw">if</span> success:
+      recipient.deposit(amount)
+      push(<span class="kw">my</span> history, {type: <span class="str">"transfer"</span>, amount: amount, note: <span class="str">"Transfer to {recipient.owner}"</span>})
+
+  <span class="kw">to</span> printStatement:
+    <span class="kw">say</span> <span class="str">""</span>
+    <span class="kw">say</span> <span class="str">"=== Statement for {my owner} ==="</span>
+    <span class="kw">for each</span> entry <span class="kw">in</span> <span class="kw">my</span> history:
+      <span class="kw">say</span> <span class="str">"  [{entry.type}] {entry.note}: ${entry.amount}"</span>
+    <span class="kw">say</span> <span class="str">"  Current balance: ${my balance}"</span>
+    <span class="kw">say</span> <span class="str">"================================="</span>
+
+<span class="cmt">-- Create two accounts</span>
+<span class="kw">say</span> <span class="str">"--- Creating accounts ---"</span>
+alice <span class="kw">is</span> Account(<span class="str">"Alice"</span>, <span class="num">1000</span>)
+bob <span class="kw">is</span> Account(<span class="str">"Bob"</span>, <span class="num">500</span>)
+
+<span class="cmt">-- Do some transactions</span>
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"--- Transactions ---"</span>
+alice.deposit(<span class="num">250</span>)
+bob.deposit(<span class="num">100</span>)
+alice.withdraw(<span class="num">75</span>)
+alice.transfer(<span class="num">300</span>, bob)
+
+<span class="cmt">-- Try to overdraw</span>
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"--- Trying to overdraw ---"</span>
+bob.withdraw(<span class="num">5000</span>)
+
+<span class="cmt">-- Print statements</span>
+alice.printStatement()
+bob.printStatement()</code></pre>
+
+      <p>Run it: <code>quill run bank.quill</code></p>
+      <pre><code>--- Creating accounts ---
+
+--- Transactions ---
+  Deposited $250. New balance: $1250
+  Deposited $100. New balance: $600
+  Withdrew $75. New balance: $1175
+  Transferring $300 from Alice to Bob...
+  Withdrew $300. New balance: $875
+  Deposited $300. New balance: $900
+
+--- Trying to overdraw ---
+  Error: Insufficient funds. Balance: $900
+
+=== Statement for Alice ===
+  [open] Account opened: $1000
+  [deposit] Deposit: $250
+  [withdraw] Withdrawal: $75
+  [withdraw] Withdrawal: $300
+  [transfer] Transfer to Bob: $300
+  Current balance: $875
+=================================
+
+=== Statement for Bob ===
+  [open] Account opened: $500
+  [deposit] Deposit: $100
+  [deposit] Deposit: $300
+  Current balance: $900
+=================================</code></pre>
+
+      <p>You just built a real bank account system with private state, validation, transfers, and transaction history. That is object-oriented programming in action!</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Add an <code>interest</code> method that adds 5% to the balance. Create a <code>SavingsAccount</code> that extends <code>Account</code> and limits withdrawals to 3 per month. Add a <code>toString</code> method that returns a summary string.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 6: WORKING WITH FILES & DATA                          -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-6">Chapter 6: Working with Files &amp; Data</h2>
+      <p>Real programs need to read and write data that persists beyond a single run. In this chapter you will learn how to work with files, JSON data, HTTP requests, and environment variables.</p>
+
+      <h3>Reading and writing files</h3>
+      <pre><code><span class="cmt">-- Write to a file</span>
+writeFile(<span class="str">"hello.txt"</span>, <span class="str">"Hello from Quill!"</span>)
+
+<span class="cmt">-- Read from a file</span>
+content <span class="kw">is</span> readFile(<span class="str">"hello.txt"</span>)
+<span class="kw">say</span> content  <span class="cmt">-- Hello from Quill!</span>
+
+<span class="cmt">-- Append to a file</span>
+appendFile(<span class="str">"log.txt"</span>, <span class="str">"New log entry\n"</span>)</code></pre>
+
+      <h3>JSON: reading, writing, and parsing</h3>
+      <p>JSON is the standard format for structured data. Quill makes it easy:</p>
+      <pre><code><span class="cmt">-- Write an object as JSON</span>
+user <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">25</span>, hobbies: [<span class="str">"coding"</span>, <span class="str">"reading"</span>]}
+writeJSON(<span class="str">"user.json"</span>, user)
+
+<span class="cmt">-- Read JSON back into an object</span>
+loaded <span class="kw">is</span> readJSON(<span class="str">"user.json"</span>)
+<span class="kw">say</span> loaded.name  <span class="cmt">-- Alice</span>
+
+<span class="cmt">-- Parse a JSON string</span>
+jsonString <span class="kw">is</span> <span class="str">"{\"x\": 10, \"y\": 20}"</span>
+point <span class="kw">is</span> parseJSON(jsonString)
+<span class="kw">say</span> point.x  <span class="cmt">-- 10</span></code></pre>
+
+      <h3>HTTP requests</h3>
+      <pre><code><span class="cmt">-- Fetch JSON from an API</span>
+data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://api.example.com/users"</span>)
+<span class="kw">say</span> data
+
+<span class="cmt">-- Post JSON to an API</span>
+response <span class="kw">is</span> <span class="kw">await</span> postJSON(<span class="str">"https://api.example.com/users"</span>, {
+  name: <span class="str">"Bob"</span>,
+  email: <span class="str">"bob@example.com"</span>
+})
+<span class="kw">say</span> response</code></pre>
+
+      <h3>Environment variables</h3>
+      <pre><code><span class="cmt">-- Read an environment variable</span>
+apiKey <span class="kw">is</span> env(<span class="str">"API_KEY"</span>)
+<span class="kw">if</span> apiKey <span class="kw">is</span> <span class="kw">nothing</span>:
+  <span class="kw">say</span> <span class="str">"Warning: API_KEY is not set"</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Never hard-code secrets like API keys in your source code. Use environment variables and a <code>.env</code> file instead.
+      </div>
+
+      <!-- Chapter 6 Project -->
+      <h3 id="project-6">Mini Project: Contact Book</h3>
+      <p><strong>What you'll build:</strong> A contact book that stores contacts in a JSON file and supports add, search, delete, and list operations. Data persists between runs!</p>
+
+      <pre><code><span class="cmt">-- contacts.quill</span>
+<span class="cmt">-- A persistent contact book using JSON storage</span>
+
+filename <span class="kw">is</span> <span class="str">"contacts.json"</span>
+
+<span class="cmt">-- Load existing contacts (or start fresh)</span>
+<span class="kw">to</span> loadContacts:
+  <span class="kw">try</span>:
+    <span class="kw">give back</span> readJSON(filename)
+  <span class="kw">catch</span> err:
+    <span class="kw">give back</span> []  <span class="cmt">-- file doesn't exist yet</span>
+
+<span class="cmt">-- Save contacts to disk</span>
+<span class="kw">to</span> saveContacts contacts:
+  writeJSON(filename, contacts)
+
+<span class="cmt">-- Add a new contact</span>
+<span class="kw">to</span> addContact name <span class="kw">as</span> string, phone <span class="kw">as</span> string, email <span class="kw">as</span> string:
+  contacts <span class="kw">is</span> loadContacts()
+  newContact <span class="kw">is</span> {name: name, phone: phone, email: email}
+  push(contacts, newContact)
+  saveContacts(contacts)
+  <span class="kw">say</span> <span class="str">"Added contact: {name}"</span>
+
+<span class="cmt">-- Search for a contact by name</span>
+<span class="kw">to</span> searchContact query <span class="kw">as</span> string:
+  contacts <span class="kw">is</span> loadContacts()
+  results <span class="kw">is</span> filter(contacts, <span class="kw">with</span> c: lowercase(c.name) <span class="kw">contains</span> lowercase(query))
+
+  <span class="kw">if</span> length(results) <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">say</span> <span class="str">"No contacts found matching \"{query}\""</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Found {length(results)} contact(s):"</span>
+    <span class="kw">for each</span> c <span class="kw">in</span> results:
+      <span class="kw">say</span> <span class="str">"  {c.name} | {c.phone} | {c.email}"</span>
+
+<span class="cmt">-- Delete a contact by name</span>
+<span class="kw">to</span> deleteContact name <span class="kw">as</span> string:
+  contacts <span class="kw">is</span> loadContacts()
+  before <span class="kw">is</span> length(contacts)
+  contacts <span class="kw">is</span> filter(contacts, <span class="kw">with</span> c: c.name <span class="kw">is not</span> name)
+  after <span class="kw">is</span> length(contacts)
+
+  <span class="kw">if</span> before <span class="kw">is</span> after:
+    <span class="kw">say</span> <span class="str">"Contact \"{name}\" not found."</span>
+  <span class="kw">otherwise</span>:
+    saveContacts(contacts)
+    <span class="kw">say</span> <span class="str">"Deleted contact: {name}"</span>
+
+<span class="cmt">-- List all contacts</span>
+<span class="kw">to</span> listAll:
+  contacts <span class="kw">is</span> loadContacts()
+  <span class="kw">if</span> length(contacts) <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">say</span> <span class="str">"Contact book is empty."</span>
+    <span class="kw">give back</span> <span class="kw">nothing</span>
+
+  <span class="kw">say</span> <span class="str">"=== All Contacts ({length(contacts)}) ==="</span>
+  <span class="kw">for each</span> c <span class="kw">in</span> contacts:
+    <span class="kw">say</span> <span class="str">"  {c.name}"</span>
+    <span class="kw">say</span> <span class="str">"    Phone: {c.phone}"</span>
+    <span class="kw">say</span> <span class="str">"    Email: {c.email}"</span>
+
+<span class="cmt">-- Demo: build up a contact book</span>
+<span class="kw">say</span> <span class="str">"--- Adding contacts ---"</span>
+addContact(<span class="str">"Alice Johnson"</span>, <span class="str">"555-0101"</span>, <span class="str">"alice@example.com"</span>)
+addContact(<span class="str">"Bob Smith"</span>, <span class="str">"555-0202"</span>, <span class="str">"bob@example.com"</span>)
+addContact(<span class="str">"Charlie Brown"</span>, <span class="str">"555-0303"</span>, <span class="str">"charlie@example.com"</span>)
+addContact(<span class="str">"Alice Cooper"</span>, <span class="str">"555-0404"</span>, <span class="str">"cooper@example.com"</span>)
+
+<span class="kw">say</span> <span class="str">""</span>
+listAll()
+
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"--- Searching for 'alice' ---"</span>
+searchContact(<span class="str">"alice"</span>)
+
+<span class="kw">say</span> <span class="str">""</span>
+<span class="kw">say</span> <span class="str">"--- Deleting Bob ---"</span>
+deleteContact(<span class="str">"Bob Smith"</span>)
+
+<span class="kw">say</span> <span class="str">""</span>
+listAll()</code></pre>
+
+      <p>Run it: <code>quill run contacts.quill</code></p>
+      <pre><code>--- Adding contacts ---
+Added contact: Alice Johnson
+Added contact: Bob Smith
+Added contact: Charlie Brown
+Added contact: Alice Cooper
+
+=== All Contacts (4) ===
+  Alice Johnson
+    Phone: 555-0101
+    Email: alice@example.com
+  Bob Smith
+    Phone: 555-0202
+    Email: bob@example.com
+  Charlie Brown
+    Phone: 555-0303
+    Email: charlie@example.com
+  Alice Cooper
+    Phone: 555-0404
+    Email: cooper@example.com
+
+--- Searching for 'alice' ---
+Found 2 contact(s):
+  Alice Johnson | 555-0101 | alice@example.com
+  Alice Cooper | 555-0404 | cooper@example.com
+
+--- Deleting Bob ---
+Deleted contact: Bob Smith
+
+=== All Contacts (3) ===
+  Alice Johnson
+    Phone: 555-0101
+    Email: alice@example.com
+  Charlie Brown
+    Phone: 555-0303
+    Email: charlie@example.com
+  Alice Cooper
+    Phone: 555-0404
+    Email: cooper@example.com</code></pre>
+
+      <p>The best part? Run it again and your contacts are still there, stored in <code>contacts.json</code>. You just built persistent data storage!</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Add an <code>updateContact</code> function that changes a contact's phone or email. Add a <code>exportCSV</code> function that writes contacts as a CSV file. Add tags to each contact and filter by tag.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 7: WEB SERVERS & APIs                                 -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-7">Chapter 7: Web Servers &amp; APIs</h2>
+      <p>Time to build something that runs on the internet! In this chapter you will create a web server that responds to HTTP requests. This is how every website and mobile app backend works.</p>
+
+      <h3>Creating a server</h3>
+      <pre><code><span class="kw">use</span> <span class="str">"server"</span> <span class="kw">from</span> <span class="str">"quill:http"</span>
+
+app <span class="kw">is</span> createServer()
+
+app.get(<span class="str">"/"</span>, <span class="kw">with</span> req, res:
+  res.send(<span class="str">"Hello from Quill!"</span>)
+)
+
+app.listen(<span class="num">3000</span>)
+<span class="kw">say</span> <span class="str">"Server running at http://localhost:3000"</span></code></pre>
+
+      <p>Run it with <code>quill run server.quill</code>, then open <code>http://localhost:3000</code> in your browser. You just built a web server!</p>
+
+      <h3>Routes: GET, POST, PUT, DELETE</h3>
+      <pre><code><span class="cmt">-- GET: retrieve data</span>
+app.get(<span class="str">"/users"</span>, <span class="kw">with</span> req, res:
+  res.json(users)
+)
+
+<span class="cmt">-- POST: create data</span>
+app.post(<span class="str">"/users"</span>, <span class="kw">with</span> req, res:
+  newUser <span class="kw">is</span> req.body
+  push(users, newUser)
+  res.json({success: <span class="bool">yes</span>, user: newUser})
+)
+
+<span class="cmt">-- PUT: update data</span>
+app.put(<span class="str">"/users/:id"</span>, <span class="kw">with</span> req, res:
+  <span class="cmt">-- update logic here</span>
+  res.json({success: <span class="bool">yes</span>})
+)
+
+<span class="cmt">-- DELETE: remove data</span>
+app.delete(<span class="str">"/users/:id"</span>, <span class="kw">with</span> req, res:
+  <span class="cmt">-- delete logic here</span>
+  res.json({success: <span class="bool">yes</span>})
+)</code></pre>
+
+      <h3>JSON responses</h3>
+      <p>Use <code>res.json()</code> to send structured data back to the client:</p>
+      <pre><code>app.get(<span class="str">"/status"</span>, <span class="kw">with</span> req, res:
+  res.json({
+    status: <span class="str">"ok"</span>,
+    uptime: <span class="num">12345</span>,
+    version: <span class="str">"1.0.0"</span>
+  })
+)</code></pre>
+
+      <h3>Middleware</h3>
+      <p>Middleware runs before your route handlers, useful for logging, authentication, etc.:</p>
+      <pre><code><span class="cmt">-- Log every request</span>
+app.use(<span class="kw">with</span> req, res, next:
+  <span class="kw">say</span> <span class="str">"{req.method} {req.path}"</span>
+  next()
+)</code></pre>
+
+      <h3>Serving static files</h3>
+      <pre><code><span class="cmt">-- Serve files from a "public" folder</span>
+app.static(<span class="str">"public"</span>)</code></pre>
+
+      <!-- Chapter 7 Project -->
+      <h3 id="project-7">Mini Project: Bookmark API</h3>
+      <p><strong>What you'll build:</strong> A full REST API for managing bookmarks. It supports Create, Read, Update, and Delete (CRUD) operations and stores data in a JSON file.</p>
+
+      <pre><code><span class="cmt">-- bookmark-api.quill</span>
+<span class="cmt">-- A REST API for managing bookmarks</span>
+
+<span class="kw">use</span> <span class="str">"server"</span> <span class="kw">from</span> <span class="str">"quill:http"</span>
+
+app <span class="kw">is</span> createServer()
+dataFile <span class="kw">is</span> <span class="str">"bookmarks.json"</span>
+
+<span class="cmt">-- Load bookmarks from disk</span>
+<span class="kw">to</span> loadBookmarks:
+  <span class="kw">try</span>:
+    <span class="kw">give back</span> readJSON(dataFile)
+  <span class="kw">catch</span> err:
+    <span class="kw">give back</span> []
+
+<span class="cmt">-- Save bookmarks to disk</span>
+<span class="kw">to</span> saveBookmarks data:
+  writeJSON(dataFile, data)
+
+<span class="cmt">-- Generate a simple ID</span>
+nextId <span class="kw">is</span> <span class="num">1</span>
+<span class="kw">to</span> generateId:
+  id <span class="kw">is</span> nextId
+  nextId <span class="kw">is</span> nextId + <span class="num">1</span>
+  <span class="kw">give back</span> id
+
+<span class="cmt">-- Middleware: log requests</span>
+app.use(<span class="kw">with</span> req, res, next:
+  <span class="kw">say</span> <span class="str">"{req.method} {req.path}"</span>
+  next()
+)
+
+<span class="cmt">-- GET /bookmarks - List all bookmarks</span>
+app.get(<span class="str">"/bookmarks"</span>, <span class="kw">with</span> req, res:
+  bookmarks <span class="kw">is</span> loadBookmarks()
+  res.json({count: length(bookmarks), bookmarks: bookmarks})
+)
+
+<span class="cmt">-- GET /bookmarks/:id - Get a single bookmark</span>
+app.get(<span class="str">"/bookmarks/:id"</span>, <span class="kw">with</span> req, res:
+  bookmarks <span class="kw">is</span> loadBookmarks()
+  found <span class="kw">is</span> find(bookmarks, <span class="kw">with</span> b: b.id <span class="kw">is</span> toNumber(req.params.id))
+
+  <span class="kw">if</span> found <span class="kw">is</span> <span class="kw">nothing</span>:
+    res.status(<span class="num">404</span>).json({error: <span class="str">"Bookmark not found"</span>})
+  <span class="kw">otherwise</span>:
+    res.json(found)
+)
+
+<span class="cmt">-- POST /bookmarks - Create a new bookmark</span>
+app.post(<span class="str">"/bookmarks"</span>, <span class="kw">with</span> req, res:
+  bookmarks <span class="kw">is</span> loadBookmarks()
+
+  <span class="kw">if</span> req.body.url <span class="kw">is</span> <span class="kw">nothing</span>:
+    res.status(<span class="num">400</span>).json({error: <span class="str">"URL is required"</span>})
+    <span class="kw">give back</span> <span class="kw">nothing</span>
+
+  newBookmark <span class="kw">is</span> {
+    id: generateId(),
+    title: req.body.title <span class="kw">or</span> <span class="str">"Untitled"</span>,
+    url: req.body.url,
+    tags: req.body.tags <span class="kw">or</span> [],
+    createdAt: now()
+  }
+
+  push(bookmarks, newBookmark)
+  saveBookmarks(bookmarks)
+
+  res.status(<span class="num">201</span>).json(newBookmark)
+)
+
+<span class="cmt">-- PUT /bookmarks/:id - Update a bookmark</span>
+app.put(<span class="str">"/bookmarks/:id"</span>, <span class="kw">with</span> req, res:
+  bookmarks <span class="kw">is</span> loadBookmarks()
+  targetId <span class="kw">is</span> toNumber(req.params.id)
+  found <span class="kw">is</span> find(bookmarks, <span class="kw">with</span> b: b.id <span class="kw">is</span> targetId)
+
+  <span class="kw">if</span> found <span class="kw">is</span> <span class="kw">nothing</span>:
+    res.status(<span class="num">404</span>).json({error: <span class="str">"Bookmark not found"</span>})
+    <span class="kw">give back</span> <span class="kw">nothing</span>
+
+  <span class="kw">if</span> req.body.title <span class="kw">is not</span> <span class="kw">nothing</span>:
+    found.title <span class="kw">is</span> req.body.title
+  <span class="kw">if</span> req.body.url <span class="kw">is not</span> <span class="kw">nothing</span>:
+    found.url <span class="kw">is</span> req.body.url
+  <span class="kw">if</span> req.body.tags <span class="kw">is not</span> <span class="kw">nothing</span>:
+    found.tags <span class="kw">is</span> req.body.tags
+
+  saveBookmarks(bookmarks)
+  res.json(found)
+)
+
+<span class="cmt">-- DELETE /bookmarks/:id - Delete a bookmark</span>
+app.delete(<span class="str">"/bookmarks/:id"</span>, <span class="kw">with</span> req, res:
+  bookmarks <span class="kw">is</span> loadBookmarks()
+  targetId <span class="kw">is</span> toNumber(req.params.id)
+  filtered <span class="kw">is</span> filter(bookmarks, <span class="kw">with</span> b: b.id <span class="kw">is not</span> targetId)
+
+  <span class="kw">if</span> length(filtered) <span class="kw">is</span> length(bookmarks):
+    res.status(<span class="num">404</span>).json({error: <span class="str">"Bookmark not found"</span>})
+    <span class="kw">give back</span> <span class="kw">nothing</span>
+
+  saveBookmarks(filtered)
+  res.json({success: <span class="bool">yes</span>, message: <span class="str">"Bookmark deleted"</span>})
+)
+
+<span class="cmt">-- Start the server</span>
+app.listen(<span class="num">3000</span>)
+<span class="kw">say</span> <span class="str">"Bookmark API running at http://localhost:3000"</span>
+<span class="kw">say</span> <span class="str">"Try: curl http://localhost:3000/bookmarks"</span></code></pre>
+
+      <p>Run it: <code>quill run bookmark-api.quill</code></p>
+      <p>Then test it with curl:</p>
+      <pre><code># Create a bookmark
+curl -X POST http://localhost:3000/bookmarks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Quill Docs", "url": "https://quill.sh/docs", "tags": ["programming", "docs"]}'
+
+# List all bookmarks
+curl http://localhost:3000/bookmarks
+
+# Delete a bookmark
+curl -X DELETE http://localhost:3000/bookmarks/1</code></pre>
+
+      <p>You just built a fully functional REST API! This is the same pattern used by real-world web services everywhere.</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Add a <code>GET /bookmarks/search?q=quill</code> route that searches bookmarks by title. Add a <code>GET /bookmarks/tags/:tag</code> route that filters by tag. Add pagination with <code>?page=1&limit=10</code>.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 8: TESTING YOUR CODE                                  -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-8">Chapter 8: Testing Your Code</h2>
+      <p>How do you know your code works? You test it! Automated tests are code that verifies your other code. Once written, you can re-run them any time to make sure nothing is broken. This chapter teaches you how to write and run tests in Quill.</p>
+
+      <h3><code>test</code> blocks and <code>expect</code></h3>
+      <p>A test in Quill uses the <code>test</code> keyword and <code>expect</code> to check results:</p>
+      <pre><code><span class="kw">to</span> add a, b:
+  <span class="kw">give back</span> a + b
+
+<span class="kw">test</span> <span class="str">"add works with positive numbers"</span>:
+  <span class="kw">expect</span> add(<span class="num">2</span>, <span class="num">3</span>) toBe <span class="num">5</span>
+
+<span class="kw">test</span> <span class="str">"add works with negative numbers"</span>:
+  <span class="kw">expect</span> add(-<span class="num">1</span>, -<span class="num">2</span>) toBe -<span class="num">3</span>
+
+<span class="kw">test</span> <span class="str">"add works with zero"</span>:
+  <span class="kw">expect</span> add(<span class="num">0</span>, <span class="num">5</span>) toBe <span class="num">5</span></code></pre>
+
+      <h3>Common matchers</h3>
+      <pre><code><span class="cmt">-- Equality</span>
+<span class="kw">expect</span> result toBe <span class="num">42</span>
+
+<span class="cmt">-- Truthiness</span>
+<span class="kw">expect</span> isValid toBeTrue
+<span class="kw">expect</span> isEmpty toBeFalse
+
+<span class="cmt">-- Comparisons</span>
+<span class="kw">expect</span> score toBeGreaterThan <span class="num">90</span>
+<span class="kw">expect</span> count toBeLessThan <span class="num">100</span>
+
+<span class="cmt">-- Strings</span>
+<span class="kw">expect</span> message toContain <span class="str">"error"</span>
+
+<span class="cmt">-- Lists</span>
+<span class="kw">expect</span> items toHaveLength <span class="num">3</span></code></pre>
+
+      <h3>Testing edge cases</h3>
+      <pre><code><span class="kw">test</span> <span class="str">"handles empty input"</span>:
+  <span class="kw">expect</span> processData(<span class="str">""</span>) toBe <span class="kw">nothing</span>
+
+<span class="kw">test</span> <span class="str">"handles very large numbers"</span>:
+  <span class="kw">expect</span> add(<span class="num">999999</span>, <span class="num">1</span>) toBe <span class="num">1000000</span>
+
+<span class="kw">test</span> <span class="str">"throws on invalid input"</span>:
+  <span class="kw">expect</span> divide(<span class="num">1</span>, <span class="num">0</span>) toThrow</code></pre>
+
+      <h3>Running tests</h3>
+      <pre><code><span class="cmt"># Run all tests in the current directory</span>
+quill test
+
+<span class="cmt"># Run tests in a specific file</span>
+quill test password-checker.test.quill
+
+<span class="cmt"># Run with coverage report</span>
+quill test --coverage</code></pre>
+
+      <!-- Chapter 8 Project -->
+      <h3 id="project-8">Mini Project: Test Suite for the Password Checker</h3>
+      <p><strong>What you'll build:</strong> A complete test suite for the password strength checker from Chapter 4. This demonstrates how to test functions, edge cases, and overall behavior.</p>
+
+      <pre><code><span class="cmt">-- password-checker.test.quill</span>
+<span class="cmt">-- Tests for the password strength checker</span>
+
+<span class="kw">use</span> <span class="str">"password-checker.quill"</span>
+
+<span class="cmt">-- Test: checkLength</span>
+<span class="kw">test</span> <span class="str">"checkLength returns 0 for very short passwords"</span>:
+  <span class="kw">expect</span> checkLength(<span class="str">"abc"</span>) toBe <span class="num">0</span>
+  <span class="kw">expect</span> checkLength(<span class="str">"1234567"</span>) toBe <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"checkLength returns 1 for 8-11 character passwords"</span>:
+  <span class="kw">expect</span> checkLength(<span class="str">"abcdefgh"</span>) toBe <span class="num">1</span>
+  <span class="kw">expect</span> checkLength(<span class="str">"12345678901"</span>) toBe <span class="num">1</span>
+
+<span class="kw">test</span> <span class="str">"checkLength returns 2 for 12-15 character passwords"</span>:
+  <span class="kw">expect</span> checkLength(<span class="str">"abcdefghijkl"</span>) toBe <span class="num">2</span>
+
+<span class="kw">test</span> <span class="str">"checkLength returns 3 for 16+ character passwords"</span>:
+  <span class="kw">expect</span> checkLength(<span class="str">"abcdefghijklmnop"</span>) toBe <span class="num">3</span>
+
+<span class="cmt">-- Test: checkSpecialChars</span>
+<span class="kw">test</span> <span class="str">"checkSpecialChars returns 0 with no specials"</span>:
+  <span class="kw">expect</span> checkSpecialChars(<span class="str">"hello"</span>) toBe <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"checkSpecialChars returns 1 with 1-2 specials"</span>:
+  <span class="kw">expect</span> checkSpecialChars(<span class="str">"hello!"</span>) toBe <span class="num">1</span>
+  <span class="kw">expect</span> checkSpecialChars(<span class="str">"h@llo!"</span>) toBe <span class="num">1</span>
+
+<span class="kw">test</span> <span class="str">"checkSpecialChars returns 3 with 3+ specials"</span>:
+  <span class="kw">expect</span> checkSpecialChars(<span class="str">"h@l!o#"</span>) toBe <span class="num">3</span>
+
+<span class="cmt">-- Test: checkCommon</span>
+<span class="kw">test</span> <span class="str">"checkCommon penalizes common passwords"</span>:
+  <span class="kw">expect</span> checkCommon(<span class="str">"password"</span>) toBe -<span class="num">5</span>
+  <span class="kw">expect</span> checkCommon(<span class="str">"123456"</span>) toBe -<span class="num">5</span>
+  <span class="kw">expect</span> checkCommon(<span class="str">"qwerty"</span>) toBe -<span class="num">5</span>
+
+<span class="kw">test</span> <span class="str">"checkCommon rewards uncommon passwords"</span>:
+  <span class="kw">expect</span> checkCommon(<span class="str">"myUniquePass"</span>) toBe <span class="num">2</span>
+
+<span class="cmt">-- Test: checkMixedCase</span>
+<span class="kw">test</span> <span class="str">"checkMixedCase returns 2 for mixed case"</span>:
+  <span class="kw">expect</span> checkMixedCase(<span class="str">"HelloWorld"</span>) toBe <span class="num">2</span>
+
+<span class="kw">test</span> <span class="str">"checkMixedCase returns 0 for all lowercase"</span>:
+  <span class="kw">expect</span> checkMixedCase(<span class="str">"hello"</span>) toBe <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"checkMixedCase returns 0 for all uppercase"</span>:
+  <span class="kw">expect</span> checkMixedCase(<span class="str">"HELLO"</span>) toBe <span class="num">0</span>
+
+<span class="cmt">-- Integration tests: overall behavior</span>
+<span class="kw">test</span> <span class="str">"a common password scores very low"</span>:
+  score <span class="kw">is</span> checkLength(<span class="str">"password"</span>) + checkSpecialChars(<span class="str">"password"</span>) + checkCommon(<span class="str">"password"</span>) + checkMixedCase(<span class="str">"password"</span>)
+  <span class="kw">expect</span> score toBeLessThan <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"a strong password scores high"</span>:
+  pw <span class="kw">is</span> <span class="str">"My$ecure#Pass!word99"</span>
+  score <span class="kw">is</span> checkLength(pw) + checkSpecialChars(pw) + checkCommon(pw) + checkMixedCase(pw)
+  <span class="kw">expect</span> score toBeGreaterThan <span class="num">7</span>
+
+<span class="kw">test</span> <span class="str">"empty password scores 0 or below"</span>:
+  score <span class="kw">is</span> checkLength(<span class="str">""</span>) + checkSpecialChars(<span class="str">""</span>) + checkCommon(<span class="str">""</span>) + checkMixedCase(<span class="str">""</span>)
+  <span class="kw">expect</span> score toBeLessThan <span class="num">3</span></code></pre>
+
+      <p>Run the tests: <code>quill test password-checker.test.quill</code></p>
+      <pre><code>PASS password-checker.test.quill
+  checkLength returns 0 for very short passwords
+  checkLength returns 1 for 8-11 character passwords
+  checkLength returns 2 for 12-15 character passwords
+  checkLength returns 3 for 16+ character passwords
+  checkSpecialChars returns 0 with no specials
+  checkSpecialChars returns 1 with 1-2 specials
+  checkSpecialChars returns 3 with 3+ specials
+  checkCommon penalizes common passwords
+  checkCommon rewards uncommon passwords
+  checkMixedCase returns 2 for mixed case
+  checkMixedCase returns 0 for all lowercase
+  checkMixedCase returns 0 for all uppercase
+  a common password scores very low
+  a strong password scores high
+  empty password scores 0 or below
+
+15 passed, 0 failed</code></pre>
+
+      <p>Now you can refactor the password checker with confidence. If you break something, the tests will catch it immediately.</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Add tests for edge cases like passwords with only numbers, only special characters, or extremely long passwords. Run <code>quill test --coverage</code> to see which lines of code your tests cover.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 9: REACTIVE COMPONENTS                                -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-9">Chapter 9: Reactive Components</h2>
+      <p>Quill can build interactive web UIs with a built-in reactive component system. If you have used React, this will feel familiar but simpler. If you have not, do not worry &mdash; we will start from the beginning.</p>
+
+      <h3>Your first component</h3>
+      <p>A <code>component</code> is a reusable piece of UI with its own state and behavior:</p>
+      <pre><code><span class="kw">component</span> Counter:
+  <span class="kw">state</span> count <span class="kw">is</span> <span class="num">0</span>
+
+  <span class="kw">to</span> increment:
+    count <span class="kw">is</span> count + <span class="num">1</span>
+
+  <span class="kw">to</span> render:
+    &lt;div&gt;
+      &lt;h1&gt;Count: {count}&lt;/h1&gt;
+      &lt;button onClick={increment}&gt;Add one&lt;/button&gt;
+    &lt;/div&gt;
+
+<span class="kw">mount</span>(Counter, <span class="str">"#app"</span>)</code></pre>
+
+      <div class="callout callout-info">
+        <strong>How it works:</strong> <code>state</code> declares reactive data. When state changes, the component automatically re-renders. <code>mount</code> attaches the component to a DOM element.
+      </div>
+
+      <h3>Event handlers</h3>
+      <p>Handle user interactions with events like <code>onClick</code>, <code>onInput</code>, <code>onChange</code>, etc.:</p>
+      <pre><code><span class="kw">component</span> Greeter:
+  <span class="kw">state</span> name <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">to</span> render:
+    &lt;div&gt;
+      &lt;input
+        placeholder=<span class="str">"Enter your name"</span>
+        value={name}
+        onInput={<span class="kw">with</span> e: name <span class="kw">is</span> e.target.value}
+      /&gt;
+      &lt;p&gt;Hello, {name <span class="kw">or</span> <span class="str">"stranger"</span>}!&lt;/p&gt;
+    &lt;/div&gt;</code></pre>
+
+      <h3>Rendering lists and conditionals</h3>
+      <pre><code><span class="kw">component</span> TaskList:
+  <span class="kw">state</span> tasks <span class="kw">are</span> [<span class="str">"Learn Quill"</span>, <span class="str">"Build an app"</span>]
+  <span class="kw">state</span> newTask <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">to</span> addTask:
+    <span class="kw">if</span> newTask <span class="kw">is not</span> <span class="str">""</span>:
+      push(tasks, newTask)
+      newTask <span class="kw">is</span> <span class="str">""</span>
+
+  <span class="kw">to</span> render:
+    &lt;div&gt;
+      &lt;input value={newTask} onInput={<span class="kw">with</span> e: newTask <span class="kw">is</span> e.target.value} /&gt;
+      &lt;button onClick={addTask}&gt;Add&lt;/button&gt;
+      &lt;ul&gt;
+        {<span class="kw">for each</span> task <span class="kw">in</span> tasks:
+          &lt;li&gt;{task}&lt;/li&gt;
+        }
+      &lt;/ul&gt;
+      {<span class="kw">if</span> length(tasks) <span class="kw">is</span> <span class="num">0</span>:
+        &lt;p&gt;No tasks yet. Add one above!&lt;/p&gt;
+      }
+    &lt;/div&gt;</code></pre>
+
+      <!-- Chapter 9 Project -->
+      <h3 id="project-9">Mini Project: Interactive Quiz App</h3>
+      <p><strong>What you'll build:</strong> A quiz app with multiple-choice questions, a progress bar, scoring, and a results screen.</p>
+
+      <pre><code><span class="cmt">-- quiz-app.quill</span>
+<span class="cmt">-- An interactive quiz application</span>
+
+questions <span class="kw">are</span> [
+  {
+    question: <span class="str">"What keyword creates a variable in Quill?"</span>,
+    options: [<span class="str">"let"</span>, <span class="str">"var"</span>, <span class="str">"is"</span>, <span class="str">"set"</span>],
+    correct: <span class="num">2</span>
+  },
+  {
+    question: <span class="str">"How do you print to the screen?"</span>,
+    options: [<span class="str">"print"</span>, <span class="str">"echo"</span>, <span class="str">"say"</span>, <span class="str">"log"</span>],
+    correct: <span class="num">2</span>
+  },
+  {
+    question: <span class="str">"What keyword defines a function?"</span>,
+    options: [<span class="str">"function"</span>, <span class="str">"def"</span>, <span class="str">"to"</span>, <span class="str">"fn"</span>],
+    correct: <span class="num">2</span>
+  },
+  {
+    question: <span class="str">"How do you return a value?"</span>,
+    options: [<span class="str">"return"</span>, <span class="str">"give back"</span>, <span class="str">"output"</span>, <span class="str">"yield"</span>],
+    correct: <span class="num">1</span>
+  },
+  {
+    question: <span class="str">"What keyword defines a class?"</span>,
+    options: [<span class="str">"class"</span>, <span class="str">"type"</span>, <span class="str">"describe"</span>, <span class="str">"define"</span>],
+    correct: <span class="num">2</span>
+  }
+]
+
+<span class="kw">component</span> QuizApp:
+  <span class="kw">state</span> currentQuestion <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">state</span> score <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">state</span> showResults <span class="kw">is</span> <span class="bool">no</span>
+  <span class="kw">state</span> selectedAnswer <span class="kw">is</span> -<span class="num">1</span>
+  <span class="kw">state</span> answered <span class="kw">is</span> <span class="bool">no</span>
+
+  <span class="kw">to</span> selectAnswer index:
+    <span class="kw">if</span> answered:
+      <span class="kw">give back</span> <span class="kw">nothing</span>  <span class="cmt">-- prevent double-answering</span>
+    selectedAnswer <span class="kw">is</span> index
+    answered <span class="kw">is</span> <span class="bool">yes</span>
+    q <span class="kw">is</span> questions[currentQuestion]
+    <span class="kw">if</span> index <span class="kw">is</span> q.correct:
+      score <span class="kw">is</span> score + <span class="num">1</span>
+
+  <span class="kw">to</span> nextQuestion:
+    <span class="kw">if</span> currentQuestion + <span class="num">1</span> <span class="kw">is</span> length(questions):
+      showResults <span class="kw">is</span> <span class="bool">yes</span>
+    <span class="kw">otherwise</span>:
+      currentQuestion <span class="kw">is</span> currentQuestion + <span class="num">1</span>
+      selectedAnswer <span class="kw">is</span> -<span class="num">1</span>
+      answered <span class="kw">is</span> <span class="bool">no</span>
+
+  <span class="kw">to</span> restart:
+    currentQuestion <span class="kw">is</span> <span class="num">0</span>
+    score <span class="kw">is</span> <span class="num">0</span>
+    showResults <span class="kw">is</span> <span class="bool">no</span>
+    selectedAnswer <span class="kw">is</span> -<span class="num">1</span>
+    answered <span class="kw">is</span> <span class="bool">no</span>
+
+  <span class="kw">to</span> render:
+    <span class="kw">if</span> showResults:
+      &lt;div class=<span class="str">"quiz"</span>&gt;
+        &lt;h1&gt;Quiz Complete!&lt;/h1&gt;
+        &lt;p class=<span class="str">"score"</span>&gt;You scored {score} out of {length(questions)}&lt;/p&gt;
+        {<span class="kw">if</span> score <span class="kw">is</span> length(questions):
+          &lt;p&gt;Perfect score! You are a Quill master!&lt;/p&gt;
+        }
+        {<span class="kw">if</span> score <span class="kw">is greater than</span> <span class="num">2</span> <span class="kw">and</span> score <span class="kw">is less than</span> length(questions):
+          &lt;p&gt;Great job! You know your Quill.&lt;/p&gt;
+        }
+        {<span class="kw">if</span> score <span class="kw">is less than</span> <span class="num">3</span>:
+          &lt;p&gt;Keep learning! Re-read the tutorial and try again.&lt;/p&gt;
+        }
+        &lt;button onClick={restart}&gt;Try Again&lt;/button&gt;
+      &lt;/div&gt;
+    <span class="kw">otherwise</span>:
+      q <span class="kw">is</span> questions[currentQuestion]
+      progress <span class="kw">is</span> ((currentQuestion + <span class="num">1</span>) / length(questions)) * <span class="num">100</span>
+
+      &lt;div class=<span class="str">"quiz"</span>&gt;
+        &lt;div class=<span class="str">"progress-bar"</span>&gt;
+          &lt;div class=<span class="str">"progress-fill"</span> style=<span class="str">"width: {progress}%"</span>&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;p class=<span class="str">"progress-text"</span>&gt;Question {currentQuestion + <span class="num">1</span>} of {length(questions)}&lt;/p&gt;
+
+        &lt;h2&gt;{q.question}&lt;/h2&gt;
+
+        &lt;div class=<span class="str">"options"</span>&gt;
+          {<span class="kw">for each</span> option, index <span class="kw">in</span> q.options:
+            className <span class="kw">is</span> <span class="str">"option"</span>
+            <span class="kw">if</span> answered <span class="kw">and</span> index <span class="kw">is</span> q.correct:
+              className <span class="kw">is</span> <span class="str">"option correct"</span>
+            <span class="kw">if</span> answered <span class="kw">and</span> index <span class="kw">is</span> selectedAnswer <span class="kw">and</span> index <span class="kw">is not</span> q.correct:
+              className <span class="kw">is</span> <span class="str">"option wrong"</span>
+
+            &lt;button class={className} onClick={<span class="kw">with</span>: selectAnswer(index)}&gt;
+              {option}
+            &lt;/button&gt;
+          }
+        &lt;/div&gt;
+
+        {<span class="kw">if</span> answered:
+          &lt;button class=<span class="str">"next-btn"</span> onClick={nextQuestion}&gt;
+            {<span class="kw">if</span> currentQuestion + <span class="num">1</span> <span class="kw">is</span> length(questions): <span class="str">"See Results"</span>}
+            {<span class="kw">if</span> currentQuestion + <span class="num">1</span> <span class="kw">is not</span> length(questions): <span class="str">"Next Question"</span>}
+          &lt;/button&gt;
+        }
+      &lt;/div&gt;
+
+<span class="kw">mount</span>(QuizApp, <span class="str">"#app"</span>)</code></pre>
+
+      <p>To run this in the browser, create an <code>index.html</code> file that includes a <code>&lt;div id="app"&gt;&lt;/div&gt;</code> and link the compiled JavaScript. Or use <code>quill run quiz-app.quill</code> with the Quill dev server.</p>
+
+      <p>You just built an interactive web application with state management, conditional rendering, and user input handling. That is frontend development!</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Add more questions. Add a timer that limits each question to 15 seconds. Show which questions the user got wrong on the results screen. Add a "hint" button that eliminates two wrong answers.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- CHAPTER 10: ADVANCED PATTERNS                                 -->
+      <!-- ============================================================ -->
+
+      <h2 id="chapter-10">Chapter 10: Advanced Patterns</h2>
+      <p>You have come a long way! This final chapter covers the advanced features that make Quill a truly powerful language: async/await, concurrency, generics, algebraic data types, decorators, and lazy pipe chains.</p>
+
+      <h3>Async / Await</h3>
+      <p>When your code needs to wait for something (like a network request or file read), use <code>await</code>:</p>
+      <pre><code><span class="kw">to</span> fetchUserData userId:
+  user <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://api.example.com/users/{userId}"</span>)
+  <span class="kw">say</span> <span class="str">"Got user: {user.name}"</span>
+  <span class="kw">give back</span> user</code></pre>
+
+      <h3>Parallel blocks</h3>
+      <p>Run multiple async operations at the same time:</p>
+      <pre><code><span class="cmt">-- Fetch all three in parallel (much faster!)</span>
+<span class="kw">parallel</span>:
+  users <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/users"</span>)
+  posts <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/posts"</span>)
+  comments <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/comments"</span>)
+
+<span class="kw">say</span> <span class="str">"Got {length(users)} users, {length(posts)} posts, {length(comments)} comments"</span></code></pre>
+
+      <h3>Channels and concurrency</h3>
+      <p>Channels let concurrent tasks communicate safely:</p>
+      <pre><code>messages <span class="kw">is</span> Channel()
+
+<span class="cmt">-- Producer task</span>
+spawn:
+  <span class="kw">for each</span> i <span class="kw">in</span> range(<span class="num">1</span>, <span class="num">5</span>):
+    messages.send(<span class="str">"Message {i}"</span>)
+  messages.close()
+
+<span class="cmt">-- Consumer task</span>
+<span class="kw">for each</span> msg <span class="kw">in</span> messages:
+  <span class="kw">say</span> <span class="str">"Received: {msg}"</span></code></pre>
+
+      <h3>Generics</h3>
+      <p>Write functions that work with any type:</p>
+      <pre><code><span class="kw">to</span> first&lt;T&gt; items <span class="kw">as</span> list&lt;T&gt; -> T:
+  <span class="kw">give back</span> items[<span class="num">0</span>]
+
+<span class="kw">say</span> first([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>])           <span class="cmt">-- 1</span>
+<span class="kw">say</span> first([<span class="str">"a"</span>, <span class="str">"b"</span>, <span class="str">"c"</span>])   <span class="cmt">-- a</span></code></pre>
+
+      <h3>Algebraic data types</h3>
+      <p>Model data that can be one of several variants:</p>
+      <pre><code><span class="kw">type</span> Shape:
+  Circle(radius <span class="kw">as</span> number)
+  Rectangle(width <span class="kw">as</span> number, height <span class="kw">as</span> number)
+  Triangle(base <span class="kw">as</span> number, height <span class="kw">as</span> number)
+
+<span class="kw">to</span> area shape <span class="kw">as</span> Shape -> number:
+  <span class="kw">match</span> shape:
+    <span class="kw">when</span> Circle(r):
+      <span class="kw">give back</span> <span class="num">3.14159</span> * r * r
+    <span class="kw">when</span> Rectangle(w, h):
+      <span class="kw">give back</span> w * h
+    <span class="kw">when</span> Triangle(b, h):
+      <span class="kw">give back</span> <span class="num">0.5</span> * b * h
+
+<span class="kw">say</span> area(Circle(<span class="num">5</span>))           <span class="cmt">-- 78.53975</span>
+<span class="kw">say</span> area(Rectangle(<span class="num">4</span>, <span class="num">6</span>))   <span class="cmt">-- 24</span></code></pre>
+
+      <h3>Decorators</h3>
+      <p>Decorators wrap functions with extra behavior:</p>
+      <pre><code><span class="kw">to</span> @logged fn:
+  <span class="kw">give back</span> <span class="kw">with</span> args...:
+    <span class="kw">say</span> <span class="str">"Calling {fn.name} with {args}"</span>
+    result <span class="kw">is</span> fn(args...)
+    <span class="kw">say</span> <span class="str">"Result: {result}"</span>
+    <span class="kw">give back</span> result
+
+@logged
+<span class="kw">to</span> multiply a, b:
+  <span class="kw">give back</span> a * b
+
+multiply(<span class="num">3</span>, <span class="num">4</span>)
+<span class="cmt">-- Calling multiply with [3, 4]</span>
+<span class="cmt">-- Result: 12</span></code></pre>
+
+      <h3>Pipe chains with lazy evaluation</h3>
+      <p>Pipes can be chained extensively for clean data processing:</p>
+      <pre><code>results <span class="kw">is</span> users
+  | filter(<span class="kw">with</span> u: u.age <span class="kw">is greater than</span> <span class="num">18</span>)
+  | map_list(<span class="kw">with</span> u: {name: u.name, email: u.email})
+  | sort(<span class="kw">with</span> a, b: a.name < b.name)
+
+<span class="kw">for each</span> r <span class="kw">in</span> results:
+  <span class="kw">say</span> <span class="str">"{r.name}: {r.email}"</span></code></pre>
+
+      <!-- Chapter 10 Project -->
+      <h3 id="project-10">Mini Project: Mini Chat Server</h3>
+      <p><strong>What you'll build:</strong> A WebSocket chat server with channels, message history, and user management. This is the grand finale &mdash; it uses async, concurrency, classes, and channels all in one program.</p>
+
+      <pre><code><span class="cmt">-- chat-server.quill</span>
+<span class="cmt">-- A real-time chat server with WebSockets</span>
+
+<span class="kw">use</span> <span class="str">"server"</span> <span class="kw">from</span> <span class="str">"quill:http"</span>
+<span class="kw">use</span> <span class="str">"WebSocket"</span> <span class="kw">from</span> <span class="str">"quill:ws"</span>
+
+<span class="cmt">-- Chat room manager</span>
+<span class="kw">describe</span> ChatRoom:
+  <span class="kw">to</span> create name <span class="kw">as</span> string:
+    <span class="kw">my</span> name <span class="kw">is</span> name
+    <span class="kw">my</span> users <span class="kw">are</span> []
+    <span class="kw">my</span> history <span class="kw">are</span> []
+    <span class="kw">my</span> channel <span class="kw">is</span> Channel()
+
+  <span class="kw">to</span> join username <span class="kw">as</span> string, socket:
+    user <span class="kw">is</span> {name: username, socket: socket}
+    push(<span class="kw">my</span> users, user)
+    <span class="kw">my</span> broadcast({
+      type: <span class="str">"system"</span>,
+      text: <span class="str">"{username} joined the room"</span>,
+      time: now()
+    })
+    <span class="kw">say</span> <span class="str">"[{my name}] {username} joined ({length(my users)} users)"</span>
+
+  <span class="kw">to</span> leave username <span class="kw">as</span> string:
+    <span class="kw">my</span> users <span class="kw">is</span> filter(<span class="kw">my</span> users, <span class="kw">with</span> u: u.name <span class="kw">is not</span> username)
+    <span class="kw">my</span> broadcast({
+      type: <span class="str">"system"</span>,
+      text: <span class="str">"{username} left the room"</span>,
+      time: now()
+    })
+    <span class="kw">say</span> <span class="str">"[{my name}] {username} left ({length(my users)} users)"</span>
+
+  <span class="kw">to</span> sendMessage username <span class="kw">as</span> string, text <span class="kw">as</span> string:
+    msg <span class="kw">is</span> {
+      type: <span class="str">"message"</span>,
+      user: username,
+      text: text,
+      time: now()
+    }
+    push(<span class="kw">my</span> history, msg)
+    <span class="kw">my</span> broadcast(msg)
+
+  <span class="kw">to</span> broadcast msg:
+    <span class="kw">for each</span> user <span class="kw">in</span> <span class="kw">my</span> users:
+      <span class="kw">try</span>:
+        user.socket.send(toJSON(msg))
+      <span class="kw">catch</span> err:
+        <span class="kw">say</span> <span class="str">"Failed to send to {user.name}: {err}"</span>
+
+  <span class="kw">to</span> getHistory count <span class="kw">as</span> number:
+    start <span class="kw">is</span> length(<span class="kw">my</span> history) - count
+    <span class="kw">if</span> start <span class="kw">is less than</span> <span class="num">0</span>:
+      start <span class="kw">is</span> <span class="num">0</span>
+    <span class="kw">give back</span> slice(<span class="kw">my</span> history, start)
+
+<span class="cmt">-- Create rooms</span>
+rooms <span class="kw">is</span> {
+  general: ChatRoom(<span class="str">"general"</span>),
+  random: ChatRoom(<span class="str">"random"</span>),
+  help: ChatRoom(<span class="str">"help"</span>)
+}
+
+<span class="cmt">-- Set up HTTP server</span>
+app <span class="kw">is</span> createServer()
+
+app.get(<span class="str">"/"</span>, <span class="kw">with</span> req, res:
+  res.json({
+    name: <span class="str">"Quill Chat Server"</span>,
+    rooms: [<span class="str">"general"</span>, <span class="str">"random"</span>, <span class="str">"help"</span>],
+    online: length(rooms.general.users) + length(rooms.random.users) + length(rooms.help.users)
+  })
+)
+
+app.get(<span class="str">"/rooms/:name/history"</span>, <span class="kw">with</span> req, res:
+  room <span class="kw">is</span> rooms[req.params.name]
+  <span class="kw">if</span> room <span class="kw">is</span> <span class="kw">nothing</span>:
+    res.status(<span class="num">404</span>).json({error: <span class="str">"Room not found"</span>})
+    <span class="kw">give back</span> <span class="kw">nothing</span>
+  res.json(room.getHistory(<span class="num">50</span>))
+)
+
+<span class="cmt">-- Set up WebSocket server</span>
+wss <span class="kw">is</span> WebSocket.Server({server: app})
+
+wss.on(<span class="str">"connection"</span>, <span class="kw">with</span> socket:
+  username <span class="kw">is</span> <span class="kw">nothing</span>
+  currentRoom <span class="kw">is</span> <span class="kw">nothing</span>
+
+  socket.on(<span class="str">"message"</span>, <span class="kw">with</span> raw:
+    data <span class="kw">is</span> parseJSON(raw)
+
+    <span class="kw">match</span> data.action:
+      <span class="kw">when</span> <span class="str">"join"</span>:
+        username <span class="kw">is</span> data.username
+        roomName <span class="kw">is</span> data.room <span class="kw">or</span> <span class="str">"general"</span>
+        currentRoom <span class="kw">is</span> rooms[roomName]
+        <span class="kw">if</span> currentRoom <span class="kw">is not</span> <span class="kw">nothing</span>:
+          currentRoom.join(username, socket)
+          <span class="cmt">-- Send last 20 messages as history</span>
+          history <span class="kw">is</span> currentRoom.getHistory(<span class="num">20</span>)
+          socket.send(toJSON({type: <span class="str">"history"</span>, messages: history}))
+
+      <span class="kw">when</span> <span class="str">"message"</span>:
+        <span class="kw">if</span> currentRoom <span class="kw">is not</span> <span class="kw">nothing</span> <span class="kw">and</span> username <span class="kw">is not</span> <span class="kw">nothing</span>:
+          currentRoom.sendMessage(username, data.text)
+
+      <span class="kw">when</span> <span class="str">"switch"</span>:
+        <span class="kw">if</span> currentRoom <span class="kw">is not</span> <span class="kw">nothing</span>:
+          currentRoom.leave(username)
+        newRoom <span class="kw">is</span> rooms[data.room]
+        <span class="kw">if</span> newRoom <span class="kw">is not</span> <span class="kw">nothing</span>:
+          currentRoom <span class="kw">is</span> newRoom
+          currentRoom.join(username, socket)
+
+      <span class="kw">otherwise</span>:
+        socket.send(toJSON({type: <span class="str">"error"</span>, text: <span class="str">"Unknown action"</span>}))
+  )
+
+  socket.on(<span class="str">"close"</span>, <span class="kw">with</span>:
+    <span class="kw">if</span> currentRoom <span class="kw">is not</span> <span class="kw">nothing</span> <span class="kw">and</span> username <span class="kw">is not</span> <span class="kw">nothing</span>:
+      currentRoom.leave(username)
+  )
+)
+
+app.listen(<span class="num">3000</span>)
+<span class="kw">say</span> <span class="str">"Chat server running at http://localhost:3000"</span>
+<span class="kw">say</span> <span class="str">"WebSocket at ws://localhost:3000"</span>
+<span class="kw">say</span> <span class="str">"Rooms: general, random, help"</span></code></pre>
+
+      <p>Run it: <code>quill run chat-server.quill</code></p>
+      <p>Connect with any WebSocket client and send:</p>
+      <pre><code>// Join a room
+{"action": "join", "username": "Alice", "room": "general"}
+
+// Send a message
+{"action": "message", "text": "Hello everyone!"}
+
+// Switch rooms
+{"action": "switch", "room": "random"}</code></pre>
+
+      <p>Congratulations! You just built a real-time chat server with multiple rooms, message history, and WebSocket communication. This is the kind of program that powers apps like Slack and Discord.</p>
+
+      <div class="callout callout-info">
+        <strong>Try it yourself:</strong> Add private messaging (DMs) between users. Add a <code>/users</code> command that lists who is online. Add rate limiting so users cannot spam messages. Build a simple HTML client that connects to the WebSocket server.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- WHAT'S NEXT                                                   -->
+      <!-- ============================================================ -->
+
+      <h2 id="whats-next">What's Next?</h2>
+      <p>You have completed the entire Quill tutorial. You now know variables, control flow, loops, functions, classes, file I/O, web servers, testing, reactive components, and advanced patterns. That is a lot! Here is where to go from here:</p>
+
+      <h3>Build something real</h3>
+      <p>The best way to solidify your skills is to build a project you care about. Here are some ideas at increasing complexity.</p>
+
+      <h3>Explore the ecosystem</h3>
+      <ul>
+        <li><strong><a href="/docs/expo">Mobile apps with Expo</a></strong> &mdash; Build iOS and Android apps using Quill with Expo and React Native.</li>
+        <li><strong><a href="/docs/discord">Discord bots</a></strong> &mdash; Build bots that interact with Discord servers, handle commands, and automate moderation.</li>
+        <li><strong><a href="/docs/ai">AI with Claude</a></strong> &mdash; Integrate Anthropic's Claude API for natural language processing, chatbots, and AI-powered features.</li>
+        <li><strong><a href="/docs/workers">Cloudflare Workers</a></strong> &mdash; Deploy serverless functions at the edge that run in milliseconds across the globe.</li>
+        <li><strong><a href="/docs/stdlib#crypto">Crypto &amp; Security</a></strong> &mdash; Hash passwords, encrypt data, generate tokens, and build secure applications.</li>
+      </ul>
+
+      <h3>Deepen your knowledge</h3>
+      <ul>
+        <li><a href="/docs/language">Language Reference</a> &mdash; The complete syntax reference with every feature explained.</li>
+        <li><a href="/docs/stdlib">Standard Library</a> &mdash; All built-in functions, from string manipulation to networking.</li>
+        <li><a href="/docs/testing">Testing Guide</a> &mdash; Advanced testing patterns, mocks, and CI integration.</li>
+        <li><a href="/docs/examples">Examples</a> &mdash; Complete programs you can study and extend.</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <strong>You did it!</strong> You went from zero to writing chat servers, REST APIs, and interactive UIs. That is a real accomplishment. Keep building, keep experimenting, and welcome to the Quill community!
+      </div>
+
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

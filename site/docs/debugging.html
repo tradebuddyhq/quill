@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debugging &amp; Common Mistakes - Quill</title>
+  <meta name="description" content="Learn how to debug Quill programs and avoid common mistakes.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .error-block {
+      background: rgba(248, 81, 73, 0.08);
+      border-left: 3px solid var(--red);
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin: 12px 0;
+    }
+    .error-block code {
+      color: var(--red);
+    }
+    .wrong-label, .right-label {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .wrong-label {
+      background: rgba(248, 81, 73, 0.15);
+      color: var(--red);
+    }
+    .right-label {
+      background: rgba(30, 185, 105, 0.15);
+      color: var(--green);
+    }
+    .mistake-section {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 28px;
+      margin-bottom: 32px;
+    }
+    .mistake-section:last-child {
+      border-bottom: none;
+    }
+    .debugger-cmd {
+      display: inline-block;
+      background: var(--card-bg-alt);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Debugging</h4>
+      <ul>
+        <li><a href="#error-messages" class="active">Reading Error Messages</a></li>
+        <li><a href="#debugger">The Debugger</a></li>
+        <li><a href="#common-mistakes">Common Mistakes</a></li>
+        <li><a href="#strategies">Debugging Strategies</a></li>
+        <li><a href="#getting-help">Getting Help</a></li>
+      </ul>
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="/docs/getting-started">Installation</a></li>
+        <li><a href="/docs/getting-started#first-program">First program</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="/docs/language">Language reference</a></li>
+        <li><a href="/docs/language#variables">Variables</a></li>
+        <li><a href="/docs/language#functions">Functions</a></li>
+        <li><a href="/docs/language#control-flow">Control flow</a></li>
+      </ul>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/docs/discord">Discord Bots</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/tools">Tools</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Debugging &amp; Common Mistakes</h1>
+      <p>Every programmer runs into bugs. This page will help you understand Quill's error messages, use the built-in debugger, and avoid the most common pitfalls that trip up new and experienced Quill developers alike.</p>
+
+      <!-- ============================================
+           SECTION 1: READING ERROR MESSAGES
+           ============================================ -->
+
+      <h2 id="error-messages">Reading Error Messages</h2>
+
+      <p>Quill tries hard to give you helpful error messages. Instead of cryptic codes, you get a pointer to exactly where things went wrong, along with an explanation and often a suggestion for how to fix it.</p>
+
+      <h3>Anatomy of an error message</h3>
+      <p>Every Quill error has three parts:</p>
+      <ol>
+        <li><strong>Location</strong> &mdash; the file name and line number</li>
+        <li><strong>Source context</strong> &mdash; the actual line of code with an underline showing the exact spot</li>
+        <li><strong>Hint</strong> &mdash; a suggestion for how to fix the problem</li>
+      </ol>
+
+      <p>Let's look at five real error examples you will encounter and learn to read each one.</p>
+
+      <!-- Error Example 1 -->
+      <h3>1. Type mismatch</h3>
+      <p>You have a variable that should hold a number, but you gave it a string:</p>
+      <pre><code>count <span class="kw">is</span> <span class="num">0</span>
+<span class="cmt">-- ... later in the code ...</span>
+count <span class="kw">is</span> <span class="str">"hello"</span></code></pre>
+
+      <div class="error-block">
+<pre><code>Error [TYPE_MISMATCH] in counter.quill:4
+
+  4 |  count is "hello"
+               ^^^^^^^
+  Type mismatch: 'count' was declared as Number but
+  you are assigning a String.
+
+  Hint: Did you mean to assign a number? If you need
+        a string, declare a new variable instead.</code></pre>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>What this means:</strong> Quill infers the type of <code>count</code> from its first assignment (<code>0</code>, a number). When you later try to assign a string to it, Quill catches the mismatch. Fix it by assigning a number, or use a different variable for the string value.
+      </div>
+
+      <p><span class="right-label">Fix</span></p>
+      <pre><code>count <span class="kw">is</span> <span class="num">0</span>
+<span class="cmt">-- ... later ...</span>
+count <span class="kw">is</span> <span class="num">42</span>
+<span class="cmt">-- Or, if you need a separate string:</span>
+label <span class="kw">is</span> <span class="str">"hello"</span></code></pre>
+
+      <!-- Error Example 2 -->
+      <h3>2. Undefined variable</h3>
+      <p>You used a name that hasn't been defined yet:</p>
+      <pre><code><span class="kw">say</span> greeting</code></pre>
+
+      <div class="error-block">
+<pre><code>Error [UNDEFINED] in hello.quill:1
+
+  1 |  say greeting
+           ^^^^^^^^
+  'greeting' is not defined. You used this name but
+  never assigned a value to it.
+
+  Hint: Did you forget to write: greeting is "..."?
+        Check for typos in the variable name.</code></pre>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>What this means:</strong> Quill cannot find a variable named <code>greeting</code> anywhere in scope. This usually means you either forgot to define it, or you have a typo in the name.
+      </div>
+
+      <p><span class="right-label">Fix</span></p>
+      <pre><code>greeting <span class="kw">is</span> <span class="str">"Hello, World!"</span>
+<span class="kw">say</span> greeting</code></pre>
+
+      <!-- Error Example 3 -->
+      <h3>3. Missing colon</h3>
+      <p>You forgot the <code>:</code> at the end of a block statement:</p>
+      <pre><code><span class="kw">if</span> x <span class="kw">is</span> <span class="num">5</span>
+  <span class="kw">say</span> <span class="str">"five!"</span></code></pre>
+
+      <div class="error-block">
+<pre><code>Error [SYNTAX] in check.quill:1
+
+  1 |  if x is 5
+                ^
+  Expected ':' after condition. Block statements in
+  Quill must end with a colon.
+
+  Hint: Add a colon:  if x is 5:</code></pre>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>What this means:</strong> In Quill, all block-starting statements (<code>if</code>, <code>for each</code>, <code>to</code>, <code>while</code>, etc.) need a colon at the end to signal that an indented block follows. This is similar to Python's syntax.
+      </div>
+
+      <p><span class="right-label">Fix</span></p>
+      <pre><code><span class="kw">if</span> x <span class="kw">is</span> <span class="num">5</span>:
+  <span class="kw">say</span> <span class="str">"five!"</span></code></pre>
+
+      <!-- Error Example 4 -->
+      <h3>4. Wrong indentation</h3>
+      <p>You mixed tabs and spaces, or used an inconsistent indent:</p>
+      <pre><code><span class="kw">to</span> greet name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+	<span class="kw">say</span> <span class="str">"Welcome!"</span>  <span class="cmt">-- this line uses a tab!</span></code></pre>
+
+      <div class="error-block">
+<pre><code>Error [INDENT] in greet.quill:3
+
+  2 |    say "Hello, {name}!"
+  3 |  	 say "Welcome!"
+         ^
+  Inconsistent indentation. Line 2 uses spaces but
+  line 3 uses a tab character.
+
+  Hint: Use spaces consistently (2 or 4 spaces).
+        Configure your editor to insert spaces when
+        you press Tab.</code></pre>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>What this means:</strong> Quill uses indentation to determine code blocks (like Python). Mixing tabs and spaces confuses the parser. Pick one &mdash; we recommend 2 spaces &mdash; and stick with it.
+      </div>
+
+      <p><span class="right-label">Fix</span></p>
+      <pre><code><span class="kw">to</span> greet name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+  <span class="kw">say</span> <span class="str">"Welcome!"</span></code></pre>
+
+      <!-- Error Example 5 -->
+      <h3>5. Import not found</h3>
+      <p>The file you're trying to bring in doesn't exist:</p>
+      <pre><code><span class="kw">bring</span> <span class="str">"./helpers/math"</span></code></pre>
+
+      <div class="error-block">
+<pre><code>Error [IMPORT_NOT_FOUND] in app.quill:1
+
+  1 |  bring "./helpers/math"
+              ^^^^^^^^^^^^^^^^
+  Could not find module './helpers/math'. Looked for:
+    - ./helpers/math.quill
+    - ./helpers/math/index.quill
+
+  Hint: Check that the file exists and the path is
+        correct. Paths are relative to the current file.</code></pre>
+      </div>
+
+      <div class="callout callout-info">
+        <strong>What this means:</strong> Quill looked for a file at the path you specified (with <code>.quill</code> extension added automatically) and couldn't find it. Double-check the path and make sure the file exists.
+      </div>
+
+      <p><span class="right-label">Fix</span></p>
+      <pre><code><span class="cmt">-- Make sure the file exists at ./helpers/math.quill</span>
+<span class="kw">bring</span> <span class="str">"./helpers/math"</span>
+
+<span class="cmt">-- Or check if the path should be different:</span>
+<span class="kw">bring</span> <span class="str">"./utils/math"</span></code></pre>
+
+
+      <!-- ============================================
+           SECTION 2: THE DEBUGGER
+           ============================================ -->
+
+      <h2 id="debugger">The Debugger</h2>
+
+      <p>Quill ships with a built-in interactive debugger that lets you pause your program, step through code line by line, and inspect variables. It's one of the most powerful tools you have for finding bugs.</p>
+
+      <h3>Starting the debugger</h3>
+      <p>Run your file with the <code>debug</code> command instead of <code>run</code>:</p>
+      <pre><code>quill debug app.quill</code></pre>
+      <p>You'll see a prompt like this:</p>
+      <pre><code>Quill Debugger v1.0
+Loaded: app.quill (42 lines)
+Paused at line 1.
+
+(quill-debug) &gt; _</code></pre>
+
+      <h3>Setting breakpoints</h3>
+      <p>A breakpoint tells the debugger to pause when it reaches a specific line. Use the <span class="debugger-cmd">break</span> command:</p>
+      <pre><code>(quill-debug) &gt; break 10
+Breakpoint set at line 10.
+
+(quill-debug) &gt; break 25
+Breakpoint set at line 25.</code></pre>
+
+      <p>To see all your breakpoints:</p>
+      <pre><code>(quill-debug) &gt; breakpoints
+  1: line 10 (app.quill)
+  2: line 25 (app.quill)</code></pre>
+
+      <p>To remove a breakpoint:</p>
+      <pre><code>(quill-debug) &gt; unbreak 10
+Breakpoint at line 10 removed.</code></pre>
+
+      <h3>Stepping through code</h3>
+
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Command</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Short</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">What it does</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>step</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>s</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Execute the current line and move to the next one</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>into</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>i</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Step into a function call (follow the call)</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>out</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>o</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Run until the current function returns</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>continue</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>c</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Run until the next breakpoint (or end of program)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Inspecting variables</h3>
+      <p>While paused, you can look at the current values of any variable:</p>
+      <pre><code>(quill-debug) &gt; print count
+count = 7 (Number)
+
+(quill-debug) &gt; print name
+name = "Alice" (String)
+
+(quill-debug) &gt; print items
+items = ["apple", "banana", "cherry"] (List of String)</code></pre>
+
+      <p>To see every variable in the current scope at once, use <span class="debugger-cmd">locals</span>:</p>
+      <pre><code>(quill-debug) &gt; locals
+  count   = 7 (Number)
+  name    = "Alice" (String)
+  items   = ["apple", "banana", "cherry"] (List)
+  total   = 0 (Number)</code></pre>
+
+      <h3>Viewing the call stack</h3>
+      <p>When you're inside a function, the <span class="debugger-cmd">stack</span> command shows you how you got there:</p>
+      <pre><code>(quill-debug) &gt; stack
+  #0  calculateTotal (app.quill:18)
+  #1  processOrder (app.quill:32)
+  #2  main (app.quill:45)</code></pre>
+
+      <p>This reads from top to bottom: you're currently in <code>calculateTotal</code> at line 18, which was called by <code>processOrder</code> at line 32, which was called from the top level at line 45.</p>
+
+      <h3>Full walkthrough: finding a bug</h3>
+
+      <p>Let's debug a function that's returning the wrong result. Here's a program that should calculate the average of a list of numbers, but it's giving the wrong answer:</p>
+
+      <pre><code><span class="cmt">-- average.quill</span>
+<span class="kw">to</span> average numbers:
+  total <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">for each</span> num <span class="kw">in</span> numbers:
+    total <span class="kw">is</span> total + num
+  <span class="kw">give back</span> total / numbers.length
+
+scores <span class="kw">are</span> [<span class="num">80</span>, <span class="num">90</span>, <span class="num">100</span>]
+result <span class="kw">is</span> average(scores)
+<span class="kw">say</span> <span class="str">"Average: {result}"</span>
+<span class="cmt">-- Expected: 90, but getting: 60 ... why?</span></code></pre>
+
+      <p>Let's fire up the debugger and find out:</p>
+
+      <pre><code>$ quill debug average.quill
+
+Quill Debugger v1.0
+Loaded: average.quill (10 lines)
+Paused at line 1.
+
+(quill-debug) &gt; break 5
+Breakpoint set at line 5.
+
+(quill-debug) &gt; continue
+Hit breakpoint at line 5.
+
+  4 |    for each num in numbers:
+  5 | &gt;   total is total + num
+  6 |    give back total / numbers.length
+
+(quill-debug) &gt; print num
+num = 80 (Number)
+
+(quill-debug) &gt; print total
+total = 0 (Number)
+
+(quill-debug) &gt; step
+  5 | &gt;   total is total + num
+
+(quill-debug) &gt; print total
+total = 80 (Number)
+
+(quill-debug) &gt; continue
+Hit breakpoint at line 5.
+
+(quill-debug) &gt; print num
+num = 90 (Number)
+
+(quill-debug) &gt; print total
+total = 80 (Number)
+
+(quill-debug) &gt; step
+
+(quill-debug) &gt; print total
+total = 170 (Number)
+
+(quill-debug) &gt; continue
+Hit breakpoint at line 5.
+
+(quill-debug) &gt; print num
+num = 100 (Number)
+
+(quill-debug) &gt; step
+
+(quill-debug) &gt; print total
+total = 270 (Number)
+
+(quill-debug) &gt; print numbers.length
+numbers.length = 3 (Number)
+
+<span class="cmt">-- Aha! 270 / 3 = 90. That's correct!</span>
+<span class="cmt">-- Let's continue to see the final output...</span>
+
+(quill-debug) &gt; continue
+Average: 90
+Program finished.</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> In this walkthrough the code turned out to be correct. In practice, the debugger shines when you find that a variable has an unexpected value &mdash; that's the moment you know exactly where the bug is. Set breakpoints around the suspicious area, step through, and watch the values change.
+      </div>
+
+
+      <!-- ============================================
+           SECTION 3: COMMON MISTAKES & FIXES
+           ============================================ -->
+
+      <h2 id="common-mistakes">Common Mistakes &amp; Fixes</h2>
+
+      <p>Here are the most common mistakes Quill programmers make. Don't feel bad if you run into these &mdash; everyone does, especially when learning a new language. Each entry shows the wrong code, the error you'll see, why it's wrong, and how to fix it.</p>
+
+      <!-- Mistake 1 -->
+      <div class="mistake-section">
+        <h3>1. Forgetting <code>is</code> for assignment</h3>
+        <p>If you're coming from a language where assignment doesn't need a keyword, you might just write the variable name and value next to each other.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code>name <span class="str">"hello"</span></code></pre>
+
+        <div class="error-block">
+<pre><code>Error [SYNTAX] in app.quill:1
+
+  1 |  name "hello"
+            ^^^^^^^
+  Unexpected string literal. Did you mean to assign
+  this value to 'name'?
+
+  Hint: Use 'is' for assignment:  name is "hello"</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> In Quill, assignment always uses the <code>is</code> keyword. Just writing two things next to each other doesn't mean anything to the compiler.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code>name <span class="kw">is</span> <span class="str">"hello"</span></code></pre>
+      </div>
+
+      <!-- Mistake 2 -->
+      <div class="mistake-section">
+        <h3>2. Using <code>=</code> instead of <code>is</code></h3>
+        <p>This is the single most common mistake for anyone coming from JavaScript, Python, or almost any other language. Muscle memory is hard to fight.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code>count = <span class="num">10</span></code></pre>
+
+        <div class="error-block">
+<pre><code>Error [SYNTAX] in app.quill:1
+
+  1 |  count = 10
+              ^
+  Unexpected character '='. Quill uses 'is' for
+  assignment, not '='.
+
+  Hint: Write:  count is 10</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> Quill was designed to read like English. The <code>=</code> symbol doesn't exist in the language. Use <code>is</code> for assignment and <code>is</code> for comparison too &mdash; Quill figures out which you mean from context.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code>count <span class="kw">is</span> <span class="num">10</span></code></pre>
+      </div>
+
+      <!-- Mistake 3 -->
+      <div class="mistake-section">
+        <h3>3. Forgetting the colon</h3>
+        <p>Block-starting lines like <code>if</code>, <code>for each</code>, <code>to</code> (function), and <code>while</code> all need a colon at the end.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">if</span> x <span class="kw">is</span> <span class="num">5</span>
+  <span class="kw">say</span> <span class="str">"five!"</span></code></pre>
+
+        <div class="error-block">
+<pre><code>Error [SYNTAX] in app.quill:1
+
+  1 |  if x is 5
+                ^
+  Expected ':' after condition.
+
+  Hint: Add a colon:  if x is 5:</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> The colon tells Quill that an indented block is about to follow. Without it, the parser doesn't know where the condition ends and the body begins.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="kw">if</span> x <span class="kw">is</span> <span class="num">5</span>:
+  <span class="kw">say</span> <span class="str">"five!"</span></code></pre>
+      </div>
+
+      <!-- Mistake 4 -->
+      <div class="mistake-section">
+        <h3>4. Wrong indentation</h3>
+        <p>Code that should be inside a block is placed at the wrong level, or you accidentally de-indented a line.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">to</span> greet name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+<span class="kw">say</span> <span class="str">"Welcome aboard!"</span>   <span class="cmt">-- oops, this is outside the function!</span></code></pre>
+
+        <p><strong>What happens:</strong> No error is thrown, but <code>"Welcome aboard!"</code> runs immediately when the file loads, not when <code>greet</code> is called. This is a logic bug, not a syntax error, which makes it harder to spot.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="kw">to</span> greet name:
+  <span class="kw">say</span> <span class="str">"Hello, {name}!"</span>
+  <span class="kw">say</span> <span class="str">"Welcome aboard!"</span>   <span class="cmt">-- now inside the function</span></code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> Turn on "show whitespace" in your editor so you can see indentation characters. In VS Code, set <code>editor.renderWhitespace</code> to <code>"all"</code>.
+        </div>
+      </div>
+
+      <!-- Mistake 5 -->
+      <div class="mistake-section">
+        <h3>5. Using <code>return</code> instead of <code>give back</code></h3>
+        <p>In most languages you write <code>return</code>, but Quill uses the phrase <code>give back</code>.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">to</span> add a, b:
+  return a + b</code></pre>
+
+        <div class="error-block">
+<pre><code>Error [UNDEFINED] in math.quill:2
+
+  2 |    return a + b
+         ^^^^^^
+  'return' is not defined. Did you mean 'give back'?
+
+  Hint: Quill uses 'give back' to return values:
+        give back a + b</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> Quill was designed with English readability in mind. Functions "give back" their results. The keyword <code>return</code> doesn't exist in Quill.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="kw">to</span> add a, b:
+  <span class="kw">give back</span> a + b</code></pre>
+      </div>
+
+      <!-- Mistake 6 -->
+      <div class="mistake-section">
+        <h3>6. Comparing with <code>==</code> instead of <code>is</code></h3>
+        <p>Just like assignment, comparisons use <code>is</code> rather than <code>==</code>.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">if</span> name == <span class="str">"Alice"</span>:
+  <span class="kw">say</span> <span class="str">"Hi Alice!"</span></code></pre>
+
+        <div class="error-block">
+<pre><code>Error [SYNTAX] in app.quill:1
+
+  1 |  if name == "Alice":
+               ^^
+  Unexpected '=='. Quill uses 'is' for comparison.
+
+  Hint: Write:  if name is "Alice":</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> There is no <code>==</code> operator in Quill. The word <code>is</code> handles both assignment and comparison. Quill determines which one you mean based on context: inside an <code>if</code> condition, <code>is</code> means comparison.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="kw">if</span> name <span class="kw">is</span> <span class="str">"Alice"</span>:
+  <span class="kw">say</span> <span class="str">"Hi Alice!"</span></code></pre>
+      </div>
+
+      <!-- Mistake 7 -->
+      <div class="mistake-section">
+        <h3>7. Forgetting <code>await</code> on async functions</h3>
+        <p>When you call an async function without <code>await</code>, you get a Promise object instead of the actual data.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">to</span> fetchUser:
+  response <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"https://api.example.com/user"</span>)
+  <span class="kw">give back</span> response.json()
+
+<span class="cmt">-- Calling without await:</span>
+user <span class="kw">is</span> fetchUser()
+<span class="kw">say</span> user.name   <span class="cmt">-- undefined! user is a Promise, not the data</span></code></pre>
+
+        <p><strong>What happens:</strong> No error is thrown, but <code>user</code> holds a Promise object rather than the actual user data. Trying to read <code>user.name</code> gives <code>undefined</code>, which can be baffling if you don't know why.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code>user <span class="kw">is</span> <span class="kw">await</span> fetchUser()
+<span class="kw">say</span> user.name   <span class="cmt">-- works! "Alice"</span></code></pre>
+
+        <div class="callout callout-info">
+          <strong>Rule of thumb:</strong> If a function uses <code>await</code> inside it, you almost certainly need to <code>await</code> when calling it too. Quill will warn you about this with <code>quill check</code>.
+        </div>
+      </div>
+
+      <!-- Mistake 8 -->
+      <div class="mistake-section">
+        <h3>8. Modifying a list while looping over it</h3>
+        <p>Adding or removing items from a list while you're iterating through it leads to unexpected behavior.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+
+<span class="kw">for each</span> num <span class="kw">in</span> numbers:
+  <span class="kw">if</span> num <span class="kw">is</span> <span class="num">3</span>:
+    numbers.remove(num)   <span class="cmt">-- modifying the list mid-loop!</span>
+
+<span class="kw">say</span> numbers
+<span class="cmt">-- Expected: [1, 2, 4, 5]</span>
+<span class="cmt">-- Actual:   [1, 2, 4] ... it skipped 4!</span></code></pre>
+
+        <p><strong>Why it's wrong:</strong> When you remove an item, the loop's internal index gets out of sync with the list's new length. Items get skipped or the loop ends early. This is a classic bug in every language.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code>numbers <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>]
+
+<span class="cmt">-- Build a new list instead of modifying the original:</span>
+filtered <span class="kw">is</span> numbers.filter(<span class="kw">to</span> (num): num <span class="kw">is not</span> <span class="num">3</span>)
+
+<span class="kw">say</span> filtered
+<span class="cmt">-- [1, 2, 4, 5]</span></code></pre>
+      </div>
+
+      <!-- Mistake 9 -->
+      <div class="mistake-section">
+        <h3>9. String concatenation with numbers</h3>
+        <p>Trying to glue a string and a number together with <code>+</code> can produce unexpected results.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code>count <span class="kw">is</span> <span class="num">5</span>
+<span class="kw">say</span> <span class="str">"Count: "</span> + count</code></pre>
+
+        <div class="error-block">
+<pre><code>Error [TYPE_MISMATCH] in app.quill:2
+
+  2 |  say "Count: " + count
+                     ^
+  Cannot use '+' with String and Number.
+
+  Hint: Use string interpolation instead:
+        say "Count: {count}"</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> Quill doesn't silently convert types during concatenation (unlike JavaScript). This prevents bugs where <code>"5" + 3</code> accidentally gives <code>"53"</code>. Use string interpolation instead &mdash; it's safer and easier to read.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code>count <span class="kw">is</span> <span class="num">5</span>
+<span class="kw">say</span> <span class="str">"Count: {count}"</span></code></pre>
+      </div>
+
+      <!-- Mistake 10 -->
+      <div class="mistake-section">
+        <h3>10. Using <code>my</code> outside a class</h3>
+        <p>The <code>my</code> keyword refers to the current instance and only works inside <code>describe</code> blocks (Quill's classes).</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="cmt">-- At the top level of a file:</span>
+my.name <span class="kw">is</span> <span class="str">"Alice"</span></code></pre>
+
+        <div class="error-block">
+<pre><code>Error [CONTEXT] in app.quill:1
+
+  1 |  my.name is "Alice"
+       ^^
+  'my' can only be used inside a 'describe' block.
+  It refers to the current instance of a class.
+
+  Hint: If you want a plain variable, just write:
+        name is "Alice"</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> <code>my</code> is Quill's equivalent of <code>this</code> or <code>self</code> in other languages. It only makes sense inside a class definition where there is an "instance" to refer to.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="cmt">-- For a plain variable:</span>
+name <span class="kw">is</span> <span class="str">"Alice"</span>
+
+<span class="cmt">-- Or inside a class:</span>
+<span class="kw">describe</span> Person:
+  <span class="kw">to</span> setup name:
+    my.name <span class="kw">is</span> name   <span class="cmt">-- correct: inside a describe block</span></code></pre>
+      </div>
+
+      <!-- Mistake 11 -->
+      <div class="mistake-section">
+        <h3>11. Forgetting <code>new</code> for class instances</h3>
+        <p>When you create an instance of a class, you need the <code>new</code> keyword.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">describe</span> Dog:
+  <span class="kw">to</span> setup name:
+    my.name <span class="kw">is</span> name
+
+<span class="cmt">-- Missing 'new':</span>
+buddy <span class="kw">is</span> Dog(<span class="str">"Buddy"</span>)</code></pre>
+
+        <div class="error-block">
+<pre><code>Error [CALL] in app.quill:6
+
+  6 |  buddy is Dog("Buddy")
+                ^^^
+  'Dog' is a class, not a function. Use 'new' to
+  create an instance.
+
+  Hint: Write:  buddy is new Dog("Buddy")</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> Without <code>new</code>, Quill tries to call <code>Dog</code> as a regular function, which fails because classes need to be instantiated. The <code>new</code> keyword tells Quill to create a fresh instance and run the <code>setup</code> method.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code>buddy <span class="kw">is</span> <span class="kw">new</span> Dog(<span class="str">"Buddy"</span>)
+<span class="kw">say</span> buddy.name   <span class="cmt">-- "Buddy"</span></code></pre>
+      </div>
+
+      <!-- Mistake 12 -->
+      <div class="mistake-section">
+        <h3>12. Circular imports</h3>
+        <p>File A imports file B, and file B imports file A. This creates an infinite loop.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="cmt">-- fileA.quill</span>
+<span class="kw">bring</span> <span class="str">"./fileB"</span>
+
+<span class="kw">to</span> helperA:
+  <span class="kw">say</span> <span class="str">"A"</span></code></pre>
+        <pre><code><span class="cmt">-- fileB.quill</span>
+<span class="kw">bring</span> <span class="str">"./fileA"</span>   <span class="cmt">-- circular!</span>
+
+<span class="kw">to</span> helperB:
+  <span class="kw">say</span> <span class="str">"B"</span></code></pre>
+
+        <div class="error-block">
+<pre><code>Error [CIRCULAR_IMPORT] in fileB.quill:1
+
+  Circular dependency detected:
+    fileA.quill -> fileB.quill -> fileA.quill
+
+  Hint: Move shared code into a third file that both
+        can import, or restructure to remove the cycle.</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> When A loads B, B tries to load A, which tries to load B again, forever. Quill detects this and stops with an error.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="cmt">-- shared.quill (new file with shared code)</span>
+<span class="kw">to</span> sharedHelper:
+  <span class="kw">say</span> <span class="str">"shared"</span>
+
+<span class="cmt">-- fileA.quill</span>
+<span class="kw">bring</span> <span class="str">"./shared"</span>
+
+<span class="cmt">-- fileB.quill</span>
+<span class="kw">bring</span> <span class="str">"./shared"</span></code></pre>
+      </div>
+
+      <!-- Mistake 13 -->
+      <div class="mistake-section">
+        <h3>13. Off-by-one errors with <code>range</code></h3>
+        <p>Quill's <code>range</code> function is exclusive of the end value, which surprises many developers.</p>
+
+        <p><span class="wrong-label">Wrong (if you expect [1,2,3,4,5])</span></p>
+        <pre><code>numbers <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">5</span>)
+<span class="kw">say</span> numbers
+<span class="cmt">-- You expected: [1, 2, 3, 4, 5]</span>
+<span class="cmt">-- You got:      [1, 2, 3, 4]</span></code></pre>
+
+        <p><strong>What happens:</strong> No error &mdash; the code runs fine, but the result doesn't include <code>5</code>. This is a logic bug. <code>range(1, 5)</code> produces numbers from 1 up to (but not including) 5.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="cmt">-- To include 5, go one higher:</span>
+numbers <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">6</span>)
+<span class="kw">say</span> numbers
+<span class="cmt">-- [1, 2, 3, 4, 5]</span></code></pre>
+
+        <div class="callout callout-info">
+          <strong>Why exclusive?</strong> This convention (used by Python, Rust, and many others) prevents a whole class of fencepost bugs. <code>range(0, list.length)</code> gives you every valid index without needing to subtract 1.
+        </div>
+      </div>
+
+      <!-- Mistake 14 -->
+      <div class="mistake-section">
+        <h3>14. Async in loops</h3>
+        <p>Using <code>await</code> inside a <code>for each</code> loop runs requests one at a time (sequentially), which might not be what you want.</p>
+
+        <p><span class="wrong-label">Slow (sequential, one by one)</span></p>
+        <pre><code>urls <span class="kw">are</span> [<span class="str">"https://api.com/1"</span>, <span class="str">"https://api.com/2"</span>, <span class="str">"https://api.com/3"</span>]
+
+<span class="kw">for each</span> url <span class="kw">in</span> urls:
+  response <span class="kw">is</span> <span class="kw">await</span> fetch(url)   <span class="cmt">-- waits for each one before starting the next</span>
+  <span class="kw">say</span> response.status</code></pre>
+
+        <p><strong>What happens:</strong> Each request waits for the previous one to finish before starting. If each takes 1 second, three requests take 3 seconds total. This is correct but slow.</p>
+
+        <p><span class="right-label">Fix (parallel, all at once)</span></p>
+        <pre><code>urls <span class="kw">are</span> [<span class="str">"https://api.com/1"</span>, <span class="str">"https://api.com/2"</span>, <span class="str">"https://api.com/3"</span>]
+
+<span class="cmt">-- Fire all requests at the same time:</span>
+promises <span class="kw">are</span> urls.map(<span class="kw">to</span> (url): fetch(url))
+responses <span class="kw">is</span> <span class="kw">await</span> Promise.all(promises)
+
+<span class="kw">for each</span> response <span class="kw">in</span> responses:
+  <span class="kw">say</span> response.status</code></pre>
+
+        <div class="callout callout-info">
+          <strong>When is sequential correct?</strong> Sometimes you genuinely need each request to finish before the next one starts (e.g., each request depends on the previous response). In that case, <code>await</code> inside the loop is the right approach.
+        </div>
+      </div>
+
+      <!-- Mistake 15 -->
+      <div class="mistake-section">
+        <h3>15. Mutable state in components</h3>
+        <p>Modifying state directly instead of using state setters means your UI won't update.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">component</span> Counter:
+  count <span class="kw">is</span> state(<span class="num">0</span>)
+
+  <span class="kw">to</span> increment:
+    count <span class="kw">is</span> count + <span class="num">1</span>   <span class="cmt">-- directly modifying! UI won't update</span>
+
+  <span class="kw">to</span> render:
+    <span class="kw">give back</span> &lt;button on click is increment&gt;
+      <span class="str">"{count}"</span>
+    &lt;/button&gt;</code></pre>
+
+        <p><strong>What happens:</strong> The variable <code>count</code> changes internally, but the component doesn't re-render because Quill's reactivity system doesn't know the state changed. You must use the setter function so Quill can track the update.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="kw">component</span> Counter:
+  [count, setCount] <span class="kw">is</span> state(<span class="num">0</span>)
+
+  <span class="kw">to</span> increment:
+    setCount(count + <span class="num">1</span>)   <span class="cmt">-- use the setter! UI will update</span>
+
+  <span class="kw">to</span> render:
+    <span class="kw">give back</span> &lt;button on click is increment&gt;
+      <span class="str">"{count}"</span>
+    &lt;/button&gt;</code></pre>
+
+        <div class="callout callout-tip">
+          <strong>Tip:</strong> If you've used React, this pattern will feel familiar. The destructured <code>[value, setter]</code> pattern is how Quill tracks what needs to re-render.
+        </div>
+      </div>
+
+      <!-- Mistake 16 (bonus) -->
+      <div class="mistake-section">
+        <h3>16. Forgetting to handle <code>nothing</code></h3>
+        <p>A function that doesn't always <code>give back</code> a value will return <code>nothing</code> (Quill's version of null/undefined), which can cause errors downstream.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">to</span> findUser id:
+  <span class="kw">for each</span> user <span class="kw">in</span> users:
+    <span class="kw">if</span> user.id <span class="kw">is</span> id:
+      <span class="kw">give back</span> user
+  <span class="cmt">-- what if the user isn't found? gives back nothing!</span>
+
+result <span class="kw">is</span> findUser(<span class="num">999</span>)
+<span class="kw">say</span> result.name   <span class="cmt">-- Error: Cannot read 'name' of nothing</span></code></pre>
+
+        <p><strong>Why it's wrong:</strong> If no user matches the ID, the function ends without a <code>give back</code> statement, so it returns <code>nothing</code>. Then trying to access <code>.name</code> on <code>nothing</code> crashes.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="kw">to</span> findUser id:
+  <span class="kw">for each</span> user <span class="kw">in</span> users:
+    <span class="kw">if</span> user.id <span class="kw">is</span> id:
+      <span class="kw">give back</span> user
+  <span class="kw">give back</span> nothing   <span class="cmt">-- explicit!</span>
+
+result <span class="kw">is</span> findUser(<span class="num">999</span>)
+<span class="kw">if</span> result <span class="kw">is not</span> nothing:
+  <span class="kw">say</span> result.name
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"User not found"</span></code></pre>
+      </div>
+
+      <!-- Mistake 17 (bonus) -->
+      <div class="mistake-section">
+        <h3>17. Shadowing a variable by accident</h3>
+        <p>Declaring a variable inside a block with the same name as one outside it. The inner variable "shadows" the outer one, and changes to it don't affect the outer variable.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code>total <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">to</span> addToTotal amount:
+  total <span class="kw">is</span> amount   <span class="cmt">-- this creates a NEW local 'total', doesn't modify the outer one!</span>
+
+addToTotal(<span class="num">10</span>)
+addToTotal(<span class="num">20</span>)
+<span class="kw">say</span> total   <span class="cmt">-- still 0!</span></code></pre>
+
+        <p><strong>What happens:</strong> No error is thrown. The <code>total</code> inside <code>addToTotal</code> is a brand new local variable that disappears when the function ends. The outer <code>total</code> is never touched. This is a silent logic bug.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code>total <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">to</span> addToTotal amount:
+  <span class="kw">change</span> total <span class="kw">to</span> total + amount   <span class="cmt">-- explicitly modify the outer variable</span>
+
+addToTotal(<span class="num">10</span>)
+addToTotal(<span class="num">20</span>)
+<span class="kw">say</span> total   <span class="cmt">-- 30</span></code></pre>
+
+        <div class="callout callout-info">
+          <strong>Why this happens:</strong> Quill treats <code>x is value</code> inside a function as a new local declaration by default. To modify a variable from an outer scope, use <code>change x to value</code>. This design prevents accidental mutation of global state.
+        </div>
+      </div>
+
+      <!-- Mistake 18 (bonus) -->
+      <div class="mistake-section">
+        <h3>18. Passing the wrong number of arguments</h3>
+        <p>Calling a function with too many or too few arguments.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">to</span> greet firstName, lastName:
+  <span class="kw">say</span> <span class="str">"Hello, {firstName} {lastName}!"</span>
+
+<span class="cmt">-- Too few arguments:</span>
+greet(<span class="str">"Alice"</span>)</code></pre>
+
+        <div class="error-block">
+<pre><code>Error [ARGS] in app.quill:5
+
+  5 |  greet("Alice")
+       ^^^^^
+  'greet' expects 2 arguments (firstName, lastName)
+  but was called with 1.
+
+  Hint: Add the missing argument:
+        greet("Alice", "Smith")</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> Quill functions are strict about the number of arguments. Unlike JavaScript, missing arguments don't silently become <code>undefined</code> &mdash; Quill catches this at compile time.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code>greet(<span class="str">"Alice"</span>, <span class="str">"Smith"</span>)
+
+<span class="cmt">-- Or make the parameter optional with a default value:</span>
+<span class="kw">to</span> greet firstName, lastName <span class="kw">is</span> <span class="str">""</span>:
+  <span class="kw">if</span> lastName <span class="kw">is</span> <span class="str">""</span>:
+    <span class="kw">say</span> <span class="str">"Hello, {firstName}!"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">say</span> <span class="str">"Hello, {firstName} {lastName}!"</span></code></pre>
+      </div>
+
+      <!-- Mistake 19 (bonus) -->
+      <div class="mistake-section">
+        <h3>19. Using <code>otherwise if</code> after <code>otherwise</code></h3>
+        <p>Putting an <code>otherwise if</code> branch after the catch-all <code>otherwise</code> block.</p>
+
+        <p><span class="wrong-label">Wrong</span></p>
+        <pre><code><span class="kw">if</span> score &gt; <span class="num">90</span>:
+  grade <span class="kw">is</span> <span class="str">"A"</span>
+<span class="kw">otherwise</span>:
+  grade <span class="kw">is</span> <span class="str">"F"</span>
+<span class="kw">otherwise if</span> score &gt; <span class="num">80</span>:   <span class="cmt">-- this will never run!</span>
+  grade <span class="kw">is</span> <span class="str">"B"</span></code></pre>
+
+        <div class="error-block">
+<pre><code>Error [SYNTAX] in grades.quill:5
+
+  5 |  otherwise if score > 80:
+       ^^^^^^^^^
+  'otherwise if' cannot appear after 'otherwise'.
+  The 'otherwise' block must be last.
+
+  Hint: Move 'otherwise if' branches before 'otherwise'.</code></pre>
+        </div>
+
+        <p><strong>Why it's wrong:</strong> The <code>otherwise</code> block is the catch-all default &mdash; it must come last. Any branches after it would be unreachable. Quill catches this mistake at compile time.</p>
+
+        <p><span class="right-label">Fix</span></p>
+        <pre><code><span class="kw">if</span> score &gt; <span class="num">90</span>:
+  grade <span class="kw">is</span> <span class="str">"A"</span>
+<span class="kw">otherwise if</span> score &gt; <span class="num">80</span>:
+  grade <span class="kw">is</span> <span class="str">"B"</span>
+<span class="kw">otherwise</span>:
+  grade <span class="kw">is</span> <span class="str">"F"</span></code></pre>
+      </div>
+
+
+      <!-- ============================================
+           SECTION 4: DEBUGGING STRATEGIES
+           ============================================ -->
+
+      <h2 id="strategies">Debugging Strategies</h2>
+
+      <p>Beyond the debugger and error messages, here are proven strategies for tracking down bugs efficiently.</p>
+
+      <h3>Print debugging with <code>say</code></h3>
+      <p>The simplest and often most effective technique. Drop <code>say</code> statements into your code to trace what values variables have at different points.</p>
+      <pre><code><span class="kw">to</span> processOrder items:
+  <span class="kw">say</span> <span class="str">"[DEBUG] processOrder called with {items.length} items"</span>
+  total <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">for each</span> item <span class="kw">in</span> items:
+    <span class="kw">say</span> <span class="str">"[DEBUG] item: {item.name}, price: {item.price}"</span>
+    total <span class="kw">is</span> total + item.price
+  <span class="kw">say</span> <span class="str">"[DEBUG] total before tax: {total}"</span>
+  <span class="kw">give back</span> total * <span class="num">1.08</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Prefix your debug messages with <code>[DEBUG]</code> so you can easily find and remove them later. Some developers use <code>say!</code> (if available) for debug-only output that gets stripped in production builds.
+      </div>
+
+      <h3>Divide and conquer</h3>
+      <p>When you have a big program and something is wrong, comment out half the code. If the bug disappears, it's in the half you commented out. If the bug remains, it's in the other half. Keep halving until you find it.</p>
+      <pre><code><span class="cmt">-- Comment out sections to isolate the bug:</span>
+
+<span class="cmt">-- step1()</span>
+<span class="cmt">-- step2()</span>
+step3()        <span class="cmt">-- bug appears? it's in step3</span>
+<span class="cmt">-- step4()</span></code></pre>
+
+      <p>This is especially useful for logic bugs that don't produce error messages.</p>
+
+      <h3>Rubber duck debugging</h3>
+      <p>Explain your code out loud, line by line, to anyone (or anything &mdash; a rubber duck works). The act of explaining often reveals the mistake because you have to think about what each line actually does, not what you assume it does.</p>
+
+      <div class="callout callout-info">
+        <strong>How it works:</strong> You say "On this line, I set total to zero. Then I loop through each item... wait. I'm adding to <code>total</code> but I declared a <em>new</em> <code>total</code> inside the loop! That's the bug!" The act of verbalizing forces you to think carefully.
+      </div>
+
+      <h3>Reading the compiled JavaScript</h3>
+      <p>Since Quill compiles to JavaScript, you can inspect the output to understand what's actually running:</p>
+      <pre><code><span class="cmt"># Generate the JS output</span>
+quill build app.quill
+
+<span class="cmt"># Read it</span>
+cat app.js</code></pre>
+
+      <p>This is particularly helpful for understanding how Quill's syntactic sugar translates to actual operations. If the compiled JS looks wrong, you've found a compiler bug (rare, but possible) or a misunderstanding of Quill syntax.</p>
+
+      <h3>Using the type checker</h3>
+      <p>Quill's <code>check</code> command analyzes your code without running it and catches many errors before they become runtime bugs:</p>
+      <pre><code>quill check app.quill</code></pre>
+      <pre><code>app.quill:14  Warning: 'result' might be nothing here.
+                        Add a check before accessing .name
+app.quill:22  Error:   Cannot call 'push' on a String.
+                        Did you mean to use a List?
+
+Found 1 error and 1 warning.</code></pre>
+
+      <p>Run <code>quill check</code> early and often. Many developers add it to their editor's save hook so every file is checked automatically.</p>
+
+      <h3>Using tests to prevent regressions</h3>
+      <p>Once you've fixed a bug, write a test that would have caught it. This prevents the same bug from coming back.</p>
+      <pre><code><span class="cmt">-- test_average.quill</span>
+<span class="kw">bring</span> <span class="str">"./average"</span>
+
+<span class="kw">test</span> <span class="str">"average of three numbers"</span>:
+  result <span class="kw">is</span> average([<span class="num">80</span>, <span class="num">90</span>, <span class="num">100</span>])
+  expect result <span class="kw">to be</span> <span class="num">90</span>
+
+<span class="kw">test</span> <span class="str">"average of empty list"</span>:
+  result <span class="kw">is</span> average([])
+  expect result <span class="kw">to be</span> <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"average of one number"</span>:
+  result <span class="kw">is</span> average([<span class="num">42</span>])
+  expect result <span class="kw">to be</span> <span class="num">42</span></code></pre>
+
+      <pre><code>quill test test_average.quill</code></pre>
+
+      <p>See the <a href="/docs/testing">Testing</a> docs for more on writing and running tests.</p>
+
+      <h3>Check your assumptions</h3>
+      <p>Most bugs come from wrong assumptions. Before diving deep, verify the basics:</p>
+      <ul>
+        <li><strong>Is the function even being called?</strong> Add a <code>say "HERE"</code> at the top of the function.</li>
+        <li><strong>Is the data what you think it is?</strong> Print the variable right before the line that's failing.</li>
+        <li><strong>Are you editing the right file?</strong> It sounds silly, but it happens. Add a unique <code>say</code> statement to confirm.</li>
+        <li><strong>Did you save the file?</strong> Some editors don't auto-save. Make sure your changes are on disk before running.</li>
+      </ul>
+
+      <h3>Minimal reproducible example</h3>
+      <p>When a bug is hard to find, try to create the smallest possible program that still shows the problem. Start with your full program and remove things one by one until you have the bare minimum that triggers the bug.</p>
+      <pre><code><span class="cmt">-- Start: 200-line program with a bug</span>
+<span class="cmt">-- Step 1: Remove unrelated functions  (150 lines)</span>
+<span class="cmt">-- Step 2: Hardcode inputs              (80 lines)</span>
+<span class="cmt">-- Step 3: Remove UI code               (30 lines)</span>
+<span class="cmt">-- Step 4: Simplify the data            (10 lines)</span>
+<span class="cmt">-- Now you can see the bug clearly!</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Why this works:</strong> Each thing you remove either makes the bug disappear (meaning the thing you removed was involved) or doesn't (meaning you can safely ignore it). By the end, you have a tiny program where the bug is obvious.
+      </div>
+
+      <h3>Compare with working code</h3>
+      <p>If something used to work and now it doesn't, use version control to compare:</p>
+      <pre><code><span class="cmt"># See what changed since the last working version</span>
+git diff HEAD~3 app.quill
+
+<span class="cmt"># Or check out the old version temporarily</span>
+git stash
+quill run app.quill   <span class="cmt">-- does the old version work?</span>
+git stash pop</code></pre>
+
+      <p>Often the bug is in something you changed recently. Narrowing down which change broke things is half the battle.</p>
+
+
+      <!-- ============================================
+           SECTION 5: GETTING HELP
+           ============================================ -->
+
+      <h2 id="getting-help">Getting Help</h2>
+
+      <p>Stuck on something? Here's where to look, in order:</p>
+
+      <h3>1. Check the error message hints</h3>
+      <p>Quill's error messages almost always include a hint. Read it carefully &mdash; it often tells you exactly what to do.</p>
+
+      <h3>2. Search the docs</h3>
+      <p>The <a href="/docs">documentation pages</a> cover every part of the language. The <a href="/docs/language">Language Reference</a> is especially useful when you're unsure about syntax, and the <a href="/docs/stdlib">Standard Library</a> docs list every built-in function.</p>
+
+      <h3>3. Try the playground</h3>
+      <p>The <a href="/playground">online playground</a> lets you test small code snippets instantly without setting anything up. It's a great way to verify how a feature works in isolation.</p>
+
+      <h3>4. Ask on Discord</h3>
+      <p>The Quill community on Discord is active and welcoming. Post your question in the <code>#help</code> channel with:</p>
+      <ul>
+        <li>The code you're trying to run</li>
+        <li>The full error message (or unexpected output)</li>
+        <li>What you expected to happen</li>
+      </ul>
+
+      <h3>5. Check the examples directory</h3>
+      <p>The <a href="/docs/examples">examples</a> directory contains dozens of working programs. If you're trying to do something specific, there's probably an example that shows how. Seeing working code is often more helpful than reading explanations.</p>
+
+      <div class="callout callout-tip">
+        <strong>Remember:</strong> Every experienced Quill developer was once confused by these same issues. Don't hesitate to ask for help &mdash; the community is here to support you.
+      </div>
+
+      <h2>Next steps</h2>
+      <ul>
+        <li>Read the <a href="/docs/language">Language Reference</a> for a full overview of Quill syntax</li>
+        <li>Explore the <a href="/docs/stdlib">Standard Library</a> to learn about built-in functions</li>
+        <li>Learn about <a href="/docs/testing">Testing</a> to prevent bugs proactively</li>
+        <li>Try the <a href="/playground">Playground</a> to experiment risk-free</li>
+        <li>Check out <a href="/docs/examples">Examples</a> for working reference code</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patterns &amp; Best Practices - Quill</title>
+  <meta name="description" content="Write clean, idiomatic, professional Quill code. Patterns for error handling, async, testing, security, performance, and more.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🪶</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-text">Quill</span>
+        <span class="badge">by Trade Buddy</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="/docs" class="active">Docs</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank" class="nav-cta">GitHub</a></li>
+      </ul>
+      <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle menu">&#9776;</button>
+    </div>
+  </nav>
+
+  <div class="container docs-layout">
+    <aside class="docs-sidebar">
+      <h4>Getting Started</h4>
+      <ul>
+        <li><a href="/docs/getting-started">Installation</a></li>
+      </ul>
+      <h4>Language</h4>
+      <ul>
+        <li><a href="/docs/language">Language reference</a></li>
+      </ul>
+      <h4>Patterns &amp; Best Practices</h4>
+      <ul>
+        <li><a href="/docs/patterns" class="active">Overview</a></li>
+        <li><a href="#code-organization">Code Organization</a></li>
+        <li><a href="#error-handling">Error Handling</a></li>
+        <li><a href="#working-with-data">Working with Data</a></li>
+        <li><a href="#async-patterns">Async Patterns</a></li>
+        <li><a href="#testing-patterns">Testing Patterns</a></li>
+        <li><a href="#security-patterns">Security Patterns</a></li>
+        <li><a href="#performance-patterns">Performance Patterns</a></li>
+        <li><a href="#common-idioms">Common Idioms</a></li>
+      </ul>
+      <h4>Guides</h4>
+      <ul>
+        <li><a href="/docs/discord">Discord Bots</a></li>
+      </ul>
+      <h4>Reference</h4>
+      <ul>
+        <li><a href="/docs/stdlib">Standard library</a></li>
+        <li><a href="/docs/testing">Testing</a></li>
+        <li><a href="/docs/tools">Tools</a></li>
+        <li><a href="/docs/examples">Examples</a></li>
+      </ul>
+    </aside>
+
+    <main class="docs-content">
+      <h1>Patterns &amp; Best Practices</h1>
+      <p>This guide teaches you how to write clean, idiomatic, professional Quill code. It is aimed at intermediate developers who already know the language basics and want to level up their craft. Each section covers a theme, shows both good and bad examples, and ends with a realistic, complete example you can adapt for your own projects.</p>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 1: CODE ORGANIZATION                                  -->
+      <!-- ============================================================ -->
+
+      <h2 id="code-organization">1. Code Organization</h2>
+      <p>How you structure your files matters far more than most people think. Good structure makes code easy to find, easy to change, and easy to hand off to a teammate. Bad structure turns every change into a scavenger hunt.</p>
+
+      <h3>Small projects (1-3 files)</h3>
+      <p>If your entire program fits in a few hundred lines, keep it simple. A single file is fine. When it grows past 300 lines, split it into two or three files by responsibility.</p>
+      <pre><code>my-tool/
+  main.quill        <span class="cmt">-- entry point, top-level logic</span>
+  helpers.quill      <span class="cmt">-- utility functions</span></code></pre>
+
+      <h3>Medium projects (4-10 files)</h3>
+      <p>Group files by what they do. Keep one clear entry point.</p>
+      <pre><code>my-app/
+  main.quill         <span class="cmt">-- entry point</span>
+  config.quill       <span class="cmt">-- configuration and constants</span>
+  db.quill           <span class="cmt">-- database connection and queries</span>
+  auth.quill         <span class="cmt">-- authentication logic</span>
+  utils.quill        <span class="cmt">-- shared helpers</span>
+  tests/
+    auth.test.quill  <span class="cmt">-- tests for auth</span>
+    db.test.quill    <span class="cmt">-- tests for database</span></code></pre>
+
+      <h3>Large projects (10+ files)</h3>
+      <p>Use directories to group related files. A web application might look like this:</p>
+      <pre><code>my-web-app/
+  main.quill
+  config.quill
+  routes/
+    users.quill      <span class="cmt">-- /api/users endpoints</span>
+    posts.quill      <span class="cmt">-- /api/posts endpoints</span>
+    auth.quill       <span class="cmt">-- /auth/login, /auth/signup</span>
+  models/
+    User.quill       <span class="cmt">-- User class and validation</span>
+    Post.quill       <span class="cmt">-- Post class and validation</span>
+  utils/
+    hash.quill       <span class="cmt">-- password hashing helpers</span>
+    email.quill      <span class="cmt">-- email sending helpers</span>
+    validate.quill   <span class="cmt">-- input validation helpers</span>
+  tests/
+    routes/
+      users.test.quill
+      posts.test.quill
+    models/
+      User.test.quill</code></pre>
+
+      <h3>When to split into a new file</h3>
+      <p>Split when a file does more than one distinct job. A good rule: if you can give the new file a clear, specific name (not "misc" or "stuff"), it deserves its own file.</p>
+
+      <h3>Naming conventions</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">What</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Convention</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Variables</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">camelCase</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>userName</code>, <code>totalPrice</code>, <code>isActive</code></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Functions</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">camelCase</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>calculateTotal</code>, <code>sendEmail</code>, <code>formatDate</code></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Classes</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">PascalCase</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>User</code>, <code>HttpClient</code>, <code>ShoppingCart</code></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Constants</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">UPPER_CASE</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>MAX_RETRIES</code>, <code>API_BASE_URL</code>, <code>DEFAULT_TIMEOUT</code></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Files</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">kebab-case or camelCase</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>auth.quill</code>, <code>user-routes.quill</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <pre><code><span class="cmt">-- Bad: inconsistent, unclear names</span>
+data <span class="kw">is</span> <span class="num">100</span>
+<span class="kw">to</span> <span class="fn">do_thing</span> x:
+  <span class="kw">give back</span> x * data
+
+<span class="cmt">-- Good: clear, consistent names</span>
+MAX_CONNECTIONS <span class="kw">is</span> <span class="num">100</span>
+<span class="kw">to</span> <span class="fn">scaleByLimit</span> value:
+  <span class="kw">give back</span> value * MAX_CONNECTIONS</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Name things for what they represent, not how they are used. <code>userAge</code> is better than <code>num</code>. <code>fetchOrders</code> is better than <code>getData</code>.
+      </div>
+
+      <h3>Organizing imports</h3>
+      <p>Group your imports at the top of every file, in this order: standard library, third-party packages, your own modules. Separate each group with a blank line.</p>
+      <pre><code><span class="cmt">-- Standard library (available by default, but be explicit for clarity)</span>
+<span class="kw">from</span> <span class="str">"crypto"</span> <span class="kw">use</span> hash, randomBytes
+
+<span class="cmt">-- Third-party packages</span>
+<span class="kw">use</span> <span class="str">"express"</span> <span class="kw">as</span> app
+<span class="kw">from</span> <span class="str">"pg"</span> <span class="kw">use</span> Pool
+
+<span class="cmt">-- Your own modules</span>
+<span class="kw">from</span> <span class="str">"./auth.quill"</span> <span class="kw">use</span> login, register
+<span class="kw">from</span> <span class="str">"./utils/validate.quill"</span> <span class="kw">use</span> validateEmail</code></pre>
+
+      <h3>Keep functions short and focused</h3>
+      <p>A function should do one thing. If you find yourself writing a function longer than 20-30 lines, look for opportunities to extract helper functions.</p>
+
+      <p><strong>Bad:</strong> one giant function that does everything.</p>
+      <pre><code><span class="cmt">-- Bad: processUser does validation, transformation, saving, and emailing</span>
+<span class="kw">to</span> <span class="fn">processUser</span> input:
+  <span class="cmt">-- 50 lines of mixed validation, database calls, and email logic</span>
+  ...</code></pre>
+
+      <p><strong>Good:</strong> each step is its own function.</p>
+      <pre><code><span class="cmt">-- Good: each function has one clear job</span>
+<span class="kw">to</span> <span class="fn">processUser</span> input -> Result <span class="kw">of</span> User:
+  validated <span class="kw">is</span> validateUserInput(input)?
+  user <span class="kw">is</span> createUserRecord(validated)
+  saveToDatabase(user)?
+  sendWelcomeEmail(user.email)?
+  <span class="kw">give back</span> Success(user)</code></pre>
+
+      <h3>Use constants for magic numbers</h3>
+      <pre><code><span class="cmt">-- Bad: what does 86400000 mean?</span>
+<span class="kw">if</span> now() - user.lastLogin <span class="kw">is greater than</span> <span class="num">86400000</span>:
+  forceReauth()
+
+<span class="cmt">-- Good: self-documenting</span>
+ONE_DAY_MS <span class="kw">is</span> <span class="num">86400000</span>
+<span class="kw">if</span> now() - user.lastLogin <span class="kw">is greater than</span> ONE_DAY_MS:
+  forceReauth()</code></pre>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 2: ERROR HANDLING PATTERNS                            -->
+      <!-- ============================================================ -->
+
+      <h2 id="error-handling">2. Error Handling Patterns</h2>
+      <p>Unhandled errors crash programs and frustrate users. Good error handling means anticipating what can go wrong and responding gracefully. Quill gives you two approaches: <code>try</code>/<code>if it fails</code> for exception-style handling, and <code>Result</code> types for explicit, composable error handling.</p>
+
+      <h3>Always handle errors</h3>
+      <p><strong>Bad:</strong> ignoring errors entirely.</p>
+      <pre><code><span class="cmt">-- Bad: if the file doesn't exist, the program crashes</span>
+data <span class="kw">is</span> readFile(<span class="str">"config.json"</span>)
+config <span class="kw">is</span> parseJSON(data)</code></pre>
+
+      <p><strong>Good:</strong> wrapping risky operations and providing a fallback.</p>
+      <pre><code><span class="cmt">-- Good: handle the error, provide a fallback</span>
+<span class="kw">try</span>:
+  data <span class="kw">is</span> readFile(<span class="str">"config.json"</span>)
+  config <span class="kw">is</span> parseJSON(data)
+<span class="kw">if it fails</span> error:
+  <span class="kw">say</span> <span class="str">"Could not load config: {error}"</span>
+  config <span class="kw">is</span> {port: <span class="num">3000</span>, debug: <span class="bool">no</span>}</code></pre>
+
+      <h3>When to use <code>try</code>/<code>if it fails</code> vs Result types</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Approach</th>
+            <th style="text-align: left; padding: 10px; border-bottom: 1px solid var(--border);">Best for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>try</code> / <code>if it fails</code></td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">I/O operations (file reads, HTTP calls), top-level error boundaries, when you want to catch everything in a block</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);"><code>Result</code> types</td>
+            <td style="padding: 10px; border-bottom: 1px solid var(--border);">Business logic, function return values, when you need to chain multiple fallible operations, when errors are expected and meaningful</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Error propagation with Result types</h3>
+      <p>Use <code>Success()</code> and <code>Error()</code> to make error handling explicit. Callers always know a function can fail.</p>
+      <pre><code><span class="kw">to</span> <span class="fn">parseAge</span> input <span class="kw">as</span> text -> Result <span class="kw">of</span> number:
+  <span class="kw">try</span>:
+    age <span class="kw">is</span> toNumber(input)
+    <span class="kw">if</span> age <span class="kw">is less than</span> <span class="num">0</span>:
+      <span class="kw">give back</span> Error(<span class="str">"Age cannot be negative"</span>)
+    <span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">150</span>:
+      <span class="kw">give back</span> Error(<span class="str">"Age is unrealistically high"</span>)
+    <span class="kw">give back</span> Success(age)
+  <span class="kw">if it fails</span> err:
+    <span class="kw">give back</span> Error(<span class="str">"'{input}' is not a valid number"</span>)</code></pre>
+
+      <h3>The <code>?</code> operator for chaining</h3>
+      <p>When you call multiple functions that return <code>Result</code>, the <code>?</code> operator keeps things clean. If the result is an <code>Error</code>, it returns immediately. If it is a <code>Success</code>, it unwraps the value.</p>
+
+      <p><strong>Bad:</strong> verbose manual checking at every step.</p>
+      <pre><code><span class="cmt">-- Bad: repetitive error checking</span>
+<span class="kw">to</span> <span class="fn">processOrder</span> orderId:
+  orderResult <span class="kw">is</span> loadOrder(orderId)
+  <span class="kw">match</span> orderResult:
+    <span class="kw">when</span> Error msg:
+      <span class="kw">give back</span> Error(msg)
+    <span class="kw">when</span> Success order:
+      userResult <span class="kw">is</span> loadUser(order.userId)
+      <span class="kw">match</span> userResult:
+        <span class="kw">when</span> Error msg:
+          <span class="kw">give back</span> Error(msg)
+        <span class="kw">when</span> Success user:
+          <span class="kw">give back</span> Success(chargeUser(user, order.total))</code></pre>
+
+      <p><strong>Good:</strong> the <code>?</code> operator does the same thing in three lines.</p>
+      <pre><code><span class="cmt">-- Good: ? propagates errors automatically</span>
+<span class="kw">to</span> <span class="fn">processOrder</span> orderId -> Result <span class="kw">of</span> Receipt:
+  order <span class="kw">is</span> loadOrder(orderId)?
+  user <span class="kw">is</span> loadUser(order.userId)?
+  <span class="kw">give back</span> Success(chargeUser(user, order.total))</code></pre>
+
+      <h3>Custom error messages</h3>
+      <p>Always include enough context for someone to diagnose the problem without reading your source code.</p>
+      <pre><code><span class="cmt">-- Bad: useless error message</span>
+<span class="kw">give back</span> Error(<span class="str">"failed"</span>)
+
+<span class="cmt">-- Good: says what went wrong and why</span>
+<span class="kw">give back</span> Error(<span class="str">"Failed to load user {id}: database connection timed out"</span>)</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Rule of thumb:</strong> An error message should answer three questions: What happened? What was the program trying to do? What can the user try instead?
+      </div>
+
+      <h3>The <code>try</code> expression for fallbacks</h3>
+      <p>When you just want a default value if something fails, use <code>try ... otherwise</code> as a one-liner.</p>
+      <pre><code><span class="cmt">-- Instead of a full try/if it fails block for a simple fallback:</span>
+name <span class="kw">is</span> <span class="kw">try</span> loadUser(<span class="num">42</span>).name <span class="kw">otherwise</span> <span class="str">"Guest"</span>
+port <span class="kw">is</span> <span class="kw">try</span> toNumber(env(<span class="str">"PORT"</span>)) <span class="kw">otherwise</span> <span class="num">3000</span></code></pre>
+
+      <h3>Wrapping third-party errors</h3>
+      <p>When calling external libraries, catch their errors and wrap them in your own error type with context. This makes debugging much easier.</p>
+      <pre><code><span class="kw">to</span> <span class="fn">queryDatabase</span> sql params -> Result <span class="kw">of</span> list:
+  <span class="kw">try</span>:
+    result <span class="kw">is</span> <span class="kw">await</span> db.query(sql, params)
+    <span class="kw">give back</span> Success(result.rows)
+  <span class="kw">if it fails</span> err:
+    <span class="kw">give back</span> Error(<span class="str">"Database query failed: {err}\nSQL: {sql}"</span>)</code></pre>
+
+      <h3>Layered error handling</h3>
+      <p>In a well-structured application, errors bubble up through layers. Each layer adds context.</p>
+      <pre><code><span class="cmt">-- Layer 1: Database (low-level)</span>
+<span class="kw">to</span> <span class="fn">findUserById</span> id -> Result <span class="kw">of</span> object:
+  <span class="kw">try</span>:
+    row <span class="kw">is</span> <span class="kw">await</span> db.query(<span class="str">"SELECT * FROM users WHERE id = ?"</span>, [id])
+    <span class="kw">if</span> row <span class="kw">is</span> <span class="kw">nothing</span>:
+      <span class="kw">give back</span> Error(<span class="str">"User {id} not found in database"</span>)
+    <span class="kw">give back</span> Success(row)
+  <span class="kw">if it fails</span> err:
+    <span class="kw">give back</span> Error(<span class="str">"Database error looking up user {id}: {err}"</span>)
+
+<span class="cmt">-- Layer 2: Service (business logic)</span>
+<span class="kw">to</span> <span class="fn">getUserProfile</span> id -> Result <span class="kw">of</span> object:
+  user <span class="kw">is</span> findUserById(id)?
+  <span class="kw">give back</span> Success({name: user.name, email: user.email})
+
+<span class="cmt">-- Layer 3: Route handler (top-level)</span>
+<span class="kw">match</span> getUserProfile(requestedId):
+  <span class="kw">when</span> Success profile:
+    respond <span class="kw">with</span> profile
+  <span class="kw">when</span> Error msg:
+    <span class="kw">say</span> <span class="str">"[Error] {msg}"</span>
+    respond <span class="kw">with</span> {error: <span class="str">"Something went wrong"</span>} status <span class="num">500</span></code></pre>
+
+      <h3>Full example: a file processor</h3>
+      <p>This function reads a JSON file, validates its structure, and returns the parsed data. It handles missing files, invalid JSON, and unexpected structure.</p>
+      <pre><code><span class="kw">to</span> <span class="fn">loadConfig</span> path <span class="kw">as</span> text -> Result <span class="kw">of</span> object:
+  <span class="cmt">-- Step 1: check the file exists</span>
+  <span class="kw">if</span> exists(path) <span class="kw">is</span> <span class="bool">no</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Config file not found: {path}"</span>)
+
+  <span class="cmt">-- Step 2: read the file</span>
+  <span class="kw">try</span>:
+    raw <span class="kw">is</span> readFile(path)
+  <span class="kw">if it fails</span> err:
+    <span class="kw">give back</span> Error(<span class="str">"Cannot read {path}: {err} (check permissions)"</span>)
+
+  <span class="cmt">-- Step 3: parse the JSON</span>
+  <span class="kw">try</span>:
+    config <span class="kw">is</span> parseJSON(raw)
+  <span class="kw">if it fails</span> err:
+    <span class="kw">give back</span> Error(<span class="str">"Invalid JSON in {path}: {err}"</span>)
+
+  <span class="cmt">-- Step 4: validate required fields</span>
+  <span class="kw">if</span> config.port <span class="kw">is</span> <span class="kw">nothing</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Config missing required field: port"</span>)
+  <span class="kw">if</span> config.host <span class="kw">is</span> <span class="kw">nothing</span>:
+    config.host <span class="kw">is</span> <span class="str">"localhost"</span>  <span class="cmt">-- default is OK</span>
+
+  <span class="kw">give back</span> Success(config)
+
+<span class="cmt">-- Usage</span>
+result <span class="kw">is</span> loadConfig(<span class="str">"app.json"</span>)
+<span class="kw">match</span> result:
+  <span class="kw">when</span> Success config:
+    <span class="kw">say</span> <span class="str">"Server starting on {config.host}:{config.port}"</span>
+  <span class="kw">when</span> Error msg:
+    <span class="kw">say</span> <span class="str">"Startup failed: {msg}"</span>
+    exit(<span class="num">1</span>)</code></pre>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 3: WORKING WITH DATA                                  -->
+      <!-- ============================================================ -->
+
+      <h2 id="working-with-data">3. Working with Data</h2>
+      <p>Most programs revolve around transforming data: reading it, cleaning it, reshaping it, and writing it somewhere else. Quill has several features that make data work concise and readable.</p>
+
+      <h3>Destructuring objects and lists</h3>
+      <p>Pull out exactly the fields you need in one step.</p>
+      <pre><code><span class="cmt">-- Object destructuring</span>
+response <span class="kw">is</span> {status: <span class="num">200</span>, body: <span class="str">"OK"</span>, headers: {}}
+{status, body} <span class="kw">is</span> response
+<span class="kw">say</span> status   <span class="cmt">-- 200</span>
+<span class="kw">say</span> body     <span class="cmt">-- "OK"</span>
+
+<span class="cmt">-- List destructuring</span>
+coordinates <span class="kw">are</span> [<span class="num">40.7</span>, <span class="num">-74.0</span>, <span class="num">10</span>]
+[lat, lng, altitude] <span class="kw">is</span> coordinates
+<span class="kw">say</span> <span class="str">"Lat: {lat}, Lng: {lng}"</span>
+
+<span class="cmt">-- Destructuring in loops</span>
+users <span class="kw">are</span> [
+  {name: <span class="str">"Alice"</span>, role: <span class="str">"admin"</span>},
+  {name: <span class="str">"Bob"</span>, role: <span class="str">"user"</span>}
+]
+<span class="kw">for each</span> {name, role} <span class="kw">in</span> users:
+  <span class="kw">say</span> <span class="str">"{name} is an {role}"</span></code></pre>
+
+      <h3>Spread operator for merging and copying</h3>
+      <pre><code><span class="cmt">-- Merge objects (later values win)</span>
+defaults <span class="kw">is</span> {theme: <span class="str">"light"</span>, lang: <span class="str">"en"</span>, pageSize: <span class="num">20</span>}
+userPrefs <span class="kw">is</span> {theme: <span class="str">"dark"</span>, pageSize: <span class="num">50</span>}
+settings <span class="kw">is</span> {...defaults, ...userPrefs}
+<span class="kw">say</span> settings.theme     <span class="cmt">-- "dark" (user preference wins)</span>
+<span class="kw">say</span> settings.lang      <span class="cmt">-- "en"   (default kept)</span>
+<span class="kw">say</span> settings.pageSize  <span class="cmt">-- 50     (user preference wins)</span>
+
+<span class="cmt">-- Copy a list and add items</span>
+original <span class="kw">are</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+extended <span class="kw">are</span> [...original, <span class="num">4</span>, <span class="num">5</span>]
+<span class="kw">say</span> extended   <span class="cmt">-- [1, 2, 3, 4, 5]</span>
+
+<span class="cmt">-- Update one field without mutating</span>
+user <span class="kw">is</span> {name: <span class="str">"Alice"</span>, age: <span class="num">30</span>, active: <span class="bool">yes</span>}
+updated <span class="kw">is</span> {...user, age: <span class="num">31</span>}
+<span class="kw">say</span> user.age      <span class="cmt">-- 30 (original unchanged)</span>
+<span class="kw">say</span> updated.age   <span class="cmt">-- 31</span></code></pre>
+
+      <h3>Pipe operator chains for data transformation</h3>
+      <p>Pipes let you read data transformations in the order they happen, from left to right.</p>
+
+      <p><strong>Bad:</strong> deeply nested function calls.</p>
+      <pre><code><span class="cmt">-- Bad: reads inside-out, hard to follow</span>
+result <span class="kw">is</span> join(sort(unique(filter(names, <span class="kw">to</span> n: length(n) <span class="kw">is greater than</span> <span class="num">2</span>))), <span class="str">", "</span>)</code></pre>
+
+      <p><strong>Good:</strong> pipe each step clearly.</p>
+      <pre><code><span class="cmt">-- Good: reads top to bottom, each step is clear</span>
+result <span class="kw">is</span> names
+  | filter(<span class="kw">to</span> n: length(n) <span class="kw">is greater than</span> <span class="num">2</span>)
+  | unique
+  | sort
+  | join(<span class="str">", "</span>)</code></pre>
+
+      <h3>Immutability with <code>deepCopy()</code></h3>
+      <p>Objects and lists are passed by reference in Quill. If you need a fully independent copy (so changes to the copy do not affect the original), use <code>deepCopy()</code>.</p>
+      <pre><code>original <span class="kw">is</span> {name: <span class="str">"Alice"</span>, scores: [<span class="num">90</span>, <span class="num">85</span>]}
+clone <span class="kw">is</span> deepCopy(original)
+
+push(clone.scores, <span class="num">100</span>)
+<span class="kw">say</span> original.scores   <span class="cmt">-- [90, 85]       (unchanged)</span>
+<span class="kw">say</span> clone.scores      <span class="cmt">-- [90, 85, 100]  (only the copy changed)</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>When to use <code>deepCopy()</code>:</strong> Use it when you receive data from a function and plan to modify it, but the original must stay intact. For read-only access, a plain reference is faster and fine.
+      </div>
+
+      <h3>Full example: processing user records</h3>
+      <p>Given a list of user records, filter out inactive users, transform their data, group by role, and sort each group by name.</p>
+      <pre><code><span class="cmt">-- Sample data</span>
+users <span class="kw">are</span> [
+  {name: <span class="str">"Alice"</span>, role: <span class="str">"admin"</span>, active: <span class="bool">yes</span>, score: <span class="num">92</span>},
+  {name: <span class="str">"Bob"</span>, role: <span class="str">"user"</span>, active: <span class="bool">no</span>, score: <span class="num">45</span>},
+  {name: <span class="str">"Carol"</span>, role: <span class="str">"user"</span>, active: <span class="bool">yes</span>, score: <span class="num">88</span>},
+  {name: <span class="str">"Dave"</span>, role: <span class="str">"admin"</span>, active: <span class="bool">yes</span>, score: <span class="num">76</span>},
+  {name: <span class="str">"Eve"</span>, role: <span class="str">"user"</span>, active: <span class="bool">yes</span>, score: <span class="num">95</span>},
+  {name: <span class="str">"Frank"</span>, role: <span class="str">"user"</span>, active: <span class="bool">no</span>, score: <span class="num">30</span>}
+]
+
+<span class="cmt">-- Step 1: keep only active users</span>
+activeUsers <span class="kw">is</span> users | filter(<span class="kw">to</span> u: u.active)
+
+<span class="cmt">-- Step 2: transform into display objects</span>
+displayUsers <span class="kw">is</span> activeUsers | map_list(<span class="kw">to</span> u: {
+  label: <span class="str">"{u.name} ({u.role})"</span>,
+  grade: <span class="kw">if</span> u.score <span class="kw">is greater than</span> <span class="num">89</span> <span class="kw">then</span> <span class="str">"A"</span> <span class="kw">otherwise</span> <span class="str">"B"</span>,
+  ...u
+})
+
+<span class="cmt">-- Step 3: group by role</span>
+grouped <span class="kw">is</span> {}
+<span class="kw">for each</span> u <span class="kw">in</span> displayUsers:
+  <span class="kw">if</span> grouped[u.role] <span class="kw">is</span> <span class="kw">nothing</span>:
+    grouped[u.role] <span class="kw">is</span> []
+  push(grouped[u.role], u)
+
+<span class="cmt">-- Step 4: sort each group by name</span>
+<span class="kw">for each</span> role <span class="kw">in</span> keys(grouped):
+  grouped[role] <span class="kw">is</span> grouped[role] | sort(<span class="kw">to</span> a b: a.name <span class="kw">is less than</span> b.name)
+
+<span class="cmt">-- Display results</span>
+<span class="kw">for each</span> role <span class="kw">in</span> keys(grouped):
+  <span class="kw">say</span> <span class="str">"=== {upper(role)} ==="</span>
+  <span class="kw">for each</span> u <span class="kw">in</span> grouped[role]:
+    <span class="kw">say</span> <span class="str">"  {u.label} - Grade {u.grade}"</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 4: ASYNC PATTERNS                                     -->
+      <!-- ============================================================ -->
+
+      <h2 id="async-patterns">4. Async Patterns</h2>
+      <p>Async programming is how you handle operations that take time: network requests, file I/O, database queries. Quill makes async intuitive with <code>await</code>, <code>parallel</code>, <code>race</code>, and channels.</p>
+
+      <h3>Basic <code>await</code> vs <code>parallel</code></h3>
+      <p><strong>Bad:</strong> fetching things one after another when they are independent.</p>
+      <pre><code><span class="cmt">-- Bad: sequential (slow) -- each waits for the previous one</span>
+users <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"/api/users"</span>)
+posts <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"/api/posts"</span>)
+comments <span class="kw">is</span> <span class="kw">await</span> fetch(<span class="str">"/api/comments"</span>)
+<span class="cmt">-- Total time: users + posts + comments</span></code></pre>
+
+      <p><strong>Good:</strong> use <code>parallel</code> when requests do not depend on each other.</p>
+      <pre><code><span class="cmt">-- Good: parallel (fast) -- all three run at the same time</span>
+<span class="kw">parallel</span>:
+  users <span class="kw">is</span> fetch(<span class="str">"/api/users"</span>)
+  posts <span class="kw">is</span> fetch(<span class="str">"/api/posts"</span>)
+  comments <span class="kw">is</span> fetch(<span class="str">"/api/comments"</span>)
+<span class="cmt">-- Total time: max(users, posts, comments)</span></code></pre>
+
+      <h3>Error handling in async code</h3>
+      <p>Wrap async blocks in <code>try</code>/<code>if it fails</code>. A single failure in <code>parallel</code> cancels the entire block, so use <code>parallel settled</code> when you want all tasks to complete regardless.</p>
+      <pre><code><span class="cmt">-- All-or-nothing: if any request fails, handle the error</span>
+<span class="kw">try</span>:
+  <span class="kw">parallel</span>:
+    users <span class="kw">is</span> fetchJSON(<span class="str">"/api/users"</span>)
+    posts <span class="kw">is</span> fetchJSON(<span class="str">"/api/posts"</span>)
+<span class="kw">if it fails</span> err:
+  <span class="kw">say</span> <span class="str">"Request failed: {err}"</span>
+
+<span class="cmt">-- Partial success: each result is Success() or Error()</span>
+<span class="kw">parallel settled</span>:
+  a <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/a"</span>)
+  b <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/b"</span>)
+
+<span class="kw">if</span> a.ok:
+  <span class="kw">say</span> <span class="str">"A succeeded: {a.value}"</span>
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> <span class="str">"A failed: {a.error}"</span></code></pre>
+
+      <h3>Race conditions and how to avoid them</h3>
+      <p>A race condition occurs when two tasks modify the same data at the same time and produce unpredictable results. The solution in Quill is to use channels instead of shared variables.</p>
+
+      <p><strong>Bad:</strong> two tasks modifying a shared counter.</p>
+      <pre><code><span class="cmt">-- Bad: both tasks read and write `count` at the same time</span>
+count <span class="kw">is</span> <span class="num">0</span>
+<span class="kw">spawn task</span> a:
+  <span class="kw">repeat</span> <span class="num">1000</span> <span class="kw">times</span>:
+    count <span class="kw">is</span> count + <span class="num">1</span>
+<span class="kw">spawn task</span> b:
+  <span class="kw">repeat</span> <span class="num">1000</span> <span class="kw">times</span>:
+    count <span class="kw">is</span> count + <span class="num">1</span>
+<span class="cmt">-- count might not be 2000!</span></code></pre>
+
+      <p><strong>Good:</strong> funnel updates through a channel.</p>
+      <pre><code><span class="cmt">-- Good: use a channel to serialize updates</span>
+<span class="kw">channel</span> updates <span class="kw">with buffer</span> <span class="num">100</span>
+
+<span class="kw">spawn task</span> a:
+  <span class="kw">repeat</span> <span class="num">1000</span> <span class="kw">times</span>:
+    <span class="kw">send</span> <span class="num">1</span> <span class="kw">to</span> updates
+
+<span class="kw">spawn task</span> b:
+  <span class="kw">repeat</span> <span class="num">1000</span> <span class="kw">times</span>:
+    <span class="kw">send</span> <span class="num">1</span> <span class="kw">to</span> updates
+
+<span class="cmt">-- Single consumer: no race condition</span>
+count <span class="kw">is</span> <span class="num">0</span>
+<span class="kw">repeat</span> <span class="num">2000</span> <span class="kw">times</span>:
+  val <span class="kw">is</span> <span class="kw">receive from</span> updates
+  count <span class="kw">is</span> count + val
+<span class="kw">say</span> count  <span class="cmt">-- always 2000</span></code></pre>
+
+      <h3>Channels for producer/consumer</h3>
+      <pre><code><span class="kw">channel</span> jobs <span class="kw">with buffer</span> <span class="num">10</span>
+<span class="kw">channel</span> results <span class="kw">with buffer</span> <span class="num">10</span>
+
+<span class="cmt">-- Producer: enqueue work</span>
+<span class="kw">spawn task</span> producer:
+  <span class="kw">for each</span> url <span class="kw">in</span> urls:
+    <span class="kw">send</span> url <span class="kw">to</span> jobs
+
+<span class="cmt">-- Workers: process jobs in parallel</span>
+<span class="kw">repeat</span> <span class="num">5</span> <span class="kw">times</span> <span class="kw">with</span> i:
+  <span class="kw">spawn task</span> worker:
+    url <span class="kw">is</span> <span class="kw">receive from</span> jobs
+    data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(url)
+    <span class="kw">send</span> data <span class="kw">to</span> results
+
+<span class="cmt">-- Collector: gather results</span>
+<span class="kw">repeat</span> length(urls) <span class="kw">times</span>:
+  result <span class="kw">is</span> <span class="kw">receive from</span> results
+  <span class="kw">say</span> <span class="str">"Got: {result.title}"</span></code></pre>
+
+      <h3>Timeouts with <code>select</code>/<code>after</code></h3>
+      <pre><code><span class="kw">channel</span> response <span class="kw">with buffer</span> <span class="num">1</span>
+
+<span class="kw">spawn task</span> fetcher:
+  data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://slow-api.example.com/data"</span>)
+  <span class="kw">send</span> data <span class="kw">to</span> response
+
+<span class="kw">select</span>:
+  <span class="kw">when receive</span> data <span class="kw">from</span> response:
+    <span class="kw">say</span> <span class="str">"Got data: {data.title}"</span>
+  <span class="kw">after</span> <span class="num">5000</span>:
+    <span class="kw">say</span> <span class="str">"Request timed out after 5 seconds"</span>
+    <span class="kw">cancel</span> fetcher</code></pre>
+
+      <h3>Full example: fetch from 3 APIs, merge results, with timeout</h3>
+      <pre><code><span class="kw">to</span> <span class="fn">fetchDashboardData</span> -> Result <span class="kw">of</span> object:
+  <span class="cmt">-- Use race to enforce a global timeout</span>
+  result <span class="kw">is</span> <span class="kw">race</span>:
+    fetchAllData()
+    delay(<span class="num">10000</span>) <span class="kw">then give back</span> Error(<span class="str">"Dashboard load timed out"</span>)
+
+  <span class="kw">give back</span> result
+
+<span class="kw">to</span> <span class="fn">fetchAllData</span> -> Result <span class="kw">of</span> object:
+  <span class="kw">try</span>:
+    <span class="kw">parallel</span>:
+      usersRaw <span class="kw">is</span> fetchJSON(<span class="str">"https://api.example.com/users"</span>)
+      ordersRaw <span class="kw">is</span> fetchJSON(<span class="str">"https://api.example.com/orders"</span>)
+      statsRaw <span class="kw">is</span> fetchJSON(<span class="str">"https://api.example.com/stats"</span>)
+
+    <span class="cmt">-- Merge the data into a single dashboard object</span>
+    dashboard <span class="kw">is</span> {
+      totalUsers: length(usersRaw),
+      recentOrders: ordersRaw | filter(<span class="kw">to</span> o: o.status <span class="kw">is</span> <span class="str">"pending"</span>) | sort(<span class="kw">to</span> a b: a.date <span class="kw">is greater than</span> b.date),
+      revenue: statsRaw.revenue,
+      topProducts: statsRaw.products | sort(<span class="kw">to</span> a b: a.sales <span class="kw">is greater than</span> b.sales) | take(<span class="num">5</span>)
+    }
+
+    <span class="kw">give back</span> Success(dashboard)
+  <span class="kw">if it fails</span> err:
+    <span class="kw">give back</span> Error(<span class="str">"Failed to fetch dashboard data: {err}"</span>)
+
+<span class="cmt">-- Usage</span>
+<span class="kw">match</span> fetchDashboardData():
+  <span class="kw">when</span> Success data:
+    <span class="kw">say</span> <span class="str">"Users: {data.totalUsers}"</span>
+    <span class="kw">say</span> <span class="str">"Pending orders: {length(data.recentOrders)}"</span>
+    <span class="kw">say</span> <span class="str">"Revenue: ${data.revenue}"</span>
+  <span class="kw">when</span> Error msg:
+    <span class="kw">say</span> <span class="str">"Dashboard unavailable: {msg}"</span></code></pre>
+
+      <div class="callout callout-warn">
+        <strong>Warning:</strong> Never ignore the result of an async operation. An unhandled rejection will crash your program silently. Always <code>await</code> or wrap in <code>try</code>/<code>if it fails</code>.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 5: TESTING PATTERNS                                   -->
+      <!-- ============================================================ -->
+
+      <h2 id="testing-patterns">5. Testing Patterns</h2>
+      <p>Tests are your safety net. They catch bugs before your users do, and they give you the confidence to refactor without fear. Quill has built-in testing with <code>test</code> and <code>expect</code> -- no frameworks needed.</p>
+
+      <h3>Arrange / Act / Assert</h3>
+      <p>Structure every test in three steps: set up the data (Arrange), run the code (Act), and check the result (Assert).</p>
+      <pre><code><span class="kw">test</span> <span class="str">"calculateDiscount applies 10% for orders over $100"</span>:
+  <span class="cmt">-- Arrange</span>
+  order <span class="kw">is</span> {items: [{price: <span class="num">60</span>}, {price: <span class="num">50</span>}], coupon: <span class="kw">nothing</span>}
+
+  <span class="cmt">-- Act</span>
+  discount <span class="kw">is</span> calculateDiscount(order)
+
+  <span class="cmt">-- Assert</span>
+  <span class="kw">expect</span> discount <span class="kw">is</span> <span class="num">11</span></code></pre>
+
+      <h3>Testing edge cases</h3>
+      <p>Always test the boundaries: empty inputs, zero, negative numbers, null values, very large inputs.</p>
+      <pre><code><span class="kw">to</span> <span class="fn">safeDivide</span> a b -> Result <span class="kw">of</span> number:
+  <span class="kw">if</span> b <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Division by zero"</span>)
+  <span class="kw">give back</span> Success(a / b)
+
+<span class="kw">test</span> <span class="str">"safeDivide normal case"</span>:
+  <span class="kw">expect</span> safeDivide(<span class="num">10</span>, <span class="num">2</span>) <span class="kw">is</span> Success(<span class="num">5</span>)
+
+<span class="kw">test</span> <span class="str">"safeDivide by zero returns Error"</span>:
+  <span class="kw">expect</span> safeDivide(<span class="num">10</span>, <span class="num">0</span>) <span class="kw">is</span> Error(<span class="str">"Division by zero"</span>)
+
+<span class="kw">test</span> <span class="str">"safeDivide with negative numbers"</span>:
+  <span class="kw">expect</span> safeDivide(<span class="num">-10</span>, <span class="num">2</span>) <span class="kw">is</span> Success(<span class="num">-5</span>)
+
+<span class="kw">test</span> <span class="str">"safeDivide with decimals"</span>:
+  <span class="kw">expect</span> safeDivide(<span class="num">7</span>, <span class="num">2</span>) <span class="kw">is</span> Success(<span class="num">3.5</span>)</code></pre>
+
+      <h3>Testing async code</h3>
+      <p>Use <code>await</code> inside test blocks just like anywhere else.</p>
+      <pre><code><span class="kw">test</span> <span class="str">"fetchUser returns the correct user"</span>:
+  user <span class="kw">is</span> <span class="kw">await</span> fetchUser(<span class="num">1</span>)
+  <span class="kw">expect</span> user.name <span class="kw">is</span> <span class="str">"Alice"</span>
+  <span class="kw">expect</span> user.id <span class="kw">is</span> <span class="num">1</span>
+
+<span class="kw">test</span> <span class="str">"fetchUser with invalid id returns Error"</span>:
+  result <span class="kw">is</span> <span class="kw">await</span> fetchUser(<span class="num">-1</span>)
+  <span class="kw">expect</span> result <span class="kw">is</span> Error(<span class="str">"User not found"</span>)</code></pre>
+
+      <h3>Mock patterns</h3>
+      <p>Replace real dependencies with predictable stand-ins. Pass dependencies as function arguments to make them swappable in tests.</p>
+      <pre><code><span class="cmt">-- Production code: accepts a fetcher function</span>
+<span class="kw">to</span> <span class="fn">getGreeting</span> userId fetcher:
+  user <span class="kw">is</span> <span class="kw">await</span> fetcher(userId)
+  <span class="kw">give back</span> <span class="str">"Hello, {user.name}!"</span>
+
+<span class="cmt">-- In tests: pass a mock fetcher</span>
+<span class="kw">to</span> <span class="fn">mockFetcher</span> id:
+  <span class="kw">give back</span> {name: <span class="str">"TestUser"</span>, id: id}
+
+<span class="kw">test</span> <span class="str">"getGreeting uses fetcher correctly"</span>:
+  greeting <span class="kw">is</span> <span class="kw">await</span> getGreeting(<span class="num">1</span>, mockFetcher)
+  <span class="kw">expect</span> greeting <span class="kw">is</span> <span class="str">"Hello, TestUser!"</span></code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> The "dependency injection" pattern shown above is the simplest way to make code testable. Instead of hardcoding a call to <code>fetch</code>, accept a fetcher parameter. In production you pass the real one; in tests you pass a fake.
+      </div>
+
+      <h3>Organizing test files</h3>
+      <p>Put tests next to the code they test, or in a dedicated <code>tests/</code> directory. Name test files with a <code>.test.quill</code> suffix so <code>quill test</code> discovers them automatically.</p>
+      <pre><code><span class="cmt">-- Option A: tests alongside source</span>
+src/
+  cart.quill
+  cart.test.quill
+
+<span class="cmt">-- Option B: tests in a separate directory</span>
+src/
+  cart.quill
+tests/
+  cart.test.quill</code></pre>
+
+      <h3>Table-driven tests</h3>
+      <p>When you have many inputs to test, use a data list to avoid repeating test boilerplate.</p>
+      <pre><code>cases <span class="kw">are</span> [
+  {input: <span class="str">"hello"</span>, expected: <span class="str">"HELLO"</span>},
+  {input: <span class="str">"World"</span>, expected: <span class="str">"WORLD"</span>},
+  {input: <span class="str">""</span>, expected: <span class="str">""</span>},
+  {input: <span class="str">"123abc"</span>, expected: <span class="str">"123ABC"</span>}
+]
+
+<span class="kw">for each</span> {input, expected} <span class="kw">in</span> cases:
+  <span class="kw">test</span> <span class="str">"upper(\"{input}\") returns \"{expected}\""</span>:
+    <span class="kw">expect</span> upper(input) <span class="kw">is</span> expected</code></pre>
+
+      <h3>Testing error cases</h3>
+      <p>Test that your functions fail correctly, not just that they succeed.</p>
+      <pre><code><span class="kw">test</span> <span class="str">"parseAge rejects non-numeric input"</span>:
+  result <span class="kw">is</span> parseAge(<span class="str">"abc"</span>)
+  <span class="kw">expect</span> result <span class="kw">is</span> Error(<span class="str">"'abc' is not a valid number"</span>)
+
+<span class="kw">test</span> <span class="str">"parseAge rejects negative age"</span>:
+  result <span class="kw">is</span> parseAge(<span class="str">"-5"</span>)
+  <span class="kw">expect</span> result <span class="kw">is</span> Error(<span class="str">"Age cannot be negative"</span>)
+
+<span class="kw">test</span> <span class="str">"parseAge accepts valid age"</span>:
+  result <span class="kw">is</span> parseAge(<span class="str">"25"</span>)
+  <span class="kw">expect</span> result <span class="kw">is</span> Success(<span class="num">25</span>)</code></pre>
+
+      <h3>Full example: testing a shopping cart</h3>
+      <pre><code><span class="cmt">-- shopping-cart.quill</span>
+
+<span class="kw">describe</span> <span class="fn">ShoppingCart</span>:
+  items <span class="kw">are</span> []
+
+  <span class="kw">to</span> <span class="fn">addItem</span> name price quantity:
+    push(my.items, {name: name, price: price, quantity: quantity})
+
+  <span class="kw">to</span> <span class="fn">removeItem</span> name:
+    my.items <span class="kw">is</span> my.items | filter(<span class="kw">to</span> i: i.name <span class="kw">is not</span> name)
+
+  <span class="kw">to</span> <span class="fn">subtotal</span>:
+    <span class="kw">give back</span> my.items | map_list(<span class="kw">to</span> i: i.price * i.quantity) | reduce(<span class="kw">to</span> a b: a + b, <span class="num">0</span>)
+
+  <span class="kw">to</span> <span class="fn">applyDiscount</span> percent:
+    <span class="kw">if</span> percent <span class="kw">is less than</span> <span class="num">0</span> <span class="kw">or</span> percent <span class="kw">is greater than</span> <span class="num">100</span>:
+      <span class="kw">give back</span> Error(<span class="str">"Invalid discount: {percent}%"</span>)
+    <span class="kw">give back</span> Success(my.subtotal() * (<span class="num">1</span> - percent / <span class="num">100</span>))
+
+  <span class="kw">to</span> <span class="fn">itemCount</span>:
+    <span class="kw">give back</span> my.items | map_list(<span class="kw">to</span> i: i.quantity) | reduce(<span class="kw">to</span> a b: a + b, <span class="num">0</span>)
+
+  <span class="kw">to</span> <span class="fn">clear</span>:
+    my.items <span class="kw">are</span> []
+
+<span class="cmt">-- Tests</span>
+
+<span class="kw">test</span> <span class="str">"empty cart has zero subtotal"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  <span class="kw">expect</span> cart.subtotal() <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"empty cart has zero item count"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  <span class="kw">expect</span> cart.itemCount() <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">test</span> <span class="str">"addItem increases subtotal"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Widget"</span>, <span class="num">9.99</span>, <span class="num">2</span>)
+  <span class="kw">expect</span> cart.subtotal() <span class="kw">is</span> <span class="num">19.98</span>
+
+<span class="kw">test</span> <span class="str">"addItem increases item count"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Widget"</span>, <span class="num">9.99</span>, <span class="num">3</span>)
+  <span class="kw">expect</span> cart.itemCount() <span class="kw">is</span> <span class="num">3</span>
+
+<span class="kw">test</span> <span class="str">"multiple items sum correctly"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Widget"</span>, <span class="num">10</span>, <span class="num">1</span>)
+  cart.addItem(<span class="str">"Gadget"</span>, <span class="num">25</span>, <span class="num">2</span>)
+  <span class="kw">expect</span> cart.subtotal() <span class="kw">is</span> <span class="num">60</span>
+  <span class="kw">expect</span> cart.itemCount() <span class="kw">is</span> <span class="num">3</span>
+
+<span class="kw">test</span> <span class="str">"removeItem removes by name"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Widget"</span>, <span class="num">10</span>, <span class="num">1</span>)
+  cart.addItem(<span class="str">"Gadget"</span>, <span class="num">25</span>, <span class="num">2</span>)
+  cart.removeItem(<span class="str">"Widget"</span>)
+  <span class="kw">expect</span> cart.subtotal() <span class="kw">is</span> <span class="num">50</span>
+  <span class="kw">expect</span> cart.itemCount() <span class="kw">is</span> <span class="num">2</span>
+
+<span class="kw">test</span> <span class="str">"removeItem with nonexistent name does nothing"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Widget"</span>, <span class="num">10</span>, <span class="num">1</span>)
+  cart.removeItem(<span class="str">"Nonexistent"</span>)
+  <span class="kw">expect</span> cart.subtotal() <span class="kw">is</span> <span class="num">10</span>
+
+<span class="kw">test</span> <span class="str">"applyDiscount 10% on $100"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Item"</span>, <span class="num">100</span>, <span class="num">1</span>)
+  <span class="kw">expect</span> cart.applyDiscount(<span class="num">10</span>) <span class="kw">is</span> Success(<span class="num">90</span>)
+
+<span class="kw">test</span> <span class="str">"applyDiscount 0% returns full price"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Item"</span>, <span class="num">50</span>, <span class="num">1</span>)
+  <span class="kw">expect</span> cart.applyDiscount(<span class="num">0</span>) <span class="kw">is</span> Success(<span class="num">50</span>)
+
+<span class="kw">test</span> <span class="str">"applyDiscount rejects negative percent"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Item"</span>, <span class="num">50</span>, <span class="num">1</span>)
+  <span class="kw">expect</span> cart.applyDiscount(<span class="num">-5</span>) <span class="kw">is</span> Error(<span class="str">"Invalid discount: -5%"</span>)
+
+<span class="kw">test</span> <span class="str">"applyDiscount rejects over 100%"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Item"</span>, <span class="num">50</span>, <span class="num">1</span>)
+  <span class="kw">expect</span> cart.applyDiscount(<span class="num">150</span>) <span class="kw">is</span> Error(<span class="str">"Invalid discount: 150%"</span>)
+
+<span class="kw">test</span> <span class="str">"clear empties the cart"</span>:
+  cart <span class="kw">is</span> <span class="kw">new</span> ShoppingCart()
+  cart.addItem(<span class="str">"Widget"</span>, <span class="num">10</span>, <span class="num">5</span>)
+  cart.clear()
+  <span class="kw">expect</span> cart.subtotal() <span class="kw">is</span> <span class="num">0</span>
+  <span class="kw">expect</span> cart.itemCount() <span class="kw">is</span> <span class="num">0</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 6: SECURITY PATTERNS                                  -->
+      <!-- ============================================================ -->
+
+      <h2 id="security-patterns">6. Security Patterns</h2>
+      <p>Security is not a feature you bolt on at the end. It is a set of habits you practice from the beginning. These patterns protect your users and your application from the most common vulnerabilities.</p>
+
+      <h3>Never hardcode secrets</h3>
+      <p><strong>Bad:</strong> secrets in source code.</p>
+      <pre><code><span class="cmt">-- Bad: anyone who reads the code can see your key</span>
+API_KEY <span class="kw">is</span> <span class="str">"sk-abc123secret456"</span>
+DB_PASSWORD <span class="kw">is</span> <span class="str">"hunter2"</span></code></pre>
+
+      <p><strong>Good:</strong> load secrets from the environment.</p>
+      <pre><code><span class="cmt">-- Good: secrets live in .env or your deployment config</span>
+API_KEY <span class="kw">is</span> env(<span class="str">"API_KEY"</span>)
+DB_PASSWORD <span class="kw">is</span> env(<span class="str">"DB_PASSWORD"</span>)
+
+<span class="kw">if</span> API_KEY <span class="kw">is</span> <span class="kw">nothing</span>:
+  <span class="kw">say</span> <span class="str">"Error: API_KEY environment variable is not set"</span>
+  exit(<span class="num">1</span>)</code></pre>
+
+      <div class="callout callout-warn">
+        <strong>Warning:</strong> Never commit <code>.env</code> files to version control. Add <code>.env</code> to your <code>.gitignore</code> immediately.
+      </div>
+
+      <h3>Hashing passwords with argon2</h3>
+      <p><strong>Bad:</strong> storing passwords in plain text.</p>
+      <pre><code><span class="cmt">-- Bad: passwords stored as plain text -- one breach exposes everyone</span>
+<span class="kw">to</span> <span class="fn">createUser</span> name password:
+  user <span class="kw">is</span> {name: name, password: password}
+  saveToDatabase(user)</code></pre>
+
+      <p><strong>Good:</strong> hash passwords with argon2 before storing.</p>
+      <pre><code><span class="cmt">-- Good: hash the password, store only the hash</span>
+<span class="kw">to</span> <span class="fn">createUser</span> name password:
+  hashedPassword <span class="kw">is</span> <span class="kw">await</span> argon2(password)
+  user <span class="kw">is</span> {name: name, password: hashedPassword}
+  saveToDatabase(user)</code></pre>
+
+      <h3>Encrypting sensitive data at rest</h3>
+      <pre><code><span class="cmt">-- Encrypt before saving</span>
+SECRET_KEY <span class="kw">is</span> env(<span class="str">"ENCRYPTION_KEY"</span>)
+encryptedSSN <span class="kw">is</span> encrypt(user.ssn, SECRET_KEY)
+saveToDatabase({...user, ssn: encryptedSSN})
+
+<span class="cmt">-- Decrypt when reading</span>
+encryptedSSN <span class="kw">is</span> loadFromDatabase(userId).ssn
+plainSSN <span class="kw">is</span> decrypt(encryptedSSN, SECRET_KEY)</code></pre>
+
+      <h3>Timing-safe comparison for tokens</h3>
+      <p>Regular string comparison (<code>is</code>) leaks information through timing. An attacker can measure how long the comparison takes to guess your token character by character. Use <code>constantTimeEqual</code> instead.</p>
+
+      <p><strong>Bad:</strong></p>
+      <pre><code><span class="cmt">-- Bad: timing attack possible</span>
+<span class="kw">if</span> token <span class="kw">is</span> expectedToken:
+  <span class="kw">say</span> <span class="str">"Authenticated"</span></code></pre>
+
+      <p><strong>Good:</strong></p>
+      <pre><code><span class="cmt">-- Good: constant-time comparison, no timing leak</span>
+<span class="kw">if</span> constantTimeEqual(token, expectedToken):
+  <span class="kw">say</span> <span class="str">"Authenticated"</span></code></pre>
+
+      <h3>Input validation</h3>
+      <p>Never trust user input. Validate type, length, and format before using it.</p>
+      <pre><code><span class="kw">to</span> <span class="fn">validateEmail</span> input -> Result <span class="kw">of</span> text:
+  <span class="kw">if</span> isText(input) <span class="kw">is</span> <span class="bool">no</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Email must be text"</span>)
+  <span class="kw">if</span> length(input) <span class="kw">is greater than</span> <span class="num">254</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Email too long"</span>)
+  <span class="kw">if</span> includes(input, <span class="str">"@"</span>) <span class="kw">is</span> <span class="bool">no</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Email must contain @"</span>)
+  <span class="kw">give back</span> Success(trim(lower(input)))
+
+<span class="kw">to</span> <span class="fn">validatePassword</span> input -> Result <span class="kw">of</span> text:
+  <span class="kw">if</span> length(input) <span class="kw">is less than</span> <span class="num">8</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Password must be at least 8 characters"</span>)
+  <span class="kw">if</span> length(input) <span class="kw">is greater than</span> <span class="num">128</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Password must be at most 128 characters"</span>)
+  <span class="kw">give back</span> Success(input)</code></pre>
+
+      <h3>Full example: a secure login system</h3>
+      <pre><code><span class="cmt">-- secure-auth.quill</span>
+<span class="cmt">-- A complete authentication system with proper password hashing,</span>
+<span class="cmt">-- token generation, and validation.</span>
+
+TOKEN_SECRET <span class="kw">is</span> env(<span class="str">"TOKEN_SECRET"</span>)
+TOKEN_EXPIRY_MS <span class="kw">is</span> <span class="num">3600000</span>  <span class="cmt">-- 1 hour</span>
+
+<span class="cmt">-- Register a new user</span>
+<span class="kw">to</span> <span class="fn">register</span> email password -> Result <span class="kw">of</span> object:
+  <span class="cmt">-- Validate inputs</span>
+  cleanEmail <span class="kw">is</span> validateEmail(email)?
+  cleanPassword <span class="kw">is</span> validatePassword(password)?
+
+  <span class="cmt">-- Check if user already exists</span>
+  existing <span class="kw">is</span> findUserByEmail(cleanEmail)
+  <span class="kw">if</span> existing <span class="kw">is not</span> <span class="kw">nothing</span>:
+    <span class="kw">give back</span> Error(<span class="str">"A user with this email already exists"</span>)
+
+  <span class="cmt">-- Hash the password (never store plain text)</span>
+  hashedPassword <span class="kw">is</span> <span class="kw">await</span> argon2(cleanPassword)
+
+  <span class="cmt">-- Save user</span>
+  user <span class="kw">is</span> {
+    id: uuid(),
+    email: cleanEmail,
+    password: hashedPassword,
+    createdAt: now()
+  }
+  saveToDatabase(user)
+
+  <span class="kw">give back</span> Success({id: user.id, email: user.email})
+
+<span class="cmt">-- Log in an existing user</span>
+<span class="kw">to</span> <span class="fn">login</span> email password -> Result <span class="kw">of</span> object:
+  cleanEmail <span class="kw">is</span> validateEmail(email)?
+
+  <span class="cmt">-- Look up the user</span>
+  user <span class="kw">is</span> findUserByEmail(cleanEmail)
+  <span class="kw">if</span> user <span class="kw">is</span> <span class="kw">nothing</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Invalid email or password"</span>)
+
+  <span class="cmt">-- Verify password against stored hash</span>
+  passwordOk <span class="kw">is</span> <span class="kw">await</span> argon2(password, user.password)
+  <span class="kw">if</span> passwordOk <span class="kw">is</span> <span class="bool">no</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Invalid email or password"</span>)
+
+  <span class="cmt">-- Generate a session token</span>
+  token <span class="kw">is</span> generateToken(user.id)
+  <span class="kw">give back</span> Success({token: token, userId: user.id})
+
+<span class="cmt">-- Generate a signed token</span>
+<span class="kw">to</span> <span class="fn">generateToken</span> userId -> text:
+  payload <span class="kw">is</span> toJSON({userId: userId, exp: now() + TOKEN_EXPIRY_MS})
+  signature <span class="kw">is</span> hmac(payload, TOKEN_SECRET)
+  <span class="kw">give back</span> toBase64(payload) + <span class="str">"."</span> + toBase64(signature)
+
+<span class="cmt">-- Validate an incoming token</span>
+<span class="kw">to</span> <span class="fn">validateToken</span> token -> Result <span class="kw">of</span> object:
+  parts <span class="kw">is</span> split(token, <span class="str">"."</span>)
+  <span class="kw">if</span> length(parts) <span class="kw">is not</span> <span class="num">2</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Malformed token"</span>)
+
+  [payloadB64, sigB64] <span class="kw">is</span> parts
+  payload <span class="kw">is</span> fromBase64(payloadB64)
+  expectedSig <span class="kw">is</span> toBase64(hmac(payload, TOKEN_SECRET))
+
+  <span class="cmt">-- Timing-safe comparison to prevent timing attacks</span>
+  <span class="kw">if</span> constantTimeEqual(sigB64, expectedSig) <span class="kw">is</span> <span class="bool">no</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Invalid token signature"</span>)
+
+  data <span class="kw">is</span> parseJSON(payload)
+  <span class="kw">if</span> data.exp <span class="kw">is less than</span> now():
+    <span class="kw">give back</span> Error(<span class="str">"Token expired"</span>)
+
+  <span class="kw">give back</span> Success({userId: data.userId})</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Note:</strong> Never reveal whether the email or password was wrong individually. Always say "Invalid email or password" to prevent attackers from enumerating valid email addresses.
+      </div>
+
+      <h3>Rate limiting</h3>
+      <p>Protect login endpoints from brute-force attacks by tracking failed attempts.</p>
+      <pre><code><span class="cmt">-- Simple in-memory rate limiter</span>
+failedAttempts <span class="kw">is</span> {}
+MAX_ATTEMPTS <span class="kw">is</span> <span class="num">5</span>
+LOCKOUT_MS <span class="kw">is</span> <span class="num">900000</span>  <span class="cmt">-- 15 minutes</span>
+
+<span class="kw">to</span> <span class="fn">checkRateLimit</span> email -> Result <span class="kw">of</span> boolean:
+  record <span class="kw">is</span> failedAttempts[email]
+  <span class="kw">if</span> record <span class="kw">is not</span> <span class="kw">nothing</span>:
+    <span class="kw">if</span> record.count <span class="kw">is greater than</span> MAX_ATTEMPTS:
+      <span class="kw">if</span> now() - record.lastAttempt <span class="kw">is less than</span> LOCKOUT_MS:
+        <span class="kw">give back</span> Error(<span class="str">"Too many failed attempts. Try again later."</span>)
+      <span class="cmt">-- Lockout period expired, reset counter</span>
+      failedAttempts[email] <span class="kw">is</span> <span class="kw">nothing</span>
+  <span class="kw">give back</span> Success(<span class="bool">yes</span>)
+
+<span class="kw">to</span> <span class="fn">recordFailedLogin</span> email:
+  <span class="kw">if</span> failedAttempts[email] <span class="kw">is</span> <span class="kw">nothing</span>:
+    failedAttempts[email] <span class="kw">is</span> {count: <span class="num">0</span>, lastAttempt: now()}
+  failedAttempts[email].count <span class="kw">is</span> failedAttempts[email].count + <span class="num">1</span>
+  failedAttempts[email].lastAttempt <span class="kw">is</span> now()</code></pre>
+
+      <h3>Sanitizing output</h3>
+      <p>When displaying user-supplied data in HTML, always sanitize to prevent cross-site scripting (XSS).</p>
+      <pre><code><span class="cmt">-- Bad: user input rendered directly as HTML</span>
+page <span class="kw">is</span> html<span class="str">`&lt;h1&gt;{userInput}&lt;/h1&gt;`</span>
+
+<span class="cmt">-- Good: Quill's html tagged template auto-escapes interpolated values</span>
+page <span class="kw">is</span> html<span class="str">`&lt;h1&gt;{userInput}&lt;/h1&gt;`</span>  <span class="cmt">-- html`` escapes &lt; &gt; &amp; " '</span></code></pre>
+
+      <div class="callout callout-warn">
+        <strong>Security checklist:</strong> Before deploying any application, verify: (1) No secrets in source code. (2) All passwords hashed with argon2 or bcrypt. (3) All user input validated and sanitized. (4) All token comparisons use constantTimeEqual. (5) HTTPS enabled for all endpoints.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 7: PERFORMANCE PATTERNS                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="performance-patterns">7. Performance Patterns</h2>
+      <p>Write clear code first, then optimize only when measurements show you need to. But knowing these patterns from the start helps you avoid the most common performance traps.</p>
+
+      <h3>Lazy evaluation with iterators</h3>
+      <p>When working with large datasets, lazy evaluation lets you process items one at a time without loading everything into memory. Use <code>range</code>, <code>filter</code>, <code>map_list</code>, and <code>take</code> in a pipe chain -- the computation only runs when you consume the results.</p>
+
+      <p><strong>Bad:</strong> creating huge intermediate lists.</p>
+      <pre><code><span class="cmt">-- Bad: creates 3 full lists of 1,000,000 items each</span>
+numbers <span class="kw">are</span> range(<span class="num">1</span>, <span class="num">1000000</span>)
+evens <span class="kw">are</span> filter(numbers, <span class="kw">to</span> n: n % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>)
+doubled <span class="kw">are</span> map_list(evens, <span class="kw">to</span> n: n * <span class="num">2</span>)
+firstTen <span class="kw">are</span> take(doubled, <span class="num">10</span>)</code></pre>
+
+      <p><strong>Good:</strong> pipe into a lazy chain -- only processes 10 items.</p>
+      <pre><code><span class="cmt">-- Good: lazy -- only the 10 items you need are computed</span>
+firstTen <span class="kw">is</span> range(<span class="num">1</span>, <span class="num">1000000</span>)
+  | filter(<span class="kw">to</span> n: n % <span class="num">2</span> <span class="kw">is</span> <span class="num">0</span>)
+  | map_list(<span class="kw">to</span> n: n * <span class="num">2</span>)
+  | take(<span class="num">10</span>)</code></pre>
+
+      <h3>Avoiding unnecessary copies</h3>
+      <p>Spread creates a new object or list every time. In a tight loop, this is wasteful if you just need to read the data.</p>
+
+      <p><strong>Bad:</strong> copying on every iteration.</p>
+      <pre><code><span class="cmt">-- Bad: creates 1000 new objects for no reason</span>
+<span class="kw">for each</span> user <span class="kw">in</span> users:
+  copy <span class="kw">is</span> {...user}
+  <span class="kw">say</span> copy.name</code></pre>
+
+      <p><strong>Good:</strong> just read the original.</p>
+      <pre><code><span class="cmt">-- Good: read directly, no copy needed</span>
+<span class="kw">for each</span> user <span class="kw">in</span> users:
+  <span class="kw">say</span> user.name</code></pre>
+
+      <h3>Parallel execution for independent tasks</h3>
+      <p>When you have several independent I/O operations, run them in parallel.</p>
+      <pre><code><span class="cmt">-- Bad: 3 sequential fetches (total time = sum of all three)</span>
+a <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/a"</span>)
+b <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/b"</span>)
+c <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"/api/c"</span>)
+
+<span class="cmt">-- Good: 3 parallel fetches (total time = slowest one)</span>
+<span class="kw">parallel</span>:
+  a <span class="kw">is</span> fetchJSON(<span class="str">"/api/a"</span>)
+  b <span class="kw">is</span> fetchJSON(<span class="str">"/api/b"</span>)
+  c <span class="kw">is</span> fetchJSON(<span class="str">"/api/c"</span>)</code></pre>
+
+      <h3>Caching expensive computations</h3>
+      <p>If a function is called repeatedly with the same arguments and the result does not change, cache it.</p>
+      <pre><code><span class="cmt">-- Simple memoization cache</span>
+cache <span class="kw">is</span> {}
+
+<span class="kw">to</span> <span class="fn">expensiveLookup</span> key:
+  <span class="kw">if</span> cache[key] <span class="kw">is not</span> <span class="kw">nothing</span>:
+    <span class="kw">give back</span> cache[key]
+
+  result <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://api.example.com/data/{key}"</span>)
+  cache[key] <span class="kw">is</span> result
+  <span class="kw">give back</span> result
+
+<span class="cmt">-- First call: fetches from API</span>
+data <span class="kw">is</span> expensiveLookup(<span class="str">"user-123"</span>)
+<span class="cmt">-- Second call: instant, from cache</span>
+data <span class="kw">is</span> expensiveLookup(<span class="str">"user-123"</span>)</code></pre>
+
+      <h3>Cache with TTL (time to live)</h3>
+      <p>Prevent stale data by expiring cache entries after a set duration.</p>
+      <pre><code>cache <span class="kw">is</span> {}
+CACHE_TTL <span class="kw">is</span> <span class="num">60000</span>  <span class="cmt">-- 1 minute</span>
+
+<span class="kw">to</span> <span class="fn">cachedFetch</span> key url:
+  entry <span class="kw">is</span> cache[key]
+  <span class="kw">if</span> entry <span class="kw">is not</span> <span class="kw">nothing</span>:
+    <span class="kw">if</span> now() - entry.timestamp <span class="kw">is less than</span> CACHE_TTL:
+      <span class="kw">give back</span> entry.data
+
+  data <span class="kw">is</span> <span class="kw">await</span> fetchJSON(url)
+  cache[key] <span class="kw">is</span> {data: data, timestamp: now()}
+  <span class="kw">give back</span> data</code></pre>
+
+      <div class="callout callout-info">
+        <strong>When to cache:</strong> Cache when the same input always produces the same output, the computation is slow (I/O, heavy math), and the cache does not grow unboundedly. Consider adding a TTL (time to live) for data that can become stale.
+      </div>
+
+      <h3>Batch operations</h3>
+      <p>When you need to perform many database inserts or API calls, batch them instead of doing one at a time.</p>
+
+      <p><strong>Bad:</strong> one insert per loop iteration.</p>
+      <pre><code><span class="cmt">-- Bad: 1000 separate database calls</span>
+<span class="kw">for each</span> record <span class="kw">in</span> records:
+  <span class="kw">await</span> db.insert(record)</code></pre>
+
+      <p><strong>Good:</strong> insert all at once.</p>
+      <pre><code><span class="cmt">-- Good: one batch insert</span>
+<span class="kw">await</span> db.insertMany(records)</code></pre>
+
+      <h3>Avoid repeated work in loops</h3>
+      <p>Compute values outside the loop when possible.</p>
+      <pre><code><span class="cmt">-- Bad: calls length() on every iteration</span>
+<span class="kw">repeat</span> length(items) <span class="kw">times</span> <span class="kw">with</span> i:
+  <span class="kw">if</span> i <span class="kw">is less than</span> length(items) / <span class="num">2</span>:
+    <span class="kw">say</span> items[i]
+
+<span class="cmt">-- Good: compute once, reuse</span>
+total <span class="kw">is</span> length(items)
+half <span class="kw">is</span> total / <span class="num">2</span>
+<span class="kw">repeat</span> total <span class="kw">times</span> <span class="kw">with</span> i:
+  <span class="kw">if</span> i <span class="kw">is less than</span> half:
+    <span class="kw">say</span> items[i]</code></pre>
+
+      <h3>Full example: processing a large dataset efficiently</h3>
+      <pre><code><span class="cmt">-- Process a large CSV of sales records efficiently.</span>
+<span class="cmt">-- Goal: find the top 10 customers by total spend.</span>
+
+<span class="kw">to</span> <span class="fn">topCustomers</span> csvPath -> list:
+  <span class="cmt">-- Read the file as lines (lazy stream)</span>
+  lines <span class="kw">is</span> readFile(csvPath) | split(<span class="str">"\n"</span>)
+
+  <span class="cmt">-- Skip the header, parse each line into a record</span>
+  records <span class="kw">is</span> lines
+    | filter(<span class="kw">to</span> line: line <span class="kw">is not</span> <span class="str">""</span>)
+    | map_list(<span class="kw">to</span> line:
+        parts <span class="kw">is</span> split(line, <span class="str">","</span>)
+        {customer: parts[<span class="num">0</span>], amount: toNumber(parts[<span class="num">1</span>])}
+      )
+
+  <span class="cmt">-- Aggregate: sum amounts per customer</span>
+  totals <span class="kw">is</span> {}
+  <span class="kw">for each</span> {customer, amount} <span class="kw">in</span> records:
+    <span class="kw">if</span> totals[customer] <span class="kw">is</span> <span class="kw">nothing</span>:
+      totals[customer] <span class="kw">is</span> <span class="num">0</span>
+    totals[customer] <span class="kw">is</span> totals[customer] + amount
+
+  <span class="cmt">-- Convert to a sorted list and take top 10</span>
+  result <span class="kw">is</span> entries(totals)
+    | map_list(<span class="kw">to</span> e: {customer: e[<span class="num">0</span>], total: e[<span class="num">1</span>]})
+    | sort(<span class="kw">to</span> a b: a.total <span class="kw">is greater than</span> b.total)
+    | take(<span class="num">10</span>)
+
+  <span class="kw">give back</span> result
+
+<span class="cmt">-- Usage</span>
+top <span class="kw">is</span> topCustomers(<span class="str">"sales.csv"</span>)
+<span class="kw">for each</span> {customer, total} <span class="kw">in</span> top:
+  <span class="kw">say</span> <span class="str">"{customer}: ${total}"</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- SECTION 8: COMMON IDIOMS                                      -->
+      <!-- ============================================================ -->
+
+      <h2 id="common-idioms">8. Common Idioms</h2>
+      <p>Idiomatic Quill reads almost like English. These patterns show you how to write code that experienced Quill developers would recognize immediately as clean and natural.</p>
+
+      <h3>Using <code>match</code> instead of long if/else chains</h3>
+      <p><strong>Before (verbose):</strong></p>
+      <pre><code><span class="kw">if</span> status <span class="kw">is</span> <span class="str">"pending"</span>:
+  handlePending()
+<span class="kw">otherwise if</span> status <span class="kw">is</span> <span class="str">"approved"</span>:
+  handleApproved()
+<span class="kw">otherwise if</span> status <span class="kw">is</span> <span class="str">"rejected"</span>:
+  handleRejected()
+<span class="kw">otherwise if</span> status <span class="kw">is</span> <span class="str">"cancelled"</span>:
+  handleCancelled()
+<span class="kw">otherwise</span>:
+  handleUnknown()</code></pre>
+
+      <p><strong>After (idiomatic):</strong></p>
+      <pre><code><span class="kw">match</span> status:
+  <span class="kw">when</span> <span class="str">"pending"</span>: handlePending()
+  <span class="kw">when</span> <span class="str">"approved"</span>: handleApproved()
+  <span class="kw">when</span> <span class="str">"rejected"</span>: handleRejected()
+  <span class="kw">when</span> <span class="str">"cancelled"</span>: handleCancelled()
+  <span class="kw">otherwise</span>: handleUnknown()</code></pre>
+
+      <h3>Pipe operator for readability</h3>
+      <p><strong>Before:</strong></p>
+      <pre><code>output <span class="kw">is</span> join(sort(unique(split(lower(trim(input)), <span class="str">" "</span>))), <span class="str">", "</span>)</code></pre>
+
+      <p><strong>After:</strong></p>
+      <pre><code>output <span class="kw">is</span> input
+  | trim
+  | lower
+  | split(<span class="str">" "</span>)
+  | unique
+  | sort
+  | join(<span class="str">", "</span>)</code></pre>
+
+      <h3>Default values with <code>or</code></h3>
+      <p><strong>Before:</strong></p>
+      <pre><code><span class="kw">if</span> config.name <span class="kw">is not</span> <span class="kw">nothing</span>:
+  name <span class="kw">is</span> config.name
+<span class="kw">otherwise</span>:
+  name <span class="kw">is</span> <span class="str">"default"</span></code></pre>
+
+      <p><strong>After:</strong></p>
+      <pre><code>name <span class="kw">is</span> config.name <span class="kw">or</span> <span class="str">"default"</span></code></pre>
+
+      <h3>Guard clauses -- early return for invalid input</h3>
+      <p><strong>Before (deeply nested):</strong></p>
+      <pre><code><span class="kw">to</span> <span class="fn">processPayment</span> order:
+  <span class="kw">if</span> order <span class="kw">is not</span> <span class="kw">nothing</span>:
+    <span class="kw">if</span> order.total <span class="kw">is greater than</span> <span class="num">0</span>:
+      <span class="kw">if</span> order.paymentMethod <span class="kw">is not</span> <span class="kw">nothing</span>:
+        <span class="cmt">-- finally, the actual logic buried 3 levels deep</span>
+        charge(order)
+      <span class="kw">otherwise</span>:
+        <span class="kw">give back</span> Error(<span class="str">"No payment method"</span>)
+    <span class="kw">otherwise</span>:
+      <span class="kw">give back</span> Error(<span class="str">"Order total must be positive"</span>)
+  <span class="kw">otherwise</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Order is missing"</span>)</code></pre>
+
+      <p><strong>After (guard clauses):</strong></p>
+      <pre><code><span class="kw">to</span> <span class="fn">processPayment</span> order:
+  <span class="kw">if</span> order <span class="kw">is</span> <span class="kw">nothing</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Order is missing"</span>)
+  <span class="kw">if</span> order.total <span class="kw">is less than</span> <span class="num">1</span>:
+    <span class="kw">give back</span> Error(<span class="str">"Order total must be positive"</span>)
+  <span class="kw">if</span> order.paymentMethod <span class="kw">is</span> <span class="kw">nothing</span>:
+    <span class="kw">give back</span> Error(<span class="str">"No payment method"</span>)
+
+  <span class="cmt">-- All checks passed, do the real work</span>
+  charge(order)</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Guard clauses put the error cases at the top and the "happy path" at the bottom, with zero nesting. The code reads like a checklist: reject bad input, then do the work.
+      </div>
+
+      <h3>10 before/after comparisons</h3>
+      <p>Here is a quick reference of common patterns showing verbose Quill versus idiomatic Quill.</p>
+
+      <p><strong>1. Conditional assignment</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+<span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">17</span>:
+  label <span class="kw">is</span> <span class="str">"adult"</span>
+<span class="kw">otherwise</span>:
+  label <span class="kw">is</span> <span class="str">"minor"</span>
+
+<span class="cmt">-- After</span>
+label <span class="kw">is</span> <span class="kw">if</span> age <span class="kw">is greater than</span> <span class="num">17</span> <span class="kw">then</span> <span class="str">"adult"</span> <span class="kw">otherwise</span> <span class="str">"minor"</span></code></pre>
+
+      <p><strong>2. Checking for existence</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+<span class="kw">if</span> user.nickname <span class="kw">is not</span> <span class="kw">nothing</span>:
+  displayName <span class="kw">is</span> user.nickname
+<span class="kw">otherwise</span>:
+  displayName <span class="kw">is</span> user.name
+
+<span class="cmt">-- After</span>
+displayName <span class="kw">is</span> user.nickname <span class="kw">or</span> user.name</code></pre>
+
+      <p><strong>3. Building a string from a list</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+result <span class="kw">is</span> <span class="str">""</span>
+<span class="kw">for each</span> name <span class="kw">in</span> names:
+  result <span class="kw">is</span> result + name + <span class="str">", "</span>
+
+<span class="cmt">-- After</span>
+result <span class="kw">is</span> names | join(<span class="str">", "</span>)</code></pre>
+
+      <p><strong>4. Filtering and counting</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+count <span class="kw">is</span> <span class="num">0</span>
+<span class="kw">for each</span> user <span class="kw">in</span> users:
+  <span class="kw">if</span> user.active:
+    count <span class="kw">is</span> count + <span class="num">1</span>
+
+<span class="cmt">-- After</span>
+count <span class="kw">is</span> users | filter(<span class="kw">to</span> u: u.active) | length</code></pre>
+
+      <p><strong>5. Extracting a single field from a list of objects</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+names <span class="kw">are</span> []
+<span class="kw">for each</span> user <span class="kw">in</span> users:
+  push(names, user.name)
+
+<span class="cmt">-- After</span>
+names <span class="kw">is</span> users | map_list(<span class="kw">to</span> u: u.name)</code></pre>
+
+      <p><strong>6. Finding an item</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+found <span class="kw">is</span> <span class="kw">nothing</span>
+<span class="kw">for each</span> user <span class="kw">in</span> users:
+  <span class="kw">if</span> user.id <span class="kw">is</span> targetId:
+    found <span class="kw">is</span> user
+
+<span class="cmt">-- After</span>
+found <span class="kw">is</span> users | find(<span class="kw">to</span> u: u.id <span class="kw">is</span> targetId)</code></pre>
+
+      <p><strong>7. Merging defaults with overrides</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+config <span class="kw">is</span> {}
+config.host <span class="kw">is</span> defaults.host
+config.port <span class="kw">is</span> defaults.port
+config.debug <span class="kw">is</span> defaults.debug
+<span class="kw">if</span> overrides.host <span class="kw">is not</span> <span class="kw">nothing</span>:
+  config.host <span class="kw">is</span> overrides.host
+<span class="kw">if</span> overrides.port <span class="kw">is not</span> <span class="kw">nothing</span>:
+  config.port <span class="kw">is</span> overrides.port
+
+<span class="cmt">-- After</span>
+config <span class="kw">is</span> {...defaults, ...overrides}</code></pre>
+
+      <p><strong>8. Error handling with fallback</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+result <span class="kw">is</span> loadUser(<span class="num">42</span>)
+<span class="kw">match</span> result:
+  <span class="kw">when</span> Success user:
+    name <span class="kw">is</span> user.name
+  <span class="kw">when</span> Error msg:
+    name <span class="kw">is</span> <span class="str">"anonymous"</span>
+
+<span class="cmt">-- After</span>
+name <span class="kw">is</span> <span class="kw">try</span> loadUser(<span class="num">42</span>).name <span class="kw">otherwise</span> <span class="str">"anonymous"</span></code></pre>
+
+      <p><strong>9. Transforming data for display</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+display <span class="kw">are</span> []
+<span class="kw">for each</span> order <span class="kw">in</span> orders:
+  formatted <span class="kw">is</span> {
+    label: order.id + <span class="str">": "</span> + order.product,
+    total: <span class="str">"$"</span> + toText(order.amount)
+  }
+  push(display, formatted)
+
+<span class="cmt">-- After</span>
+display <span class="kw">is</span> orders | map_list(<span class="kw">to</span> o: {
+  label: <span class="str">"{o.id}: {o.product}"</span>,
+  total: <span class="str">"${o.amount}"</span>
+})</code></pre>
+
+      <p><strong>10. Multiple return conditions</strong></p>
+      <pre><code><span class="cmt">-- Before</span>
+<span class="kw">to</span> <span class="fn">classify</span> score:
+  <span class="kw">if</span> score <span class="kw">is greater than</span> <span class="num">89</span>:
+    <span class="kw">give back</span> <span class="str">"A"</span>
+  <span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">79</span>:
+    <span class="kw">give back</span> <span class="str">"B"</span>
+  <span class="kw">otherwise if</span> score <span class="kw">is greater than</span> <span class="num">69</span>:
+    <span class="kw">give back</span> <span class="str">"C"</span>
+  <span class="kw">otherwise</span>:
+    <span class="kw">give back</span> <span class="str">"F"</span>
+
+<span class="cmt">-- After</span>
+<span class="kw">to</span> <span class="fn">classify</span> score:
+  <span class="kw">match</span> score:
+    <span class="kw">when</span> n <span class="kw">if</span> n <span class="kw">is greater than</span> <span class="num">89</span>: <span class="kw">give back</span> <span class="str">"A"</span>
+    <span class="kw">when</span> n <span class="kw">if</span> n <span class="kw">is greater than</span> <span class="num">79</span>: <span class="kw">give back</span> <span class="str">"B"</span>
+    <span class="kw">when</span> n <span class="kw">if</span> n <span class="kw">is greater than</span> <span class="num">69</span>: <span class="kw">give back</span> <span class="str">"C"</span>
+    <span class="kw">otherwise</span>: <span class="kw">give back</span> <span class="str">"F"</span></code></pre>
+
+      <!-- ============================================================ -->
+      <!-- NEXT STEPS                                                    -->
+      <!-- ============================================================ -->
+
+      <h2>Next steps</h2>
+      <ul>
+        <li>Read the <a href="/docs/language">Language Reference</a> for complete syntax details</li>
+        <li>Explore the <a href="/docs/stdlib">Standard Library</a> to discover all built-in functions</li>
+        <li>Check out <a href="/docs/testing">Testing</a> for more on writing and running tests</li>
+        <li>Try the <a href="/playground">Playground</a> to experiment with these patterns in your browser</li>
+        <li>Browse <a href="/docs/examples">Examples</a> for complete working programs</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <ul class="footer-links">
+        <li><a href="/docs">Documentation</a></li>
+        <li><a href="/playground">Playground</a></li>
+        <li><a href="https://github.com/tradebuddyhq/quill" target="_blank">GitHub</a></li>
+      </ul>
+      <p>Built with care. Quill is open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('nav-toggle').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
