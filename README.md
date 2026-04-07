@@ -1137,6 +1137,13 @@ derived is hkdf(inputKeyHex, saltHex, "context-info", 32)
 -- Password hashing (Argon2 / bcrypt)
 hashed is await argon2("password", "salt")
 valid is await argon2Verify(hashed, "password")
+hashed is await bcryptHash("password", 12)
+valid is await bcryptVerify(hashed, "password")
+
+-- Buffer variants (return raw Buffers instead of hex)
+macBuf is hmacBuffer("data", key, "sha256")
+keyBuf is hkdfBuffer(sharedSecret, salt, "enc", 32)
+iv is randomBytesBuffer(12)
 
 -- Random & UUID
 bytes is randomBytes(32)

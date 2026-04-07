@@ -71,6 +71,7 @@
         <li><a href="#https-server">HTTPS server</a></li>
         <li><a href="#secure-storage">Secure storage</a></li>
         <li><a href="#webrtc">WebRTC</a></li>
+        <li><a href="#static-site">Static sites</a></li>
       </ul>
       <h4>Ecosystem Packages</h4>
       <ul>
@@ -179,7 +180,7 @@
           </tr>
           <tr style="border-bottom: 1px solid var(--border);">
             <td style="padding: 8px;"><a href="#signal-crypto">Signal Protocol Primitives</a></td>
-            <td style="padding: 8px;"><code>hkdf</code>, <code>diffieHellman</code>, <code>argon2</code>, <code>constantTimeEqual</code>, <code>aesEncrypt</code>, <code>secureErase</code>, <code>defineSchema</code></td>
+            <td style="padding: 8px;"><code>hkdf</code>, <code>hkdfBuffer</code>, <code>diffieHellman</code>, <code>argon2</code>, <code>bcryptHash</code>, <code>constantTimeEqual</code>, <code>aesEncrypt</code>, <code>hmacBuffer</code>, <code>randomBytesBuffer</code>, <code>secureErase</code>, <code>defineSchema</code></td>
           </tr>
         </tbody>
       </table>
@@ -1812,6 +1813,26 @@ hashed <span class="kw">is</span> <span class="kw">await</span> argon2(password,
 <span class="kw">if</span> isValid:
   <span class="kw">say</span> <span class="str">"Login successful"</span></code></pre>
 
+      <h3><code>bcryptHash(password, rounds)</code> &mdash; bcrypt Password Hashing</h3>
+      <p>Hashes a password using bcrypt with configurable rounds (default 12). Returns a salt:hash string. Use this when you need bcrypt compatibility.</p>
+      <pre><code>hashed <span class="kw">is</span> <span class="kw">await</span> bcryptHash(password, <span class="num">12</span>)</code></pre>
+
+      <h3><code>bcryptVerify(hashed, password)</code> &mdash; Verify bcrypt Password</h3>
+      <p>Verifies a password against a bcrypt hash. Returns <code>true</code> or <code>false</code>.</p>
+      <pre><code>isValid <span class="kw">is</span> <span class="kw">await</span> bcryptVerify(storedHash, userPassword)</code></pre>
+
+      <h3><code>hmacBuffer(data, key, algorithm)</code> &mdash; HMAC as Buffer</h3>
+      <p>Like <code>hmac()</code> but returns a raw Buffer instead of a hex string. Useful when chaining crypto operations.</p>
+      <pre><code>macBuf <span class="kw">is</span> hmacBuffer(<span class="str">"data"</span>, key, <span class="str">"sha256"</span>)</code></pre>
+
+      <h3><code>hkdfBuffer(inputKey, salt, info, outputLength)</code> &mdash; HKDF as Buffer</h3>
+      <p>Like <code>hkdf()</code> but returns a raw Buffer instead of a hex string.</p>
+      <pre><code>keyBuf <span class="kw">is</span> hkdfBuffer(sharedSecret, salt, <span class="str">"encryption"</span>, <span class="num">32</span>)</code></pre>
+
+      <h3><code>randomBytesBuffer(size)</code> &mdash; Random Bytes as Buffer</h3>
+      <p>Like <code>randomBytes()</code> but returns a raw Buffer instead of a hex string. Useful for IV generation and key material.</p>
+      <pre><code>iv <span class="kw">is</span> randomBytesBuffer(<span class="num">12</span>)   <span class="cmt">-- 12-byte IV for AES-GCM</span></code></pre>
+
       <h3><code>constantTimeEqual(a, b)</code> &mdash; Timing-Safe Comparison</h3>
       <p>Compares two buffers in constant time to prevent timing attacks. Always use this instead of <code>is</code> when comparing secrets, MACs, or hashes.</p>
       <pre><code><span class="cmt">-- Verify a MAC safely</span>
@@ -1865,6 +1886,34 @@ msg <span class="kw">is</span> decode(MessageSchema, wire)</code></pre>
   <span class="kw">say</span> data
 <span class="kw">catch</span> err:
   <span class="kw">say</span> <span class="str">"Request failed: "</span> + err</code></pre>
+
+      <!-- ============================================ -->
+      <!-- STATIC SITE GENERATOR                        -->
+      <!-- ============================================ -->
+
+      <h2 id="static-site">Static Site Generator</h2>
+      <p>Scaffold a static site project with a build pipeline, templating, and hot reload.</p>
+
+      <h3>Scaffold a Project</h3>
+      <pre><code>quill site my-site</code></pre>
+      <p>This creates a new directory with:</p>
+      <ul>
+        <li><code>pages/</code> &mdash; Quill template files (<code>.quill</code>) that compile to HTML</li>
+        <li><code>public/</code> &mdash; Static assets (CSS, images, fonts)</li>
+        <li><code>quill.toml</code> &mdash; Project configuration</li>
+        <li><code>build.quill</code> &mdash; Build script that compiles pages and copies assets</li>
+      </ul>
+
+      <h3>Build &amp; Serve</h3>
+      <pre><code><span class="cmt">-- Build the site to dist/</span>
+quill run build.quill
+
+<span class="cmt">-- Or serve with hot reload during development</span>
+quill serve</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Tip:</strong> Use Quill's string interpolation and components to build reusable layouts, headers, and footers across your pages.
+      </div>
 
     </main>
   </div>
