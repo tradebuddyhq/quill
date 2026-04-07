@@ -144,7 +144,7 @@ func (g *Generator) Generate(program *ast.Program) string {
 	}
 
 	// Include crypto runtime if crypto functions are used
-	if strings.Contains(userCodeStr, "hash(") || strings.Contains(userCodeStr, "encrypt(") || strings.Contains(userCodeStr, "decrypt(") || strings.Contains(userCodeStr, "generateKeys(") || strings.Contains(userCodeStr, "hmac(") || strings.Contains(userCodeStr, "randomBytes(") || strings.Contains(userCodeStr, "uuid(") {
+	if strings.Contains(userCodeStr, "hash(") || strings.Contains(userCodeStr, "encrypt(") || strings.Contains(userCodeStr, "decrypt(") || strings.Contains(userCodeStr, "generateKeys(") || strings.Contains(userCodeStr, "hmac(") || strings.Contains(userCodeStr, "randomBytes(") || strings.Contains(userCodeStr, "uuid(") || strings.Contains(userCodeStr, "hkdf(") || strings.Contains(userCodeStr, "diffieHellman(") || strings.Contains(userCodeStr, "generateX25519Keys(") || strings.Contains(userCodeStr, "argon2(") || strings.Contains(userCodeStr, "argon2Verify(") || strings.Contains(userCodeStr, "bcryptHash(") || strings.Contains(userCodeStr, "bcryptVerify(") || strings.Contains(userCodeStr, "constantTimeEqual(") || strings.Contains(userCodeStr, "aesEncrypt(") || strings.Contains(userCodeStr, "aesDecrypt(") || strings.Contains(userCodeStr, "secureRandomInt(") || strings.Contains(userCodeStr, "secureErase(") || strings.Contains(userCodeStr, "hmacBuffer(") || strings.Contains(userCodeStr, "hkdfBuffer(") || strings.Contains(userCodeStr, "randomBytesBuffer(") {
 		out.WriteString(stdlib.GetCryptoRuntime())
 		out.WriteString("\n")
 	}
@@ -164,6 +164,12 @@ func (g *Generator) Generate(program *ast.Program) string {
 	// Include WebRTC runtime if peer connection is used
 	if strings.Contains(userCodeStr, "createPeer(") || strings.Contains(userCodeStr, "PeerConnection") {
 		out.WriteString(stdlib.GetWebRTCRuntime())
+		out.WriteString("\n")
+	}
+
+	// Include serialization runtime if encode/decode/defineSchema are used
+	if strings.Contains(userCodeStr, "defineSchema(") || strings.Contains(userCodeStr, "encode(") || strings.Contains(userCodeStr, "decode(") {
+		out.WriteString(stdlib.GetSerializationRuntime())
 		out.WriteString("\n")
 	}
 

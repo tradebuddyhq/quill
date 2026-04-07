@@ -568,6 +568,17 @@ func (p *Parser) parseTryCatch() *ast.TryCatchStatement {
 		p.expect(lexer.TOKEN_COLON)
 		p.expect(lexer.TOKEN_NEWLINE)
 		catchBody = p.parseBlock()
+	} else if p.check(lexer.TOKEN_IDENT) && p.current().Value == "catch" {
+		// Alternative syntax: catch err:
+		p.advance() // consume "catch"
+		if p.check(lexer.TOKEN_IDENT) {
+			errorVar = p.advance().Value
+		} else {
+			errorVar = "error"
+		}
+		p.expect(lexer.TOKEN_COLON)
+		p.expect(lexer.TOKEN_NEWLINE)
+		catchBody = p.parseBlock()
 	}
 
 	return &ast.TryCatchStatement{

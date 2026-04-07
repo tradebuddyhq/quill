@@ -1392,3 +1392,83 @@ func TestSecureServerRuntimeInjection(t *testing.T) {
 		t.Errorf("expected createSecureServer in output, got:\n%s", output)
 	}
 }
+
+func TestHKDFRuntimeInjection(t *testing.T) {
+	output, err := compile("derived is hkdf(inputKey, salt, \"info\", 32)\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function hkdf(") {
+		t.Error("expected hkdf function in runtime")
+	}
+}
+
+func TestDiffieHellmanRuntimeInjection(t *testing.T) {
+	output, err := compile("shared is diffieHellman(myKey, theirKey)\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function diffieHellman(") {
+		t.Error("expected diffieHellman function in runtime")
+	}
+}
+
+func TestArgon2RuntimeInjection(t *testing.T) {
+	output, err := compile("hashed is await argon2(password, salt)\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "async function argon2(") {
+		t.Error("expected argon2 function in runtime")
+	}
+}
+
+func TestConstantTimeEqualRuntimeInjection(t *testing.T) {
+	output, err := compile("result is constantTimeEqual(a, b)\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function constantTimeEqual(") {
+		t.Error("expected constantTimeEqual function in runtime")
+	}
+}
+
+func TestAESEncryptRuntimeInjection(t *testing.T) {
+	output, err := compile("encrypted is aesEncrypt(data, key, iv, \"aes-256-gcm\")\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function aesEncrypt(") {
+		t.Error("expected aesEncrypt function in runtime")
+	}
+}
+
+func TestSecureEraseRuntimeInjection(t *testing.T) {
+	output, err := compile("buf is randomBytes(32)\nsecureErase(buf)\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function secureErase(") {
+		t.Error("expected secureErase function in runtime")
+	}
+}
+
+func TestSerializationRuntimeInjection(t *testing.T) {
+	output, err := compile("schema is defineSchema({ name: { type: \"string\", tag: 1 } })\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function defineSchema(") {
+		t.Error("expected defineSchema function in runtime")
+	}
+}
+
+func TestCatchSyntax(t *testing.T) {
+	output, err := compile("try:\n  say \"test\"\ncatch err:\n  say err\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "try {") || !strings.Contains(output, "catch (err)") {
+		t.Errorf("expected try/catch block, got:\n%s", output)
+	}
+}
