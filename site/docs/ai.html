@@ -56,6 +56,7 @@
       <h4>AI & LLM</h4>
       <ul>
         <li><a href="#multi-provider">Multi-Provider Support</a></li>
+        <li><a href="#streaming-providers">Streaming</a></li>
         <li><a href="#structured-output">Structured Output</a></li>
         <li><a href="#agents">AI Agents</a></li>
         <li><a href="#embeddings">Embeddings & Vector Search</a></li>
@@ -247,10 +248,18 @@ say explanation</code></pre>
 
       <!-- Multi-Provider Support -->
       <h2 id="multi-provider">Multi-Provider Support</h2>
-      <p>Quill supports multiple LLM providers with the same simple <code>ask</code> syntax. Just swap the provider name:</p>
+      <p>Quill supports multiple LLM providers with the same simple <code>ask</code> syntax. Just swap the provider name.
+        All four providers &mdash; <strong>Claude</strong>, <strong>OpenAI</strong>, <strong>Gemini</strong>, and <strong>Ollama</strong> &mdash; share identical syntax for options, streaming, structured output, and agents.</p>
 
       <h3>OpenAI</h3>
-      <p>Requires the <code>openai</code> npm package and an <code>OPENAI_API_KEY</code> in your environment or <code>.env</code> file.</p>
+      <p>OpenAI provides GPT-4o and other models via their cloud API.</p>
+      <ol>
+        <li>Install the SDK: <code>npm install openai</code></li>
+        <li>Get an API key from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></li>
+        <li>Add it to your <code>.env</code> file:</li>
+      </ol>
+      <pre><code>OPENAI_API_KEY=sk-proj-...</code></pre>
+      <p>Then use it in your code:</p>
       <pre><code><span class="kw">answer</span> <span class="kw">is</span> ask openai <span class="str">"Explain quantum computing"</span>
 <span class="kw">say</span> answer
 
@@ -259,7 +268,16 @@ say explanation</code></pre>
 <span class="kw">say</span> answer</code></pre>
 
       <h3>Google Gemini</h3>
-      <p>Requires the <code>@google/generative-ai</code> npm package and a <code>GEMINI_API_KEY</code>.</p>
+      <p>Google Gemini provides fast, capable models through the Generative AI SDK.</p>
+      <ol>
+        <li>Install the SDK: <code>npm install @google/generative-ai</code></li>
+        <li>Get an API key from <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></li>
+        <li>Add it to your <code>.env</code> file (either name works):</li>
+      </ol>
+      <pre><code>GEMINI_API_KEY=AIza...
+<span class="cmt"># or alternatively:</span>
+GOOGLE_API_KEY=AIza...</code></pre>
+      <p>Then use it in your code:</p>
       <pre><code><span class="kw">answer</span> <span class="kw">is</span> ask gemini <span class="str">"Write a haiku about coding"</span>
 <span class="kw">say</span> answer
 
@@ -268,8 +286,13 @@ say explanation</code></pre>
 <span class="kw">say</span> answer</code></pre>
 
       <h3>Ollama (local models)</h3>
-      <p>Run models locally for free with <a href="https://ollama.ai" target="_blank">Ollama</a>. No API key needed &mdash; just install Ollama and pull a model.</p>
-      <pre><code><span class="cmt">-- Uses your local Ollama instance</span>
+      <p>Run models locally for free with <a href="https://ollama.com" target="_blank">Ollama</a>. No API key needed &mdash; everything runs on your machine. Perfect for privacy-sensitive applications or offline development.</p>
+      <ol>
+        <li>Install Ollama from <a href="https://ollama.com" target="_blank">ollama.com</a></li>
+        <li>Pull a model: <code>ollama pull llama3</code></li>
+        <li>Make sure Ollama is running (it serves on <code>http://localhost:11434</code>)</li>
+      </ol>
+      <pre><code><span class="cmt">-- Uses your local Ollama instance (no API key needed)</span>
 <span class="kw">answer</span> <span class="kw">is</span> ask ollama <span class="str">"Summarize this text"</span>
 <span class="kw">say</span> answer
 
@@ -277,97 +300,639 @@ say explanation</code></pre>
 <span class="kw">answer</span> <span class="kw">is</span> ask ollama <span class="str">"Explain recursion"</span> <span class="kw">with</span> model <span class="str">"llama3"</span>
 <span class="kw">say</span> answer</code></pre>
 
+      <h3>Default models</h3>
+      <p>Each provider uses a sensible default model when you don't specify one:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+            <th style="padding: 8px;">Provider</th>
+            <th style="padding: 8px;">Default Model</th>
+            <th style="padding: 8px;">API Key Env Variable</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>claude</code></td>
+            <td style="padding: 8px;"><code>claude-sonnet-4-20250514</code></td>
+            <td style="padding: 8px;"><code>ANTHROPIC_API_KEY</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>openai</code></td>
+            <td style="padding: 8px;"><code>gpt-4o</code></td>
+            <td style="padding: 8px;"><code>OPENAI_API_KEY</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>gemini</code></td>
+            <td style="padding: 8px;"><code>gemini-2.0-flash</code></td>
+            <td style="padding: 8px;"><code>GEMINI_API_KEY</code> or <code>GOOGLE_API_KEY</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>ollama</code></td>
+            <td style="padding: 8px;"><code>llama3</code></td>
+            <td style="padding: 8px;">(none &mdash; local)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>All provider options</h3>
+      <p>These options work with every provider via the <code>with</code> keyword:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+            <th style="padding: 8px;">Option</th>
+            <th style="padding: 8px;">Type</th>
+            <th style="padding: 8px;">Default</th>
+            <th style="padding: 8px;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>model</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">(see table above)</td>
+            <td style="padding: 8px;">Which model to use for this provider</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>system</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">(none)</td>
+            <td style="padding: 8px;">System prompt to set the LLM's behavior</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>max_tokens</code></td>
+            <td style="padding: 8px;">number</td>
+            <td style="padding: 8px;">1024</td>
+            <td style="padding: 8px;">Maximum tokens in the response (OpenAI, Claude, Ollama)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>temperature</code></td>
+            <td style="padding: 8px;">number</td>
+            <td style="padding: 8px;">(API default)</td>
+            <td style="padding: 8px;">Randomness: 0 = deterministic, 1 = creative (OpenAI, Claude, Ollama)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Comparing providers</h3>
+      <p>You can send the same prompt to multiple providers and compare the results:</p>
+      <pre><code><span class="cmt">-- Compare responses from all 4 providers</span>
+<span class="kw">prompt</span> <span class="kw">is</span> <span class="str">"What are the benefits of functional programming? Answer in 2 sentences."</span>
+
+<span class="kw">say</span> <span class="str">"--- Claude ---"</span>
+<span class="kw">say</span> ask claude prompt
+
+<span class="kw">say</span> <span class="str">"--- OpenAI ---"</span>
+<span class="kw">say</span> ask openai prompt
+
+<span class="kw">say</span> <span class="str">"--- Gemini ---"</span>
+<span class="kw">say</span> ask gemini prompt
+
+<span class="kw">say</span> <span class="str">"--- Ollama ---"</span>
+<span class="kw">say</span> ask ollama prompt</code></pre>
+
+      <h3>Error handling</h3>
+      <p>If an API key is missing or invalid, you will get a runtime error. Wrap your calls in a <code>try</code> block to handle failures gracefully:</p>
+      <pre><code><span class="kw">try</span>:
+  <span class="kw">answer</span> <span class="kw">is</span> ask openai <span class="str">"Hello"</span>
+  <span class="kw">say</span> answer
+<span class="kw">catch</span> err:
+  <span class="kw">say</span> <span class="str">"Error: "</span> + err.message
+  <span class="cmt">-- Common: "Incorrect API key provided" or module not found</span></code></pre>
+
       <div class="callout callout-info">
-        <strong>All providers share the same syntax.</strong> The <code>with</code> keyword works with every provider for options like <code>model</code>, <code>system</code>, <code>max_tokens</code>, and <code>temperature</code>.
+        <strong>All providers share the same syntax.</strong> The <code>with</code> keyword works with every provider for options like <code>model</code>, <code>system</code>, <code>max_tokens</code>, and <code>temperature</code>. You can switch providers by changing a single word &mdash; no other code changes needed.
+      </div>
+
+      <!-- Streaming with all providers -->
+      <h2 id="streaming-providers">Streaming</h2>
+      <p>Streaming delivers the LLM's response piece by piece as it is generated, rather than waiting for the entire response to complete. This is ideal for long responses, real-time UI updates, and chatbot interfaces where you want the user to see output immediately.</p>
+
+      <h3>When to use streaming vs regular ask</h3>
+      <ul>
+        <li><strong>Use <code>ask</code></strong> when you need the full response at once (structured output, short answers, programmatic use)</li>
+        <li><strong>Use <code>stream</code></strong> when the response is long, when you want real-time display, or when building chat interfaces</li>
+      </ul>
+
+      <p>Inside the stream block, the <code>chunk</code> variable contains a piece of plain text (not JSON) &mdash; typically a few characters or a word at a time. Each chunk arrives as soon as the LLM generates it.</p>
+
+      <h3>Streaming from each provider</h3>
+      <pre><code><span class="cmt">-- Stream from Claude</span>
+<span class="kw">stream</span> claude <span class="str">"Write a poem about coding"</span>:
+  <span class="kw">say</span> chunk
+
+<span class="cmt">-- Stream from OpenAI</span>
+<span class="kw">stream</span> openai <span class="str">"Write a short story"</span>:
+  <span class="kw">say</span> chunk
+
+<span class="cmt">-- Stream from Gemini</span>
+<span class="kw">stream</span> gemini <span class="str">"Explain machine learning"</span>:
+  <span class="kw">say</span> chunk
+
+<span class="cmt">-- Stream from Ollama (local)</span>
+<span class="kw">stream</span> ollama <span class="str">"Describe the solar system"</span>:
+  <span class="kw">say</span> chunk</code></pre>
+
+      <h3>Streaming with options</h3>
+      <p>All <code>with</code> options work with streaming, just like regular <code>ask</code>:</p>
+      <pre><code><span class="kw">stream</span> openai <span class="str">"Tell me a long story"</span> <span class="kw">with</span> model <span class="str">"gpt-4o"</span> max_tokens <span class="num">4000</span> temperature <span class="num">0.9</span>:
+  <span class="kw">say</span> chunk</code></pre>
+
+      <h3>Building a progress indicator</h3>
+      <p>You can collect chunks and track progress as the response streams in:</p>
+      <pre><code><span class="kw">fullResponse</span> <span class="kw">is</span> <span class="str">""</span>
+<span class="kw">chunkCount</span> <span class="kw">is</span> <span class="num">0</span>
+
+<span class="kw">stream</span> claude <span class="str">"Write a detailed essay about climate change"</span> <span class="kw">with</span> max_tokens <span class="num">2000</span>:
+  <span class="kw">fullResponse</span> <span class="kw">is</span> fullResponse + chunk
+  <span class="kw">chunkCount</span> <span class="kw">is</span> chunkCount + <span class="num">1</span>
+
+<span class="kw">say</span> <span class="str">"Received "</span> + chunkCount + <span class="str">" chunks"</span>
+<span class="kw">say</span> <span class="str">"Total length: "</span> + fullResponse.length + <span class="str">" characters"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Streaming works with all 4 providers using the same syntax.</strong> Just swap <code>claude</code> for <code>openai</code>, <code>gemini</code>, or <code>ollama</code>. The <code>chunk</code> variable and block syntax are identical across providers.
       </div>
 
       <!-- Structured Output -->
       <h2 id="structured-output">Structured Output</h2>
-      <p>Get structured data back from any provider by adding <code>as</code> followed by a type shape:</p>
-      <pre><code><span class="cmt">-- Extract structured data from natural language</span>
+      <p>Structured output lets you get typed, parsed data back from any LLM instead of free-form text. Add <code>as</code> followed by a type shape to your <code>ask</code> call, and Quill will instruct the LLM to return JSON and automatically parse it into a typed object.</p>
+
+      <h3>Supported types</h3>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+            <th style="padding: 8px;">Type</th>
+            <th style="padding: 8px;">Description</th>
+            <th style="padding: 8px;">Example value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>text</code></td>
+            <td style="padding: 8px;">A string value, converted with <code>String()</code></td>
+            <td style="padding: 8px;"><code>"John Smith"</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>number</code></td>
+            <td style="padding: 8px;">A numeric value, converted with <code>Number()</code></td>
+            <td style="padding: 8px;"><code>42</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>bool</code></td>
+            <td style="padding: 8px;">A boolean value, converted with <code>Boolean()</code></td>
+            <td style="padding: 8px;"><code>true</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>list</code></td>
+            <td style="padding: 8px;">An array of values. Non-array values are wrapped in <code>[ ]</code></td>
+            <td style="padding: 8px;"><code>["red", "blue", "green"]</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Example 1: Simple extraction</h3>
+      <pre><code><span class="cmt">-- Extract name and age from natural language</span>
 <span class="kw">person</span> <span class="kw">is</span> ask claude <span class="str">"Extract: John Smith is 30 years old"</span> as {name: text, age: number}
 <span class="kw">say</span> person.name    <span class="cmt">-- "John Smith"</span>
 <span class="kw">say</span> person.age     <span class="cmt">-- 30</span></code></pre>
 
-      <p>This works with any provider:</p>
-      <pre><code><span class="kw">movie</span> <span class="kw">is</span> ask openai <span class="str">"Tell me about Inception"</span> as {title: text, year: number, director: text}
-<span class="kw">say</span> movie.title + <span class="str">" ("</span> + movie.year + <span class="str">")"</span></code></pre>
+      <h3>Example 2: Product information</h3>
+      <pre><code><span class="cmt">-- Extract multiple types including booleans and lists</span>
+<span class="kw">product</span> <span class="kw">is</span> ask openai <span class="str">"Extract product info: The Nike Air Max 90 costs $120, is currently in stock, and comes in white, black, and red"</span> as {name: text, price: number, inStock: bool, colors: list}
+<span class="kw">say</span> product.name       <span class="cmt">-- "Nike Air Max 90"</span>
+<span class="kw">say</span> product.price      <span class="cmt">-- 120</span>
+<span class="kw">say</span> product.inStock    <span class="cmt">-- true</span>
+<span class="kw">say</span> product.colors     <span class="cmt">-- ["white", "black", "red"]</span></code></pre>
+
+      <h3>Example 3: Extracting a list of items</h3>
+      <pre><code><span class="cmt">-- Extract structured data from a paragraph</span>
+<span class="kw">paragraph</span> <span class="kw">is</span> <span class="str">"Our team includes Alice (engineer, 5 years), Bob (designer, 3 years), and Carol (manager, 8 years)."</span>
+<span class="kw">team</span> <span class="kw">is</span> ask claude paragraph <span class="kw">with</span> system <span class="str">"Extract the team members"</span> as {names: list, roles: list, years: list}
+<span class="kw">say</span> team.names    <span class="cmt">-- ["Alice", "Bob", "Carol"]</span>
+<span class="kw">say</span> team.roles    <span class="cmt">-- ["engineer", "designer", "manager"]</span>
+<span class="kw">say</span> team.years    <span class="cmt">-- [5, 3, 8]</span></code></pre>
+
+      <h3>How it works</h3>
+      <p>Under the hood, Quill modifies your prompt to ask the LLM to return JSON matching your schema, then parses the response with <code>__parse_structured</code>. It handles JSON wrapped in markdown code fences or embedded in text.</p>
+
+      <h3>Error handling</h3>
+      <p>If the LLM returns text that cannot be parsed as JSON, the result will contain an <code>error</code> field and the raw response:</p>
+      <pre><code><span class="kw">result</span> <span class="kw">is</span> ask claude <span class="str">"Tell me a joke"</span> as {setup: text, punchline: text}
+
+<span class="kw">if</span> result.error:
+  <span class="kw">say</span> <span class="str">"Parsing failed: "</span> + result.error
+  <span class="kw">say</span> <span class="str">"Raw response: "</span> + result.raw
+<span class="kw">otherwise</span>:
+  <span class="kw">say</span> result.setup
+  <span class="kw">say</span> result.punchline</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> For best results, be specific in your prompt about the expected format. Structured output works with all 4 providers (Claude, OpenAI, Gemini, Ollama) &mdash; just swap the provider name.
+      </div>
 
       <!-- AI Agents -->
       <h2 id="agents">AI Agents</h2>
-      <p>Build autonomous AI agents that can use tools to accomplish tasks:</p>
-      <pre><code><span class="kw">agent</span> <span class="str">"researcher"</span> <span class="kw">with</span> tools [search, summarize]:
-  <span class="kw">result</span> <span class="kw">is</span> <span class="kw">await</span> __agent_researcher.run(<span class="str">"Find the latest news about AI"</span>)
-  <span class="kw">say</span> result</code></pre>
+      <p>An AI agent is an LLM combined with tools and a loop. You give the agent a goal, and it autonomously decides which tools to call, processes the results, and repeats until the task is complete. Think of it as giving the LLM hands and eyes &mdash; it can take actions, not just generate text.</p>
 
-      <p>Agents combine an LLM with tools that it can call autonomously. The agent decides which tools to use and when, running in a loop until the task is complete.</p>
+      <div class="callout callout-info">
+        <strong>How the agent loop works:</strong>
+        <ol style="margin: 8px 0 0 0; padding-left: 20px;">
+          <li>You call <code>agent.run(goal)</code> with a task description</li>
+          <li>The LLM sees the goal and available tools, then decides which tool to call</li>
+          <li>The tool runs and returns a result</li>
+          <li>The LLM sees the tool result and decides the next action</li>
+          <li>This repeats until the LLM signals it is done, or <code>maxTurns</code> is reached</li>
+        </ol>
+      </div>
 
-      <div class="callout callout-tip">
-        <strong>Tool registration.</strong> The tools you pass to <code>agent</code> are Quill functions. The agent can call them as needed to gather information and take actions.
+      <h3>API Reference</h3>
+
+      <h4><code>createAgent(name, options)</code></h4>
+      <p>Creates a new agent with the given name and configuration.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+            <th style="padding: 8px;">Option</th>
+            <th style="padding: 8px;">Type</th>
+            <th style="padding: 8px;">Default</th>
+            <th style="padding: 8px;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>provider</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;"><code>"claude"</code></td>
+            <td style="padding: 8px;">Which LLM provider to use (<code>"claude"</code>, <code>"openai"</code>, <code>"gemini"</code>, <code>"ollama"</code>)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>model</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">(provider default)</td>
+            <td style="padding: 8px;">Which model to use. If not set, uses the provider's default model</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>system</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">(auto-generated)</td>
+            <td style="padding: 8px;">Custom system prompt. The default instructs the agent to use JSON for tool calls</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>maxTurns</code></td>
+            <td style="padding: 8px;">number</td>
+            <td style="padding: 8px;"><code>10</code></td>
+            <td style="padding: 8px;">Maximum number of LLM calls before the agent stops. Prevents runaway loops</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4><code>agent.addTool(name, description, function)</code></h4>
+      <p>Registers a tool that the agent can call. The description is shown to the LLM so it knows when to use this tool.</p>
+      <ul>
+        <li><strong>name</strong>: A short identifier for the tool (e.g., <code>"search"</code>, <code>"calculate"</code>)</li>
+        <li><strong>description</strong>: A human-readable explanation of what the tool does. The LLM reads this to decide when to use it</li>
+        <li><strong>function</strong>: A Quill function that accepts arguments and returns a result</li>
+      </ul>
+
+      <h4><code>agent.run(goal)</code></h4>
+      <p>Starts the agent loop with the given goal. Returns the final result when the agent signals it is done, or a text response if <code>maxTurns</code> is reached.</p>
+
+      <h3>Basic example</h3>
+      <pre><code><span class="cmt">-- Create a simple math agent</span>
+<span class="kw">to</span> calculate expression:
+  <span class="kw">give back</span> eval(expression)
+
+<span class="kw">myAgent</span> <span class="kw">is</span> createAgent(<span class="str">"math-helper"</span>, {provider: <span class="str">"claude"</span>, maxTurns: <span class="num">5</span>})
+myAgent.addTool(<span class="str">"calculate"</span>, <span class="str">"Evaluate a math expression"</span>, calculate)
+
+<span class="kw">result</span> <span class="kw">is</span> <span class="kw">await</span> myAgent.run(<span class="str">"What is 15% of 280, then add 42?"</span>)
+<span class="kw">say</span> result</code></pre>
+
+      <h3>Real-world example: Research agent</h3>
+      <p>Here is a more complete agent that can search the web and summarize findings:</p>
+      <pre><code><span class="cmt">-- Research agent with search and summarize tools</span>
+
+<span class="kw">to</span> searchWeb query:
+  <span class="kw">data</span> <span class="kw">is</span> <span class="kw">await</span> fetchJSON(<span class="str">"https://api.duckduckgo.com/?q="</span> + query + <span class="str">"&amp;format=json"</span>)
+  <span class="kw">give back</span> data.AbstractText or <span class="str">"No results found"</span>
+
+<span class="kw">to</span> summarizeText text:
+  <span class="kw">give back</span> ask claude <span class="str">"Summarize in 3 bullets: "</span> + text
+
+<span class="kw">myAgent</span> <span class="kw">is</span> createAgent(<span class="str">"researcher"</span>, {provider: <span class="str">"claude"</span>, maxTurns: <span class="num">5</span>})
+myAgent.addTool(<span class="str">"search"</span>, <span class="str">"Search the web for information"</span>, searchWeb)
+myAgent.addTool(<span class="str">"summarize"</span>, <span class="str">"Summarize a piece of text"</span>, summarizeText)
+
+<span class="kw">result</span> <span class="kw">is</span> <span class="kw">await</span> myAgent.run(<span class="str">"Find and summarize the latest news about AI safety"</span>)
+<span class="kw">say</span> result</code></pre>
+
+      <h3>Using agents with different providers</h3>
+      <p>Agents work with any provider. Just change the <code>provider</code> option:</p>
+      <pre><code><span class="cmt">-- Use OpenAI as the agent's brain</span>
+<span class="kw">agent</span> <span class="kw">is</span> createAgent(<span class="str">"helper"</span>, {provider: <span class="str">"openai"</span>, model: <span class="str">"gpt-4o"</span>})
+
+<span class="cmt">-- Use a local Ollama model (free, private)</span>
+<span class="kw">agent</span> <span class="kw">is</span> createAgent(<span class="str">"local-agent"</span>, {provider: <span class="str">"ollama"</span>, model: <span class="str">"llama3"</span>, maxTurns: <span class="num">3</span>})</code></pre>
+
+      <h3>How the agent communicates</h3>
+      <p>The agent uses JSON messages to interact with tools. When it wants to call a tool, it responds with:</p>
+      <pre><code>{"tool": "search", "args": {"query": "AI safety news"}}</code></pre>
+      <p>When it has finished the task, it responds with:</p>
+      <pre><code>{"done": true, "result": "Here are the findings..."}</code></pre>
+      <p>If the LLM responds with plain text (not JSON), the agent treats it as the final answer and returns it directly.</p>
+
+      <div class="callout callout-warn">
+        <strong>Watch your token costs.</strong> Each agent turn uses tokens from your provider. Set <code>maxTurns</code> to a reasonable limit (3&ndash;10) to prevent runaway costs. The default is 10 turns. If the agent reaches <code>maxTurns</code> without completing, it returns <code>"Agent reached max turns without completing."</code>
       </div>
 
       <!-- Embeddings & Vector Search -->
       <h2 id="embeddings">Embeddings & Vector Search</h2>
-      <p>Generate embeddings and perform similarity search for RAG (Retrieval-Augmented Generation) pipelines:</p>
+      <p>Embeddings convert text into arrays of numbers (vectors) that capture semantic meaning. Similar text produces similar vectors, which lets you search by meaning rather than keywords. This is the foundation of RAG (Retrieval-Augmented Generation) and semantic search.</p>
 
-      <h3>Generate embeddings</h3>
-      <pre><code><span class="cmt">-- Generate an embedding vector</span>
-<span class="kw">vec</span> <span class="kw">is</span> embed(<span class="str">"Hello world"</span>)</code></pre>
+      <h3><code>embed(text, provider, model)</code></h3>
+      <p>Generates an embedding vector for a piece of text. Returns an array of numbers.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+            <th style="padding: 8px;">Parameter</th>
+            <th style="padding: 8px;">Type</th>
+            <th style="padding: 8px;">Default</th>
+            <th style="padding: 8px;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>text</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">(required)</td>
+            <td style="padding: 8px;">The text to convert into a vector</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>provider</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;"><code>"openai"</code></td>
+            <td style="padding: 8px;"><code>"openai"</code> or <code>"ollama"</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>model</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">(see below)</td>
+            <td style="padding: 8px;">Embedding model name. Defaults: <code>"text-embedding-3-small"</code> (OpenAI), <code>"nomic-embed-text"</code> (Ollama)</td>
+          </tr>
+        </tbody>
+      </table>
 
-      <h3>Build a vector store</h3>
-      <pre><code><span class="cmt">-- Create a searchable knowledge base</span>
-<span class="kw">store</span> <span class="kw">is</span> createVectorStore()
-<span class="kw">await</span> store.add(<span class="str">"Quill compiles to JavaScript"</span>, {source: <span class="str">"docs"</span>})
-<span class="kw">await</span> store.add(<span class="str">"Quill has built-in AI support"</span>, {source: <span class="str">"readme"</span>})</code></pre>
+      <pre><code><span class="cmt">-- Generate an embedding with OpenAI (default)</span>
+<span class="kw">vec</span> <span class="kw">is</span> <span class="kw">await</span> embed(<span class="str">"Hello world"</span>)
+<span class="kw">say</span> <span class="str">"Vector has "</span> + vec.length + <span class="str">" dimensions"</span>
 
-      <h3>Similarity search</h3>
-      <pre><code><span class="cmt">-- Search for the 3 most relevant documents</span>
-<span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(<span class="str">"How does Quill work?"</span>, 3)
-<span class="kw">for each</span> result <span class="kw">in</span> results:
-  <span class="kw">say</span> result.text + <span class="str">" (score: "</span> + result.score + <span class="str">")"</span></code></pre>
+<span class="cmt">-- Generate an embedding with Ollama (local, free)</span>
+<span class="kw">vec</span> <span class="kw">is</span> <span class="kw">await</span> embed(<span class="str">"Hello world"</span>, <span class="str">"ollama"</span>, <span class="str">"nomic-embed-text"</span>)</code></pre>
+
+      <h3><code>cosineSimilarity(a, b)</code></h3>
+      <p>Compares two embedding vectors and returns a similarity score. Use this when you want to compare two specific texts without a full vector store.</p>
+      <pre><code><span class="kw">vec1</span> <span class="kw">is</span> <span class="kw">await</span> embed(<span class="str">"I love programming"</span>)
+<span class="kw">vec2</span> <span class="kw">is</span> <span class="kw">await</span> embed(<span class="str">"Coding is my passion"</span>)
+<span class="kw">vec3</span> <span class="kw">is</span> <span class="kw">await</span> embed(<span class="str">"The weather is nice today"</span>)
+
+<span class="kw">say</span> cosineSimilarity(vec1, vec2)  <span class="cmt">-- ~0.85 (very similar)</span>
+<span class="kw">say</span> cosineSimilarity(vec1, vec3)  <span class="cmt">-- ~0.15 (unrelated)</span></code></pre>
 
       <div class="callout callout-info">
-        <strong>Cosine similarity.</strong> The vector store uses cosine similarity to rank results. Scores range from 0 (unrelated) to 1 (identical meaning).
+        <strong>Understanding cosine similarity scores.</strong> Scores range from 0 to 1. A score of <strong>1.0</strong> means the texts are identical in meaning. Scores above <strong>0.7</strong> indicate strong similarity. Scores below <strong>0.3</strong> suggest the texts are unrelated.
+      </div>
+
+      <h3>VectorStore API</h3>
+      <p>The VectorStore is an in-memory database for embedding vectors. It handles embedding, storage, and similarity search in one convenient interface.</p>
+
+      <h4><code>createVectorStore()</code></h4>
+      <p>Creates an empty vector store.</p>
+      <pre><code><span class="kw">store</span> <span class="kw">is</span> createVectorStore()</code></pre>
+
+      <h4><code>store.add(text, metadata)</code></h4>
+      <p>Adds a single text to the store. Automatically generates the embedding. The optional <code>metadata</code> object lets you attach extra information (source, date, category, etc.).</p>
+      <pre><code><span class="kw">await</span> store.add(<span class="str">"Quill compiles to JavaScript"</span>, {source: <span class="str">"docs"</span>, page: <span class="num">1</span>})
+<span class="kw">await</span> store.add(<span class="str">"Quill has built-in AI support"</span>, {source: <span class="str">"readme"</span>})</code></pre>
+
+      <h4><code>store.addMany(texts, metadatas)</code></h4>
+      <p>Batch-add multiple texts at once. The <code>metadatas</code> array is optional and should match the length of <code>texts</code>.</p>
+      <pre><code><span class="kw">texts</span> <span class="kw">are</span> [<span class="str">"First document"</span>, <span class="str">"Second document"</span>, <span class="str">"Third document"</span>]
+<span class="kw">metas</span> <span class="kw">are</span> [{id: <span class="num">1</span>}, {id: <span class="num">2</span>}, {id: <span class="num">3</span>}]
+<span class="kw">await</span> store.addMany(texts, metas)</code></pre>
+
+      <h4><code>store.search(query, topK)</code></h4>
+      <p>Searches the store for the most similar texts to the query. Returns an array of results, each with <code>text</code>, <code>metadata</code>, and <code>score</code> fields. The <code>topK</code> parameter controls how many results to return (default: 5).</p>
+      <pre><code><span class="cmt">-- Search for the 3 most relevant documents</span>
+<span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(<span class="str">"How does Quill work?"</span>, <span class="num">3</span>)
+<span class="kw">for each</span> result <span class="kw">in</span> results:
+  <span class="kw">say</span> result.text + <span class="str">" (score: "</span> + result.score + <span class="str">")"</span>
+  <span class="kw">say</span> <span class="str">"  Source: "</span> + result.metadata.source</code></pre>
+
+      <h4><code>store.toJSON()</code> / <code>VectorStore.fromJSON(json)</code></h4>
+      <p>Serialize and deserialize the vector store for persistence. This lets you build the store once and reuse it later without re-embedding all your documents.</p>
+      <pre><code><span class="cmt">-- Save the vector store to a file</span>
+<span class="kw">write</span>(<span class="str">"knowledge.json"</span>, store.toJSON())
+
+<span class="cmt">-- Load it later in another script</span>
+<span class="kw">stored</span> <span class="kw">is</span> <span class="kw">read</span>(<span class="str">"knowledge.json"</span>)
+<span class="kw">store</span> <span class="kw">is</span> VectorStore.fromJSON(stored)
+
+<span class="cmt">-- Search immediately, no re-embedding needed</span>
+<span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(<span class="str">"my question"</span>, <span class="num">3</span>)</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> For large knowledge bases, save the vector store to a file after building it. Loading from JSON is instant, while re-embedding hundreds of documents can take minutes and use API credits.
       </div>
 
       <!-- Document Processing -->
       <h2 id="document-processing">Document Processing / RAG</h2>
-      <p>Extract text from files and chunk it for RAG pipelines:</p>
+      <p>Quill provides built-in functions to extract text from files, split it into chunks, and prepare it for embedding. These are the building blocks of any RAG (Retrieval-Augmented Generation) pipeline.</p>
 
-      <h3>Extract text</h3>
-      <pre><code><span class="cmt">-- Extract text from various file formats</span>
+      <h3><code>extract(filePath)</code></h3>
+      <p>Reads a file and returns its text content as a string. Supports multiple file formats:</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+            <th style="padding: 8px;">Format</th>
+            <th style="padding: 8px;">Extensions</th>
+            <th style="padding: 8px;">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;">Plain text</td>
+            <td style="padding: 8px;"><code>.txt</code></td>
+            <td style="padding: 8px;">Read as-is</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;">Markdown</td>
+            <td style="padding: 8px;"><code>.md</code></td>
+            <td style="padding: 8px;">Read as-is (raw markdown text)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;">CSV</td>
+            <td style="padding: 8px;"><code>.csv</code></td>
+            <td style="padding: 8px;">Read as-is (raw CSV text)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;">JSON</td>
+            <td style="padding: 8px;"><code>.json</code></td>
+            <td style="padding: 8px;">Parsed and pretty-printed with 2-space indentation</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;">HTML</td>
+            <td style="padding: 8px;"><code>.html</code>, <code>.htm</code></td>
+            <td style="padding: 8px;">HTML tags are stripped, leaving only text content</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;">PDF</td>
+            <td style="padding: 8px;"><code>.pdf</code></td>
+            <td style="padding: 8px;">Requires <code>npm install pdf-parse</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <pre><code><span class="cmt">-- Extract text from different file types</span>
 <span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"document.pdf"</span>)
-<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"page.html"</span>)</code></pre>
+<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"page.html"</span>)
+<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"data.json"</span>)
+<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"notes.md"</span>)</code></pre>
 
-      <h3>Chunk text</h3>
-      <pre><code><span class="cmt">-- Split text into overlapping chunks for embedding</span>
-<span class="kw">chunks</span> <span class="kw">are</span> chunk(text, 500)
-<span class="kw">for each</span> c <span class="kw">in</span> chunks:
-  <span class="kw">await</span> store.add(c)</code></pre>
+      <div class="callout callout-warn">
+        <strong>PDF support requires an extra package.</strong> Run <code>npm install pdf-parse</code> before using <code>extract</code> with PDF files. If the package is missing, you will get a clear error message telling you to install it.
+      </div>
 
-      <h3>Full RAG pipeline</h3>
-      <p>Here is a complete example that extracts a document, chunks it, builds a vector store, and answers questions using the retrieved context:</p>
-      <pre><code><span class="cmt">-- Full RAG pipeline: extract -> chunk -> embed -> search -> ask</span>
+      <h3><code>chunk(text, size, overlap)</code></h3>
+      <p>Splits a long text into overlapping chunks suitable for embedding. The chunker tries to break at sentence boundaries (periods and newlines) rather than mid-word, so chunks read naturally.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+          <tr style="text-align: left; border-bottom: 2px solid var(--border);">
+            <th style="padding: 8px;">Parameter</th>
+            <th style="padding: 8px;">Type</th>
+            <th style="padding: 8px;">Default</th>
+            <th style="padding: 8px;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>text</code></td>
+            <td style="padding: 8px;">string</td>
+            <td style="padding: 8px;">(required)</td>
+            <td style="padding: 8px;">The text to split into chunks</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>size</code></td>
+            <td style="padding: 8px;">number</td>
+            <td style="padding: 8px;"><code>500</code></td>
+            <td style="padding: 8px;">Maximum characters per chunk</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><code>overlap</code></td>
+            <td style="padding: 8px;">number</td>
+            <td style="padding: 8px;"><code>50</code></td>
+            <td style="padding: 8px;">Character overlap between consecutive chunks to preserve context at boundaries</td>
+          </tr>
+        </tbody>
+      </table>
 
-<span class="cmt">-- 1. Extract text from a PDF</span>
-<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"knowledge-base.pdf"</span>)
+      <pre><code><span class="cmt">-- Split text into overlapping chunks</span>
+<span class="kw">chunks</span> <span class="kw">are</span> chunk(text, <span class="num">500</span>, <span class="num">50</span>)
+<span class="kw">say</span> <span class="str">"Split into "</span> + chunks.length + <span class="str">" chunks"</span>
 
-<span class="cmt">-- 2. Chunk into manageable pieces</span>
-<span class="kw">chunks</span> <span class="kw">are</span> chunk(text, 500)
+<span class="cmt">-- Smaller chunks with more overlap for higher precision</span>
+<span class="kw">chunks</span> <span class="kw">are</span> chunk(text, <span class="num">300</span>, <span class="num">100</span>)</code></pre>
 
-<span class="cmt">-- 3. Build the vector store</span>
+      <div class="callout callout-tip">
+        <strong>Chunk size guidance.</strong> For RAG, chunk sizes of 300&ndash;500 characters work best. Use 50&ndash;100 character overlap to avoid losing context at boundaries. Smaller chunks give more precise search results; larger chunks give more context per result.
+      </div>
+
+      <h3><code>splitSentences(text)</code></h3>
+      <p>Splits text into an array of individual sentences. Sentences are delimited by periods, exclamation marks, and question marks.</p>
+      <pre><code><span class="kw">sentences</span> <span class="kw">are</span> splitSentences(<span class="str">"Hello world. How are you? I am fine!"</span>)
+<span class="cmt">-- ["Hello world.", " How are you?", " I am fine!"]</span>
+<span class="kw">say</span> <span class="str">"Found "</span> + sentences.length + <span class="str">" sentences"</span></code></pre>
+
+      <h3><code>splitParagraphs(text)</code></h3>
+      <p>Splits text at double newlines (blank lines) into an array of paragraphs. Empty paragraphs are filtered out.</p>
+      <pre><code><span class="kw">paragraphs</span> <span class="kw">are</span> splitParagraphs(text)
+<span class="kw">for each</span> p <span class="kw">in</span> paragraphs:
+  <span class="kw">say</span> <span class="str">"---"</span>
+  <span class="kw">say</span> p</code></pre>
+
+      <h3>Practical example: PDF Q&A</h3>
+      <p>Extract a PDF, chunk it, embed the chunks, and answer questions about the document:</p>
+      <pre><code><span class="cmt">-- Extract and process a PDF for question answering</span>
+<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"research-paper.pdf"</span>)
+<span class="kw">say</span> <span class="str">"Extracted "</span> + text.length + <span class="str">" characters"</span>
+
+<span class="cmt">-- Chunk the text</span>
+<span class="kw">chunks</span> <span class="kw">are</span> chunk(text, <span class="num">400</span>, <span class="num">80</span>)
+<span class="kw">say</span> <span class="str">"Created "</span> + chunks.length + <span class="str">" chunks"</span>
+
+<span class="cmt">-- Build a vector store from the chunks</span>
 <span class="kw">store</span> <span class="kw">is</span> createVectorStore()
 <span class="kw">for each</span> c <span class="kw">in</span> chunks:
-  <span class="kw">await</span> store.add(c)
+  <span class="kw">await</span> store.add(c, {source: <span class="str">"research-paper.pdf"</span>})
 
-<span class="cmt">-- 4. Search for relevant context</span>
-<span class="kw">question</span> <span class="kw">is</span> <span class="str">"What are the main features?"</span>
-<span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(question, 3)
-
-<span class="cmt">-- 5. Build context string</span>
+<span class="cmt">-- Ask a question</span>
+<span class="kw">question</span> <span class="kw">is</span> <span class="str">"What methodology did the authors use?"</span>
+<span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(question, <span class="num">3</span>)
 <span class="kw">context</span> <span class="kw">is</span> join(map_list(results, <span class="kw">with</span> r: r.text), <span class="str">"\n\n"</span>)
 
-<span class="cmt">-- 6. Ask the LLM with retrieved context</span>
+<span class="kw">answer</span> <span class="kw">is</span> ask claude question <span class="kw">with</span> system <span class="str">"Answer based only on this context:\n\n"</span> + context
+<span class="kw">say</span> answer</code></pre>
+
+      <h3>Full RAG pipeline</h3>
+
+      <div class="callout callout-info">
+        <strong>What is RAG?</strong> Retrieval-Augmented Generation (RAG) is a pattern where you first <em>retrieve</em> relevant documents from a knowledge base, then pass them as context to the LLM. This grounds the LLM's response in your actual data, reducing hallucinations and enabling answers about private or recent information the LLM was not trained on.
+      </div>
+
+      <p>Here is a complete RAG pipeline with error handling and persistence:</p>
+      <pre><code><span class="cmt">-- Full RAG pipeline: extract -> chunk -> embed -> search -> ask</span>
+
+<span class="kw">try</span>:
+  <span class="cmt">-- 1. Extract text from a PDF</span>
+  <span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"knowledge-base.pdf"</span>)
+  <span class="kw">say</span> <span class="str">"Extracted "</span> + text.length + <span class="str">" characters"</span>
+
+  <span class="cmt">-- 2. Chunk into manageable pieces</span>
+  <span class="kw">chunks</span> <span class="kw">are</span> chunk(text, <span class="num">500</span>, <span class="num">50</span>)
+  <span class="kw">say</span> <span class="str">"Created "</span> + chunks.length + <span class="str">" chunks"</span>
+
+  <span class="cmt">-- 3. Build the vector store</span>
+  <span class="kw">store</span> <span class="kw">is</span> createVectorStore()
+  <span class="kw">for each</span> c <span class="kw">in</span> chunks:
+    <span class="kw">await</span> store.add(c)
+
+  <span class="cmt">-- 4. Save the vector store for reuse</span>
+  <span class="kw">write</span>(<span class="str">"knowledge-store.json"</span>, store.toJSON())
+  <span class="kw">say</span> <span class="str">"Vector store saved to knowledge-store.json"</span>
+
+  <span class="cmt">-- 5. Search for relevant context</span>
+  <span class="kw">question</span> <span class="kw">is</span> <span class="str">"What are the main features?"</span>
+  <span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(question, <span class="num">3</span>)
+
+  <span class="cmt">-- 6. Build context string</span>
+  <span class="kw">context</span> <span class="kw">is</span> join(map_list(results, <span class="kw">with</span> r: r.text), <span class="str">"\n\n"</span>)
+
+  <span class="cmt">-- 7. Ask the LLM with retrieved context</span>
+  <span class="kw">answer</span> <span class="kw">is</span> ask claude question <span class="kw">with</span> system <span class="str">"Answer based on this context:\n\n"</span> + context
+  <span class="kw">say</span> answer
+
+<span class="kw">catch</span> err:
+  <span class="kw">say</span> <span class="str">"Error in RAG pipeline: "</span> + err.message</code></pre>
+
+      <h3>Loading a saved vector store</h3>
+      <p>Once you have saved a vector store, you can load it in subsequent runs without re-embedding:</p>
+      <pre><code><span class="cmt">-- Load a previously saved vector store</span>
+<span class="kw">stored</span> <span class="kw">is</span> <span class="kw">read</span>(<span class="str">"knowledge-store.json"</span>)
+<span class="kw">store</span> <span class="kw">is</span> VectorStore.fromJSON(stored)
+
+<span class="cmt">-- Search and ask immediately</span>
+<span class="kw">question</span> <span class="kw">is</span> <span class="str">"How does authentication work?"</span>
+<span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(question, <span class="num">3</span>)
+<span class="kw">context</span> <span class="kw">is</span> join(map_list(results, <span class="kw">with</span> r: r.text), <span class="str">"\n\n"</span>)
 <span class="kw">answer</span> <span class="kw">is</span> ask claude question <span class="kw">with</span> system <span class="str">"Answer based on this context:\n\n"</span> + context
 <span class="kw">say</span> answer</code></pre>
 

@@ -129,9 +129,17 @@ Quill is the easiest language to build AI apps, agents, and LLM pipelines. Use a
 
 ### Multi-Provider LLM Support
 
+| Provider | Package | Env Variable | Default Model |
+|----------|---------|-------------|---------------|
+| Claude | @anthropic-ai/sdk | ANTHROPIC_API_KEY | claude-sonnet-4-20250514 |
+| OpenAI | openai | OPENAI_API_KEY | gpt-4o |
+| Gemini | @google/generative-ai | GEMINI_API_KEY | gemini-2.0-flash |
+| Ollama | (none, runs locally) | (none) | llama3 |
+
 ```
--- Claude (built-in)
+-- Claude (built-in, no extra packages needed)
 answer is ask claude "What is the capital of France?"
+say answer
 
 -- OpenAI (requires openai npm package)
 answer is ask openai "Explain quantum computing"
@@ -139,67 +147,139 @@ answer is ask openai "Explain quantum computing"
 -- Google Gemini (requires @google/generative-ai)
 answer is ask gemini "Write a haiku about coding"
 
--- Local models with Ollama (free, runs locally)
+-- Local models with Ollama (free, private, runs locally)
 answer is ask ollama "Summarize this text"
+```
 
--- All providers support options
-answer is ask openai "Translate to French" with model "gpt-4o" system "You are a translator"
+All providers accept the same options: `model`, `system`, `max_tokens`, and `temperature`.
+
+```
+answer is ask claude "Translate to French" with model "claude-sonnet-4-20250514" system "You are a translator" max_tokens 500 temperature 0.3
+answer is ask openai "Write a poem" with model "gpt-4o" temperature 0.9
+answer is ask ollama "Explain this code" with model "codellama"
 ```
 
 ### Streaming
 
+Use streaming for long responses or real-time output. Each `chunk` is a piece of the response as it arrives.
+
 ```
-stream openai "Write a story about a robot":
+stream claude "Write a short story about a robot":
   say chunk
 
-stream claude "Explain gravity" with model "claude-opus-4-20250805":
+stream openai "Explain gravity step by step" with model "gpt-4o":
   say chunk
 ```
 
 ### Structured Output
 
+Use `as {schema}` to get typed, structured data back from any provider. Supported types: `text`, `number`, `bool`, `list`.
+
 ```
--- Get structured data back from any provider
-person is ask claude "Extract: John Smith is 30 years old" as {name: text, age: number}
-say person.name    -- "John Smith"
-say person.age     -- 30
+person is ask claude "Extract: John Smith is 30 years old" as {name: text, age: number, employed: bool}
+say person.name       -- "John Smith"
+say person.age        -- 30
+say person.employed   -- true
+
+tags is ask openai "List 3 tags for this article" as {tags: list}
+for each tag in tags.tags:
+  say tag
 ```
 
 ### AI Agents
 
+Register tools as functions, then let an agent decide when to call them.
+
 ```
-agent "researcher" with tools [search, summarize]:
-  result is await __agent_researcher.run("Find the latest news about AI")
-  say result
+to searchWeb query:
+  data is await fetchJSON("https://api.duckduckgo.com/?q=" + query + "&format=json")
+  give back data.AbstractText or "No results found"
+
+myAgent is createAgent("researcher", {provider: "claude"})
+myAgent.addTool("search", "Search the web", searchWeb)
+result is await myAgent.run("Find info about Quill programming language")
+say result
 ```
 
 ### Embeddings & Vector Search (RAG)
 
+Generate embeddings and build a searchable knowledge base with `VectorStore`.
+
 ```
--- Generate embeddings
+-- Generate an embedding vector
 vec is embed("Hello world")
 
 -- Build a searchable knowledge base
 store is createVectorStore()
 await store.add("Quill compiles to JavaScript", {source: "docs"})
 await store.add("Quill has built-in AI support", {source: "readme"})
+await store.add("Quill supports four LLM providers", {source: "readme"})
 
 results is await store.search("How does Quill work?", 3)
 for each result in results:
   say result.text + " (score: " + result.score + ")"
+
+-- Persist and reload the store
+saved is store.toJSON()
+restored is VectorStore.fromJSON(saved)
 ```
 
 ### Document Processing
 
+Extract text from files, then chunk it for RAG pipelines.
+
 ```
--- Extract text from files
+-- Supported formats: PDF, HTML, TXT, Markdown, DOCX
 text is await extract("document.pdf")
 text is await extract("page.html")
+text is await extract("notes.md")
 
--- Chunk text for RAG pipelines
-chunks are chunk(text, 500)
+-- Chunk text for embedding (size in chars, overlap in chars)
+chunks are chunk(text, 500, 50)
+
+-- Or split by structure
+sentences are splitSentences(text)
+paragraphs are splitParagraphs(text)
+```
+
+### Full RAG Pipeline
+
+A complete extract, chunk, embed, search, and ask pipeline in one script.
+
+```
+-- 1. Extract text from a document
+text is await extract("knowledge-base.pdf")
+
+-- 2. Chunk it into overlapping segments
+chunks are chunk(text, 500, 50)
+
+-- 3. Store chunks in a vector store
+store is createVectorStore()
 for each c in chunks:
   await store.add(c)
+
+-- 4. Search for relevant context
+query is "How do I deploy?"
+results is await store.search(query, 3)
+context is ""
+for each r in results:
+  context is context + r.text + "\n"
+
+-- 5. Ask the LLM with retrieved context
+answer is ask claude query with system ("Answer using this context:\n" + context)
+say answer
+```
+
+### Conversation History
+
+Maintain multi-turn conversations with any provider.
+
+```
+convo is createConversation({provider: "claude"})
+reply1 is await convo.say("My name is Alice")
+say reply1
+reply2 is await convo.say("What is my name?")
+say reply2   -- "Your name is Alice"
 ```
 
 ## Features
