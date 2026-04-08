@@ -53,6 +53,14 @@
         <li><a href="#chatbot-example">Chatbot example</a></li>
         <li><a href="#cli-tool-example">CLI tool example</a></li>
       </ul>
+      <h4>AI & LLM</h4>
+      <ul>
+        <li><a href="#multi-provider">Multi-Provider Support</a></li>
+        <li><a href="#structured-output">Structured Output</a></li>
+        <li><a href="#agents">AI Agents</a></li>
+        <li><a href="#embeddings">Embeddings & Vector Search</a></li>
+        <li><a href="#document-processing">Document Processing / RAG</a></li>
+      </ul>
       <h4>Guides</h4>
       <ul>
         <li><a href="/docs/discord">Discord Bots</a></li>
@@ -236,6 +244,132 @@ say "Explanation:"
 say explanation</code></pre>
 
       <p>Run it: <code>quill run explain.quill "for (let i = 0; i &lt; 10; i++) { console.log(i); }"</code></p>
+
+      <!-- Multi-Provider Support -->
+      <h2 id="multi-provider">Multi-Provider Support</h2>
+      <p>Quill supports multiple LLM providers with the same simple <code>ask</code> syntax. Just swap the provider name:</p>
+
+      <h3>OpenAI</h3>
+      <p>Requires the <code>openai</code> npm package and an <code>OPENAI_API_KEY</code> in your environment or <code>.env</code> file.</p>
+      <pre><code><span class="kw">answer</span> <span class="kw">is</span> ask openai <span class="str">"Explain quantum computing"</span>
+<span class="kw">say</span> answer
+
+<span class="cmt">-- With options</span>
+<span class="kw">answer</span> <span class="kw">is</span> ask openai <span class="str">"Translate to French"</span> <span class="kw">with</span> model <span class="str">"gpt-4o"</span> system <span class="str">"You are a translator"</span>
+<span class="kw">say</span> answer</code></pre>
+
+      <h3>Google Gemini</h3>
+      <p>Requires the <code>@google/generative-ai</code> npm package and a <code>GEMINI_API_KEY</code>.</p>
+      <pre><code><span class="kw">answer</span> <span class="kw">is</span> ask gemini <span class="str">"Write a haiku about coding"</span>
+<span class="kw">say</span> answer
+
+<span class="cmt">-- With model option</span>
+<span class="kw">answer</span> <span class="kw">is</span> ask gemini <span class="str">"Summarize this article"</span> <span class="kw">with</span> model <span class="str">"gemini-pro"</span>
+<span class="kw">say</span> answer</code></pre>
+
+      <h3>Ollama (local models)</h3>
+      <p>Run models locally for free with <a href="https://ollama.ai" target="_blank">Ollama</a>. No API key needed &mdash; just install Ollama and pull a model.</p>
+      <pre><code><span class="cmt">-- Uses your local Ollama instance</span>
+<span class="kw">answer</span> <span class="kw">is</span> ask ollama <span class="str">"Summarize this text"</span>
+<span class="kw">say</span> answer
+
+<span class="cmt">-- Specify a model</span>
+<span class="kw">answer</span> <span class="kw">is</span> ask ollama <span class="str">"Explain recursion"</span> <span class="kw">with</span> model <span class="str">"llama3"</span>
+<span class="kw">say</span> answer</code></pre>
+
+      <div class="callout callout-info">
+        <strong>All providers share the same syntax.</strong> The <code>with</code> keyword works with every provider for options like <code>model</code>, <code>system</code>, <code>max_tokens</code>, and <code>temperature</code>.
+      </div>
+
+      <!-- Structured Output -->
+      <h2 id="structured-output">Structured Output</h2>
+      <p>Get structured data back from any provider by adding <code>as</code> followed by a type shape:</p>
+      <pre><code><span class="cmt">-- Extract structured data from natural language</span>
+<span class="kw">person</span> <span class="kw">is</span> ask claude <span class="str">"Extract: John Smith is 30 years old"</span> as {name: text, age: number}
+<span class="kw">say</span> person.name    <span class="cmt">-- "John Smith"</span>
+<span class="kw">say</span> person.age     <span class="cmt">-- 30</span></code></pre>
+
+      <p>This works with any provider:</p>
+      <pre><code><span class="kw">movie</span> <span class="kw">is</span> ask openai <span class="str">"Tell me about Inception"</span> as {title: text, year: number, director: text}
+<span class="kw">say</span> movie.title + <span class="str">" ("</span> + movie.year + <span class="str">")"</span></code></pre>
+
+      <!-- AI Agents -->
+      <h2 id="agents">AI Agents</h2>
+      <p>Build autonomous AI agents that can use tools to accomplish tasks:</p>
+      <pre><code><span class="kw">agent</span> <span class="str">"researcher"</span> <span class="kw">with</span> tools [search, summarize]:
+  <span class="kw">result</span> <span class="kw">is</span> <span class="kw">await</span> __agent_researcher.run(<span class="str">"Find the latest news about AI"</span>)
+  <span class="kw">say</span> result</code></pre>
+
+      <p>Agents combine an LLM with tools that it can call autonomously. The agent decides which tools to use and when, running in a loop until the task is complete.</p>
+
+      <div class="callout callout-tip">
+        <strong>Tool registration.</strong> The tools you pass to <code>agent</code> are Quill functions. The agent can call them as needed to gather information and take actions.
+      </div>
+
+      <!-- Embeddings & Vector Search -->
+      <h2 id="embeddings">Embeddings & Vector Search</h2>
+      <p>Generate embeddings and perform similarity search for RAG (Retrieval-Augmented Generation) pipelines:</p>
+
+      <h3>Generate embeddings</h3>
+      <pre><code><span class="cmt">-- Generate an embedding vector</span>
+<span class="kw">vec</span> <span class="kw">is</span> embed(<span class="str">"Hello world"</span>)</code></pre>
+
+      <h3>Build a vector store</h3>
+      <pre><code><span class="cmt">-- Create a searchable knowledge base</span>
+<span class="kw">store</span> <span class="kw">is</span> createVectorStore()
+<span class="kw">await</span> store.add(<span class="str">"Quill compiles to JavaScript"</span>, {source: <span class="str">"docs"</span>})
+<span class="kw">await</span> store.add(<span class="str">"Quill has built-in AI support"</span>, {source: <span class="str">"readme"</span>})</code></pre>
+
+      <h3>Similarity search</h3>
+      <pre><code><span class="cmt">-- Search for the 3 most relevant documents</span>
+<span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(<span class="str">"How does Quill work?"</span>, 3)
+<span class="kw">for each</span> result <span class="kw">in</span> results:
+  <span class="kw">say</span> result.text + <span class="str">" (score: "</span> + result.score + <span class="str">")"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Cosine similarity.</strong> The vector store uses cosine similarity to rank results. Scores range from 0 (unrelated) to 1 (identical meaning).
+      </div>
+
+      <!-- Document Processing -->
+      <h2 id="document-processing">Document Processing / RAG</h2>
+      <p>Extract text from files and chunk it for RAG pipelines:</p>
+
+      <h3>Extract text</h3>
+      <pre><code><span class="cmt">-- Extract text from various file formats</span>
+<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"document.pdf"</span>)
+<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"page.html"</span>)</code></pre>
+
+      <h3>Chunk text</h3>
+      <pre><code><span class="cmt">-- Split text into overlapping chunks for embedding</span>
+<span class="kw">chunks</span> <span class="kw">are</span> chunk(text, 500)
+<span class="kw">for each</span> c <span class="kw">in</span> chunks:
+  <span class="kw">await</span> store.add(c)</code></pre>
+
+      <h3>Full RAG pipeline</h3>
+      <p>Here is a complete example that extracts a document, chunks it, builds a vector store, and answers questions using the retrieved context:</p>
+      <pre><code><span class="cmt">-- Full RAG pipeline: extract -> chunk -> embed -> search -> ask</span>
+
+<span class="cmt">-- 1. Extract text from a PDF</span>
+<span class="kw">text</span> <span class="kw">is</span> <span class="kw">await</span> extract(<span class="str">"knowledge-base.pdf"</span>)
+
+<span class="cmt">-- 2. Chunk into manageable pieces</span>
+<span class="kw">chunks</span> <span class="kw">are</span> chunk(text, 500)
+
+<span class="cmt">-- 3. Build the vector store</span>
+<span class="kw">store</span> <span class="kw">is</span> createVectorStore()
+<span class="kw">for each</span> c <span class="kw">in</span> chunks:
+  <span class="kw">await</span> store.add(c)
+
+<span class="cmt">-- 4. Search for relevant context</span>
+<span class="kw">question</span> <span class="kw">is</span> <span class="str">"What are the main features?"</span>
+<span class="kw">results</span> <span class="kw">is</span> <span class="kw">await</span> store.search(question, 3)
+
+<span class="cmt">-- 5. Build context string</span>
+<span class="kw">context</span> <span class="kw">is</span> join(map_list(results, <span class="kw">with</span> r: r.text), <span class="str">"\n\n"</span>)
+
+<span class="cmt">-- 6. Ask the LLM with retrieved context</span>
+<span class="kw">answer</span> <span class="kw">is</span> ask claude question <span class="kw">with</span> system <span class="str">"Answer based on this context:\n\n"</span> + context
+<span class="kw">say</span> answer</code></pre>
 
       <div class="callout callout-tip" style="margin-top: 32px;">
         <strong>Next steps</strong>

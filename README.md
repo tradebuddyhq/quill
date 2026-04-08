@@ -123,6 +123,85 @@ quill run app.quill
 
 See the [AI docs](https://quill.tradebuddy.dev/docs/ai)
 
+## AI & LLM Development
+
+Quill is the easiest language to build AI apps, agents, and LLM pipelines. Use any provider with the same simple syntax.
+
+### Multi-Provider LLM Support
+
+```
+-- Claude (built-in)
+answer is ask claude "What is the capital of France?"
+
+-- OpenAI (requires openai npm package)
+answer is ask openai "Explain quantum computing"
+
+-- Google Gemini (requires @google/generative-ai)
+answer is ask gemini "Write a haiku about coding"
+
+-- Local models with Ollama (free, runs locally)
+answer is ask ollama "Summarize this text"
+
+-- All providers support options
+answer is ask openai "Translate to French" with model "gpt-4o" system "You are a translator"
+```
+
+### Streaming
+
+```
+stream openai "Write a story about a robot":
+  say chunk
+
+stream claude "Explain gravity" with model "claude-opus-4-20250805":
+  say chunk
+```
+
+### Structured Output
+
+```
+-- Get structured data back from any provider
+person is ask claude "Extract: John Smith is 30 years old" as {name: text, age: number}
+say person.name    -- "John Smith"
+say person.age     -- 30
+```
+
+### AI Agents
+
+```
+agent "researcher" with tools [search, summarize]:
+  result is await __agent_researcher.run("Find the latest news about AI")
+  say result
+```
+
+### Embeddings & Vector Search (RAG)
+
+```
+-- Generate embeddings
+vec is embed("Hello world")
+
+-- Build a searchable knowledge base
+store is createVectorStore()
+await store.add("Quill compiles to JavaScript", {source: "docs"})
+await store.add("Quill has built-in AI support", {source: "readme"})
+
+results is await store.search("How does Quill work?", 3)
+for each result in results:
+  say result.text + " (score: " + result.score + ")"
+```
+
+### Document Processing
+
+```
+-- Extract text from files
+text is await extract("document.pdf")
+text is await extract("page.html")
+
+-- Chunk text for RAG pipelines
+chunks are chunk(text, 500)
+for each c in chunks:
+  await store.add(c)
+```
+
 ## Features
 
 **Language**
@@ -181,6 +260,10 @@ See the [AI docs](https://quill.tradebuddy.dev/docs/ai)
 - **Environment management** — auto-loads `.env` files, `env.require("KEY")`, `--env production`
 - **Testing mocks** — `mock fetchJSON with url:`, `expect func was called N times`
 - **Built-in AI syntax** — `ask claude "prompt"`, `stream claude "prompt":`, conversation history, options (model, max_tokens, system, temperature)
+- **Multi-provider AI** — `ask openai`, `ask gemini`, `ask ollama` + Claude, streaming, structured output
+- **AI agents** — `agent` blocks with tool registration and autonomous execution loops
+- **Embeddings & RAG** — `embed()`, `createVectorStore()`, cosine similarity search
+- **Document processing** — `extract()` from PDF/HTML/text, `chunk()` for RAG pipelines
 - **AI project scaffolding** — `quill ai my-app` creates a ready-to-run AI project
 - **AI-powered generation** — `quill generate "build me a todo API"` uses Claude CLI or Gemini CLI for real AI code generation (falls back to templates if no AI CLI installed)
 - **Friendly error messages** — with source context and hints

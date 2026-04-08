@@ -1472,3 +1472,131 @@ func TestCatchSyntax(t *testing.T) {
 		t.Errorf("expected try/catch block, got:\n%s", output)
 	}
 }
+
+// --- AI Feature Tests ---
+
+func TestAskOpenAI(t *testing.T) {
+	output, err := compile(`answer is ask openai "What is 2+2?"`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__ask_openai") {
+		t.Errorf("expected __ask_openai call, got:\n%s", output)
+	}
+}
+
+func TestAskGemini(t *testing.T) {
+	output, err := compile(`answer is ask gemini "What is 2+2?"`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__ask_gemini") {
+		t.Errorf("expected __ask_gemini call, got:\n%s", output)
+	}
+}
+
+func TestAskOllama(t *testing.T) {
+	output, err := compile(`answer is ask ollama "What is 2+2?"`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__ask_ollama") {
+		t.Errorf("expected __ask_ollama call, got:\n%s", output)
+	}
+}
+
+func TestStreamOpenAI(t *testing.T) {
+	output, err := compile("stream openai \"Tell me a joke\":\n  say chunk\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__stream_openai") {
+		t.Errorf("expected __stream_openai call, got:\n%s", output)
+	}
+}
+
+func TestStreamGemini(t *testing.T) {
+	output, err := compile("stream gemini \"Tell me a joke\":\n  say chunk\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__stream_gemini") {
+		t.Errorf("expected __stream_gemini call, got:\n%s", output)
+	}
+}
+
+func TestStructuredOutput(t *testing.T) {
+	output, err := compile(`result is ask claude "Extract name and age from: John is 30" as {name: text, age: number}`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__parse_structured") {
+		t.Errorf("expected __parse_structured call, got:\n%s", output)
+	}
+}
+
+func TestAgentStatement(t *testing.T) {
+	output, err := compile("agent \"researcher\" with tools [search, browse]:\n  say \"agent running\"\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, `createAgent("researcher"`) {
+		t.Errorf("expected createAgent(\"researcher\") call, got:\n%s", output)
+	}
+}
+
+func TestEmbedExpression(t *testing.T) {
+	output, err := compile(`vec is embed("hello world")`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "embed(") {
+		t.Errorf("expected embed( call, got:\n%s", output)
+	}
+}
+
+func TestVectorRuntimeInjection(t *testing.T) {
+	output, err := compile("store is createVectorStore()\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "VectorStore") {
+		t.Errorf("expected VectorStore in runtime preamble, got:\n%s", output)
+	}
+}
+
+func TestDocumentRuntimeInjection(t *testing.T) {
+	output, err := compile("data is extract(\"file.pdf\")\nparts is chunk(text, 100)\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "extract(") {
+		t.Errorf("expected extract( in output, got:\n%s", output)
+	}
+	if !strings.Contains(output, "chunk(") {
+		t.Errorf("expected chunk( in output, got:\n%s", output)
+	}
+}
+
+func TestOpenAIRuntimeInjection(t *testing.T) {
+	output, err := compile(`answer is ask openai "hello"`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__ask_openai") {
+		t.Errorf("expected __ask_openai in runtime preamble, got:\n%s", output)
+	}
+	if !strings.Contains(output, "__stream_openai") {
+		t.Errorf("expected __stream_openai in runtime preamble, got:\n%s", output)
+	}
+}
+
+func TestAgentRuntimeInjection(t *testing.T) {
+	output, err := compile("agent \"helper\" with tools [search]:\n  say \"running\"\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "class Agent") {
+		t.Errorf("expected 'class Agent' in runtime preamble, got:\n%s", output)
+	}
+}

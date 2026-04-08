@@ -1025,10 +1025,11 @@ func (s *OnStatement) stmtNode()        {}
 
 // AskExpression represents an "ask claude" expression for AI queries.
 type AskExpression struct {
-	Provider   string            // "claude"
-	Prompt     Expression        // the prompt string or messages variable
-	Options    map[string]Expression // model, max_tokens, system, temperature
-	IsMessages bool              // true when argument is a variable (messages array)
+	Provider         string                // "claude", "openai", "gemini", "ollama"
+	Prompt           Expression            // the prompt string or messages variable
+	Options          map[string]Expression // model, max_tokens, system, temperature
+	IsMessages       bool                  // true when argument is a variable (messages array)
+	StructuredOutput map[string]string     // field name -> type ("text", "number", "bool", "list")
 }
 
 func (e *AskExpression) nodeType() string { return "Ask" }
@@ -1046,6 +1047,31 @@ type StreamStatement struct {
 
 func (s *StreamStatement) nodeType() string { return "Stream" }
 func (s *StreamStatement) stmtNode()        {}
+
+// AgentStatement represents an "agent" block for autonomous agent loops.
+type AgentStatement struct {
+	Name     string                // agent name
+	Provider string                // "claude", "openai", "gemini", "ollama"
+	Tools    []string              // tool names
+	Prompt   Expression            // initial prompt or goal
+	Options  map[string]Expression // model, max_tokens, system, etc.
+	Body     []Statement           // agent loop body
+	Line     int
+}
+
+func (s *AgentStatement) nodeType() string { return "Agent" }
+func (s *AgentStatement) stmtNode()        {}
+
+// EmbedExpression represents an embed() call to generate text embeddings.
+type EmbedExpression struct {
+	Text     Expression // text to embed
+	Provider string     // "openai", "ollama", etc.
+	Model    string     // embedding model name
+	Line     int
+}
+
+func (e *EmbedExpression) nodeType() string { return "Embed" }
+func (e *EmbedExpression) exprNode()        {}
 
 // --- Expo / React Native ---
 

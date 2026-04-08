@@ -131,6 +131,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseEveryStatement()
 	case p.isStreamStatement():
 		return p.parseStreamStatement()
+	case p.isAgentStatement():
+		return p.parseAgentStatement()
 	case p.check(lexer.TOKEN_LBRACE):
 		// Check if this is a destructuring: {name, age} is expr
 		if p.isObjectDestructure() {
@@ -2094,9 +2096,16 @@ func (p *Parser) parsePrimary() ast.Expression {
 		return &ast.BoolLiteral{Value: false}
 
 	case lexer.TOKEN_IDENT:
-		// Check for "ask claude" expression
-		if tok.Value == "ask" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT && p.tokens[p.pos+1].Value == "claude" {
-			return p.parseAskExpression()
+		// Check for "ask <provider>" expression
+		if tok.Value == "ask" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT {
+			nextVal := p.tokens[p.pos+1].Value
+			if nextVal == "claude" || nextVal == "openai" || nextVal == "gemini" || nextVal == "ollama" {
+				return p.parseAskExpression()
+			}
+		}
+		// Check for "agent" statement used as expression (shouldn't happen, but handle gracefully)
+		if tok.Value == "agent" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_STRING {
+			p.error("agent blocks are statements, not expressions")
 		}
 		p.advance()
 		// Check for tagged template: identifier followed by backtick
@@ -2110,6 +2119,10 @@ func (p *Parser) parsePrimary() ast.Expression {
 		return &ast.NothingLiteral{}
 
 	case lexer.TOKEN_EMBED:
+		// Check if this is embed(...) function call for embeddings
+		if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LPAREN {
+			return p.parseEmbedExpression()
+		}
 		// Check if this is an embed literal: embed "title":
 		if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_STRING {
 			return p.parseEmbedLiteral()
@@ -2988,7 +3001,7 @@ func (p *Parser) parseWebSocketBlock() ast.WebSocketBlock {
 	return ws
 }
 
-// isStreamStatement checks if the current position is a "stream claude" statement.
+// isStreamStatement checks if the current position is a "stream <provider>" statement.
 func (p *Parser) isStreamStatement() bool {
 	if p.pos+1 >= len(p.tokens) {
 		return false
@@ -2996,7 +3009,19 @@ func (p *Parser) isStreamStatement() bool {
 	cur := p.tokens[p.pos]
 	next := p.tokens[p.pos+1]
 	return cur.Type == lexer.TOKEN_IDENT && cur.Value == "stream" &&
-		next.Type == lexer.TOKEN_IDENT && next.Value == "claude"
+		next.Type == lexer.TOKEN_IDENT &&
+		(next.Value == "claude" || next.Value == "openai" || next.Value == "gemini" || next.Value == "ollama")
+}
+
+// isAgentStatement checks if the current position is an "agent" statement.
+func (p *Parser) isAgentStatement() bool {
+	if p.pos+1 >= len(p.tokens) {
+		return false
+	}
+	cur := p.tokens[p.pos]
+	next := p.tokens[p.pos+1]
+	return cur.Type == lexer.TOKEN_IDENT && cur.Value == "agent" &&
+		next.Type == lexer.TOKEN_STRING
 }
 
 // parseAskExpression parses: ask claude "prompt" [with model "x" max_tokens N system "y" temperature N]
@@ -3060,11 +3085,37 @@ func (p *Parser) parseAskExpression() *ast.AskExpression {
 	}
 doneOptions:
 
+	// Parse optional "as {schema}" for structured output
+	var structuredOutput map[string]string
+	if p.check(lexer.TOKEN_AS) || (p.check(lexer.TOKEN_IDENT) && p.current().Value == "as") {
+		p.advance() // consume "as"
+		p.expect(lexer.TOKEN_LBRACE)
+		structuredOutput = map[string]string{}
+		for !p.check(lexer.TOKEN_RBRACE) && !p.check(lexer.TOKEN_EOF) {
+			fieldName := p.expect(lexer.TOKEN_IDENT).Value
+			p.expect(lexer.TOKEN_COLON)
+			fieldType := p.expect(lexer.TOKEN_IDENT).Value
+			switch fieldType {
+			case "text", "number", "bool", "list":
+				// valid
+			default:
+				p.error("unknown structured output type '" + fieldType + "'; expected text, number, bool, or list")
+			}
+			structuredOutput[fieldName] = fieldType
+			// optional comma separator
+			if p.check(lexer.TOKEN_COMMA) {
+				p.advance()
+			}
+		}
+		p.expect(lexer.TOKEN_RBRACE)
+	}
+
 	return &ast.AskExpression{
-		Provider:   provider,
-		Prompt:     prompt,
-		Options:    options,
-		IsMessages: isMessages,
+		Provider:         provider,
+		Prompt:           prompt,
+		Options:          options,
+		IsMessages:       isMessages,
+		StructuredOutput: structuredOutput,
 	}
 }
 
@@ -3132,6 +3183,106 @@ doneStreamOptions:
 		ChunkVar: "chunk",
 		Body:     body,
 		Options:  options,
+		Line:     line,
+	}
+}
+
+// parseAgentStatement parses: agent "name" with tools [tool1, tool2, tool3]:
+func (p *Parser) parseAgentStatement() *ast.AgentStatement {
+	line := p.current().Line
+	p.advance() // consume "agent"
+
+	name := p.expect(lexer.TOKEN_STRING).Value
+
+	// Parse "with tools [...]"
+	var tools []string
+	if p.check(lexer.TOKEN_WITH) || (p.check(lexer.TOKEN_IDENT) && p.current().Value == "with") {
+		p.advance() // consume "with"
+		if !p.check(lexer.TOKEN_IDENT) || p.current().Value != "tools" {
+			p.error("expected 'tools' after 'with' in agent statement")
+		}
+		p.advance() // consume "tools"
+		p.expect(lexer.TOKEN_LBRACKET)
+		for !p.check(lexer.TOKEN_RBRACKET) && !p.check(lexer.TOKEN_EOF) {
+			tools = append(tools, p.expect(lexer.TOKEN_IDENT).Value)
+			if p.check(lexer.TOKEN_COMMA) {
+				p.advance()
+			}
+		}
+		p.expect(lexer.TOKEN_RBRACKET)
+	}
+
+	// Parse optional prompt string
+	var prompt ast.Expression
+	if p.check(lexer.TOKEN_STRING) {
+		prompt = &ast.StringLiteral{Value: p.advance().Value}
+	} else if p.check(lexer.TOKEN_IDENT) {
+		prompt = &ast.Identifier{Name: p.advance().Value}
+	}
+
+	// Parse optional options (model, system, max_tokens)
+	options := map[string]ast.Expression{}
+	for p.check(lexer.TOKEN_IDENT) || p.check(lexer.TOKEN_MODEL) {
+		optName := p.advance().Value
+		switch optName {
+		case "model":
+			options["model"] = &ast.StringLiteral{Value: p.expect(lexer.TOKEN_STRING).Value}
+		case "max_tokens":
+			val, err := strconv.ParseFloat(p.expect(lexer.TOKEN_NUMBER).Value, 64)
+			if err != nil {
+				p.error("expected a number for max_tokens")
+			}
+			options["max_tokens"] = &ast.NumberLiteral{Value: val}
+		case "system":
+			options["system"] = &ast.StringLiteral{Value: p.expect(lexer.TOKEN_STRING).Value}
+		default:
+			p.pos-- // back up
+			goto doneAgentOptions
+		}
+	}
+doneAgentOptions:
+
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	body := p.parseBlock()
+
+	return &ast.AgentStatement{
+		Name:    name,
+		Tools:   tools,
+		Prompt:  prompt,
+		Options: options,
+		Body:    body,
+		Line:    line,
+	}
+}
+
+// parseEmbedExpression parses: embed(text), embed(text, "openai"), embed(text, "openai", "text-embedding-3-small")
+func (p *Parser) parseEmbedExpression() *ast.EmbedExpression {
+	line := p.current().Line
+	p.advance() // consume "embed"
+	p.expect(lexer.TOKEN_LPAREN)
+
+	text := p.parseExpression()
+
+	provider := ""
+	model := ""
+
+	if p.check(lexer.TOKEN_COMMA) {
+		p.advance()
+		provider = p.expect(lexer.TOKEN_STRING).Value
+	}
+
+	if p.check(lexer.TOKEN_COMMA) {
+		p.advance()
+		model = p.expect(lexer.TOKEN_STRING).Value
+	}
+
+	p.expect(lexer.TOKEN_RPAREN)
+
+	return &ast.EmbedExpression{
+		Text:     text,
+		Provider: provider,
+		Model:    model,
 		Line:     line,
 	}
 }
