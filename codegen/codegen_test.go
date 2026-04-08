@@ -1600,3 +1600,80 @@ func TestAgentRuntimeInjection(t *testing.T) {
 		t.Errorf("expected 'class Agent' in runtime preamble, got:\n%s", output)
 	}
 }
+
+func TestMultilineObjectLiteral(t *testing.T) {
+	output, err := compile("x is {foo: 1,\n  bar: 2}")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "foo: 1") || !strings.Contains(output, "bar: 2") {
+		t.Errorf("expected multiline object literal to compile, got:\n%s", output)
+	}
+	// Also test multiline array
+	output2, err := compile("x is [1,\n  2,\n  3]")
+	if err != nil {
+		t.Fatalf("unexpected error for multiline array: %v", err)
+	}
+	if !strings.Contains(output2, "[1, 2, 3]") {
+		t.Errorf("expected multiline array literal to compile, got:\n%s", output2)
+	}
+}
+
+func TestQuotedKeysObjectLiteral(t *testing.T) {
+	output, err := compile(`x is {"User-Agent": "test"}`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, `["User-Agent"]: "test"`) {
+		t.Errorf("expected quoted key to compile as computed property, got:\n%s", output)
+	}
+}
+
+func TestExponentiationOperator(t *testing.T) {
+	output, err := compile("x is 2 ^ 3")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "2 ** 3") {
+		t.Errorf("expected ^ to compile to **, got:\n%s", output)
+	}
+}
+
+func TestInlineTernary(t *testing.T) {
+	output, err := compile("x is if yes: 1 otherwise: 2")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "? 1 : 2") {
+		t.Errorf("expected ternary expression, got:\n%s", output)
+	}
+}
+
+func TestEveryMinutesCron(t *testing.T) {
+	output, err := compile("every 30 minutes:\n  say \"tick\"")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "setInterval") {
+		t.Errorf("expected setInterval, got:\n%s", output)
+	}
+	if !strings.Contains(output, "1800000") {
+		t.Errorf("expected 30 minutes = 1800000ms, got:\n%s", output)
+	}
+}
+
+func TestAskOllamaWithModelAndStructuredOutput(t *testing.T) {
+	output, err := compile(`result is ask ollama "hello" with model "llama3" as {name: text}`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "__ask_ollama") {
+		t.Errorf("expected __ask_ollama call, got:\n%s", output)
+	}
+	if !strings.Contains(output, "__parse_structured") {
+		t.Errorf("expected __parse_structured wrapper for structured output, got:\n%s", output)
+	}
+	if !strings.Contains(output, `"llama3"`) {
+		t.Errorf("expected model llama3 in options, got:\n%s", output)
+	}
+}

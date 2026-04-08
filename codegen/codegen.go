@@ -1163,7 +1163,13 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		return "[" + strings.Join(elems, ", ") + "]"
 
 	case *ast.BinaryExpr:
+		if e.Operator == "^" {
+			return fmt.Sprintf("(%s ** %s)", g.genExpr(e.Left), g.genExpr(e.Right))
+		}
 		return fmt.Sprintf("(%s %s %s)", g.genExpr(e.Left), e.Operator, g.genExpr(e.Right))
+
+	case *ast.TernaryExpression:
+		return fmt.Sprintf("(%s ? %s : %s)", g.genExpr(e.Condition), g.genExpr(e.Then), g.genExpr(e.Else))
 
 	case *ast.ComparisonExpr:
 		if e.Operator == "contains" {

@@ -132,6 +132,7 @@ const (
 	TOKEN_STAR
 	TOKEN_SLASH
 	TOKEN_MODULO
+	TOKEN_CARET
 	TOKEN_DOT
 
 	// Type utility keywords
@@ -281,6 +282,7 @@ var tokenNames = map[TokenType]string{
 	TOKEN_STAR:      "*",
 	TOKEN_SLASH:     "/",
 	TOKEN_MODULO:    "%",
+	TOKEN_CARET:     "^",
 	TOKEN_DOT:       ".",
 	TOKEN_COLON:     ":",
 	TOKEN_COMMA:     ",",

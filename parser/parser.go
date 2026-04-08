@@ -2001,11 +2001,21 @@ func (p *Parser) parseAddition() ast.Expression {
 }
 
 func (p *Parser) parseMultiplication() ast.Expression {
-	left := p.parseUnary()
+	left := p.parseExponentiation()
 	for p.check(lexer.TOKEN_STAR) || p.check(lexer.TOKEN_SLASH) || p.check(lexer.TOKEN_MODULO) {
 		op := p.advance().Value
-		right := p.parseUnary()
+		right := p.parseExponentiation()
 		left = &ast.BinaryExpr{Left: left, Operator: op, Right: right}
+	}
+	return left
+}
+
+func (p *Parser) parseExponentiation() ast.Expression {
+	left := p.parseUnary()
+	for p.check(lexer.TOKEN_CARET) {
+		p.advance() // consume "^"
+		right := p.parseUnary()
+		left = &ast.BinaryExpr{Left: left, Operator: "^", Right: right}
 	}
 	return left
 }
@@ -2179,6 +2189,9 @@ func (p *Parser) parsePrimary() ast.Expression {
 		field := p.expectIdentOrKeyword()
 		return &ast.DotExpr{Object: &ast.Identifier{Name: "this"}, Field: field.Value}
 
+	case lexer.TOKEN_IF:
+		return p.parseTernaryExpression()
+
 	case lexer.TOKEN_LBRACKET:
 		return p.parseListLiteral()
 
@@ -2192,6 +2205,18 @@ func (p *Parser) parsePrimary() ast.Expression {
 		p.error(fmt.Sprintf("I didn't expect %q here", tok.Value))
 		return nil
 	}
+}
+
+// parseTernaryExpression parses: if <cond>: <then> otherwise: <else> as an expression.
+func (p *Parser) parseTernaryExpression() ast.Expression {
+	p.advance() // consume "if"
+	condition := p.parseExpression()
+	p.expect(lexer.TOKEN_COLON)
+	thenExpr := p.parseExpression()
+	p.expect(lexer.TOKEN_OTHERWISE)
+	p.expect(lexer.TOKEN_COLON)
+	elseExpr := p.parseExpression()
+	return &ast.TernaryExpression{Condition: condition, Then: thenExpr, Else: elseExpr}
 }
 
 func (p *Parser) parseLambda() ast.Expression {
@@ -2227,12 +2252,16 @@ func (p *Parser) parseLambda() ast.Expression {
 
 func (p *Parser) parseObjectLiteral() ast.Expression {
 	p.advance() // consume "{"
+	savedPos := p.pos
+	p.skipNewlinesAndIndent()
+	// Count how many net indents we consumed from the opening brace
+	netIndents := p.countIndentsBetween(savedPos, p.pos)
 	keys := []string{}
 	values := []ast.Expression{}
 	var computed []ast.ComputedProperty
 
 	if !p.check(lexer.TOKEN_RBRACE) {
-		// Parse first property (regular or computed)
+		// Parse first property (regular, computed, or string-keyed)
 		if p.check(lexer.TOKEN_LBRACKET) {
 			// Computed property: {[expr]: value}
 			p.advance() // consume "["
@@ -2241,6 +2270,15 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 			p.expect(lexer.TOKEN_COLON)
 			val := p.parseExpression()
 			computed = append(computed, ast.ComputedProperty{KeyExpr: keyExpr, Value: val})
+		} else if p.check(lexer.TOKEN_STRING) {
+			// String key: {"User-Agent": value}
+			keyStr := p.advance().Value
+			p.expect(lexer.TOKEN_COLON)
+			val := p.parseExpression()
+			computed = append(computed, ast.ComputedProperty{
+				KeyExpr: &ast.StringLiteral{Value: keyStr},
+				Value:   val,
+			})
 		} else {
 			key := p.expectIdentOrKeyword()
 			keys = append(keys, key.Value)
@@ -2250,6 +2288,9 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 
 		for p.check(lexer.TOKEN_COMMA) {
 			p.advance()
+			beforeSkip := p.pos
+			p.skipNewlinesAndIndent()
+			netIndents += p.countIndentsBetween(beforeSkip, p.pos)
 			if p.check(lexer.TOKEN_RBRACE) {
 				break // trailing comma
 			}
@@ -2261,6 +2302,15 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 				p.expect(lexer.TOKEN_COLON)
 				val := p.parseExpression()
 				computed = append(computed, ast.ComputedProperty{KeyExpr: keyExpr, Value: val})
+			} else if p.check(lexer.TOKEN_STRING) {
+				// String key
+				keyStr := p.advance().Value
+				p.expect(lexer.TOKEN_COLON)
+				val := p.parseExpression()
+				computed = append(computed, ast.ComputedProperty{
+					KeyExpr: &ast.StringLiteral{Value: keyStr},
+					Value:   val,
+				})
 			} else {
 				key := p.expectIdentOrKeyword()
 				keys = append(keys, key.Value)
@@ -2270,7 +2320,20 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 		}
 	}
 
+	beforeSkip := p.pos
+	p.skipNewlinesAndIndent()
+	netIndents += p.countIndentsBetween(beforeSkip, p.pos)
 	p.expect(lexer.TOKEN_RBRACE)
+	// After a multiline object literal, consume matching dedent tokens
+	// for any indentation that was entered inside the braces
+	for i := 0; i < netIndents; i++ {
+		if p.check(lexer.TOKEN_NEWLINE) {
+			p.advance()
+		}
+		if p.check(lexer.TOKEN_DEDENT) {
+			p.advance()
+		}
+	}
 	return &ast.ObjectLiteral{Keys: keys, Values: values, ComputedProperties: computed}
 }
 
@@ -2327,12 +2390,18 @@ func (p *Parser) parseTaggedTemplate(tag string, line int) ast.Expression {
 
 func (p *Parser) parseListLiteral() ast.Expression {
 	p.advance() // consume "["
+	savedPos := p.pos
+	p.skipNewlinesAndIndent()
+	netIndents := p.countIndentsBetween(savedPos, p.pos)
 	elements := []ast.Expression{}
 
 	if !p.check(lexer.TOKEN_RBRACKET) {
 		elements = append(elements, p.parseExpression())
 		for p.check(lexer.TOKEN_COMMA) {
 			p.advance()
+			beforeSkip := p.pos
+			p.skipNewlinesAndIndent()
+			netIndents += p.countIndentsBetween(beforeSkip, p.pos)
 			if p.check(lexer.TOKEN_RBRACKET) {
 				break // trailing comma
 			}
@@ -2340,7 +2409,19 @@ func (p *Parser) parseListLiteral() ast.Expression {
 		}
 	}
 
+	beforeSkip := p.pos
+	p.skipNewlinesAndIndent()
+	netIndents += p.countIndentsBetween(beforeSkip, p.pos)
 	p.expect(lexer.TOKEN_RBRACKET)
+	// After a multiline array literal, consume matching dedent tokens
+	for i := 0; i < netIndents; i++ {
+		if p.check(lexer.TOKEN_NEWLINE) {
+			p.advance()
+		}
+		if p.check(lexer.TOKEN_DEDENT) {
+			p.advance()
+		}
+	}
 	return &ast.ListLiteral{Elements: elements}
 }
 
@@ -2701,6 +2782,28 @@ func (p *Parser) skipNewlines() {
 	for p.check(lexer.TOKEN_NEWLINE) {
 		p.advance()
 	}
+}
+
+// skipNewlinesAndIndent skips newlines along with indent/dedent tokens,
+// used inside object/array literals to support multiline syntax.
+func (p *Parser) skipNewlinesAndIndent() {
+	for p.check(lexer.TOKEN_NEWLINE) || p.check(lexer.TOKEN_INDENT) || p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+}
+
+// countIndentsBetween counts the net indent depth (indents minus dedents)
+// in the token range [from, to).
+func (p *Parser) countIndentsBetween(from, to int) int {
+	depth := 0
+	for i := from; i < to && i < len(p.tokens); i++ {
+		if p.tokens[i].Type == lexer.TOKEN_INDENT {
+			depth++
+		} else if p.tokens[i].Type == lexer.TOKEN_DEDENT {
+			depth--
+		}
+	}
+	return depth
 }
 
 func (p *Parser) isAtEnd() bool {

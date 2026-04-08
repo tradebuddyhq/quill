@@ -234,6 +234,16 @@ type UnaryMinusExpr struct {
 func (e *UnaryMinusExpr) nodeType() string { return "UnaryMinus" }
 func (e *UnaryMinusExpr) exprNode()        {}
 
+// TernaryExpression represents: if <cond>: <then> otherwise: <else> as an expression.
+type TernaryExpression struct {
+	Condition Expression
+	Then      Expression
+	Else      Expression
+}
+
+func (e *TernaryExpression) nodeType() string { return "Ternary" }
+func (e *TernaryExpression) exprNode()        {}
+
 type CallExpr struct {
 	Function Expression
 	Args     []Expression

@@ -235,6 +235,10 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 				l.advance()
 			}
 
+		case ch == '^':
+			l.addToken(TOKEN_CARET, "^")
+			l.advance()
+
 		case ch == '|':
 			l.addToken(TOKEN_PIPE, "|")
 			l.advance()
