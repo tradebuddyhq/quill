@@ -2,7 +2,7 @@
 
 A beginner-friendly language that compiles to JavaScript
 
-[Website](https://quill.tradebuddy.dev) · [Playground](https://quill.tradebuddy.dev/playground) · [Docs](https://quill.tradebuddy.dev/docs/) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=tradebuddyhq.quill-lang)
+[Docs](https://quill.tradebuddy.dev/docs/) · [Website](https://quill.tradebuddy.dev) · [Playground](https://quill.tradebuddy.dev/playground) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=tradebuddyhq.quill-lang)
 
 ## Learn Quill
 
