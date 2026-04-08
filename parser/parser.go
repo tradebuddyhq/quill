@@ -129,6 +129,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseNavigateStmt()
 	case p.check(lexer.TOKEN_EVERY):
 		return p.parseEveryStatement()
+	case p.check(lexer.TOKEN_DELETE):
+		return p.parseDelete()
 	case p.isStreamStatement():
 		return p.parseStreamStatement()
 	case p.isAgentStatement():
@@ -591,6 +593,14 @@ func (p *Parser) parseTryCatch() *ast.TryCatchStatement {
 	}
 }
 
+func (p *Parser) parseDelete() *ast.DeleteStatement {
+	line := p.current().Line
+	p.advance() // consume "delete"
+	target := p.parseExpression()
+	p.consumeNewline()
+	return &ast.DeleteStatement{Target: target, Line: line}
+}
+
 func (p *Parser) parseBreak() *ast.BreakStatement {
 	line := p.current().Line
 	p.advance() // consume "break"
@@ -827,7 +837,7 @@ func (p *Parser) parseOnStatement() *ast.OnStatement {
 
 	// Check if this is a route handler: on get|post|put|delete|patch "path"
 	httpMethods := map[string]bool{"get": true, "post": true, "put": true, "delete": true, "patch": true}
-	if p.check(lexer.TOKEN_IDENT) && httpMethods[p.current().Value] {
+	if (p.check(lexer.TOKEN_IDENT) || p.check(lexer.TOKEN_DELETE)) && httpMethods[p.current().Value] {
 		method := p.advance().Value
 		path := p.expect(lexer.TOKEN_STRING).Value
 		params := []string{}

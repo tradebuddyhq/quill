@@ -1136,6 +1136,17 @@ type NavigateStatement struct {
 func (s *NavigateStatement) nodeType() string { return "Navigate" }
 func (s *NavigateStatement) stmtNode()        {}
 
+// --- Delete Statement ---
+
+// DeleteStatement represents "delete obj.field" or "delete obj[key]".
+type DeleteStatement struct {
+	Target Expression
+	Line   int
+}
+
+func (s *DeleteStatement) nodeType() string { return "Delete" }
+func (s *DeleteStatement) stmtNode()        {}
+
 // --- Cron Jobs ---
 
 // EveryStatement represents a scheduled task: every 5 minutes:

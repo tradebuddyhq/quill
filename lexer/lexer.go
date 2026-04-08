@@ -108,6 +108,7 @@ var keywords = map[string]TokenType{
 	"navigate":    TOKEN_NAVIGATE,
 	"effect":      TOKEN_EFFECT,
 	"every":       TOKEN_EVERY,
+	"delete":      TOKEN_DELETE,
 }
 
 type Lexer struct {

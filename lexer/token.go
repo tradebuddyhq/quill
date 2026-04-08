@@ -173,6 +173,9 @@ const (
 	// Cron keywords
 	TOKEN_EVERY
 
+	// Delete keyword
+	TOKEN_DELETE
+
 	// Delimiters
 	TOKEN_COLON
 	TOKEN_COMMA
@@ -312,6 +315,7 @@ var tokenNames = map[TokenType]string{
 	TOKEN_NAVIGATE:    "navigate",
 	TOKEN_EFFECT:      "effect",
 	TOKEN_EVERY:       "every",
+	TOKEN_DELETE:      "delete",
 }
 
 func (t TokenType) String() string {
