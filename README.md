@@ -7,11 +7,11 @@ A beginner-friendly language that compiles to JavaScript
 ## Learn Quill
 
 
-1. **[Install Quill](https://quill.tradebuddy.dev/docs/getting-started)**
-2. **[Learn Quill Tutorial](https://quill.tradebuddy.dev/docs/learn)**
-3. **[Patterns & Best Practices](https://quill.tradebuddy.dev/docs/patterns)**
-4. **[Debugging & Common Mistakes](https://quill.tradebuddy.dev/docs/debugging)**
-5. **Build something** — [Web Server](https://quill.tradebuddy.dev/docs/web) · [Discord Bot](https://quill.tradebuddy.dev/docs/discord) · [Mobile App](https://quill.tradebuddy.dev/docs/expo) · [AI App](https://quill.tradebuddy.dev/docs/ai)
+1. [Install Quill](https://quill.tradebuddy.dev/docs/getting-started)
+2. [Learn Quill Tutorial](https://quill.tradebuddy.dev/docs/learn)
+3. [Patterns & Best Practices](https://quill.tradebuddy.dev/docs/patterns)
+4. [Debugging & Common Mistakes](https://quill.tradebuddy.dev/docs/debugging)
+5. Learn how to build something: [Web Server](https://quill.tradebuddy.dev/docs/web) · [Discord Bot](https://quill.tradebuddy.dev/docs/discord) · [Mobile App](https://quill.tradebuddy.dev/docs/expo) · [AI App](https://quill.tradebuddy.dev/docs/ai)
 
 ## Community
 
@@ -125,7 +125,7 @@ See the [AI docs](https://quill.tradebuddy.dev/docs/ai)
 
 ## AI & LLM Development
 
-Quill is the easiest language to build AI apps, agents, and LLM pipelines. Use any provider with the same simple syntax.
+Quill is the easiest language to build AI apps, agents, and LLM pipelines
 
 ### Multi-Provider LLM Support
 
@@ -151,7 +151,7 @@ answer is ask gemini "Write a haiku about coding"
 answer is ask ollama "Summarize this text"
 ```
 
-All providers accept the same options: `model`, `system`, `max_tokens`, and `temperature`.
+All providers accept the same options: `model`, `system`, `max_tokens`, and `temperature`
 
 ```
 answer is ask claude "Translate to French" with model "claude-sonnet-4-20250514" system "You are a translator" max_tokens 500 temperature 0.3
@@ -161,7 +161,7 @@ answer is ask ollama "Explain this code" with model "codellama"
 
 ### Streaming
 
-Use streaming for long responses or real-time output. Each `chunk` is a piece of the response as it arrives.
+Use streaming for long responses or real-time output. Each `chunk` is a piece of the response as it arrives
 
 ```
 stream claude "Write a short story about a robot":
@@ -173,7 +173,7 @@ stream openai "Explain gravity step by step" with model "gpt-4o":
 
 ### Structured Output
 
-Use `as {schema}` to get typed, structured data back from any provider. Supported types: `text`, `number`, `bool`, `list`.
+Use `as {schema}` to get typed, structured data back from any provider. Supported types: `text`, `number`, `bool`, `list`
 
 ```
 person is ask claude "Extract: John Smith is 30 years old" as {name: text, age: number, employed: bool}
@@ -188,7 +188,7 @@ for each tag in tags.tags:
 
 ### AI Agents
 
-Register tools as functions, then let an agent decide when to call them.
+Register tools as functions, then let an agent decide when to call them
 
 ```
 to searchWeb query:
@@ -203,7 +203,7 @@ say result
 
 ### Embeddings & Vector Search (RAG)
 
-Generate embeddings and build a searchable knowledge base with `VectorStore`.
+Generate embeddings and build a searchable knowledge base with `VectorStore`
 
 ```
 -- Generate an embedding vector
@@ -226,7 +226,7 @@ restored is VectorStore.fromJSON(saved)
 
 ### Document Processing
 
-Extract text from files, then chunk it for RAG pipelines.
+Extract text from files, then chunk it for RAG pipelines
 
 ```
 -- Supported formats: PDF, HTML, TXT, Markdown, DOCX
@@ -244,7 +244,7 @@ paragraphs are splitParagraphs(text)
 
 ### Full RAG Pipeline
 
-A complete extract, chunk, embed, search, and ask pipeline in one script.
+A complete extract, chunk, embed, search, and ask pipeline in one script
 
 ```
 -- 1. Extract text from a document
@@ -272,7 +272,7 @@ say answer
 
 ### Conversation History
 
-Maintain multi-turn conversations with any provider.
+Maintain multi-turn conversations with any provider
 
 ```
 convo is createConversation({provider: "claude"})
