@@ -107,6 +107,8 @@
         <li><a href="#testing-mocks">Testing mocks</a></li>
         <li><a href="#scoping">Variable scoping</a></li>
         <li><a href="#user-input">User input</a></li>
+        <li><a href="#template-engine">Template engine</a></li>
+        <li><a href="#utility-css">Utility CSS framework</a></li>
       </ul>
       <h4>Guides</h4>
       <ul>
@@ -2217,6 +2219,89 @@ reader.question(<span class="str">"How old are you? "</span>, <span class="kw">w
 
       <div class="callout callout-info">
         <strong>Note:</strong> The <code>ask</code> function requires <code>await</code> because reading user input is an asynchronous operation. The program pauses until the user types something and presses Enter.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- TEMPLATE ENGINE                                              -->
+      <!-- ============================================================ -->
+
+      <h2 id="template-engine">Built-in Template Engine</h2>
+      <p>Quill ships with a built-in template engine for generating HTML programmatically. Instead of concatenating strings or using a separate templating library, you can build type-safe HTML with plain Quill functions.</p>
+
+      <h3>Core functions</h3>
+      <ul>
+        <li><code><span class="fn">tag</span>(name, attrsOrChildren, children)</code> &mdash; Build an HTML tag. <code>name</code> is the element name, <code>attrsOrChildren</code> is an object of attributes <em>or</em> a string/array of children, and <code>children</code> is a string or array of child elements.</li>
+        <li><code><span class="fn">page</span>(options)</code> &mdash; Generate a full HTML page. Options: <code>title</code>, <code>body</code>, <code>styles</code>, <code>scripts</code>, <code>lang</code>, <code>charset</code>, <code>viewport</code>.</li>
+        <li><code><span class="fn">escapeHTML</span>(str)</code> &mdash; Escape HTML entities (<code>&amp;</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&quot;</code>, <code>&#39;</code>) for XSS protection.</li>
+        <li><code><span class="fn">eachItem</span>(items, fn)</code> &mdash; Map items to HTML strings and join them together.</li>
+        <li><code><span class="fn">showIf</span>(condition, content)</code> &mdash; Conditional HTML rendering. Returns <code>content</code> when <code>condition</code> is true, empty string otherwise.</li>
+        <li><code><span class="fn">layout</span>(name, templateFn)</code> &mdash; Register a reusable layout template.</li>
+        <li><code><span class="fn">renderLayout</span>(name, data)</code> &mdash; Render a registered layout with the given data.</li>
+        <li><code><span class="fn">partial</span>(name, templateFn)</code> &mdash; Register or render a partial template (reusable HTML fragments).</li>
+        <li><code><span class="fn">raw</span>(str)</code> &mdash; Bypass automatic escaping. <strong>Use with caution</strong> &mdash; only for trusted content.</li>
+      </ul>
+
+      <h3>Shorthand tag builders</h3>
+      <p>For convenience, Quill provides shorthand functions for common HTML elements. Each works exactly like <code>tag()</code> but with the element name pre-filled:</p>
+      <pre><code><span class="cmt">-- All of these shorthand builders are available:</span>
+div()  span()  h1()  h2()  h3()  p()  a()  img()
+ul()  ol()  li()  form()  input()  button()  label()  textarea()
+table()  tr()  th()  td()
+nav()  header()  footer()  section()  article()  main()</code></pre>
+
+      <h3>Example</h3>
+      <pre><code>items <span class="kw">is</span> [<span class="str">"Apple"</span>, <span class="str">"Banana"</span>, <span class="str">"Cherry"</span>]
+html <span class="kw">is</span> page({
+  title: <span class="str">"My Page"</span>,
+  body: tag(<span class="str">"div"</span>, {class: <span class="str">"container"</span>}, [
+    tag(<span class="str">"h1"</span>, <span class="str">"Hello from Quill!"</span>),
+    tag(<span class="str">"ul"</span>, eachItem(items, <span class="kw">with</span> item: tag(<span class="str">"li"</span>, item)))
+  ])
+})
+<span class="kw">say</span> html</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> Combine the template engine with <a href="#reactive-components">reactive components</a> for server-rendered pages that hydrate on the client, or use it standalone for static HTML generation.
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- UTILITY CSS FRAMEWORK                                        -->
+      <!-- ============================================================ -->
+
+      <h2 id="utility-css">Utility CSS Framework</h2>
+      <p>Quill includes a built-in Tailwind-style utility CSS framework. When you use <a href="#reactive-components">components</a>, the framework is auto-injected &mdash; no extra setup required. Apply utility classes via the <code>className</code> attribute.</p>
+
+      <h3>Available categories</h3>
+      <ul>
+        <li><strong>Layout:</strong> <code>flex</code>, <code>grid</code>, <code>block</code>, <code>hidden</code>, <code>inline-flex</code></li>
+        <li><strong>Flexbox:</strong> <code>flex-row</code>, <code>flex-col</code>, <code>flex-wrap</code>, <code>flex-1</code>, <code>items-center</code>, <code>justify-between</code>, <code>gap-*</code></li>
+        <li><strong>Grid:</strong> <code>grid-cols-1</code> through <code>grid-cols-12</code>, <code>col-span-*</code></li>
+        <li><strong>Spacing:</strong> <code>p-0</code> to <code>p-12</code>, <code>px-*</code>, <code>py-*</code>, <code>m-0</code> to <code>m-8</code>, <code>mx-auto</code>, <code>mt-*</code>, <code>mb-*</code></li>
+        <li><strong>Sizing:</strong> <code>w-full</code>, <code>h-screen</code>, <code>max-w-sm</code> to <code>max-w-7xl</code>, <code>min-h-screen</code></li>
+        <li><strong>Typography:</strong> <code>text-xs</code> to <code>text-6xl</code>, <code>font-bold</code>, <code>text-center</code>, <code>uppercase</code>, <code>truncate</code></li>
+        <li><strong>Colors:</strong> <code>text-{color}-{shade}</code>, <code>bg-{color}-{shade}</code> (gray, red, green, blue, indigo, purple, pink)</li>
+        <li><strong>Borders:</strong> <code>border</code>, <code>border-2</code>, <code>rounded</code> to <code>rounded-full</code>, <code>border-{color}</code></li>
+        <li><strong>Shadows:</strong> <code>shadow-sm</code> to <code>shadow-xl</code></li>
+        <li><strong>Transitions:</strong> <code>transition</code>, <code>transition-colors</code>, <code>duration-*</code></li>
+        <li><strong>Responsive:</strong> <code>sm:*</code>, <code>md:*</code>, <code>lg:*</code> prefixes</li>
+        <li><strong>Hover/Focus:</strong> <code>hover:bg-*</code>, <code>hover:text-*</code>, <code>focus:ring-*</code>, <code>focus:outline-none</code></li>
+        <li><strong>Pre-built components:</strong> <code>btn</code>, <code>btn-primary</code>, <code>btn-secondary</code>, <code>btn-success</code>, <code>btn-danger</code>, <code>btn-outline</code>, <code>btn-ghost</code>, <code>btn-sm</code>, <code>btn-lg</code>, <code>input</code>, <code>card</code>, <code>badge-*</code>, <code>alert-*</code>, <code>container</code></li>
+        <li><strong>Animations:</strong> <code>animate-spin</code>, <code>animate-pulse</code>, <code>animate-bounce</code>, <code>animate-fade-in</code>, <code>animate-slide-up</code></li>
+      </ul>
+
+      <h3>Example</h3>
+      <pre><code><span class="kw">component</span> Dashboard:
+  <span class="kw">to</span> render:
+    div className <span class="str">"container mx-auto p-8"</span>:
+      h1 className <span class="str">"text-3xl font-bold mb-6"</span>: <span class="str">"Dashboard"</span>
+      div className <span class="str">"grid grid-cols-3 gap-4"</span>:
+        div className <span class="str">"card shadow-md hover:shadow-lg transition"</span>:
+          h3 className <span class="str">"font-semibold mb-2"</span>: <span class="str">"Users"</span>
+          p className <span class="str">"text-2xl text-blue-600"</span>: <span class="str">"1,234"</span>
+      button className <span class="str">"btn btn-primary mt-4"</span>: <span class="str">"View All"</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Note:</strong> The utility CSS is automatically included when your file contains components. No import or configuration is needed. The classes follow Tailwind CSS naming conventions, so existing Tailwind knowledge transfers directly.
       </div>
 
       <h2 id="next-steps">Next Steps</h2>

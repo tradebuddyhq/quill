@@ -63,6 +63,7 @@
         <li><a href="#system">System &amp; environment</a></li>
         <li><a href="#concurrency">Concurrency</a></li>
         <li><a href="#templates">Templates</a></li>
+        <li><a href="#template-engine">Template engine</a></li>
         <li><a href="#database">Database</a></li>
         <li><a href="#iterators">Iterators &amp; lazy evaluation</a></li>
         <li><a href="#recipes">Recipes</a></li>
@@ -928,6 +929,102 @@ results <span class="kw">is</span> <span class="kw">await</span> parallel(
   count: <span class="num">5</span>
 })
 <span class="kw">say</span> msg   <span class="cmt">-- "Hello, Alice! You have 5 messages."</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- TEMPLATE ENGINE                              -->
+      <!-- ============================================ -->
+
+      <h2 id="template-engine">Template Engine</h2>
+      <p>Quill's built-in template engine provides functions for programmatically generating HTML. All output is escaped by default for XSS protection.</p>
+
+      <h3><code>tag(name, attrsOrChildren, children)</code> &mdash; Build an HTML tag</h3>
+      <p>Creates an HTML element. The second argument can be an object of attributes or a string/array of children. If an attributes object is provided, pass children as the third argument.</p>
+      <pre><code>tag(<span class="str">"div"</span>, {class: <span class="str">"box"</span>}, <span class="str">"Hello"</span>)
+<span class="cmt">-- &lt;div class="box"&gt;Hello&lt;/div&gt;</span>
+
+tag(<span class="str">"ul"</span>, [tag(<span class="str">"li"</span>, <span class="str">"One"</span>), tag(<span class="str">"li"</span>, <span class="str">"Two"</span>)])
+<span class="cmt">-- &lt;ul&gt;&lt;li&gt;One&lt;/li&gt;&lt;li&gt;Two&lt;/li&gt;&lt;/ul&gt;</span></code></pre>
+
+      <h3><code>page(options)</code> &mdash; Generate a full HTML page</h3>
+      <p>Produces a complete HTML document. Options: <code>title</code>, <code>body</code>, <code>styles</code>, <code>scripts</code>, <code>lang</code>, <code>charset</code>, <code>viewport</code>.</p>
+      <pre><code>html <span class="kw">is</span> page({
+  title: <span class="str">"My App"</span>,
+  body: tag(<span class="str">"h1"</span>, <span class="str">"Welcome"</span>),
+  styles: [<span class="str">"/css/app.css"</span>],
+  lang: <span class="str">"en"</span>
+})
+<span class="kw">say</span> html</code></pre>
+
+      <h3><code>escapeHTML(str)</code> &mdash; Escape HTML entities</h3>
+      <p>Converts <code>&amp;</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&quot;</code>, and <code>&#39;</code> to their HTML entity equivalents. Used internally by <code>tag()</code>, but available for manual use.</p>
+      <pre><code><span class="kw">say</span> escapeHTML(<span class="str">"&lt;script&gt;alert('xss')&lt;/script&gt;"</span>)
+<span class="cmt">-- "&amp;lt;script&amp;gt;alert(&amp;#39;xss&amp;#39;)&amp;lt;/script&amp;gt;"</span></code></pre>
+
+      <h3><code>eachItem(items, fn)</code> &mdash; Map items to HTML</h3>
+      <p>Applies a function to each item in a list, joins the resulting HTML strings, and returns them as a single string.</p>
+      <pre><code>fruits <span class="kw">is</span> [<span class="str">"Apple"</span>, <span class="str">"Banana"</span>, <span class="str">"Cherry"</span>]
+list <span class="kw">is</span> tag(<span class="str">"ul"</span>, eachItem(fruits, <span class="kw">with</span> f: tag(<span class="str">"li"</span>, f)))
+<span class="kw">say</span> list
+<span class="cmt">-- &lt;ul&gt;&lt;li&gt;Apple&lt;/li&gt;&lt;li&gt;Banana&lt;/li&gt;&lt;li&gt;Cherry&lt;/li&gt;&lt;/ul&gt;</span></code></pre>
+
+      <h3><code>showIf(condition, content)</code> &mdash; Conditional rendering</h3>
+      <p>Returns <code>content</code> when <code>condition</code> is true, or an empty string when false.</p>
+      <pre><code>isAdmin <span class="kw">is</span> <span class="bool">yes</span>
+html <span class="kw">is</span> showIf(isAdmin, tag(<span class="str">"span"</span>, {class: <span class="str">"badge"</span>}, <span class="str">"Admin"</span>))
+<span class="kw">say</span> html   <span class="cmt">-- &lt;span class="badge"&gt;Admin&lt;/span&gt;</span></code></pre>
+
+      <h3><code>layout(name, templateFn)</code> &mdash; Register a layout</h3>
+      <p>Registers a reusable layout template that can be rendered later with <code>renderLayout()</code>.</p>
+      <pre><code>layout(<span class="str">"main"</span>, <span class="kw">with</span> data:
+  page({
+    title: data.title,
+    body: tag(<span class="str">"div"</span>, {class: <span class="str">"wrapper"</span>}, [
+      tag(<span class="str">"header"</span>, tag(<span class="str">"h1"</span>, data.title)),
+      tag(<span class="str">"main"</span>, data.content),
+      tag(<span class="str">"footer"</span>, <span class="str">"&amp;copy; 2026"</span>)
+    ])
+  })
+)</code></pre>
+
+      <h3><code>renderLayout(name, data)</code> &mdash; Render a layout</h3>
+      <p>Renders a previously registered layout with the provided data object.</p>
+      <pre><code>html <span class="kw">is</span> renderLayout(<span class="str">"main"</span>, {
+  title: <span class="str">"About Us"</span>,
+  content: tag(<span class="str">"p"</span>, <span class="str">"We build great software."</span>)
+})
+<span class="kw">say</span> html</code></pre>
+
+      <h3><code>partial(name, templateFn)</code> &mdash; Register/render partials</h3>
+      <p>Register a reusable HTML fragment. Call with a function to register; call with just a name to render.</p>
+      <pre><code><span class="cmt">-- Register a partial</span>
+partial(<span class="str">"userCard"</span>, <span class="kw">with</span> user:
+  tag(<span class="str">"div"</span>, {class: <span class="str">"card"</span>}, [
+    tag(<span class="str">"h3"</span>, user.name),
+    tag(<span class="str">"p"</span>, user.email)
+  ])
+)
+
+<span class="cmt">-- Use the partial</span>
+html <span class="kw">is</span> partial(<span class="str">"userCard"</span>, {name: <span class="str">"Alice"</span>, email: <span class="str">"alice@example.com"</span>})</code></pre>
+
+      <h3><code>raw(str)</code> &mdash; Bypass escaping</h3>
+      <p>Marks a string as safe HTML, bypassing automatic escaping. <strong>Use with caution</strong> &mdash; only for content you fully trust.</p>
+      <pre><code>html <span class="kw">is</span> tag(<span class="str">"div"</span>, raw(<span class="str">"&lt;strong&gt;Already safe&lt;/strong&gt;"</span>))
+<span class="kw">say</span> html   <span class="cmt">-- &lt;div&gt;&lt;strong&gt;Already safe&lt;/strong&gt;&lt;/div&gt;</span></code></pre>
+
+      <h3>Shorthand tag builders</h3>
+      <p>Pre-filled versions of <code>tag()</code> for common HTML elements:</p>
+      <pre><code><span class="cmt">-- Available shorthand builders:</span>
+div()  span()  h1()  h2()  h3()  p()  a()  img()
+ul()  ol()  li()  form()  input()  button()  label()  textarea()
+table()  tr()  th()  td()
+nav()  header()  footer()  section()  article()  main()
+
+<span class="cmt">-- Usage is identical to tag():</span>
+div({class: <span class="str">"container"</span>}, [
+  h1(<span class="str">"Hello"</span>),
+  p({class: <span class="str">"lead"</span>}, <span class="str">"Welcome to Quill."</span>)
+])</code></pre>
 
       <!-- ============================================ -->
       <!-- DATABASE                                     -->

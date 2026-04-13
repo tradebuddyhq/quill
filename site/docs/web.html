@@ -52,6 +52,7 @@
         <li><a href="#middleware">Middleware</a></li>
         <li><a href="#static-files">Static files</a></li>
         <li><a href="#deployment">Deployment</a></li>
+        <li><a href="#server-block">Declarative server: block</a></li>
       </ul>
       <h4>Guides</h4>
       <ul>
@@ -415,6 +416,57 @@ CMD ["node", "server.js"]</code></pre>
 
       <pre><code>docker build -t my-api .
 docker run -d -p 3000:3000 --env-file .env my-api</code></pre>
+
+      <!-- ============================================ -->
+      <!-- DECLARATIVE SERVER BLOCK                     -->
+      <!-- ============================================ -->
+
+      <h2 id="server-block">Declarative <code>server:</code> Block</h2>
+
+      <p>In addition to the Express-style <code>app on get</code> syntax, Quill supports a declarative <code>server:</code> block for defining your entire server in a single, readable structure. This is ideal for smaller APIs or when you want a clean overview of all your routes.</p>
+
+      <pre><code><span class="kw">server</span>:
+  port <span class="kw">is</span> <span class="num">3000</span>
+
+  get <span class="str">"/"</span> <span class="kw">with</span> req res:
+    res.send(<span class="str">"Hello from Quill!"</span>)
+
+  get <span class="str">"/api/users"</span> <span class="kw">with</span> req res:
+    res.json([{name: <span class="str">"Alice"</span>}, {name: <span class="str">"Bob"</span>}])
+
+  post <span class="str">"/api/users"</span> <span class="kw">with</span> req res:
+    user <span class="kw">is</span> req.body
+    res.status(<span class="num">201</span>).json({created: user})
+
+  delete <span class="str">"/api/users/:id"</span> <span class="kw">with</span> req res:
+    res.json({deleted: req.params.id})</code></pre>
+
+      <p>The <code>server:</code> block automatically creates an Express app, configures JSON body parsing, and starts listening on the specified port. You do not need to call <code>createServer()</code> or <code>app.listen()</code> yourself.</p>
+
+      <h3>Adding middleware</h3>
+      <p>Use the <code>use</code> keyword inside the block to attach middleware:</p>
+
+      <pre><code><span class="kw">use</span> <span class="str">"cors"</span> <span class="kw">as</span> cors
+
+<span class="kw">server</span>:
+  port <span class="kw">is</span> <span class="num">3000</span>
+
+  <span class="kw">use</span> cors()
+
+  get <span class="str">"/"</span> <span class="kw">with</span> req res:
+    res.send(<span class="str">"Hello!"</span>)</code></pre>
+
+      <h3>Static files in a server block</h3>
+      <pre><code><span class="kw">server</span>:
+  port <span class="kw">is</span> <span class="num">3000</span>
+  static <span class="str">"public"</span>
+
+  get <span class="str">"/"</span> <span class="kw">with</span> req res:
+    res.send(<span class="str">"Home page"</span>)</code></pre>
+
+      <div class="callout callout-tip">
+        <strong>Tip:</strong> The <code>server:</code> block and the <code>app on get</code> style are interchangeable. Use whichever reads better for your project. The <code>server:</code> block is great for quick prototypes; the manual style gives you full control over Express configuration.
+      </div>
 
       <!-- ============================================ -->
       <!-- NEXT STEPS                                   -->

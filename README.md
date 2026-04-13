@@ -314,6 +314,9 @@ say reply2   -- "Your name is Alice"
 - **Nullable types** — `?number` shorthand for `number | nothing`
 - **Cron jobs** — `every 5 seconds:` / `every 1 minute:` / `every 2 hours:` scheduled tasks
 - **Reactive web framework** — Svelte-like `component`/`state`/`mount` with virtual DOM
+- **Server blocks** — `server:` block syntax for quick web servers without imports
+- **Built-in template engine** — `tag()`, `page()`, `layout()` with automatic XSS protection
+- **Utility CSS framework** — Tailwind-style classes auto-injected for components (flex, grid, responsive, pre-built components)
 - **Full-stack in one file** — `server:`, `database:`, `component:` blocks in a single `.quill` file
 - **Built-in crypto** — hash, HMAC, AES-256, X25519 DH, HKDF, Argon2, RSA, secure random — zero dependencies
 - **Binary serialization** — `defineSchema`/`encode`/`decode` for compact binary encoding
@@ -1136,6 +1139,50 @@ node server.js
 
 See the [Web Servers documentation](https://quill.tradebuddy.dev/docs/web)
 
+### Server Blocks
+
+For quick APIs, use `server:` block syntax instead of importing Express. Quill auto-detects server blocks and handles the setup for you:
+
+```
+server:
+  port is 3000
+
+  route get "/":
+    respond "Hello World"
+
+  route get "/api/users":
+    respond json {name: "Alice", age: 30}
+
+  route post "/api/users":
+    respond json {ok: yes} status 201
+```
+
+Run with `quill run app.quill` — no build step needed, server blocks are detected automatically.
+
+## Built-in Template Engine
+
+Generate HTML with built-in functions and automatic XSS protection:
+
+```
+-- Build HTML pages with tag()
+html is tag("div", {class: "container"}, [
+  tag("h1", "Welcome"),
+  tag("ul", eachItem(users, with user: tag("li", user.name)))
+])
+
+-- Generate full pages
+result is page({
+  title: "My Site",
+  styles: "body { font-family: sans-serif; }",
+  body: html
+})
+
+-- Conditional rendering
+showIf(isLoggedIn, tag("p", "Welcome back!"))
+```
+
+Available functions: `tag()`, `page()`, `escapeHTML()`, `eachItem()`, `showIf()`, `layout()`, `partial()`, `renderLayout()`, `raw()`
+
 ## Cloudflare Workers
 
 Quill compiles to Cloudflare Worker-compatible ES modules with the `worker on fetch` syntax
@@ -1221,6 +1268,46 @@ npx expo start
 Features: components with props, useState hooks, useEffect, StyleSheet, React Navigation (stack/tab/drawer), and all core React Native elements.
 
 See the [Expo documentation](https://quill.tradebuddy.dev/docs/expo)
+
+## Reactive Components
+
+Build interactive UIs with Svelte-like components. Define state, methods, and a render function — Quill handles the virtual DOM and re-rendering automatically:
+
+```
+component Counter:
+  state count is 0
+
+  to increment:
+    count is count + 1
+
+  to render:
+    div:
+      h1: "Count: {count}"
+      button onClick increment: "+"
+
+mount Counter to "#app"
+```
+
+Components support props, scoped styles, lifecycle hooks, and nested children. Build with `quill build app.quill --browser` or use `quill serve` for hot-reloading development.
+
+### Utility CSS Framework
+
+Components get automatic access to a Tailwind-style utility CSS framework. No imports or config needed — classes are auto-injected when you use components:
+
+```
+component App:
+  state items is []
+
+  to render:
+    div className "container mx-auto p-8":
+      h1 className "text-3xl font-bold mb-4": "Dashboard"
+      div className "grid grid-cols-3 gap-4":
+        div className "card shadow-md":
+          p className "text-gray-600": "Card 1"
+      button className "btn btn-primary": "Click me"
+```
+
+Includes flex, grid, spacing, typography, colors, borders, shadows, and animations. Responsive breakpoints (`sm:`, `md:`, `lg:`), hover/focus states, and pre-built components (`btn`, `input`, `card`, `badge`, `alert`, `container`) are all available out of the box.
 
 ## Cron Jobs
 
