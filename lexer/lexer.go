@@ -263,6 +263,9 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 		case ch == '}':
 			l.addToken(TOKEN_RBRACE, "}")
 			l.advance()
+		case ch == '=':
+			l.addToken(TOKEN_ASSIGN, "=")
+			l.advance()
 
 		default:
 			return nil, fmt.Errorf("line %d, column %d: unexpected character %q", l.line, l.col, string(ch))

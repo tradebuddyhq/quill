@@ -1474,6 +1474,7 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 	props := make(map[string]ast.Expression)
 
 	// Parse props: onClick handler, bind:value ident, key value, etc.
+	// Supports both space-separated (onClick increment) and = syntax (onClick=increment)
 	for p.check(lexer.TOKEN_IDENT) && !p.isAtEnd() {
 		propName := p.current().Value
 		// Check for bind:value pattern
@@ -1482,6 +1483,21 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			p.advance() // consume ":"
 			bindTarget := p.expect(lexer.TOKEN_IDENT)
 			props["bind:"+bindTarget.Value] = &ast.Identifier{Name: bindTarget.Value}
+			continue
+		}
+		// Check for prop=value syntax (e.g., onClick=increment, class="my-class")
+		if p.pos+2 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_ASSIGN {
+			p.advance() // consume prop name
+			p.advance() // consume "="
+			if p.check(lexer.TOKEN_IDENT) {
+				valTok := p.advance()
+				props[propName] = &ast.Identifier{Name: valTok.Value}
+			} else if p.check(lexer.TOKEN_STRING) {
+				valTok := p.advance()
+				props[propName] = &ast.StringLiteral{Value: valTok.Value}
+			} else {
+				break
+			}
 			continue
 		}
 		// Check if next token is an identifier (event handler or attr with value)

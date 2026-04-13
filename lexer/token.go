@@ -176,6 +176,9 @@ const (
 	// Delete keyword
 	TOKEN_DELETE
 
+	// Assignment
+	TOKEN_ASSIGN // =
+
 	// Delimiters
 	TOKEN_COLON
 	TOKEN_COMMA
@@ -316,6 +319,7 @@ var tokenNames = map[TokenType]string{
 	TOKEN_EFFECT:      "effect",
 	TOKEN_EVERY:       "every",
 	TOKEN_DELETE:      "delete",
+	TOKEN_ASSIGN:      "=",
 }
 
 func (t TokenType) String() string {

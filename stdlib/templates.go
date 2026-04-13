@@ -37,7 +37,12 @@ function tag(name, attrsOrChildren, children) {
 }
 
 // Build a full HTML page with head and body
-function page(options) {
+// Supports: page({title: "My Page", body: "..."}) or page("My Page", "...")
+function page(optionsOrTitle, bodyArg) {
+  var options = optionsOrTitle;
+  if (typeof optionsOrTitle === 'string') {
+    options = { title: optionsOrTitle, body: bodyArg || '' };
+  }
   var title = options.title || 'Quill App';
   var lang = options.lang || 'en';
   var head = options.head || '';
