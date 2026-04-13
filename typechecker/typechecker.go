@@ -78,10 +78,15 @@ type TypeAliasInfo struct {
 	Args     []string
 }
 
+// Scope represents a lexical scope with its own variable bindings.
+type Scope struct {
+	variables map[string]Type
+}
+
 // Checker performs type checking on Quill ASTs.
 type Checker struct {
 	diagnostics []TypeDiagnostic
-	variables   map[string]Type    // variable name -> type
+	scopes      []*Scope           // scope stack; last element is the current scope
 	functions   map[string]FuncSig // function name -> signature
 	types       map[string]bool    // defined type names (from describe/define)
 	traits      map[string]TraitInfo  // trait name -> trait info
@@ -101,8 +106,8 @@ type FuncSig struct {
 
 // New creates a new type checker.
 func New() *Checker {
-	return &Checker{
-		variables: make(map[string]Type),
+	c := &Checker{
+		scopes: []*Scope{{variables: make(map[string]Type)}},
 		functions: make(map[string]FuncSig),
 		types: map[string]bool{
 			"text": true, "number": true, "boolean": true,
@@ -114,6 +119,34 @@ func New() *Checker {
 		narrowings:  make(map[string]Type),
 		typeAliases: make(map[string]TypeAliasInfo),
 	}
+	return c
+}
+
+// pushScope pushes a new scope onto the scope stack.
+func (c *Checker) pushScope() {
+	c.scopes = append(c.scopes, &Scope{variables: make(map[string]Type)})
+}
+
+// popScope removes the top scope from the scope stack.
+func (c *Checker) popScope() {
+	if len(c.scopes) > 1 {
+		c.scopes = c.scopes[:len(c.scopes)-1]
+	}
+}
+
+// defineVar defines a variable in the current (top) scope.
+func (c *Checker) defineVar(name string, typ Type) {
+	c.scopes[len(c.scopes)-1].variables[name] = typ
+}
+
+// lookupVar looks up a variable by walking the scope chain from top to bottom.
+func (c *Checker) lookupVar(name string) (Type, bool) {
+	for i := len(c.scopes) - 1; i >= 0; i-- {
+		if t, ok := c.scopes[i].variables[name]; ok {
+			return t, true
+		}
+	}
+	return Type{}, false
 }
 
 // Check runs type checking and returns diagnostics.
@@ -131,7 +164,7 @@ func (c *Checker) Check(program *ast.Program) []TypeDiagnostic {
 					t = parseType(s.ParamTypes[i])
 				}
 				sig.Params = append(sig.Params, t)
-				c.variables[param] = t
+				c.defineVar(param, t)
 			}
 			if s.ReturnType != "" {
 				sig.ReturnType = parseType(s.ReturnType)
@@ -229,7 +262,7 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 	switch s := stmt.(type) {
 	case *ast.AssignStatement:
 		inferredType := c.inferType(s.Value)
-		c.variables[s.Name] = inferredType
+		c.defineVar(s.Name, inferredType)
 
 	case *ast.SayStatement:
 		c.inferType(s.Value) // just check for errors in the expression
@@ -243,66 +276,88 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 		// Type narrowing: if the condition is a type check, narrow the variable
 		if tc, ok := s.Condition.(*ast.TypeCheckExpr); ok {
 			if ident, ok := tc.Expr.(*ast.Identifier); ok {
-				// Save old type and apply narrowing
-				oldType, hadOld := c.variables[ident.Name]
+				// Save old narrowing and apply new one
+				oldNarrowing, hadOldNarrowing := c.narrowings[ident.Name]
 				c.narrowings[ident.Name] = Type{Name: tc.TypeName}
+				c.pushScope()
 				for _, stmt := range s.Body {
 					c.checkStmt(stmt)
 				}
-				// Restore
-				delete(c.narrowings, ident.Name)
-				if hadOld {
-					c.variables[ident.Name] = oldType
+				c.popScope()
+				// Restore narrowing
+				if hadOldNarrowing {
+					c.narrowings[ident.Name] = oldNarrowing
+				} else {
+					delete(c.narrowings, ident.Name)
 				}
 				// Check else-ifs and else without narrowing
 				for _, elif := range s.ElseIfs {
+					c.pushScope()
 					for _, stmt := range elif.Body {
 						c.checkStmt(stmt)
 					}
+					c.popScope()
 				}
-				for _, stmt := range s.Else {
-					c.checkStmt(stmt)
+				if len(s.Else) > 0 {
+					c.pushScope()
+					for _, stmt := range s.Else {
+						c.checkStmt(stmt)
+					}
+					c.popScope()
 				}
 				break
 			}
 		}
 
+		c.pushScope()
 		for _, stmt := range s.Body {
 			c.checkStmt(stmt)
 		}
+		c.popScope()
 		for _, elif := range s.ElseIfs {
+			c.pushScope()
 			for _, stmt := range elif.Body {
 				c.checkStmt(stmt)
 			}
+			c.popScope()
 		}
-		for _, stmt := range s.Else {
-			c.checkStmt(stmt)
+		if len(s.Else) > 0 {
+			c.pushScope()
+			for _, stmt := range s.Else {
+				c.checkStmt(stmt)
+			}
+			c.popScope()
 		}
 
 	case *ast.ForEachStatement:
 		iterType := c.inferType(s.Iterable)
+		c.pushScope()
 		if iterType.Name == "list" && iterType.Inner != "" {
-			c.variables[s.Variable] = Type{Name: iterType.Inner}
+			c.defineVar(s.Variable, Type{Name: iterType.Inner})
 		} else {
-			c.variables[s.Variable] = Type{Name: "any"}
+			c.defineVar(s.Variable, Type{Name: "any"})
 		}
 		for _, stmt := range s.Body {
 			c.checkStmt(stmt)
 		}
+		c.popScope()
 
 	case *ast.WhileStatement:
 		c.inferType(s.Condition)
+		c.pushScope()
 		for _, stmt := range s.Body {
 			c.checkStmt(stmt)
 		}
+		c.popScope()
 
 	case *ast.FuncDefinition:
+		c.pushScope()
 		// Register param types
 		for i, param := range s.Params {
 			if i < len(s.ParamTypes) && s.ParamTypes[i] != "" {
-				c.variables[param] = parseType(s.ParamTypes[i])
+				c.defineVar(param, parseType(s.ParamTypes[i]))
 			} else {
-				c.variables[param] = Type{Name: "any"}
+				c.defineVar(param, Type{Name: "any"})
 			}
 		}
 		// Check body
@@ -322,6 +377,7 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 				}
 			}
 		}
+		c.popScope()
 
 	case *ast.ReturnStatement:
 		c.inferType(s.Value)
@@ -330,15 +386,19 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 		c.inferType(s.Expr)
 
 	case *ast.TryCatchStatement:
+		c.pushScope()
 		for _, stmt := range s.TryBody {
 			c.checkStmt(stmt)
 		}
+		c.popScope()
+		c.pushScope()
 		if s.ErrorVar != "" {
-			c.variables[s.ErrorVar] = Type{Name: "text"}
+			c.defineVar(s.ErrorVar, Type{Name: "text"})
 		}
 		for _, stmt := range s.CatchBody {
 			c.checkStmt(stmt)
 		}
+		c.popScope()
 
 	case *ast.MatchStatement:
 		matchType := c.inferType(s.Value)
@@ -417,9 +477,9 @@ func (c *Checker) checkStmt(stmt ast.Statement) {
 				c.addError(s.Line, fmt.Sprintf("variable %q declared as %s but assigned %s",
 					s.Name, expected, inferredType))
 			}
-			c.variables[s.Name] = expected
+			c.defineVar(s.Name, expected)
 		} else {
-			c.variables[s.Name] = inferredType
+			c.defineVar(s.Name, inferredType)
 		}
 
 	case *ast.TraitDeclaration:
@@ -481,7 +541,7 @@ func (c *Checker) isEnumVariantMatch(expr ast.Expression, enumName string) bool 
 	}
 	// Check if the variable type matches the enum name
 	if ident, ok := expr.(*ast.Identifier); ok {
-		if t, ok := c.variables[ident.Name]; ok {
+		if t, ok := c.lookupVar(ident.Name); ok {
 			return t.Name == enumName
 		}
 	}
@@ -504,7 +564,7 @@ func (c *Checker) inferType(expr ast.Expression) Type {
 		if t, ok := c.narrowings[e.Name]; ok {
 			return t
 		}
-		if t, ok := c.variables[e.Name]; ok {
+		if t, ok := c.lookupVar(e.Name); ok {
 			return t
 		}
 		return Type{Name: "any"}

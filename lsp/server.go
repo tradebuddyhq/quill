@@ -20,6 +20,7 @@ type Server struct {
 	docs       *DocumentStore
 	hover      *HoverProvider
 	completion *CompletionProvider
+	definition *DefinitionProvider
 	shutdown   bool
 
 	// Cache parsed programs per URI
@@ -34,6 +35,7 @@ func Start() {
 		docs:       NewDocumentStore(),
 		hover:      NewHoverProvider(),
 		completion: NewCompletionProvider(),
+		definition: NewDefinitionProvider(),
 		programs:   make(map[string]*ast.Program),
 	}
 	s.run()
@@ -70,6 +72,8 @@ func (s *Server) handleMessage(msg *JSONRPCMessage) {
 		s.handleDidClose(msg)
 	case "textDocument/hover":
 		s.handleHover(msg)
+	case "textDocument/definition":
+		s.handleDefinition(msg)
 	case "textDocument/completion":
 		s.handleCompletion(msg)
 	default:
@@ -84,8 +88,9 @@ func (s *Server) handleMessage(msg *JSONRPCMessage) {
 func (s *Server) handleInitialize(msg *JSONRPCMessage) {
 	result := InitializeResult{
 		Capabilities: ServerCapabilities{
-			TextDocumentSync: 1, // Full sync
-			HoverProvider:    true,
+			TextDocumentSync:   1, // Full sync
+			HoverProvider:      true,
+			DefinitionProvider: true,
 			CompletionProvider: &CompletionOpt{
 				TriggerCharacters: []string{".", " "},
 				ResolveProvider:   false,
@@ -177,6 +182,33 @@ func (s *Server) handleHover(msg *JSONRPCMessage) {
 	}
 
 	resp := MakeResponse(msg.ID, hover)
+	WriteMessage(s.writer, resp)
+}
+
+func (s *Server) handleDefinition(msg *JSONRPCMessage) {
+	var params TextDocumentPositionParams
+	if err := json.Unmarshal(msg.Params, &params); err != nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	doc := s.docs.Get(params.TextDocument.URI)
+	if doc == nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	program := s.programs[params.TextDocument.URI]
+	loc := s.definition.GetDefinition(doc, params.Position, program, params.TextDocument.URI)
+	if loc == nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	resp := MakeResponse(msg.ID, loc)
 	WriteMessage(s.writer, resp)
 }
 

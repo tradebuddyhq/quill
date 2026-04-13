@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"quill/analyzer"
 	"quill/ast"
@@ -24,10 +25,74 @@ import (
 	"quill/typechecker"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
-const version = "0.2.0"
+const version = "0.10.1"
+
+// displayCompileError formats a compile error with source context and prints to stderr.
+// It extracts line/column from ParseError or falls back to a plain message.
+func displayCompileError(err error, source []byte, filename string) {
+	sourceLines := strings.Split(string(source), "\n")
+	// Try to extract line info from the error message
+	if pe, ok := err.(*parser.ParseError); ok {
+		de := quillerrors.DisplayError{
+			Line:    pe.Line,
+			Message: pe.Message,
+			Code:    "E001",
+		}
+		fmt.Fprint(os.Stderr, quillerrors.FormatError(de, sourceLines, filename, true))
+	} else {
+		// Try to parse "line N: message" or "line N, column M: message" from error string
+		msg := err.Error()
+		line, col, cleanMsg := parseErrorLocation(msg)
+		if line > 0 {
+			de := quillerrors.DisplayError{
+				Line:    line,
+				Column:  col,
+				Message: cleanMsg,
+				Code:    "E001",
+			}
+			fmt.Fprint(os.Stderr, quillerrors.FormatError(de, sourceLines, filename, true))
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		}
+	}
+}
+
+// parseErrorLocation extracts line, column, and message from error strings like
+// "line 5: message" or "line 5, column 10: message"
+func parseErrorLocation(msg string) (int, int, string) {
+	if !strings.HasPrefix(msg, "line ") {
+		return 0, 0, msg
+	}
+	rest := msg[5:]
+	line := 0
+	col := 0
+	i := 0
+	for i < len(rest) && rest[i] >= '0' && rest[i] <= '9' {
+		line = line*10 + int(rest[i]-'0')
+		i++
+	}
+	if line == 0 {
+		return 0, 0, msg
+	}
+	rest = rest[i:]
+	if strings.HasPrefix(rest, ", column ") {
+		rest = rest[9:]
+		j := 0
+		for j < len(rest) && rest[j] >= '0' && rest[j] <= '9' {
+			col = col*10 + int(rest[j]-'0')
+			j++
+		}
+		rest = rest[j:]
+	}
+	if strings.HasPrefix(rest, ": ") {
+		rest = rest[2:]
+	}
+	return line, col, rest
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -160,6 +225,14 @@ func main() {
 		}
 		bumpVersion(os.Args[2])
 
+	case "watch":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a file to watch")
+			fmt.Fprintln(os.Stderr, "Usage: quill watch <file.quill>")
+			os.Exit(1)
+		}
+		watchFile(os.Args[2])
+
 	case "serve":
 		serveApp()
 
@@ -259,6 +332,160 @@ func runFile(filename string) {
 	}
 }
 
+// watchFile watches a .quill file (and sibling .quill files) for changes,
+// automatically recompiling and re-running on each change.
+func watchFile(filename string) {
+	absPath, err := filepath.Abs(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Verify the file exists
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Error: file not found: %s\n", filename)
+		os.Exit(1)
+	}
+
+	sourceDir := filepath.Dir(absPath)
+
+	// Collect all .quill files in the same directory to watch
+	watchPaths := []string{absPath}
+	entries, err := os.ReadDir(sourceDir)
+	if err == nil {
+		for _, e := range entries {
+			if !e.IsDir() && filepath.Ext(e.Name()) == ".quill" {
+				full := filepath.Join(sourceDir, e.Name())
+				if full != absPath {
+					watchPaths = append(watchPaths, full)
+				}
+			}
+		}
+	}
+
+	// Handle Ctrl+C gracefully
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+	// Track modification times
+	modTimes := make(map[string]time.Time)
+	for _, p := range watchPaths {
+		if info, err := os.Stat(p); err == nil {
+			modTimes[p] = info.ModTime()
+		}
+	}
+
+	// Find JS runtime once
+	runtime := findRuntime()
+	if runtime == "" {
+		fmt.Fprintln(os.Stderr, "Error: no JavaScript runtime found")
+		fmt.Fprintln(os.Stderr, "Please install Node.js, Bun, or Deno")
+		os.Exit(1)
+	}
+
+	fmt.Printf("Watching %s (and %d sibling .quill files)\n", filename, len(watchPaths)-1)
+	fmt.Println("Press Ctrl+C to stop")
+	fmt.Println()
+
+	// compileAndRun compiles the main file and runs it, returning the process
+	compileAndRun := func() *exec.Cmd {
+		js := compile(absPath)
+
+		tmpFile, err := os.CreateTemp("", "quill-watch-*.js")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: could not create temp file: %s\n", err)
+			return nil
+		}
+		tmpFile.WriteString(js)
+		tmpFile.Close()
+
+		cmd := exec.Command(runtime, tmpFile.Name())
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		cmd.Dir = sourceDir
+		// Use a process group so we can kill child processes too
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+		if err := cmd.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting process: %s\n", err)
+			os.Remove(tmpFile.Name())
+			return nil
+		}
+
+		// Clean up temp file when process exits
+		go func() {
+			cmd.Wait()
+			os.Remove(tmpFile.Name())
+		}()
+
+		return cmd
+	}
+
+	killProcess := func(cmd *exec.Cmd) {
+		if cmd == nil || cmd.Process == nil {
+			return
+		}
+		// Kill the process group
+		syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	}
+
+	// Initial run
+	fmt.Printf("[%s] Starting %s\n", time.Now().Format("15:04:05"), filename)
+	currentCmd := compileAndRun()
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-sigCh:
+			fmt.Println("\nStopping...")
+			killProcess(currentCmd)
+			os.Exit(0)
+
+		case <-ticker.C:
+			changed := false
+			for _, p := range watchPaths {
+				info, err := os.Stat(p)
+				if err != nil {
+					continue
+				}
+				if prev, ok := modTimes[p]; ok {
+					if info.ModTime().After(prev) {
+						changed = true
+						modTimes[p] = info.ModTime()
+					}
+				} else {
+					modTimes[p] = info.ModTime()
+				}
+			}
+
+			// Also check for new .quill files
+			if entries, err := os.ReadDir(sourceDir); err == nil {
+				for _, e := range entries {
+					if !e.IsDir() && filepath.Ext(e.Name()) == ".quill" {
+						full := filepath.Join(sourceDir, e.Name())
+						if _, ok := modTimes[full]; !ok {
+							watchPaths = append(watchPaths, full)
+							if info, err := os.Stat(full); err == nil {
+								modTimes[full] = info.ModTime()
+							}
+							changed = true
+						}
+					}
+				}
+			}
+
+			if changed {
+				fmt.Printf("\n[%s] File changed, restarting...\n", time.Now().Format("15:04:05"))
+				killProcess(currentCmd)
+				currentCmd = compileAndRun()
+			}
+		}
+	}
+}
+
 func buildFile(filename string, browser bool) {
 	target := "node"
 	if browser {
@@ -344,14 +571,14 @@ func buildLLVM(filename string, base string) {
 	l := lexer.New(string(source))
 	tokens, err := l.Tokenize()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
 	p := parser.New(tokens)
 	program, err := p.Parse()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
@@ -429,7 +656,7 @@ func compileWithTarget(filename string, browser bool) string {
 	l := lexer.New(string(source))
 	tokens, err := l.Tokenize()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
@@ -437,7 +664,7 @@ func compileWithTarget(filename string, browser bool) string {
 	p := parser.New(tokens)
 	program, err := p.Parse()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
@@ -462,14 +689,14 @@ func compileWithSourceMap(filename string, browser bool) (string, string) {
 	l := lexer.New(string(source))
 	tokens, err := l.Tokenize()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
 	p := parser.New(tokens)
 	program, err := p.Parse()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
@@ -544,14 +771,14 @@ func formatFile(filename string) {
 	l := lexer.New(string(source))
 	tokens, err := l.Tokenize()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
 	p := parser.New(tokens)
 	program, err := p.Parse()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
@@ -579,7 +806,7 @@ func checkFile(filename string) {
 	l := lexer.New(sourceStr)
 	tokens, err := l.Tokenize()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
@@ -1084,14 +1311,14 @@ func runFileWithFullStack(filename string) {
 	l := lexer.New(string(source))
 	tokens, err := l.Tokenize()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
 	p := parser.New(tokens)
 	program, err := p.Parse()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
@@ -2009,14 +2236,14 @@ func buildExpo(filename string, base string) {
 	l := lexer.New(string(source))
 	tokens, err := l.Tokenize()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
 	p := parser.New(tokens)
 	program, err := p.Parse()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		displayCompileError(err, source, filename)
 		os.Exit(1)
 	}
 
