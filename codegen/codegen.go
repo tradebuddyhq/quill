@@ -135,6 +135,17 @@ func (g *Generator) Generate(program *ast.Program) string {
 	if g.hasComponents(program) {
 		out.WriteString(stdlib.FrameworkRuntime)
 		out.WriteString("\n")
+		// Include utility CSS framework for components
+		if g.browser {
+			out.WriteString(stdlib.GetUIRuntime())
+			out.WriteString("\n")
+		}
+	}
+
+	// Include template engine runtime if template functions are used
+	if strings.Contains(userCodeStr, "tag(") || strings.Contains(userCodeStr, "page(") || strings.Contains(userCodeStr, "escapeHTML(") || strings.Contains(userCodeStr, "layout(") || strings.Contains(userCodeStr, "partial(") || strings.Contains(userCodeStr, "eachItem(") || strings.Contains(userCodeStr, "showIf(") {
+		out.WriteString(stdlib.GetTemplateRuntime())
+		out.WriteString("\n")
 	}
 
 	// Include channel runtime if concurrency features are used

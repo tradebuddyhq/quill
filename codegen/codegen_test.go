@@ -1677,3 +1677,148 @@ func TestAskOllamaWithModelAndStructuredOutput(t *testing.T) {
 		t.Errorf("expected model llama3 in options, got:\n%s", output)
 	}
 }
+
+// --- Server Block Tests ---
+
+func TestServerBlockCompiles(t *testing.T) {
+	input := "server:\n  port is 8080\n\n  route get \"/\":\n    respond \"Hello\"\n"
+	_, err := compile(input)
+	if err != nil {
+		t.Fatalf("server block should compile, got error: %v", err)
+	}
+}
+
+func TestServerBlockWithRoutes(t *testing.T) {
+	input := "server:\n  port is 3000\n\n  route get \"/api/users\":\n    respond json {name: \"Alice\"}\n\n  route post \"/api/users\":\n    respond json {ok: yes}\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// In build mode, server block is a comment placeholder
+	if !strings.Contains(output, "server block") {
+		t.Errorf("expected server block comment, got:\n%s", output)
+	}
+}
+
+// --- Delete Statement Tests ---
+
+func TestDeleteStatement(t *testing.T) {
+	input := "obj is {name: \"test\", age: 25}\ndelete obj.age\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "delete obj.age;") {
+		t.Errorf("expected 'delete obj.age;', got:\n%s", output)
+	}
+}
+
+// --- Template Engine Tests ---
+
+func TestTemplateEngineInjection(t *testing.T) {
+	input := "html is tag(\"div\", \"hello\")\nsay html\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function tag(") {
+		t.Errorf("expected template runtime to be injected, got:\n%s", output)
+	}
+	if !strings.Contains(output, "function escapeHTML(") {
+		t.Errorf("expected escapeHTML function, got:\n%s", output)
+	}
+	if !strings.Contains(output, "function page(") {
+		t.Errorf("expected page function, got:\n%s", output)
+	}
+}
+
+func TestTemplatePageFunction(t *testing.T) {
+	input := "html is page({title: \"Test\", body: \"Hello\"})\nsay html\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "function page(") {
+		t.Errorf("expected page function injection, got:\n%s", output)
+	}
+}
+
+// --- Component Tests ---
+
+func compileBrowser(input string) (string, error) {
+	l := lexer.New(input)
+	tokens, err := l.Tokenize()
+	if err != nil {
+		return "", err
+	}
+	p := parser.New(tokens)
+	prog, err := p.Parse()
+	if err != nil {
+		return "", err
+	}
+	gen := NewBrowser()
+	return gen.Generate(prog), nil
+}
+
+func TestComponentWithUIClasses(t *testing.T) {
+	input := "component App:\n  state msg is \"hi\"\n\n  to render:\n    div className \"flex p-4\":\n      h1: \"Hello\"\n\nmount App to \"#app\"\n"
+	output, err := compileBrowser(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Should include UI CSS framework
+	if !strings.Contains(output, "Quill UI") {
+		t.Errorf("expected Quill UI CSS injection, got:\n%s", output[:min(500, len(output))])
+	}
+	// Should include component framework
+	if !strings.Contains(output, "__quill_mount") {
+		t.Errorf("expected __quill_mount function, got:\n%s", output[:min(500, len(output))])
+	}
+	// Should have className prop
+	if !strings.Contains(output, `className: "flex p-4"`) {
+		t.Errorf("expected className prop, got:\n%s", output)
+	}
+}
+
+func TestArrowFunctionObjectWrap(t *testing.T) {
+	input := "result is items.map(with item: {id: item})\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "=> ({") {
+		t.Errorf("expected arrow function with wrapped object literal, got:\n%s", output)
+	}
+}
+
+func TestBrowserNoRequireFS(t *testing.T) {
+	input := "say \"hello\"\n"
+	output, err := compileBrowser(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(output, "require('fs')") {
+		t.Errorf("browser mode should not contain require('fs'), got:\n%s", output[:min(500, len(output))])
+	}
+}
+
+func TestStringEscapeSequences(t *testing.T) {
+	input := "msg is \"Hello\\nWorld\"\nsay msg\n"
+	output, err := compile(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(output, `"Hello\\nWorld"`) {
+		t.Errorf("\\n should not be double-escaped, got:\n%s", output)
+	}
+	if !strings.Contains(output, `"Hello\nWorld"`) {
+		t.Errorf("expected single-escaped \\n, got:\n%s", output)
+	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
