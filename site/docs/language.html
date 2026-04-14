@@ -263,6 +263,55 @@ sentence <span class="kw">is</span> <span class="str">"I have 3 cats."</span>   
       <pre><code><span class="kw">say</span> <span class="str">"She said \"hello\" to me"</span>   <span class="cmt">-- She said "hello" to me</span>
 <span class="kw">say</span> <span class="str">"Line one\nLine two"</span>         <span class="cmt">-- prints on two separate lines</span></code></pre>
 
+      <h3>Multiline Strings</h3>
+      <p>For text that spans multiple lines, use triple quotes (<code>"""</code>):</p>
+      <pre><code>poem <span class="kw">is</span> <span class="str">"""
+  Roses are red,
+  Violets are blue,
+  Quill is great,
+  And so are you.
+"""</span>
+
+<span class="kw">say</span> poem</code></pre>
+
+      <p>Triple-quoted strings preserve newlines and indentation. They are useful for:</p>
+      <ul>
+        <li>Long text blocks (poems, stories, templates)</li>
+        <li>SQL queries or code snippets</li>
+        <li>Multi-line messages or emails</li>
+        <li>Any text where readability matters</li>
+      </ul>
+
+      <pre><code><span class="cmt">-- SQL query</span>
+query <span class="kw">is</span> <span class="str">"""
+  SELECT name, email
+  FROM users
+  WHERE active = true
+  ORDER BY name
+"""</span>
+
+<span class="cmt">-- HTML template</span>
+html <span class="kw">is</span> <span class="str">"""
+  &lt;div class="card"&gt;
+    &lt;h2&gt;{title}&lt;/h2&gt;
+    &lt;p&gt;{description}&lt;/p&gt;
+  &lt;/div&gt;
+"""</span>
+
+<span class="cmt">-- Multi-line error message</span>
+message <span class="kw">is</span> <span class="str">"""
+  Something went wrong!
+
+  Please check:
+  - Your internet connection
+  - Your API key
+  - The server status
+"""</span></code></pre>
+
+      <div class="callout callout-info">
+        <strong>Under the hood:</strong> Multiline strings compile to JavaScript template literals (backticks). String interpolation with <code>{variable}</code> works inside them, just like regular strings.
+      </div>
+
       <h3>Numbers</h3>
       <p>Numbers in Quill work like you would expect. They can be whole numbers (integers) or decimals:</p>
       <pre><code>wholeNumber <span class="kw">is</span> <span class="num">42</span>

@@ -303,9 +303,10 @@ say reply2   -- "Your name is Alice"
 - **Lazy evaluation** — `range(1, 1000000) | filter | map_list | take 10 | collect`
 - **Object literals** — `{name: "Alice", age: 30}`, computed properties `{[key]: "value"}`
 - **Spread operator** — `...items` for expanding lists
+- **Multiline strings** — `"""..."""` triple-quoted strings for multi-line text, compiled to JS template literals
 - **String interpolation** — `"Hello {name}!"`, tagged templates `` query`SELECT * FROM users WHERE age > {min}` ``
 - **Break/continue** — loop control flow
-- **60+ built-in functions** — `sort()`, `filter()`, `map_list()`, `hash()`, `uuid()`, and more
+- **130+ built-in functions** — `sort()`, `filter()`, `map_list()`, `hash()`, `uuid()`, `regex()`, `chart()`, `drawCircle()`, and more
 - **Async/await** — `data is await fetchJSON("url")`, cancellation (`cancel task`), async iteration (`for await each chunk in stream:`), `parallel settled:` (allSettled)
 - **Import system** — `use "express" as app` or `from "express" use Router, json`
 - **Type utilities** — `type X is Partial of Y`, `Omit`, `Pick`, `Record`, `Readonly`, `Required`
@@ -330,7 +331,7 @@ say reply2   -- "Your name is Alice"
 - **Type checker** — `quill check` catches type errors before you run
 - **Static analyzer** — detects unused variables, infinite loops, bad patterns
 - **Code formatter** — `quill fmt` for consistent style
-- **Built-in testing** — `test` and `expect` keywords, `quill test --coverage` for coverage reports
+- **Built-in testing** — `test` and `expect` keywords, `quill test --coverage` for coverage reports, `quill test --watch` for auto-rerun on save
 - **Docs generator** — `quill docs` generates styled HTML documentation
 - **Package manager** — `quill add express`, `quill remove express`
 - **Interactive tutorial** — `quill learn` — 10 hands-on lessons right in your terminal
@@ -385,6 +386,7 @@ say reply2   -- "Your name is Alice"
 | `quill build file.quill --wasm` | Compile as WASM-ready module |
 | `quill build file.quill --standalone` | Compile as standalone executable |
 | `quill test file.quill` | Run tests |
+| `quill test --watch` | Re-run tests automatically on file changes |
 | `quill fmt file.quill` | Format source code |
 | `quill check file.quill` | Type check and lint |
 | `quill docs file.quill` | Generate HTML documentation |
@@ -546,7 +548,7 @@ server.get("/", "Hello from Quill!")
 server.listen(3000)
 ```
 
-### Standard Library (60+ functions)
+### Standard Library (130+ functions)
 ```
 -- Lists
 length(items)              sort(items)
@@ -590,6 +592,25 @@ fileInfo("file.txt")       fileExists("file.txt")
 
 -- HTTP
 fetchJSON("url")           postJSON("url", body)
+putJSON("url", body)       patchJSON("url", body)
+deleteJSON("url")          sortBy(list, "field")
+
+-- Number Formatting
+formatNumber(1234567)      toFixed(3.14, 2)
+percent(0.75)              currency(9.99, "$")
+ordinal(1)                 clamp(150, 0, 100)
+lerp(0, 100, 0.5)          mapRange(50, 0, 100, 0, 1)
+
+-- Regex
+regex("\\d+", "gi")        matches(text, pattern)
+matchGroups(text, pattern)  matchFirst(text, pattern)
+
+-- Drawing & Charts
+drawCircle(200, 200, 50, "blue")
+drawRect(100, 100, 80, 60, "red")
+drawLine(0, 0, 400, 400, "green")
+drawText(150, 50, "Hello!", "black")
+chart(data, "bar", "Sales")
 
 -- Crypto & Encoding
 hash("text")               uuid()
@@ -600,6 +621,7 @@ today()    now()    timestamp()    formatDate(d, "YYYY-MM-DD")
 
 -- System
 env("HOME")    platform()    run("ls")    args()
+env("PORT", "3000")        -- with fallback default
 ```
 
 ### Reactive Web Components

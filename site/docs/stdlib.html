@@ -59,7 +59,9 @@
         <li><a href="#date-time">Date &amp; time</a></li>
         <li><a href="#web-http">Web &amp; HTTP</a></li>
         <li><a href="#crypto">Crypto &amp; encoding</a></li>
+        <li><a href="#number-formatting">Number formatting</a></li>
         <li><a href="#patterns">Patterns &amp; RegExp</a></li>
+        <li><a href="#drawing">Drawing &amp; Charts</a></li>
         <li><a href="#system">System &amp; environment</a></li>
         <li><a href="#concurrency">Concurrency</a></li>
         <li><a href="#templates">Templates</a></li>
@@ -114,7 +116,7 @@
 
     <main class="docs-content">
       <h1>Standard Library</h1>
-      <p>Quill comes with <strong>60+ built-in functions</strong> that are available everywhere &mdash; no imports needed. This page documents every function with plain English explanations and practical examples.</p>
+      <p>Quill comes with <strong>130+ built-in functions</strong> that are available everywhere &mdash; no imports needed. This page documents every function with plain English explanations and practical examples.</p>
 
       <div class="callout callout-info">
         <strong>New to programming?</strong> Think of the standard library as a toolbox. Just like a carpenter has a hammer, saw, and measuring tape, Quill gives you ready-made tools for working with text, lists, numbers, files, and more. You don't need to build these tools yourself &mdash; they're already here for you.
@@ -160,7 +162,19 @@
           </tr>
           <tr style="border-bottom: 1px solid var(--border);">
             <td style="padding: 8px;"><a href="#web-http">HTTP / Fetch</a></td>
-            <td style="padding: 8px;"><code>fetch</code>, <code>fetchJSON</code>, <code>serve</code></td>
+            <td style="padding: 8px;"><code>fetch</code>, <code>fetchJSON</code>, <code>serve</code>, <code>putJSON</code>, <code>patchJSON</code>, <code>deleteJSON</code>, <code>sortBy</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#number-formatting">Number Formatting</a></td>
+            <td style="padding: 8px;"><code>formatNumber</code>, <code>toFixed</code>, <code>percent</code>, <code>currency</code>, <code>ordinal</code>, <code>clamp</code>, <code>lerp</code>, <code>mapRange</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#drawing">Drawing &amp; Charts</a></td>
+            <td style="padding: 8px;"><code>drawCircle</code>, <code>drawRect</code>, <code>drawLine</code>, <code>drawText</code>, <code>chart</code>, <code>showCanvas</code></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 8px;"><a href="#patterns">Patterns &amp; RegExp</a></td>
+            <td style="padding: 8px;"><code>matches</code>, <code>matchesPattern</code>, <code>replacePattern</code>, <code>regex</code>, <code>matchGroups</code>, <code>matchFirst</code></td>
           </tr>
           <tr style="border-bottom: 1px solid var(--border);">
             <td style="padding: 8px;"><a href="#system">Environment</a></td>
@@ -385,6 +399,15 @@ adults <span class="kw">is</span> countWhere(ages, <span class="kw">with</span> 
 teams <span class="kw">is</span> groupBy(people, <span class="kw">with</span> p: p.dept)
 <span class="cmt">-- { engineering: [{...}, {...}], design: [{...}] }</span></code></pre>
 
+      <h3><code>sortBy(list, field)</code> &mdash; Sort by a field</h3>
+      <p>Sorts a list of objects by a given field name.</p>
+      <pre><code>users <span class="kw">are</span> [{name: <span class="str">"Charlie"</span>, age: <span class="num">30</span>}, {name: <span class="str">"Alice"</span>, age: <span class="num">25</span>}, {name: <span class="str">"Bob"</span>, age: <span class="num">35</span>}]
+sorted <span class="kw">is</span> <span class="fn">sortBy</span>(users, <span class="str">"name"</span>)
+<span class="cmt">-- [{name: "Alice", age: 25}, {name: "Charlie", age: 30}, {name: "Bob", age: 35}]</span>
+
+sorted <span class="kw">is</span> <span class="fn">sortBy</span>(users, <span class="str">"age"</span>)
+<span class="cmt">-- [{name: "Alice", age: 25}, {name: "Charlie", age: 30}, {name: "Bob", age: 35}]</span></code></pre>
+
       <!-- ============================================ -->
       <!-- WORKING WITH TEXT                             -->
       <!-- ============================================ -->
@@ -512,6 +535,51 @@ card <span class="kw">is</span> randomInt(<span class="num">1</span>, <span clas
 <span class="kw">say</span> typeOf(<span class="num">42</span>)        <span class="cmt">-- "number"</span>
 <span class="kw">say</span> typeOf([<span class="num">1</span>,<span class="num">2</span>])    <span class="cmt">-- "list"</span>
 <span class="kw">say</span> typeOf(nothing)   <span class="cmt">-- "nothing"</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- NUMBER FORMATTING                             -->
+      <!-- ============================================ -->
+
+      <h2 id="number-formatting">Number Formatting</h2>
+      <p>Format numbers for display &mdash; add commas, decimal places, percentages, currency symbols, and more. Also includes utility functions for clamping and interpolation.</p>
+
+      <h3><code>formatNumber(n)</code> &mdash; Format with locale separators</h3>
+      <p>Formats a number with commas (or your locale's separator) for readability.</p>
+      <pre><code><span class="kw">say</span> <span class="fn">formatNumber</span>(<span class="num">1234567</span>)   <span class="cmt">-- "1,234,567"</span></code></pre>
+
+      <h3><code>toFixed(n, digits)</code> &mdash; Fixed decimal places</h3>
+      <p>Returns a text representation of a number with exactly the specified number of decimal places.</p>
+      <pre><code><span class="kw">say</span> <span class="fn">toFixed</span>(<span class="num">3.14159</span>, <span class="num">2</span>)   <span class="cmt">-- "3.14"</span></code></pre>
+
+      <h3><code>percent(n)</code> &mdash; Convert to percentage</h3>
+      <p>Converts a decimal number to a percentage string.</p>
+      <pre><code><span class="kw">say</span> <span class="fn">percent</span>(<span class="num">0.75</span>)   <span class="cmt">-- "75%"</span></code></pre>
+
+      <h3><code>currency(n, symbol)</code> &mdash; Format as currency</h3>
+      <p>Formats a number as currency with an optional symbol (defaults to <code>"$"</code>).</p>
+      <pre><code><span class="kw">say</span> <span class="fn">currency</span>(<span class="num">9.99</span>, <span class="str">"$"</span>)     <span class="cmt">-- "$9.99"</span>
+<span class="kw">say</span> <span class="fn">currency</span>(<span class="num">1234.5</span>)         <span class="cmt">-- "$1,234.50"</span></code></pre>
+
+      <h3><code>ordinal(n)</code> &mdash; Add ordinal suffix</h3>
+      <p>Returns a number with its ordinal suffix (st, nd, rd, th).</p>
+      <pre><code><span class="kw">say</span> <span class="fn">ordinal</span>(<span class="num">1</span>)    <span class="cmt">-- "1st"</span>
+<span class="kw">say</span> <span class="fn">ordinal</span>(<span class="num">2</span>)    <span class="cmt">-- "2nd"</span>
+<span class="kw">say</span> <span class="fn">ordinal</span>(<span class="num">3</span>)    <span class="cmt">-- "3rd"</span>
+<span class="kw">say</span> <span class="fn">ordinal</span>(<span class="num">11</span>)   <span class="cmt">-- "11th"</span></code></pre>
+
+      <h3><code>clamp(n, min, max)</code> &mdash; Constrain to range</h3>
+      <p>Constrains a number to be within a given range. If the number is below <code>min</code>, returns <code>min</code>. If above <code>max</code>, returns <code>max</code>.</p>
+      <pre><code><span class="kw">say</span> <span class="fn">clamp</span>(<span class="num">150</span>, <span class="num">0</span>, <span class="num">100</span>)   <span class="cmt">-- 100</span>
+<span class="kw">say</span> <span class="fn">clamp</span>(<span class="num">-5</span>, <span class="num">0</span>, <span class="num">100</span>)    <span class="cmt">-- 0</span></code></pre>
+
+      <h3><code>lerp(start, end, t)</code> &mdash; Linear interpolation</h3>
+      <p>Linearly interpolates between <code>start</code> and <code>end</code> by the factor <code>t</code> (where 0 = start, 1 = end).</p>
+      <pre><code><span class="kw">say</span> <span class="fn">lerp</span>(<span class="num">0</span>, <span class="num">100</span>, <span class="num">0.5</span>)    <span class="cmt">-- 50</span>
+<span class="kw">say</span> <span class="fn">lerp</span>(<span class="num">0</span>, <span class="num">100</span>, <span class="num">0.25</span>)   <span class="cmt">-- 25</span></code></pre>
+
+      <h3><code>mapRange(value, inMin, inMax, outMin, outMax)</code> &mdash; Map from one range to another</h3>
+      <p>Maps a value from one range to another. Useful for converting between different scales.</p>
+      <pre><code><span class="kw">say</span> <span class="fn">mapRange</span>(<span class="num">50</span>, <span class="num">0</span>, <span class="num">100</span>, <span class="num">0</span>, <span class="num">1</span>)   <span class="cmt">-- 0.5</span></code></pre>
 
       <!-- ============================================ -->
       <!-- OBJECTS & DATA                               -->
@@ -728,6 +796,20 @@ nextWeek <span class="kw">is</span> addDays(today(), <span class="num">7</span>)
   email: <span class="str">"alice@example.com"</span>
 })</code></pre>
 
+      <h3><code>putJSON(url, body)</code> &mdash; Update an existing resource (full replacement)</h3>
+      <pre><code>result <span class="kw">is</span> <span class="kw">await</span> <span class="fn">putJSON</span>(<span class="str">"https://api.example.com/users/1"</span>, {
+  name: <span class="str">"Alice Updated"</span>,
+  email: <span class="str">"alice@new.com"</span>
+})</code></pre>
+
+      <h3><code>patchJSON(url, body)</code> &mdash; Partially update a resource</h3>
+      <pre><code>result <span class="kw">is</span> <span class="kw">await</span> <span class="fn">patchJSON</span>(<span class="str">"https://api.example.com/users/1"</span>, {
+  email: <span class="str">"alice@new.com"</span>
+})</code></pre>
+
+      <h3><code>deleteJSON(url)</code> &mdash; Delete a resource</h3>
+      <pre><code>result <span class="kw">is</span> <span class="kw">await</span> <span class="fn">deleteJSON</span>(<span class="str">"https://api.example.com/users/1"</span>)</code></pre>
+
       <h3><code>createServer()</code> &mdash; Build a web server</h3>
       <p>Creates an HTTP server with routing. This is how you build web applications and APIs with Quill.</p>
       <pre><code>server <span class="kw">is</span> createServer()
@@ -810,26 +892,95 @@ sig <span class="kw">is</span> hmac(<span class="str">"my data"</span>, <span cl
       <h2 id="patterns">Patterns &amp; RegExp</h2>
       <p>Search and replace using patterns (regular expressions). Patterns are like wildcards on steroids &mdash; they let you match complex text patterns.</p>
 
-      <h3><code>matches(text, pattern)</code> &mdash; Find all matches</h3>
-      <p>Returns a list of all parts of the text that match the pattern.</p>
+      <h3><code>matches(text, pattern, flags)</code> &mdash; Find all matches</h3>
+      <p>Returns a list of all parts of the text that match the pattern. The optional <code>flags</code> parameter accepts regex flags like <code>"i"</code> (case-insensitive) or <code>"g"</code> (global).</p>
       <pre><code><span class="cmt">-- Find all numbers in text</span>
-<span class="kw">say</span> matches(<span class="str">"I have 3 cats and 2 dogs"</span>, <span class="str">"\\d+"</span>)
+<span class="kw">say</span> <span class="fn">matches</span>(<span class="str">"I have 3 cats and 2 dogs"</span>, <span class="str">"\\d+"</span>)
 <span class="cmt">-- ["3", "2"]</span>
 
 <span class="cmt">-- Find all email-like patterns</span>
-<span class="kw">say</span> matches(<span class="str">"Contact alice@test.com or bob@test.com"</span>, <span class="str">"\\w+@\\w+\\.\\w+"</span>)
-<span class="cmt">-- ["alice@test.com", "bob@test.com"]</span></code></pre>
+<span class="kw">say</span> <span class="fn">matches</span>(<span class="str">"Contact alice@test.com or bob@test.com"</span>, <span class="str">"\\w+@\\w+\\.\\w+"</span>)
+<span class="cmt">-- ["alice@test.com", "bob@test.com"]</span>
 
-      <h3><code>matchesPattern(text, pattern)</code> &mdash; Test if text matches</h3>
-      <p>Returns <code>yes</code> or <code>no</code> based on whether the text matches the pattern.</p>
-      <pre><code><span class="kw">say</span> matchesPattern(<span class="str">"hello123"</span>, <span class="str">"\\d+"</span>)   <span class="cmt">-- true (contains digits)</span>
-<span class="kw">say</span> matchesPattern(<span class="str">"hello"</span>, <span class="str">"\\d+"</span>)      <span class="cmt">-- false (no digits)</span></code></pre>
+<span class="cmt">-- Case-insensitive matching</span>
+<span class="kw">say</span> <span class="fn">matches</span>(<span class="str">"Hello HELLO hello"</span>, <span class="str">"hello"</span>, <span class="str">"gi"</span>)
+<span class="cmt">-- ["Hello", "HELLO", "hello"]</span></code></pre>
 
-      <h3><code>replacePattern(text, pattern, replacement)</code></h3>
-      <p>Replaces all matches of a pattern with the replacement text.</p>
+      <h3><code>matchesPattern(text, pattern, flags)</code> &mdash; Test if text matches</h3>
+      <p>Returns <code>yes</code> or <code>no</code> based on whether the text matches the pattern. The optional <code>flags</code> parameter accepts regex flags.</p>
+      <pre><code><span class="kw">say</span> <span class="fn">matchesPattern</span>(<span class="str">"hello123"</span>, <span class="str">"\\d+"</span>)   <span class="cmt">-- true (contains digits)</span>
+<span class="kw">say</span> <span class="fn">matchesPattern</span>(<span class="str">"hello"</span>, <span class="str">"\\d+"</span>)      <span class="cmt">-- false (no digits)</span></code></pre>
+
+      <h3><code>replacePattern(text, pattern, replacement, flags)</code></h3>
+      <p>Replaces all matches of a pattern with the replacement text. The optional <code>flags</code> parameter accepts regex flags.</p>
       <pre><code><span class="cmt">-- Remove all digits</span>
-<span class="kw">say</span> replacePattern(<span class="str">"abc123def456"</span>, <span class="str">"\\d+"</span>, <span class="str">""</span>)
-<span class="cmt">-- "abcdef"</span></code></pre>
+<span class="kw">say</span> <span class="fn">replacePattern</span>(<span class="str">"abc123def456"</span>, <span class="str">"\\d+"</span>, <span class="str">""</span>)
+<span class="cmt">-- "abcdef"</span>
+
+<span class="cmt">-- Case-insensitive replace</span>
+<span class="kw">say</span> <span class="fn">replacePattern</span>(<span class="str">"Hello HELLO"</span>, <span class="str">"hello"</span>, <span class="str">"hi"</span>, <span class="str">"gi"</span>)
+<span class="cmt">-- "hi hi"</span></code></pre>
+
+      <h3><code>regex(pattern, flags)</code> &mdash; Create a regex object</h3>
+      <p>Creates a reusable regex object with the given pattern and flags.</p>
+      <pre><code>pattern <span class="kw">is</span> <span class="fn">regex</span>(<span class="str">"\\d+"</span>, <span class="str">"gi"</span>)
+<span class="kw">say</span> pattern   <span class="cmt">-- a regex object</span></code></pre>
+
+      <h3><code>matchGroups(text, pattern, flags)</code> &mdash; Get capture group matches</h3>
+      <p>Returns the capture group matches from a pattern. Useful for extracting structured data from text.</p>
+      <pre><code>result <span class="kw">is</span> <span class="fn">matchGroups</span>(<span class="str">"2026-04-14"</span>, <span class="str">"(\\d{4})-(\\d{2})-(\\d{2})"</span>)
+<span class="cmt">-- ["2026", "04", "14"]</span></code></pre>
+
+      <h3><code>matchFirst(text, pattern, flags)</code> &mdash; Get the first match only</h3>
+      <p>Returns just the first match of a pattern in the text, or <code>nothing</code> if no match is found.</p>
+      <pre><code>first <span class="kw">is</span> <span class="fn">matchFirst</span>(<span class="str">"Order #123 and #456"</span>, <span class="str">"#\\d+"</span>)
+<span class="kw">say</span> first   <span class="cmt">-- "#123"</span></code></pre>
+
+      <!-- ============================================ -->
+      <!-- DRAWING & CHARTS                              -->
+      <!-- ============================================ -->
+
+      <h2 id="drawing">Drawing &amp; Charts</h2>
+      <p>Create drawings and charts programmatically. Draw shapes, text, and visualize data with bar charts, line charts, and pie charts.</p>
+
+      <h3><code>drawCircle(x, y, size, color)</code> &mdash; Draw a circle at position</h3>
+      <pre><code><span class="fn">drawCircle</span>(<span class="num">200</span>, <span class="num">200</span>, <span class="num">50</span>, <span class="str">"blue"</span>)</code></pre>
+
+      <h3><code>drawRect(x, y, width, height, color)</code> &mdash; Draw a rectangle</h3>
+      <pre><code><span class="fn">drawRect</span>(<span class="num">100</span>, <span class="num">100</span>, <span class="num">80</span>, <span class="num">60</span>, <span class="str">"red"</span>)</code></pre>
+
+      <h3><code>drawLine(x1, y1, x2, y2, color)</code> &mdash; Draw a line between two points</h3>
+      <pre><code><span class="fn">drawLine</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">400</span>, <span class="num">400</span>, <span class="str">"green"</span>)</code></pre>
+
+      <h3><code>drawText(x, y, message, color)</code> &mdash; Draw text at position</h3>
+      <pre><code><span class="fn">drawText</span>(<span class="num">150</span>, <span class="num">50</span>, <span class="str">"Hello Canvas!"</span>, <span class="str">"black"</span>)</code></pre>
+
+      <h3><code>fillBackground(color)</code> &mdash; Fill the canvas background</h3>
+      <pre><code><span class="fn">fillBackground</span>(<span class="str">"white"</span>)</code></pre>
+
+      <h3><code>chart(data, type, title)</code> &mdash; Draw a chart</h3>
+      <p>Draws a chart from data. Supported types: <code>"bar"</code>, <code>"line"</code>, and <code>"pie"</code>.</p>
+      <pre><code><span class="fn">chart</span>([
+  {label: <span class="str">"Jan"</span>, value: <span class="num">100</span>},
+  {label: <span class="str">"Feb"</span>, value: <span class="num">150</span>},
+  {label: <span class="str">"Mar"</span>, value: <span class="num">120</span>}
+], <span class="str">"bar"</span>, <span class="str">"Monthly Sales"</span>)</code></pre>
+
+      <h3><code>showCanvas(title)</code> &mdash; Display the canvas</h3>
+      <p>Displays the canvas with an optional title. Drawing commands are buffered and rendered when <code>showCanvas()</code> is called.</p>
+      <pre><code><span class="fn">showCanvas</span>(<span class="str">"My Drawing"</span>)</code></pre>
+
+      <h3>Full Drawing Example</h3>
+      <pre><code><span class="fn">fillBackground</span>(<span class="str">"white"</span>)
+<span class="fn">drawCircle</span>(<span class="num">200</span>, <span class="num">200</span>, <span class="num">50</span>, <span class="str">"blue"</span>)
+<span class="fn">drawRect</span>(<span class="num">100</span>, <span class="num">100</span>, <span class="num">80</span>, <span class="num">60</span>, <span class="str">"red"</span>)
+<span class="fn">drawLine</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">400</span>, <span class="num">400</span>, <span class="str">"green"</span>)
+<span class="fn">drawText</span>(<span class="num">150</span>, <span class="num">50</span>, <span class="str">"Hello Canvas!"</span>, <span class="str">"black"</span>)
+<span class="fn">showCanvas</span>(<span class="str">"My Drawing"</span>)</code></pre>
+
+      <div class="callout callout-info">
+        <strong>Canvas behavior:</strong> In Node.js, the canvas auto-opens in a browser. Drawing commands are buffered and rendered when <code>showCanvas()</code> is called (or automatically on exit). In the browser, drawing happens directly on an HTML canvas element.
+      </div>
 
       <!-- ============================================ -->
       <!-- SYSTEM & ENVIRONMENT                         -->

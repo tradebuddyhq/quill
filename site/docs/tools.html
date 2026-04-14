@@ -691,7 +691,16 @@ quill test math.quill
 quill test math.quill strings.quill
 
 <span class="cmt">-- Test all .quill files in the current folder</span>
-quill test</code></pre>
+quill test
+
+<span class="cmt">-- Watch mode: automatically re-run tests when files change</span>
+quill test --watch
+
+<span class="cmt">-- Watch a specific file</span>
+quill test math.quill --watch
+
+<span class="cmt">-- Short flag</span>
+quill test -w</code></pre>
 
       <p><strong>Step 3:</strong> Read the results.</p>
 
@@ -728,6 +737,7 @@ quill test</code></pre>
         <li><strong>Test edge cases:</strong> What happens with zero? With negative numbers? With empty strings? These are the places bugs like to hide.</li>
         <li><strong>Run tests after every change:</strong> This way you catch problems immediately instead of discovering them later.</li>
         <li><strong>Each <code>expect</code> should check one thing:</strong> If a test has 10 expects and one fails, it is easier to find the problem when each expect checks a single behavior.</li>
+        <li><strong>Use <code>--watch</code> mode during development:</strong> This automatically re-runs your tests every time you save a file, giving you instant feedback as you code.</li>
       </ul>
 
       <!-- ============================================================ -->
@@ -884,6 +894,85 @@ Removed chalk from dependencies</code></pre>
         <li><strong>Check npm for packages:</strong> Visit <a href="https://www.npmjs.com" target="_blank">npmjs.com</a> to browse available packages and find tools for your project.</li>
         <li><strong>Keep dependencies minimal:</strong> Only install packages you actually need. Fewer dependencies means fewer things that can break.</li>
         <li><strong>Commit your quill.json:</strong> If you use version control (like Git), always include <code>quill.json</code> so others can install the same packages.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <!-- PROJECT SCAFFOLDING                                           -->
+      <!-- ============================================================ -->
+
+      <h2 id="new">Project Scaffolding (<code>quill new</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill new</code> creates a brand-new project directory with a starter file and a <code>quill.toml</code> configuration file. It sets up everything you need to start coding immediately.</p>
+
+      <h3>When to use it</h3>
+      <p>Use <code>quill new</code> when you want to start a fresh project from scratch. It saves you from manually creating directories and boilerplate files.</p>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Run the command with your project name.</p>
+      <pre><code>quill new my-app</code></pre>
+
+      <p><strong>Step 2:</strong> Quill creates the directory, writes a <code>main.quill</code> with a hello world program, and writes a <code>quill.toml</code> with project configuration.</p>
+
+      <h3>Example output</h3>
+      <pre><code>$ quill new my-app
+Created project <span class="str">"my-app"</span>
+  my-app/main.quill
+  my-app/quill.toml
+
+cd my-app && quill run main.quill</code></pre>
+
+      <p>The generated <code>main.quill</code> contains a simple hello world program:</p>
+      <pre><code><span class="kw">say</span> <span class="str">"Hello, Quill!"</span></code></pre>
+
+      <p>The generated <code>quill.toml</code> contains your project configuration:</p>
+      <pre><code>[project]
+name = <span class="str">"my-app"</span>
+version = <span class="str">"0.1.0"</span></code></pre>
+
+      <h3>Tips</h3>
+      <ul>
+        <li><strong>Use <code>quill new</code> for quick starts:</strong> It creates a new directory with everything set up. Use <code>quill init</code> instead if you want to initialize an existing directory.</li>
+        <li><strong>Customize the starter file:</strong> The generated <code>main.quill</code> is a simple hello world &mdash; replace it with your own code to start building.</li>
+      </ul>
+
+      <!-- ============================================================ -->
+      <!-- INSTANT SHARING                                               -->
+      <!-- ============================================================ -->
+
+      <h2 id="share">Instant Sharing (<code>quill share</code>)</h2>
+
+      <h3>What it does</h3>
+      <p><code>quill share</code> creates a shareable URL that opens your code in the Quill online playground. The code is base64-encoded in the URL &mdash; no server needed.</p>
+
+      <h3>When to use it</h3>
+      <p>Use <code>quill share</code> when you want to:</p>
+      <ul>
+        <li>Share code snippets with friends or colleagues</li>
+        <li>Ask for help and include a runnable example</li>
+        <li>Show off your projects with a single link</li>
+      </ul>
+
+      <h3>Step-by-step usage</h3>
+      <p><strong>Step 1:</strong> Run the command with the file you want to share.</p>
+      <pre><code>quill share app.quill</code></pre>
+
+      <p><strong>Step 2:</strong> Quill generates a shareable link and copies it to your clipboard.</p>
+      <pre><code>$ quill share app.quill
+Shareable link:
+https://quill.tradebuddy.dev/playground#code=...
+
+Link copied to clipboard!</code></pre>
+
+      <p><strong>Step 3:</strong> Send the link to anyone. When they open it, the playground loads your code automatically.</p>
+
+      <h3>How it works</h3>
+      <p>The file content is base64-encoded and appended to the playground URL as a hash fragment. When someone opens the link, the playground decodes the hash and loads the code. Nothing is stored on a server &mdash; the entire source code lives in the URL itself.</p>
+
+      <h3>Tips</h3>
+      <ul>
+        <li><strong>Keep files small:</strong> The link contains your entire source code, so keep it under a few KB for best results.</li>
+        <li><strong>Works offline:</strong> The link works even without an internet connection to a backend, since the code is in the URL itself, not stored on a server.</li>
       </ul>
 
       <!-- ============================================================ -->
