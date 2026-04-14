@@ -56,6 +56,14 @@
         <li><a href="#flatlist">FlatList</a></li>
         <li><a href="#styling">Styling</a></li>
         <li><a href="#sdk-imports">SDK Imports</a></li>
+        <li><a href="#provider">Context Provider</a></li>
+        <li><a href="#conditional">Conditional Rendering</a></li>
+        <li><a href="#children">Children Components</a></li>
+        <li><a href="#dynamic-styles">Dynamic Styles</a></li>
+        <li><a href="#multi-styles">Multiple Styles</a></li>
+        <li><a href="#alert-buttons">Alert Buttons</a></li>
+        <li><a href="#advanced-props">Advanced Props</a></li>
+        <li><a href="#builtins">JS Built-ins</a></li>
         <li><a href="#navigation">Navigation</a></li>
         <li><a href="#elements">Element Reference</a></li>
         <li><a href="#building">Building &amp; Running</a></li>
@@ -266,6 +274,24 @@ context UserContext is nothing</code></pre>
 
       <p>The <code>Alert</code> import is added automatically when <code>alert()</code> is used.</p>
 
+      <h3 id="alert-buttons">Alerts with Buttons</h3>
+
+      <p>Pass a third argument to <code>alert()</code> with an array of button objects to show custom buttons with handlers:</p>
+
+      <pre><code>component DeleteScreen:
+  to handleDelete:
+    say "Item deleted"
+
+  to confirmDelete:
+    alert("Delete?", "Are you sure?", [{ text: "Cancel" }, { text: "Delete", onPress: handleDelete }])
+
+  to render:
+    view:
+      button onPress confirmDelete:
+        text: "Delete Item"</code></pre>
+
+      <p>This compiles to <code>Alert.alert("Delete?", "Are you sure?", [{ text: "Cancel" }, { text: "Delete", onPress: handleDelete }])</code>. Each button object can have <code>text</code>, <code>onPress</code>, and <code>style</code> properties.</p>
+
       <h2 id="storage">AsyncStorage</h2>
 
       <p>Persist data on the device with simple <code>store</code> and <code>load</code> functions. These compile to <code>AsyncStorage</code> calls.</p>
@@ -315,6 +341,165 @@ context UserContext is nothing</code></pre>
           text: "Name"</code></pre>
 
       <p>The <code>data</code> prop specifies the array, and <code>key</code> specifies which field to use as the key extractor. Children inside the flatlist become the <code>renderItem</code> template. If no <code>key</code> prop is given, a default index-based key extractor is used.</p>
+
+      <h2 id="provider">Context Provider Pattern</h2>
+
+      <p>Wrap parts of your app in a Context Provider to pass dynamic values down to all child components. Use <code>provide</code> with a context name and a <code>with</code> clause for the value:</p>
+
+      <pre><code>provide ThemeContext with theme:
+  view:
+    text: "Hello"</code></pre>
+
+      <p>This compiles to <code>&lt;ThemeContext.Provider value={theme}&gt;</code>. Any child component that uses <code>use context ThemeContext as theme</code> will receive the current value. This is the standard React pattern for making global state (themes, user info, settings) available without prop drilling.</p>
+
+      <h2 id="conditional">Conditional Rendering</h2>
+
+      <p>Use <code>if</code> / <code>otherwise</code> to conditionally render different content. This works inside the <code>to render</code> body of any component.</p>
+
+      <h3>If / Otherwise</h3>
+
+      <pre><code>if loading:
+  text: "Loading..."
+otherwise:
+  text: "Done!"</code></pre>
+
+      <p>This compiles to a ternary expression: <code>{loading ? (&lt;Text&gt;Loading...&lt;/Text&gt;) : (&lt;Text&gt;Done!&lt;/Text&gt;)}</code>.</p>
+
+      <h3>If Only (no otherwise)</h3>
+
+      <pre><code>if showWarning:
+  text: "Warning!"</code></pre>
+
+      <p>Without an <code>otherwise</code> block, this compiles to the short-circuit pattern: <code>{showWarning &amp;&amp; (&lt;Text&gt;Warning!&lt;/Text&gt;)}</code>. The content is rendered only when the condition is truthy.</p>
+
+      <h2 id="children">Reusable Components with Children</h2>
+
+      <p>Create wrapper components that accept child elements using the <code>children</code> keyword. Declare <code>children</code> in the <code>with</code> clause and use it in the render body:</p>
+
+      <pre><code>component Card with children:
+  to render:
+    view style card:
+      children</code></pre>
+
+      <p>When <code>children</code> appears in the render body, it compiles to <code>{children}</code> in JSX. This lets you create reusable layout wrappers:</p>
+
+      <pre><code>-- Usage:
+Card:
+  text: "This appears inside the card"
+  text: "So does this"</code></pre>
+
+      <h2 id="dynamic-styles">Dynamic Styles</h2>
+
+      <p>Style values can include ternary expressions, variable references, and arithmetic for dynamic styling based on component state or props:</p>
+
+      <h3>Ternary in Style Values</h3>
+
+      <pre><code>style native:
+  indicator:
+    color is score greater than 70 ? "#22c55e" : "#ef4444"
+    font size is 16</code></pre>
+
+      <p>The ternary expression is preserved in the compiled <code>StyleSheet.create()</code> output, allowing styles to change based on runtime values.</p>
+
+      <h3>Variable References and Arithmetic</h3>
+
+      <pre><code>style native:
+  box:
+    width is screenWidth * 0.8
+    padding is baseSize + 4
+    background color is themeColor</code></pre>
+
+      <p>Any valid JavaScript expression can be used as a style value, including variables, arithmetic, and function calls.</p>
+
+      <h2 id="multi-styles">Multiple Styles</h2>
+
+      <p>Apply multiple style names to a single element using array syntax:</p>
+
+      <pre><code>view style [container, highlighted]:
+  text: "Multi-styled"</code></pre>
+
+      <p>This compiles to <code>style={[styles.container, styles.highlighted]}</code>. React Native merges the style objects from left to right, so later styles override earlier ones for conflicting properties. This is useful for combining a base style with conditional modifiers.</p>
+
+      <h2 id="advanced-props">Advanced Element Props</h2>
+
+      <p>Quill elements accept all the props supported by their React Native counterparts. Here are commonly used advanced props:</p>
+
+      <h3>FlatList</h3>
+
+      <table>
+        <thead><tr><th>Prop</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>showsVerticalScrollIndicator</code></td><td>Show/hide the vertical scroll bar</td></tr>
+          <tr><td><code>contentContainerStyle</code></td><td>Style applied to the scroll content container</td></tr>
+          <tr><td><code>ListHeaderComponent</code></td><td>Component rendered at the top of the list</td></tr>
+        </tbody>
+      </table>
+
+      <h3>ScrollView</h3>
+
+      <table>
+        <thead><tr><th>Prop</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>keyboardShouldPersistTaps</code></td><td>Controls keyboard dismiss behavior on tap</td></tr>
+          <tr><td><code>contentContainerStyle</code></td><td>Style applied to the scroll content container</td></tr>
+        </tbody>
+      </table>
+
+      <h3>TextInput</h3>
+
+      <table>
+        <thead><tr><th>Prop</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>keyboardType</code></td><td>Keyboard type (e.g., "numeric", "email-address")</td></tr>
+          <tr><td><code>placeholderTextColor</code></td><td>Color of the placeholder text</td></tr>
+          <tr><td><code>value</code></td><td>Current text value (controlled input)</td></tr>
+          <tr><td><code>onChangeText</code></td><td>Callback when text changes</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Pressable</h3>
+
+      <pre><code>pressable onPress handleTap onLongPress handleHold:
+  text: "Press or hold me"</code></pre>
+
+      <h3>Accessibility</h3>
+
+      <p>Add accessibility props to any element:</p>
+
+      <pre><code>button onPress handleTap accessibilityRole "button" accessibilityLabel "Submit form":
+  text: "Submit"</code></pre>
+
+      <p>The <code>accessibilityRole</code> and <code>accessibilityLabel</code> props work on any Quill element and compile directly to their React Native equivalents.</p>
+
+      <h2 id="builtins">Math, Date &amp; JS Built-ins</h2>
+
+      <p>Since Quill compiles to JavaScript, all standard JS built-in objects and methods work in Expo mode. You can use them directly in expressions, methods, and render bodies.</p>
+
+      <h3>Math</h3>
+
+      <pre><code>result is Math.max(a, b)
+rounded is Math.round(score * 100) / 100
+display is value.toFixed(2)
+area is Math.PI * radius * radius
+clamped is Math.min(Math.max(value, 0), 100)</code></pre>
+
+      <h3>Date</h3>
+
+      <pre><code>now is new Date()
+iso is now.toISOString()
+formatted is now.toLocaleDateString()
+day is now.getDate()</code></pre>
+
+      <h3>Array &amp; Object Methods</h3>
+
+      <pre><code>doubled is items.map(with x: x * 2)
+active is items.filter(with x: x.active)
+total is items.reduce(with acc x: acc + x.value, 0)
+first3 is items.slice(0, 3)
+sorted is items.sort(with a b: a.name.localeCompare(b.name))
+entries is Object.entries(config)</code></pre>
+
+      <p>These all work because Quill compiles to JavaScript. Any valid JS expression or method call can be used anywhere you would use a value in Quill.</p>
 
       <h2 id="styling">Styling</h2>
 

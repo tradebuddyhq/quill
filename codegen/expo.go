@@ -386,13 +386,40 @@ func (g *Generator) genExpoStmt(stmt ast.Statement, stateVars map[string]bool) s
 func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars map[string]bool) string {
 	indent := strings.Repeat("  ", depth)
 	tag := mapRNTag(el.Tag)
+	var out strings.Builder
+
+	// Special handling for __children
+	if tag == "__children" || el.Tag == "__children" {
+		out.WriteString(fmt.Sprintf("%s{children}\n", indent))
+		return out.String()
+	}
+
+	// Special handling for __provider
+	if tag == "__provider" || el.Tag == "__provider" {
+		var contextName string
+		if ctxProp, ok := el.Props["__context"]; ok {
+			if str, ok := ctxProp.(*ast.StringLiteral); ok {
+				contextName = str.Value
+			}
+		}
+		valuePart := ""
+		if valExpr, ok := el.Props["value"]; ok {
+			valuePart = fmt.Sprintf(" value={%s}", g.genExpr(valExpr))
+		}
+		out.WriteString(fmt.Sprintf("%s<%s.Provider%s>\n", indent, contextName, valuePart))
+		for _, child := range el.Children {
+			if child.Element != nil {
+				out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
+			}
+		}
+		out.WriteString(fmt.Sprintf("%s</%s.Provider>\n", indent, contextName))
+		return out.String()
+	}
 
 	// Special handling for FlatList
 	if tag == "FlatList" {
 		return g.genExpoFlatList(el, depth, stateVars)
 	}
-
-	var out strings.Builder
 
 	// Build props string
 	var propParts []string
@@ -404,6 +431,17 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			if ident, ok := val.(*ast.Identifier); ok {
 				propParts = append(propParts, fmt.Sprintf("style={styles.%s}", ident.Name))
 			}
+		} else if key == "__multiStyle" {
+			if str, ok := val.(*ast.StringLiteral); ok {
+				parts := strings.Split(str.Value, ",")
+				var styleParts []string
+				for _, p := range parts {
+					styleParts = append(styleParts, "styles."+strings.TrimSpace(p))
+				}
+				propParts = append(propParts, fmt.Sprintf("style={[%s]}", strings.Join(styleParts, ", ")))
+			}
+		} else if key == "__inlineStyle" {
+			propParts = append(propParts, fmt.Sprintf("style={%s}", g.genExpr(val)))
 		} else if key == "style" {
 			if ident, ok := val.(*ast.Identifier); ok {
 				propParts = append(propParts, fmt.Sprintf("style={styles.%s}", ident.Name))
@@ -414,7 +452,12 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			// Event handler: onPress, onChangeText, etc.
 			propParts = append(propParts, fmt.Sprintf("%s={() => %s()}", key, g.genExpr(val)))
 		} else {
-			propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
+			// Check for boolean true props
+			if ident, ok := val.(*ast.Identifier); ok && ident.Name == "true" {
+				propParts = append(propParts, key)
+			} else {
+				propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
+			}
 		}
 	}
 
@@ -425,7 +468,13 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 
 	// Handle conditional rendering
 	if el.Condition != nil {
-		out.WriteString(fmt.Sprintf("%s{%s && (\n", indent, g.genExpr(el.Condition)))
+		if len(el.ElseChildren) > 0 {
+			// Ternary: {condition ? (...) : (...)}
+			out.WriteString(fmt.Sprintf("%s{%s ? (\n", indent, g.genExpr(el.Condition)))
+		} else {
+			// Short-circuit: {condition && (...)}
+			out.WriteString(fmt.Sprintf("%s{%s && (\n", indent, g.genExpr(el.Condition)))
+		}
 		depth++
 		indent = strings.Repeat("  ", depth)
 	}
@@ -475,7 +524,19 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 	if el.Condition != nil {
 		depth--
 		indent = strings.Repeat("  ", depth)
-		out.WriteString(fmt.Sprintf("%s)}\n", indent))
+		if len(el.ElseChildren) > 0 {
+			out.WriteString(fmt.Sprintf("%s) : (\n", indent))
+			for _, child := range el.ElseChildren {
+				if child.Element != nil {
+					out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
+				} else if child.Text != nil {
+					out.WriteString(fmt.Sprintf("%s  %s\n", indent, g.genExpoTextContent(child.Text)))
+				}
+			}
+			out.WriteString(fmt.Sprintf("%s)}\n", indent))
+		} else {
+			out.WriteString(fmt.Sprintf("%s)}\n", indent))
+		}
 	}
 
 	return out.String()
@@ -676,6 +737,11 @@ func (g *Generator) collectRNComponents(elements []ast.RenderElement, rnComponen
 			rnComponents[mapped] = true
 		}
 		for _, child := range el.Children {
+			if child.Element != nil {
+				g.collectRNComponents([]ast.RenderElement{*child.Element}, rnComponents)
+			}
+		}
+		for _, child := range el.ElseChildren {
 			if child.Element != nil {
 				g.collectRNComponents([]ast.RenderElement{*child.Element}, rnComponents)
 			}

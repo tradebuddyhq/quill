@@ -375,3 +375,131 @@ func TestMapRNTag(t *testing.T) {
 		}
 	}
 }
+
+func TestExpoOtherwiseRender(t *testing.T) {
+	src := `component TestScreen:
+  state loading is yes
+
+  to render:
+    view:
+      if loading:
+        text: "Loading..."
+      otherwise:
+        text: "Done!"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "?") || !strings.Contains(output, ":") {
+		t.Error("expected ternary expression for if/otherwise")
+	}
+	if !strings.Contains(output, "Loading...") {
+		t.Error("expected Loading... text")
+	}
+	if !strings.Contains(output, "Done!") {
+		t.Error("expected Done! text")
+	}
+}
+
+func TestExpoProviderElement(t *testing.T) {
+	src := `context ThemeContext is "light"
+
+component App:
+  state theme is "dark"
+
+  to render:
+    provide ThemeContext with theme:
+      view:
+        text: "Hello"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "ThemeContext.Provider") {
+		t.Error("expected ThemeContext.Provider")
+	}
+	if !strings.Contains(output, "value={theme}") {
+		t.Error("expected value={theme} prop")
+	}
+}
+
+func TestExpoChildrenRendering(t *testing.T) {
+	src := `component Card with children:
+  to render:
+    view style card:
+      children
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "{ children }") {
+		t.Error("expected children in props")
+	}
+	if !strings.Contains(output, "{children}") {
+		t.Error("expected {children} in render")
+	}
+}
+
+func TestExpoMultipleStyles(t *testing.T) {
+	src := `component TestScreen:
+  to render:
+    view style [container, highlighted]:
+      text: "Multi"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "styles.container") || !strings.Contains(output, "styles.highlighted") {
+		t.Error("expected multiple style references")
+	}
+}
+
+func TestExpoAlertWithButtons(t *testing.T) {
+	src := `component TestScreen:
+  to confirmDelete:
+    alert("Delete?", "Are you sure?", [{ text: "Cancel" }, { text: "OK" }])
+
+  to render:
+    view:
+      text: "Test"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "Alert.alert(") {
+		t.Error("expected Alert.alert")
+	}
+	if !strings.Contains(output, "Cancel") {
+		t.Error("expected Cancel button text")
+	}
+}
+
+func TestExpoTernaryStyle(t *testing.T) {
+	src := `component TestScreen:
+  state score is 80
+
+  to render:
+    view:
+      text: "Score"
+
+  style native:
+    indicator:
+      color is score greater than 70 ? "#22c55e" : "#ef4444"
+      font size is 16
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "score") {
+		t.Error("expected score in style value")
+	}
+	if !strings.Contains(output, ">") {
+		t.Error("expected > comparison operator in style value")
+	}
+}

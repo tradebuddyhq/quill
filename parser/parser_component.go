@@ -318,14 +318,39 @@ func (p *Parser) parseNativeStyleBlock() *ast.NativeStyleBlock {
 							val += "." + p.advance().Value
 						}
 					}
-					// Handle ternary-like expressions: condition ? val1 : val2
-					// or simple arithmetic: width - 20
+					// Handle simple arithmetic: width - 20
 					for p.check(lexer.TOKEN_PLUS) || p.check(lexer.TOKEN_MINUS) || p.check(lexer.TOKEN_STAR) || p.check(lexer.TOKEN_SLASH) {
 						op := p.advance().Value
 						if p.check(lexer.TOKEN_NUMBER) {
 							val += " " + op + " " + p.advance().Value
 						} else if p.check(lexer.TOKEN_IDENT) {
 							val += " " + op + " " + p.advance().Value
+						}
+					}
+					// Handle comparison and ternary expressions
+					// Translate Quill comparisons to JS operators and consume until newline
+					for !p.check(lexer.TOKEN_NEWLINE) && !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+						tok := p.advance()
+						if tok.Type == lexer.TOKEN_STRING {
+							val += " \"" + tok.Value + "\""
+						} else if tok.Type == lexer.TOKEN_QUESTION {
+							val += " ? "
+						} else if tok.Type == lexer.TOKEN_COLON {
+							val += " : "
+						} else if tok.Type == lexer.TOKEN_GREATER {
+							// "greater than" → ">"
+							if p.check(lexer.TOKEN_THAN) {
+								p.advance() // consume "than"
+							}
+							val += " >"
+						} else if tok.Type == lexer.TOKEN_LESS {
+							// "less than" → "<"
+							if p.check(lexer.TOKEN_THAN) {
+								p.advance() // consume "than"
+							}
+							val += " <"
+						} else {
+							val += " " + tok.Value
 						}
 					}
 				} else {
@@ -696,6 +721,35 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 		if p.check(lexer.TOKEN_DEDENT) {
 			p.advance()
 		}
+
+		// Check for otherwise: branch
+		if p.check(lexer.TOKEN_OTHERWISE) {
+			p.advance() // consume "otherwise"
+			p.expect(lexer.TOKEN_COLON)
+			p.expect(lexer.TOKEN_NEWLINE)
+			p.expect(lexer.TOKEN_INDENT)
+			var elseChildren []ast.RenderNode
+			for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+				p.skipNewlines()
+				if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+					break
+				}
+				el := p.parseRenderElement()
+				elseChildren = append(elseChildren, ast.RenderNode{Element: el})
+			}
+			if p.check(lexer.TOKEN_DEDENT) {
+				p.advance()
+			}
+			return &ast.RenderElement{
+				Tag:          "__fragment",
+				Condition:    condition,
+				Children:     children,
+				ElseChildren: elseChildren,
+				Props:        map[string]ast.Expression{},
+				Line:         line,
+			}
+		}
+
 		return &ast.RenderElement{
 			Tag:       "__fragment",
 			Condition: condition,
@@ -736,13 +790,63 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 		}
 	}
 
+	// Handle children placeholder
+	if p.check(lexer.TOKEN_IDENT) && p.current().Value == "children" {
+		p.advance() // consume "children"
+		p.consumeNewline()
+		return &ast.RenderElement{
+			Tag:   "__children",
+			Props: map[string]ast.Expression{},
+			Line:  line,
+		}
+	}
+
+	// Handle provide: provide ThemeContext with value:
+	if p.check(lexer.TOKEN_IDENT) && p.current().Value == "provide" {
+		p.advance() // consume "provide"
+		contextName := p.expect(lexer.TOKEN_IDENT)
+		var valueExpr ast.Expression
+		if p.check(lexer.TOKEN_WITH) {
+			p.advance() // consume "with"
+			valueExpr = p.parseExpression()
+		}
+		p.expect(lexer.TOKEN_COLON)
+		p.expect(lexer.TOKEN_NEWLINE)
+		p.expect(lexer.TOKEN_INDENT)
+		var children []ast.RenderNode
+		for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+			p.skipNewlines()
+			if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+				break
+			}
+			el := p.parseRenderElement()
+			children = append(children, ast.RenderNode{Element: el})
+		}
+		if p.check(lexer.TOKEN_DEDENT) {
+			p.advance()
+		}
+		props := map[string]ast.Expression{
+			"__context": &ast.StringLiteral{Value: contextName.Value},
+		}
+		if valueExpr != nil {
+			props["value"] = valueExpr
+		}
+		return &ast.RenderElement{
+			Tag:      "__provider",
+			Props:    props,
+			Children: children,
+			Line:     line,
+		}
+	}
+
 	// Regular element: tag [props...] [: "text" | NEWLINE INDENT children DEDENT]
-	tag := p.expect(lexer.TOKEN_IDENT)
+	tag := p.expectIdentOrKeyword()
 	props := make(map[string]ast.Expression)
 
 	// Parse props: onClick handler, bind:value ident, key value, etc.
 	// Supports both space-separated (onClick increment) and = syntax (onClick=increment)
-	for p.check(lexer.TOKEN_IDENT) && !p.isAtEnd() {
+	// Also handles keyword tokens like "style" as prop names
+	for (p.check(lexer.TOKEN_IDENT) || p.check(lexer.TOKEN_STYLE)) && !p.isAtEnd() {
 		propName := p.current().Value
 		// Check for bind:value pattern
 		if propName == "bind" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_COLON {
@@ -767,6 +871,25 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			}
 			continue
 		}
+		// Special: style [a, b] for multiple styles
+		if propName == "style" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LBRACKET {
+			p.advance() // consume "style"
+			p.advance() // consume "["
+			var parts []string
+			for !p.check(lexer.TOKEN_RBRACKET) && !p.isAtEnd() {
+				if p.check(lexer.TOKEN_IDENT) {
+					parts = append(parts, p.advance().Value)
+				}
+				if p.check(lexer.TOKEN_COMMA) {
+					p.advance()
+				}
+			}
+			if p.check(lexer.TOKEN_RBRACKET) {
+				p.advance()
+			}
+			props["__multiStyle"] = &ast.StringLiteral{Value: strings.Join(parts, ",")}
+			continue
+		}
 		// Check if next token is an identifier (event handler or attr with value)
 		if p.checkNext(lexer.TOKEN_IDENT) {
 			p.advance() // consume prop name
@@ -776,7 +899,23 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			p.advance() // consume prop name
 			valTok := p.advance() // consume string value
 			props[propName] = &ast.StringLiteral{Value: valTok.Value}
+		} else if p.checkNext(lexer.TOKEN_NUMBER) {
+			p.advance() // consume prop name
+			valTok := p.advance() // consume number value
+			var numVal float64
+			fmt.Sscanf(valTok.Value, "%f", &numVal)
+			props[propName] = &ast.NumberLiteral{Value: numVal}
 		} else {
+			// Check if this is a boolean prop (no value, e.g., showsVerticalScrollIndicator)
+			nextType := lexer.TOKEN_EOF
+			if p.pos+1 < len(p.tokens) {
+				nextType = p.tokens[p.pos+1].Type
+			}
+			if nextType == lexer.TOKEN_COLON || nextType == lexer.TOKEN_NEWLINE || nextType == lexer.TOKEN_EOF || nextType == lexer.TOKEN_IDENT {
+				p.advance() // consume prop name as boolean
+				props[propName] = &ast.Identifier{Name: "true"}
+				continue
+			}
 			break
 		}
 	}

@@ -631,18 +631,20 @@ func (s *StateDeclaration) stmtNode()        {}
 
 // RenderElement represents an HTML element in the render block.
 type RenderElement struct {
-	Tag       string
-	Props     map[string]Expression // attributes and event handlers
-	Children  []RenderNode          // child elements or text
-	Condition Expression            // for conditional rendering (if)
-	Iterator  *RenderIterator       // for list rendering (for each)
-	Line      int
+	Tag          string
+	Props        map[string]Expression // attributes and event handlers
+	Children     []RenderNode          // child elements or text
+	ElseChildren []RenderNode          // for otherwise: branch
+	Condition    Expression            // for conditional rendering (if)
+	Iterator     *RenderIterator       // for list rendering (for each)
+	Line         int
 }
 
 // RenderNode is either an element or text content in a render block.
 type RenderNode struct {
-	Element *RenderElement // either an element...
-	Text    Expression     // ...or text content (string interpolation)
+	Element    *RenderElement // either an element...
+	Text       Expression     // ...or text content (string interpolation)
+	IsChildren bool           // renders {children} in JSX
 }
 
 // RenderIterator represents a for-each loop in a render block.
