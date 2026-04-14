@@ -141,6 +141,7 @@ func main() {
 		debugger.StartREPL(os.Args[2])
 
 	case "repl":
+		repl.Version = version
 		repl.Start()
 
 	case "lsp":

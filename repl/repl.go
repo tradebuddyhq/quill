@@ -12,8 +12,20 @@ import (
 	"quill/parser"
 )
 
+// Version is set by the caller (main.go) to keep the version in one place.
+var Version = "0.10.1"
+
+func findRuntime() string {
+	for _, name := range []string{"node", "bun", "deno"} {
+		if _, err := exec.LookPath(name); err == nil {
+			return name
+		}
+	}
+	return ""
+}
+
 func Start() {
-	fmt.Println("Quill REPL v0.2.0")
+	fmt.Printf("Quill REPL v%s\n", Version)
 	fmt.Println("Type your code. Use 'exit' or Ctrl+C to quit.")
 	fmt.Println("Commands: :help, :reset, :vars")
 	fmt.Println()
@@ -158,8 +170,12 @@ func evalSource(source string) (string, error) {
 	g := codegen.New()
 	js := g.Generate(program)
 
-	// Run with node, capturing output
-	cmd := exec.Command("node", "-e", js)
+	// Run with available JS runtime
+	runtime := findRuntime()
+	if runtime == "" {
+		return "", fmt.Errorf("no JavaScript runtime found (install Node.js, Bun, or Deno)")
+	}
+	cmd := exec.Command(runtime, "-e", js)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
