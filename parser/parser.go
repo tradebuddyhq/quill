@@ -77,6 +77,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseDescribe()
 	case p.check(lexer.TOKEN_TRY):
 		return p.parseTryCatch()
+	case p.check(lexer.TOKEN_RAISE):
+		return p.parseRaise()
 	case p.check(lexer.TOKEN_BREAK):
 		return p.parseBreak()
 	case p.check(lexer.TOKEN_CONTINUE):

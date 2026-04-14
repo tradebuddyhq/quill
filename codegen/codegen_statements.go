@@ -287,6 +287,16 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		}
 		return fmt.Sprintf("%stry {\n%s%s} catch (%s) {\n%s%s}", prefix, tryBody, prefix, errorVar, catchBody, prefix)
 
+	case *ast.RaiseStatement:
+		g.addStmtMapping(s.Line)
+		expr := g.genExpr(s.Value)
+		// If the expression is a plain string literal, wrap in new Error()
+		if strings.HasPrefix(expr, "\"") || strings.HasPrefix(expr, "`") {
+			return fmt.Sprintf("%sthrow new Error(%s);", prefix, expr)
+		}
+		// Otherwise throw the value directly (could be an Error object already)
+		return fmt.Sprintf("%sthrow %s;", prefix, expr)
+
 	case *ast.DeleteStatement:
 		return fmt.Sprintf("%sdelete %s;", prefix, g.genExpr(s.Target))
 

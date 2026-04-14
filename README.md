@@ -305,6 +305,8 @@ say reply2   -- "Your name is Alice"
 - **Spread operator** — `...items` for expanding lists
 - **Multiline strings** — `"""..."""` triple-quoted strings for multi-line text, compiled to JS template literals
 - **String interpolation** — `"Hello {name}!"`, tagged templates `` query`SELECT * FROM users WHERE age > {min}` ``
+- **Brace escaping** — `\{` and `\}` for literal braces in strings (essential for inline JS/CSS in HTML templates)
+- **Raise errors** — `raise "message"` compiles to `throw new Error()` for explicit error throwing
 - **Break/continue** — loop control flow
 - **130+ built-in functions** — `sort()`, `filter()`, `map_list()`, `hash()`, `uuid()`, `regex()`, `chart()`, `drawCircle()`, and more
 - **Async/await** — `data is await fetchJSON("url")`, cancellation (`cancel task`), async iteration (`for await each chunk in stream:`), `parallel settled:` (allSettled)
@@ -526,6 +528,15 @@ try:
   data is parseJSON(raw)
 catch err:
   say "Error: " + err
+
+-- Raise an error
+raise "something went wrong"
+
+-- Use in a function
+to divide a b:
+  if b is 0:
+    raise "cannot divide by zero"
+  give back a / b
 ```
 
 ### Imports

@@ -123,7 +123,20 @@ func (g *Generator) Generate(program *ast.Program) string {
 	if g.browser {
 		out.WriteString(stdlib.BrowserRuntime)
 	} else {
-		out.WriteString(stdlib.Runtime)
+		runtime := stdlib.Runtime
+		// If web runtime will be used, remove the basic createServer to avoid duplication
+		if strings.Contains(userCodeStr, "createServer(") || strings.Contains(userCodeStr, "createSecureServer(") {
+			// Remove the basic HTTP createServer definition from the base runtime
+			// It starts with "const createServer = () =>" and ends at the next "const " declaration
+			if idx := strings.Index(runtime, "\nconst createServer = ()"); idx != -1 {
+				// Find the next top-level const after createServer
+				rest := runtime[idx+1:]
+				if end := strings.Index(rest[len("const createServer"):], "\nconst "); end != -1 {
+					runtime = runtime[:idx+1] + rest[len("const createServer")+end+1:]
+				}
+			}
+		}
+		out.WriteString(runtime)
 	}
 	out.WriteString("\n")
 

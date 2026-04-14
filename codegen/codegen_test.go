@@ -497,6 +497,61 @@ func TestGenerateTryCatch(t *testing.T) {
 	}
 }
 
+func TestGenerateRaise(t *testing.T) {
+	src := "raise \"something went wrong\"\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "throw new Error(") {
+		t.Errorf("expected throw new Error, got:\n%s", output)
+	}
+	if !strings.Contains(output, "something went wrong") {
+		t.Errorf("expected error message, got:\n%s", output)
+	}
+}
+
+func TestGenerateRaiseVariable(t *testing.T) {
+	src := "raise err\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "throw err;") {
+		t.Errorf("expected throw expr, got:\n%s", output)
+	}
+}
+
+func TestGenerateEscapedBraces(t *testing.T) {
+	src := `say "function()\{return true\}"` + "\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Should produce a string with literal braces, NOT interpolation
+	if strings.Contains(output, "${return") {
+		t.Errorf("escaped brace was treated as interpolation, got:\n%s", output)
+	}
+	if !strings.Contains(output, "{return true}") {
+		t.Errorf("expected literal braces in output, got:\n%s", output)
+	}
+}
+
+func TestGenerateEscapedBracesWithInterpolation(t *testing.T) {
+	src := `say "{name} and \{literal\}"` + "\n"
+	output, err := compile(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// name should be interpolated, literal should be escaped
+	if !strings.Contains(output, "${name}") {
+		t.Errorf("expected interpolation of name, got:\n%s", output)
+	}
+	if !strings.Contains(output, "{literal}") {
+		t.Errorf("expected literal braces, got:\n%s", output)
+	}
+}
+
 func TestGenerateBreak(t *testing.T) {
 	src := "while yes:\n  break\n"
 	output, err := compile(src)

@@ -50,6 +50,7 @@
         <li><a href="#variables">Variables</a></li>
         <li><a href="#data-types">Data types</a></li>
         <li><a href="#multiline-strings">Multiline strings</a></li>
+        <li><a href="#escape-braces">Escaping braces</a></li>
         <li><a href="#operators">Operators</a></li>
         <li><a href="#comparisons">Comparisons</a></li>
         <li><a href="#logic">Logic</a></li>
@@ -312,6 +313,21 @@ message <span class="kw">is</span> <span class="str">"""
       <div class="callout callout-info">
         <strong>Under the hood:</strong> Multiline strings compile to JavaScript template literals (backticks). String interpolation with <code>{variable}</code> works inside them, just like regular strings.
       </div>
+
+<h3 id="escape-braces">Escaping Braces</h3>
+<p>If you need a literal <code>{</code> or <code>}</code> in a string without triggering interpolation, use <code>\{</code> and <code>\}</code>:</p>
+<pre><code><span class="cmt">-- Literal braces (not interpolation)</span>
+<span class="kw">say</span> <span class="str">"CSS: \{color: red\}"</span>
+<span class="cmt">-- Output: CSS: {color: red}</span>
+
+<span class="cmt">-- Inline JavaScript</span>
+<span class="kw">say</span> <span class="str">"function()\{location.reload()\}"</span>
+<span class="cmt">-- Output: function(){location.reload()}</span>
+
+<span class="cmt">-- Mix interpolation and literal braces</span>
+name <span class="kw">is</span> <span class="str">"Alice"</span>
+<span class="kw">say</span> <span class="str">"{name} says \{hello\}"</span>
+<span class="cmt">-- Output: Alice says {hello}</span></code></pre>
 
       <h3>Numbers</h3>
       <p>Numbers in Quill work like you would expect. They can be whole numbers (integers) or decimals:</p>
@@ -947,6 +963,27 @@ total <span class="kw">is</span> reduce(numbers, <span class="kw">with</span> a,
       <div class="callout callout-info">
         <strong>Tip:</strong> Only wrap code in <code>try</code> if it might genuinely fail. Do not use it to hide bugs — fix the bug instead.
       </div>
+
+<h3 id="raise">Raising Errors</h3>
+<p>Use <code>raise</code> to throw an error. This immediately stops execution and can be caught with <code>try</code>/<code>if it fails</code>.</p>
+<pre><code><span class="cmt">-- Raise an error with a message</span>
+<span class="kw">raise</span> <span class="str">"something went wrong"</span>
+
+<span class="cmt">-- Raise inside a function</span>
+<span class="kw">to</span> <span class="fn">divide</span> a b:
+  <span class="kw">if</span> b <span class="kw">is</span> <span class="num">0</span>:
+    <span class="kw">raise</span> <span class="str">"cannot divide by zero"</span>
+  <span class="kw">give back</span> a / b
+
+<span class="cmt">-- Catch a raised error</span>
+<span class="kw">try</span>:
+  result <span class="kw">is</span> divide(<span class="num">10</span>, <span class="num">0</span>)
+<span class="kw">if it fails</span> err:
+  <span class="kw">say</span> <span class="str">"Error: "</span> + err</code></pre>
+
+<div class="callout callout-info">
+  <strong>Tip:</strong> <code>raise</code> with a string creates a new <code>Error</code> object automatically. You can also raise a variable that already holds an error: <code>raise err</code>.
+</div>
 
       <!-- ============================================================ -->
       <!-- CLASSES                                                       -->

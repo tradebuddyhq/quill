@@ -50,6 +50,7 @@ const (
 	TOKEN_AS
 	TOKEN_TRY
 	TOKEN_FAILS
+	TOKEN_RAISE
 	TOKEN_EXTENDS
 	TOKEN_FROM
 	TOKEN_WITH
@@ -228,6 +229,7 @@ var tokenNames = map[TokenType]string{
 	TOKEN_AS:        "as",
 	TOKEN_TRY:       "try",
 	TOKEN_FAILS:     "fails",
+	TOKEN_RAISE:     "raise",
 	TOKEN_EXTENDS:   "extends",
 	TOKEN_FROM:      "from",
 	TOKEN_WITH:      "with",

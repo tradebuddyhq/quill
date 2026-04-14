@@ -16,12 +16,16 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 			// Convert my.field to this.field only inside interpolation braces
 			converted = replaceMyInInterpolations(converted)
 			converted = convertInterpolation(converted)
+			converted = strings.ReplaceAll(converted, "\x00LBRACE\x00", "{")
+			converted = strings.ReplaceAll(converted, "\x00RBRACE\x00", "}")
 			return "`" + converted + "`"
 		}
 		// Multiline strings (from """) — use JS template literals to preserve newlines
 		if strings.Contains(e.Value, "\n") {
 			escaped := strings.ReplaceAll(e.Value, "`", "\\`")
 			escaped = strings.ReplaceAll(escaped, "${", "\\${")
+			escaped = strings.ReplaceAll(escaped, "\x00LBRACE\x00", "{")
+			escaped = strings.ReplaceAll(escaped, "\x00RBRACE\x00", "}")
 			return "`" + escaped + "`"
 		}
 		// The lexer preserves escape sequences as-is (e.g. \n stays as backslash + n),
@@ -29,6 +33,8 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		escaped := strings.ReplaceAll(e.Value, "\n", "\\n")  // actual newline bytes (shouldn't occur, but safety)
 		escaped = strings.ReplaceAll(escaped, "\r", "\\r")
 		escaped = strings.ReplaceAll(escaped, "\t", "\\t")
+		escaped = strings.ReplaceAll(escaped, "\x00LBRACE\x00", "{")
+		escaped = strings.ReplaceAll(escaped, "\x00RBRACE\x00", "}")
 		escaped = strings.ReplaceAll(escaped, "\x00", "\\0")
 		return `"` + escaped + `"`
 

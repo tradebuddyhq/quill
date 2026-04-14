@@ -41,6 +41,7 @@ var keywords = map[string]TokenType{
 	"as":        TOKEN_AS,
 	"try":       TOKEN_TRY,
 	"fails":     TOKEN_FAILS,
+	"raise":     TOKEN_RAISE,
 	"extends":   TOKEN_EXTENDS,
 	"from":      TOKEN_FROM,
 	"with":      TOKEN_WITH,
@@ -370,6 +371,9 @@ func (l *Lexer) readString() error {
 	}
 
 	value := l.source[start:l.pos]
+	// Process escape sequences for braces: \{ → placeholder, \} → placeholder
+	value = strings.ReplaceAll(value, "\\{", "\x00LBRACE\x00")
+	value = strings.ReplaceAll(value, "\\}", "\x00RBRACE\x00")
 	l.addToken(TOKEN_STRING, value)
 	l.pos++ // skip closing quote
 	l.col++
@@ -397,6 +401,9 @@ func (l *Lexer) readMultilineString() error {
 			if len(value) > 0 && value[len(value)-1] == '\n' {
 				value = value[:len(value)-1]
 			}
+			// Process escape sequences for braces: \{ → placeholder, \} → placeholder
+			value = strings.ReplaceAll(value, "\\{", "\x00LBRACE\x00")
+			value = strings.ReplaceAll(value, "\\}", "\x00RBRACE\x00")
 			l.addToken(TOKEN_STRING, value)
 			l.pos += 3 // skip closing """
 			l.col += 3

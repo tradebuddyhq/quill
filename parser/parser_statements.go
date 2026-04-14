@@ -244,6 +244,14 @@ func (p *Parser) parseReturn() *ast.ReturnStatement {
 	return &ast.ReturnStatement{Value: value, Line: line}
 }
 
+func (p *Parser) parseRaise() *ast.RaiseStatement {
+	line := p.current().Line
+	p.advance() // consume "raise"
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.RaiseStatement{Value: value, Line: line}
+}
+
 func (p *Parser) parseUse() *ast.UseStatement {
 	line := p.current().Line
 	p.advance() // consume "use"

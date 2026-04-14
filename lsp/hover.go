@@ -161,6 +161,7 @@ var keywordDocs = map[string]string{
 	"while":     "Loop keyword. Repeats a block while a condition is true.\n\nExample: `while count less than 10`",
 	"try":       "Error handling keyword. Starts a try block.\n\nExample: `try`",
 	"fails":     "Error handling keyword. Catches errors from a try block.\n\nExample: `fails with error`",
+	"raise":     "Throw an error. Compiles to `throw new Error(message)`.\n\nUsage:\n  raise \"something went wrong\"\n  raise errorVariable\n\nUse with try/catch:\n  try:\n    raise \"oops\"\n  if it fails err:\n    say err",
 	"match":     "Pattern matching keyword. Matches a value against patterns.\n\nExample: `match color`",
 	"when":      "Pattern case keyword. Defines a case in a match block.\n\nExample: `when \"red\"`",
 	"define":    "Type definition keyword. Defines an enum/algebraic type.\n\nExample: `define Color`",

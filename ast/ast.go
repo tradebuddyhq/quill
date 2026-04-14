@@ -330,6 +330,16 @@ type TryCatchStatement struct {
 func (s *TryCatchStatement) nodeType() string { return "TryCatch" }
 func (s *TryCatchStatement) stmtNode()        {}
 
+// --- Raise (throw) ---
+
+type RaiseStatement struct {
+	Value Expression
+	Line  int
+}
+
+func (s *RaiseStatement) nodeType() string { return "Raise" }
+func (s *RaiseStatement) stmtNode()        {}
+
 // --- Break/Continue ---
 
 type BreakStatement struct {
