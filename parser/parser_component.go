@@ -29,6 +29,9 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 
 	var states []ast.StateDeclaration
 	var effects []ast.EffectDeclaration
+	var contexts []ast.UseContextDeclaration
+	var memos []ast.MemoDeclaration
+	var callbacks []ast.CallbackDeclaration
 	var methods []ast.FuncDefinition
 	var renderBody []ast.RenderElement
 	var styles *ast.StyleBlock
@@ -47,6 +50,15 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 		} else if p.check(lexer.TOKEN_USE) && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_EFFECT {
 			effect := p.parseEffectDecl()
 			effects = append(effects, *effect)
+		} else if p.check(lexer.TOKEN_USE) && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT && p.tokens[p.pos+1].Value == "context" {
+			ctx := p.parseUseContextDecl()
+			contexts = append(contexts, *ctx)
+		} else if p.check(lexer.TOKEN_IDENT) && p.current().Value == "memo" {
+			m := p.parseMemoDecl()
+			memos = append(memos, *m)
+		} else if p.check(lexer.TOKEN_IDENT) && p.current().Value == "callback" {
+			cb := p.parseCallbackDecl()
+			callbacks = append(callbacks, *cb)
 		} else if p.check(lexer.TOKEN_STYLE) {
 			// Check if next-next token is IDENT (native style) or selector (CSS style)
 			// For Expo components: "native style:" block
@@ -70,7 +82,7 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 			action := p.parseFormAction()
 			actions = append(actions, action)
 		} else {
-			p.error("expected state, style, head, method (to), form, effect, or render inside component block")
+			p.error("expected state, style, head, method (to), form, effect, context, memo, callback, or render inside component block")
 		}
 	}
 	if p.check(lexer.TOKEN_DEDENT) {
@@ -83,6 +95,9 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 		Props:        propNames,
 		States:       states,
 		Effects:      effects,
+		Contexts:     contexts,
+		Memos:        memos,
+		Callbacks:    callbacks,
 		Methods:      methods,
 		RenderBody:   renderBody,
 		Styles:       styles,
@@ -133,6 +148,115 @@ func (p *Parser) parseEffectDecl() *ast.EffectDeclaration {
 	return &ast.EffectDeclaration{Dependencies: deps, Body: body, Line: line}
 }
 
+// parseUseContextDecl parses: use context ThemeContext as theme
+func (p *Parser) parseUseContextDecl() *ast.UseContextDeclaration {
+	line := p.current().Line
+	p.advance() // consume "use"
+	p.advance() // consume "context" (ident)
+
+	contextName := p.expect(lexer.TOKEN_IDENT)
+
+	alias := contextName.Value
+	if p.check(lexer.TOKEN_AS) {
+		p.advance() // consume "as"
+		aliasTok := p.expect(lexer.TOKEN_IDENT)
+		alias = aliasTok.Value
+	}
+
+	p.consumeNewline()
+	return &ast.UseContextDeclaration{ContextName: contextName.Value, Alias: alias, Line: line}
+}
+
+// parseMemoDecl parses: memo total is computeTotal(data) when [data]
+func (p *Parser) parseMemoDecl() *ast.MemoDeclaration {
+	line := p.current().Line
+	p.advance() // consume "memo"
+	name := p.expect(lexer.TOKEN_IDENT)
+	p.expect(lexer.TOKEN_IS)
+	value := p.parseExpression()
+
+	var deps []string
+	if p.check(lexer.TOKEN_WHEN) {
+		p.advance() // consume "when"
+		p.expect(lexer.TOKEN_LBRACKET)
+		for !p.check(lexer.TOKEN_RBRACKET) && !p.isAtEnd() {
+			dep := p.expect(lexer.TOKEN_IDENT)
+			deps = append(deps, dep.Value)
+			if p.check(lexer.TOKEN_COMMA) {
+				p.advance()
+			}
+		}
+		p.expect(lexer.TOKEN_RBRACKET)
+	}
+
+	p.consumeNewline()
+	return &ast.MemoDeclaration{Name: name.Value, Value: value, Dependencies: deps, Line: line}
+}
+
+// parseCallbackDecl parses: callback handlePress is with item: doSomething(item) when [items]
+func (p *Parser) parseCallbackDecl() *ast.CallbackDeclaration {
+	line := p.current().Line
+	p.advance() // consume "callback"
+	name := p.expect(lexer.TOKEN_IDENT)
+	p.expect(lexer.TOKEN_IS)
+
+	// Parse the function: with param1 param2: body
+	var params []string
+	if p.check(lexer.TOKEN_WITH) {
+		p.advance() // consume "with"
+		for p.check(lexer.TOKEN_IDENT) && !p.check(lexer.TOKEN_COLON) {
+			params = append(params, p.advance().Value)
+			if p.check(lexer.TOKEN_COMMA) {
+				p.advance()
+			}
+		}
+	}
+
+	p.expect(lexer.TOKEN_COLON)
+	p.expect(lexer.TOKEN_NEWLINE)
+	p.expect(lexer.TOKEN_INDENT)
+
+	var body []ast.Statement
+	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
+		p.skipNewlines()
+		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
+			break
+		}
+		body = append(body, p.parseStatement())
+	}
+	if p.check(lexer.TOKEN_DEDENT) {
+		p.advance()
+	}
+
+	var deps []string
+	if p.check(lexer.TOKEN_WHEN) {
+		p.advance() // consume "when"
+		p.expect(lexer.TOKEN_LBRACKET)
+		for !p.check(lexer.TOKEN_RBRACKET) && !p.isAtEnd() {
+			dep := p.expect(lexer.TOKEN_IDENT)
+			deps = append(deps, dep.Value)
+			if p.check(lexer.TOKEN_COMMA) {
+				p.advance()
+			}
+		}
+		p.expect(lexer.TOKEN_RBRACKET)
+	}
+	p.consumeNewline()
+
+	return &ast.CallbackDeclaration{Name: name.Value, Params: params, Body: body, Dependencies: deps, Line: line}
+}
+
+// parseContextDecl parses top-level: context ThemeContext is defaultValue
+func (p *Parser) parseContextDecl() *ast.ContextDeclaration {
+	line := p.current().Line
+	p.advance() // consume "context"
+	name := p.expect(lexer.TOKEN_IDENT)
+	p.expect(lexer.TOKEN_IS)
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.ContextDeclaration{Name: name.Value, DefaultValue: value, Line: line}
+}
+
 // parseNativeStyleBlock parses: style native:
 func (p *Parser) parseNativeStyleBlock() *ast.NativeStyleBlock {
 	line := p.current().Line
@@ -172,7 +296,7 @@ func (p *Parser) parseNativeStyleBlock() *ast.NativeStyleBlock {
 
 			if p.check(lexer.TOKEN_IS) {
 				p.advance() // consume "is"
-				// Read value - could be string or number
+				// Read value - could be string, number, boolean, or expression
 				var val string
 				if p.check(lexer.TOKEN_STRING) {
 					val = "\"" + p.advance().Value + "\""
@@ -184,6 +308,26 @@ func (p *Parser) parseNativeStyleBlock() *ast.NativeStyleBlock {
 				} else if p.check(lexer.TOKEN_NO) {
 					p.advance()
 					val = "false"
+				} else if p.check(lexer.TOKEN_IDENT) {
+					// Could be a variable reference or expression
+					val = p.advance().Value
+					// Handle dot access (e.g., theme.primary)
+					for p.check(lexer.TOKEN_DOT) {
+						p.advance() // consume "."
+						if p.check(lexer.TOKEN_IDENT) {
+							val += "." + p.advance().Value
+						}
+					}
+					// Handle ternary-like expressions: condition ? val1 : val2
+					// or simple arithmetic: width - 20
+					for p.check(lexer.TOKEN_PLUS) || p.check(lexer.TOKEN_MINUS) || p.check(lexer.TOKEN_STAR) || p.check(lexer.TOKEN_SLASH) {
+						op := p.advance().Value
+						if p.check(lexer.TOKEN_NUMBER) {
+							val += " " + op + " " + p.advance().Value
+						} else if p.check(lexer.TOKEN_IDENT) {
+							val += " " + op + " " + p.advance().Value
+						}
+					}
 				} else {
 					val = p.advance().Value
 				}

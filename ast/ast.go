@@ -603,6 +603,9 @@ type ComponentStatement struct {
 	Props      []string          // named prop declarations
 	States     []StateDeclaration
 	Effects    []EffectDeclaration // useEffect hooks (Expo mode)
+	Contexts   []UseContextDeclaration
+	Memos      []MemoDeclaration
+	Callbacks  []CallbackDeclaration
 	Methods    []FuncDefinition
 	RenderBody []RenderElement
 	Styles     *StyleBlock
@@ -1104,6 +1107,40 @@ type EffectDeclaration struct {
 
 func (s *EffectDeclaration) nodeType() string { return "Effect" }
 func (s *EffectDeclaration) stmtNode()        {}
+
+// --- Context (React useContext) ---
+
+type ContextDeclaration struct {
+	Name         string
+	DefaultValue Expression
+	Line         int
+}
+
+func (s *ContextDeclaration) nodeType() string { return "ContextDecl" }
+func (s *ContextDeclaration) stmtNode()        {}
+
+type UseContextDeclaration struct {
+	ContextName string
+	Alias       string
+	Line        int
+}
+
+// --- Memo and Callback hooks ---
+
+type MemoDeclaration struct {
+	Name         string
+	Value        Expression
+	Dependencies []string
+	Line         int
+}
+
+type CallbackDeclaration struct {
+	Name         string
+	Params       []string
+	Body         []Statement
+	Dependencies []string
+	Line         int
+}
 
 // NativeStyleBlock represents React Native StyleSheet styles.
 type NativeStyleBlock struct {

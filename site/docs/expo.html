@@ -49,7 +49,13 @@
         <li><a href="#components">Components</a></li>
         <li><a href="#state">State &amp; Hooks</a></li>
         <li><a href="#effects">Effects</a></li>
+        <li><a href="#context">Context</a></li>
+        <li><a href="#memo-callback">Memo &amp; Callback</a></li>
+        <li><a href="#alerts">Alerts</a></li>
+        <li><a href="#storage">AsyncStorage</a></li>
+        <li><a href="#flatlist">FlatList</a></li>
         <li><a href="#styling">Styling</a></li>
+        <li><a href="#sdk-imports">SDK Imports</a></li>
         <li><a href="#navigation">Navigation</a></li>
         <li><a href="#elements">Element Reference</a></li>
         <li><a href="#building">Building &amp; Running</a></li>
@@ -186,6 +192,130 @@ component ProfileScreen with navigation route:
       otherwise:
         text: "Data: {data}"</code></pre>
 
+      <h2 id="context">Context (Global State)</h2>
+
+      <p>Use React Context to share state across components without prop drilling. Define a context at the top level, then consume it inside any component.</p>
+
+      <h3>Defining a Context</h3>
+
+      <pre><code>-- Top-level context declaration
+context ThemeContext is "light"
+context UserContext is nothing</code></pre>
+
+      <p>This compiles to <code>React.createContext()</code>.</p>
+
+      <h3>Consuming a Context</h3>
+
+      <pre><code>component ThemedScreen:
+  use context ThemeContext as theme
+
+  to render:
+    view:
+      text: "Current theme: {theme}"</code></pre>
+
+      <p>The <code>use context</code> declaration compiles to <code>useContext(ThemeContext)</code>. The <code>as</code> keyword lets you name the local variable.</p>
+
+      <h2 id="memo-callback">Memo &amp; Callback</h2>
+
+      <p>Optimize performance with memoized values and callbacks — the Quill equivalents of <code>useMemo</code> and <code>useCallback</code>.</p>
+
+      <h3>Memoized Values</h3>
+
+      <pre><code>component ExpensiveScreen:
+  state items are []
+
+  memo total is computeTotal(items) when [items]
+  memo filtered is items.filter(isActive) when [items]
+
+  to render:
+    view:
+      text: "Total: {total}"</code></pre>
+
+      <p>The <code>memo</code> keyword creates a <code>useMemo</code> hook. The <code>when [deps]</code> clause specifies the dependency array — the value only recomputes when those variables change.</p>
+
+      <h3>Memoized Callbacks</h3>
+
+      <pre><code>component ListScreen:
+  state items are []
+
+  callback handlePress is with item:
+    say item.name
+  when [items]
+
+  to render:
+    view:
+      text: "List"</code></pre>
+
+      <p>The <code>callback</code> keyword creates a <code>useCallback</code> hook. Use <code>with</code> to define parameters, then write the body indented below. The <code>when [deps]</code> clause controls when the callback is recreated.</p>
+
+      <h2 id="alerts">Alerts</h2>
+
+      <p>Show native mobile alerts with the <code>alert()</code> function. In Expo mode, it compiles to <code>Alert.alert()</code>.</p>
+
+      <pre><code>component AlertExample:
+  to showError:
+    alert("Error", "Something went wrong")
+
+  to confirmDelete:
+    alert("Delete?", "This cannot be undone")
+
+  to render:
+    view:
+      button onPress showError:
+        text: "Show Error"</code></pre>
+
+      <p>The <code>Alert</code> import is added automatically when <code>alert()</code> is used.</p>
+
+      <h2 id="storage">AsyncStorage</h2>
+
+      <p>Persist data on the device with simple <code>store</code> and <code>load</code> functions. These compile to <code>AsyncStorage</code> calls.</p>
+
+      <pre><code>component SettingsScreen:
+  state theme is "light"
+
+  to saveTheme:
+    store("userTheme", theme)
+
+  to loadTheme:
+    result is load("userTheme")
+    theme is result
+
+  to clearTheme:
+    removeStore("userTheme")
+
+  to render:
+    view:
+      text: "Theme: {theme}"
+      button onPress saveTheme:
+        text: "Save"</code></pre>
+
+      <table>
+        <thead><tr><th>Quill</th><th>Compiles To</th></tr></thead>
+        <tbody>
+          <tr><td><code>store(key, value)</code></td><td><code>await AsyncStorage.setItem(key, JSON.stringify(value))</code></td></tr>
+          <tr><td><code>load(key)</code></td><td><code>JSON.parse(await AsyncStorage.getItem(key))</code></td></tr>
+          <tr><td><code>removeStore(key)</code></td><td><code>await AsyncStorage.removeItem(key)</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>The <code>@react-native-async-storage/async-storage</code> import is added automatically. Install it with:</p>
+      <pre><code>npx expo install @react-native-async-storage/async-storage</code></pre>
+
+      <h2 id="flatlist">FlatList</h2>
+
+      <p>Render long scrollable lists efficiently with <code>flatlist</code>. Quill generates proper <code>renderItem</code> and <code>keyExtractor</code> props.</p>
+
+      <pre><code>component UserList:
+  state users are []
+
+  to render:
+    view:
+      flatlist data users key id:
+        view style row:
+          text: "Name"</code></pre>
+
+      <p>The <code>data</code> prop specifies the array, and <code>key</code> specifies which field to use as the key extractor. Children inside the flatlist become the <code>renderItem</code> template. If no <code>key</code> prop is given, a default index-based key extractor is used.</p>
+
       <h2 id="styling">Styling</h2>
 
       <p>Use <code>style native:</code> blocks inside components. Properties use Quill's natural <code>is</code> syntax and multi-word properties become camelCase automatically.</p>
@@ -269,6 +399,39 @@ navigate to "Profile" with { userId: 42, name: "Arhan" }</code></pre>
     screen "Home" component HomeScreen
     screen "Search" component SearchScreen
     screen "Profile" component ProfileScreen</code></pre>
+
+      <h2 id="sdk-imports">Expo SDK Imports</h2>
+
+      <p>Import Expo SDK modules using Quill's <code>use</code> keyword. In Expo mode, imports compile to ESM <code>import</code> statements instead of CommonJS <code>require()</code>.</p>
+
+      <pre><code>-- Import an entire module
+use "expo-location" as Location
+
+-- Import specific items from a module
+from "expo-notifications" use scheduleNotification sendNotification
+
+-- Import Expo Camera
+use "expo-camera" as Camera</code></pre>
+
+      <p>This compiles to:</p>
+
+      <pre><code>import * as Location from 'expo-location';
+import { scheduleNotification, sendNotification } from 'expo-notifications';
+import * as Camera from 'expo-camera';</code></pre>
+
+      <p>Common Expo SDK modules you can import this way:</p>
+
+      <table>
+        <thead><tr><th>Module</th><th>Quill Import</th></tr></thead>
+        <tbody>
+          <tr><td>Location</td><td><code>use "expo-location" as Location</code></td></tr>
+          <tr><td>Notifications</td><td><code>use "expo-notifications" as Notifications</code></td></tr>
+          <tr><td>Camera</td><td><code>use "expo-camera" as Camera</code></td></tr>
+          <tr><td>Image Picker</td><td><code>use "expo-image-picker" as ImagePicker</code></td></tr>
+          <tr><td>File System</td><td><code>use "expo-file-system" as FileSystem</code></td></tr>
+          <tr><td>Haptics</td><td><code>use "expo-haptics" as Haptics</code></td></tr>
+        </tbody>
+      </table>
 
       <h2 id="elements">Element Reference</h2>
 

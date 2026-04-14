@@ -131,6 +131,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseEveryStatement()
 	case p.check(lexer.TOKEN_DELETE):
 		return p.parseDelete()
+	case p.check(lexer.TOKEN_IDENT) && p.current().Value == "context" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT:
+		return p.parseContextDecl()
 	case p.check(lexer.TOKEN_IDENT) && p.current().Value == "server" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_COLON:
 		return p.parseServerBlock()
 	case p.check(lexer.TOKEN_IDENT) && p.current().Value == "auth" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_COLON:

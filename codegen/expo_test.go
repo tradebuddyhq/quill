@@ -195,6 +195,167 @@ func TestExpoModeFlag(t *testing.T) {
 	}
 }
 
+func TestExpoUseContext(t *testing.T) {
+	src := `context ThemeContext is "light"
+
+component ThemedScreen:
+  use context ThemeContext as theme
+
+  to render:
+    view:
+      text: "Theme"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "React.createContext(") {
+		t.Error("expected React.createContext call")
+	}
+	if !strings.Contains(output, "useContext(ThemeContext)") {
+		t.Error("expected useContext(ThemeContext)")
+	}
+	if !strings.Contains(output, "const theme = useContext") {
+		t.Error("expected const theme = useContext")
+	}
+	if !strings.Contains(output, ", useContext") {
+		t.Error("expected useContext in React imports")
+	}
+}
+
+func TestExpoUseMemo(t *testing.T) {
+	src := `component ListScreen:
+  state items are []
+
+  memo total is items.length when [items]
+
+  to render:
+    view:
+      text: "Total"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "useMemo(") {
+		t.Error("expected useMemo call")
+	}
+	if !strings.Contains(output, "[items]") {
+		t.Error("expected dependency array [items]")
+	}
+	if !strings.Contains(output, ", useMemo") {
+		t.Error("expected useMemo in React imports")
+	}
+}
+
+func TestExpoUseCallback(t *testing.T) {
+	src := `component CallbackScreen:
+  state items are []
+
+  callback handlePress is with item:
+    say item
+  when [items]
+
+  to render:
+    view:
+      text: "Callback"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "useCallback(") {
+		t.Error("expected useCallback call")
+	}
+	if !strings.Contains(output, "[items]") {
+		t.Error("expected dependency array [items]")
+	}
+	if !strings.Contains(output, ", useCallback") {
+		t.Error("expected useCallback in React imports")
+	}
+}
+
+func TestExpoAlertMapping(t *testing.T) {
+	src := `component AlertScreen:
+  to showAlert:
+    alert("Error", "Something went wrong")
+
+  to render:
+    view:
+      text: "Alert"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "Alert.alert(") {
+		t.Error("expected Alert.alert() call")
+	}
+	if !strings.Contains(output, "Alert") {
+		t.Error("expected Alert in react-native imports")
+	}
+}
+
+func TestExpoAsyncStorage(t *testing.T) {
+	src := `component StorageScreen:
+  to saveData:
+    store("key", "value")
+
+  to render:
+    view:
+      text: "Storage"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "AsyncStorage.setItem(") {
+		t.Error("expected AsyncStorage.setItem call")
+	}
+	if !strings.Contains(output, "@react-native-async-storage/async-storage") {
+		t.Error("expected AsyncStorage import")
+	}
+}
+
+func TestExpoESMImports(t *testing.T) {
+	src := `use "expo-location" as Location
+
+component LocationScreen:
+  to render:
+    view:
+      text: "Location"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "import * as Location from 'expo-location'") {
+		t.Error("expected ESM import for expo-location")
+	}
+}
+
+func TestExpoFlatListRendering(t *testing.T) {
+	src := `component ListScreen:
+  state items are []
+
+  to render:
+    view:
+      flatlist data items key id:
+        view:
+          text: "Item"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "<FlatList") {
+		t.Error("expected <FlatList")
+	}
+	if !strings.Contains(output, "FlatList") {
+		t.Error("expected FlatList in imports")
+	}
+}
+
 func TestMapRNTag(t *testing.T) {
 	tests := map[string]string{
 		"view":      "View",

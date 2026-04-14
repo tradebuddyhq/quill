@@ -1304,7 +1304,7 @@ quill build --expo screens/Home.quill
 npx expo start
 ```
 
-Features: components with props, useState hooks, useEffect, StyleSheet, React Navigation (stack/tab/drawer), and all core React Native elements.
+Features: components with props, useState/useEffect/useContext/useMemo/useCallback hooks, StyleSheet, React Navigation (stack/tab/drawer), Alert.alert(), AsyncStorage (store/load/removeStore), FlatList with renderItem, ESM imports for Expo SDK modules (expo-location, expo-notifications, etc.), and all core React Native elements.
 
 See the [Expo documentation](https://quill.tradebuddy.dev/docs/expo)
 
