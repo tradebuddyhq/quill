@@ -13,7 +13,7 @@ import (
 )
 
 // Version is set by the caller (main.go) to keep the version in one place.
-var Version = "0.10.1"
+var Version = "0.10.2"
 
 func findRuntime() string {
 	for _, name := range []string{"node", "bun", "deno"} {

@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-const version = "0.10.1"
+const version = "0.10.2"
 
 // displayCompileError formats a compile error with source context and prints to stderr.
 // It extracts line/column from ParseError or falls back to a plain message.
