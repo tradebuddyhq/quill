@@ -15,6 +15,9 @@
   "categories": ["Programming Languages"],
   "activationEvents": ["onLanguage:quill"],
   "main": "./extension.js",
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
   "contributes": {
     "languages": [{
       "id": "quill",

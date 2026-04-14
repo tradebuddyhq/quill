@@ -1,9 +1,30 @@
 const vscode = require('vscode');
-const { exec } = require('child_process');
-const path = require('path');
+const { LanguageClient, TransportKind } = require('vscode-languageclient/node');
+
+let client;
 
 function activate(context) {
-    // Run command
+    // ---- LSP Client ----
+    const serverOptions = {
+        command: 'quill',
+        args: ['lsp'],
+        transport: TransportKind.stdio
+    };
+
+    const clientOptions = {
+        documentSelector: [{ scheme: 'file', language: 'quill' }],
+    };
+
+    client = new LanguageClient(
+        'quillLanguageServer',
+        'Quill Language Server',
+        serverOptions,
+        clientOptions
+    );
+
+    client.start();
+
+    // ---- Run command ----
     let runCmd = vscode.commands.registerCommand('quill.run', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
@@ -13,7 +34,6 @@ function activate(context) {
             return;
         }
 
-        // Save first
         editor.document.save().then(() => {
             const terminal = vscode.window.createTerminal('Quill');
             terminal.show();
@@ -21,7 +41,7 @@ function activate(context) {
         });
     });
 
-    // Build command
+    // ---- Build command ----
     let buildCmd = vscode.commands.registerCommand('quill.build', () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;
@@ -35,7 +55,7 @@ function activate(context) {
         });
     });
 
-    // Init command
+    // ---- Init command ----
     let initCmd = vscode.commands.registerCommand('quill.init', () => {
         const folder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         if (!folder) {
@@ -49,14 +69,13 @@ function activate(context) {
 
     context.subscriptions.push(runCmd, buildCmd, initCmd);
 
-    // Status bar item
+    // ---- Status bar ----
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     statusBar.text = '$(play) Run Quill';
     statusBar.command = 'quill.run';
     statusBar.tooltip = 'Run current Quill file (Ctrl+Shift+R)';
     context.subscriptions.push(statusBar);
 
-    // Show status bar for .quill files
     vscode.window.onDidChangeActiveTextEditor(editor => {
         if (editor && editor.document.languageId === 'quill') {
             statusBar.show();
@@ -65,12 +84,15 @@ function activate(context) {
         }
     });
 
-    // Check on activation
     if (vscode.window.activeTextEditor?.document.languageId === 'quill') {
         statusBar.show();
     }
 }
 
-function deactivate() {}
+function deactivate() {
+    if (client) {
+        return client.stop();
+    }
+}
 
 module.exports = { activate, deactivate };

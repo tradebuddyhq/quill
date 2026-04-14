@@ -12,6 +12,16 @@ const OrmRuntime = `
 (function(global) {
   "use strict";
 
+  // --- Column name sanitization ---
+
+  var __validColumn = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+  function __safeCol(name) {
+    if (!__validColumn.test(name)) {
+      throw new Error("Invalid column name: " + name);
+    }
+    return name;
+  }
+
   // --- Query Builder ---
 
   function QueryBuilder(model) {
@@ -50,7 +60,7 @@ const OrmRuntime = `
     var params = [];
     for (var i = 0; i < this._conditions.length; i++) {
       var c = this._conditions[i];
-      clauses.push(c.field + " " + c.op + " ?");
+      clauses.push(__safeCol(c.field) + " " + c.op + " ?");
       params.push(c.value);
     }
     return { sql: " WHERE " + clauses.join(" AND "), params: params };
@@ -59,7 +69,7 @@ const OrmRuntime = `
   QueryBuilder.prototype._buildSuffix = function() {
     var sql = "";
     if (this._orderByField) {
-      sql += " ORDER BY " + this._orderByField + " " + this._orderDir;
+      sql += " ORDER BY " + __safeCol(this._orderByField) + " " + this._orderDir;
     }
     if (this._limitVal !== null) {
       sql += " LIMIT " + this._limitVal;
@@ -107,7 +117,7 @@ const OrmRuntime = `
   function Model(db, name, schema) {
     this._db = db;
     this._name = name;
-    this._tableName = name.toLowerCase() + "s";
+    this._tableName = __safeCol(name.toLowerCase() + "s");
     this._schema = schema;
     this._fields = Object.keys(schema);
   }
@@ -119,7 +129,7 @@ const OrmRuntime = `
     for (var i = 0; i < this._fields.length; i++) {
       var f = this._fields[i];
       if (data[f] !== undefined) {
-        fields.push(f);
+        fields.push(__safeCol(f));
         placeholders.push("?");
         values.push(data[f]);
       }
@@ -135,7 +145,7 @@ const OrmRuntime = `
     var clauses = [];
     var params = [];
     for (var key in query) {
-      clauses.push(key + " = ?");
+      clauses.push(__safeCol(key) + " = ?");
       params.push(query[key]);
     }
     var sql = "SELECT * FROM " + this._tableName + " WHERE " + clauses.join(" AND ");
@@ -151,12 +161,12 @@ const OrmRuntime = `
     var setClauses = [];
     var params = [];
     for (var key in data) {
-      setClauses.push(key + " = ?");
+      setClauses.push(__safeCol(key) + " = ?");
       params.push(data[key]);
     }
     var whereClauses = [];
     for (var key in query) {
-      whereClauses.push(key + " = ?");
+      whereClauses.push(__safeCol(key) + " = ?");
       params.push(query[key]);
     }
     var sql = "UPDATE " + this._tableName + " SET " + setClauses.join(", ");
@@ -170,7 +180,7 @@ const OrmRuntime = `
     var clauses = [];
     var params = [];
     for (var key in query) {
-      clauses.push(key + " = ?");
+      clauses.push(__safeCol(key) + " = ?");
       params.push(query[key]);
     }
     var sql = "DELETE FROM " + this._tableName;
@@ -307,7 +317,7 @@ const OrmRuntime = `
       for (var field in m._schema) {
         var def = m._schema[field];
         var type = typeof def === "string" ? def : (def.type || "text");
-        var col = field + " " + sqlType(type);
+        var col = __safeCol(field) + " " + sqlType(type);
         if (def.required) col += " NOT NULL";
         if (def.unique) col += " UNIQUE";
         if (def.default !== undefined) col += " DEFAULT " + JSON.stringify(def.default);

@@ -111,13 +111,26 @@ func GetApplied(queryFunc func(sql string) ([]string, error)) ([]string, error) 
 	return queryFunc("SELECT version FROM __quill_migrations ORDER BY version")
 }
 
+var safeMigrationName = regexp.MustCompile(`^[a-zA-Z0-9_\-]+$`)
+
+func sanitizeMigrationField(s string) string {
+	if !safeMigrationName.MatchString(s) {
+		// Strip anything that isn't alphanumeric, underscore, or hyphen
+		clean := regexp.MustCompile(`[^a-zA-Z0-9_\-]`).ReplaceAllString(s, "")
+		return clean
+	}
+	return s
+}
+
 // ApplyDBMigration runs the up SQL and records it in the tracking table.
 func ApplyDBMigration(migration DBMigration, execFunc func(sql string) error) error {
 	if err := execFunc(migration.UpSQL); err != nil {
 		return fmt.Errorf("failed to apply migration %s_%s: %w", migration.Version, migration.Name, err)
 	}
+	version := sanitizeMigrationField(migration.Version)
+	name := sanitizeMigrationField(migration.Name)
 	trackSQL := fmt.Sprintf("INSERT INTO __quill_migrations (version, name, applied_at) VALUES ('%s', '%s', datetime('now'))",
-		migration.Version, migration.Name)
+		version, name)
 	if err := execFunc(trackSQL); err != nil {
 		return fmt.Errorf("failed to record migration %s_%s: %w", migration.Version, migration.Name, err)
 	}
@@ -132,7 +145,8 @@ func RollbackMigration(migration DBMigration, execFunc func(sql string) error) e
 	if err := execFunc(migration.DownSQL); err != nil {
 		return fmt.Errorf("failed to rollback migration %s_%s: %w", migration.Version, migration.Name, err)
 	}
-	trackSQL := fmt.Sprintf("DELETE FROM __quill_migrations WHERE version = '%s'", migration.Version)
+	version := sanitizeMigrationField(migration.Version)
+	trackSQL := fmt.Sprintf("DELETE FROM __quill_migrations WHERE version = '%s'", version)
 	if err := execFunc(trackSQL); err != nil {
 		return fmt.Errorf("failed to remove migration record %s_%s: %w", migration.Version, migration.Name, err)
 	}

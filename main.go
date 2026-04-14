@@ -1554,6 +1554,7 @@ func printUsage() {
 	fmt.Println("  quill build <file> --standalone     Compile as standalone executable")
 	fmt.Println("  quill build <file> --llvm           Compile to LLVM IR (.ll file)")
 	fmt.Println("  quill repl                   Start interactive REPL")
+	fmt.Println("  quill watch <file.quill>     Watch a file and re-run on changes")
 	fmt.Println("  quill lsp                    Start the LSP server (for editor integration)")
 	fmt.Println("  quill test [files...]        Run tests in .quill files")
 	fmt.Println("  quill test --coverage        Run tests with coverage report")

@@ -38,7 +38,7 @@ const startsWith = (s, prefix) => s.startsWith(prefix);
 const endsWith = (s, suffix) => s.endsWith(suffix);
 const now = () => new Date().toISOString();
 const today = () => new Date().toISOString().split('T')[0];
-const wait = (ms) => { const end = Date.now() + ms; while (Date.now() < end) {} };
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const parseJSON = (s) => JSON.parse(s);
 const toJSON = (x) => JSON.stringify(x, null, 2);
 const prompt = (msg) => { const rl = require('readline').createInterface({input: process.stdin, output: process.stdout}); return new Promise(r => rl.question(msg || '> ', a => { rl.close(); r(a); })); };
