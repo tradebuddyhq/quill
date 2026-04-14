@@ -334,6 +334,7 @@ say reply2   -- "Your name is Alice"
 - **Docs generator** — `quill docs` generates styled HTML documentation
 - **Package manager** — `quill add express`, `quill remove express`
 - **Interactive tutorial** — `quill learn` — 10 hands-on lessons right in your terminal
+- **Instant sharing** — `quill share app.quill` creates a shareable playground link
 - **Interactive REPL** — `quill repl`
 - **Dev server** — `quill serve` with hot reload and file-based routing
 - **Profiler** — `quill profile app.quill` for function timing reports
@@ -405,6 +406,7 @@ say reply2   -- "Your name is Alice"
 | `quill search query` | Search the package registry |
 | `quill install` | Install all dependencies |
 | `quill bump patch` | Bump version in quill.json |
+| `quill share file.quill` | Create a shareable playground link |
 | `quill deploy` | Generate Dockerfile and production bundle |
 | `quill db migrate` | Run pending database migrations |
 | `quill db rollback` | Roll back the last migration |

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -250,6 +251,14 @@ func main() {
 
 	case "deploy":
 		deployApp()
+
+	case "share":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a file to share")
+			fmt.Fprintln(os.Stderr, "Usage: quill share <file.quill>")
+			os.Exit(1)
+		}
+		shareFile(os.Args[2])
 
 	case "db":
 		dbCommand(os.Args[2:])
@@ -1746,6 +1755,7 @@ func printUsage() {
 	fmt.Println("  quill search <query>         Search the local package registry")
 	fmt.Println("                                       (remote registry coming soon)")
 	fmt.Println("  quill bump <major|minor|patch>  Bump version in quill.json")
+	fmt.Println("  quill share <file.quill>     Create a shareable playground link")
 	fmt.Println("  quill deploy                 Deploy the app (generate deployment bundle)")
 	fmt.Println("  quill deploy --preview       Deploy in preview mode")
 	fmt.Println("  quill deploy --production    Deploy in production mode")
@@ -1804,6 +1814,55 @@ func serveApp() {
 		fmt.Fprintf(os.Stderr, "Error starting server: %s\n", err)
 		os.Exit(1)
 	}
+}
+
+func shareFile(filename string) {
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not read %s: %s\n", filename, err)
+		os.Exit(1)
+	}
+
+	// Base64 encode the source code
+	encoded := base64.StdEncoding.EncodeToString(source)
+	url := "https://quill.tradebuddy.dev/playground#code=" + encoded
+
+	fmt.Println()
+	fmt.Println("  Shareable link created!")
+	fmt.Println()
+	fmt.Println("  " + url)
+	fmt.Println()
+	fmt.Printf("  Anyone with this link can view, run, and remix your code.\n")
+	fmt.Printf("  File: %s (%d bytes)\n", filename, len(source))
+	fmt.Println()
+
+	// Try to copy to clipboard
+	if copyToClipboard(url) {
+		fmt.Println("  Copied to clipboard!")
+		fmt.Println()
+	}
+}
+
+func copyToClipboard(text string) bool {
+	// Try pbcopy (macOS), xclip (Linux), clip (Windows)
+	for _, cmd := range []struct{ name, flag string }{
+		{"pbcopy", ""},
+		{"xclip", "-selection clipboard"},
+		{"clip", ""},
+	} {
+		if _, err := exec.LookPath(cmd.name); err == nil {
+			args := []string{}
+			if cmd.flag != "" {
+				args = append(args, strings.Fields(cmd.flag)...)
+			}
+			c := exec.Command(cmd.name, args...)
+			c.Stdin = strings.NewReader(text)
+			if c.Run() == nil {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func deployApp() {
