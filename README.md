@@ -335,6 +335,7 @@ say reply2   -- "Your name is Alice"
 - **Package manager** — `quill add express`, `quill remove express`
 - **Interactive tutorial** — `quill learn` — 10 hands-on lessons right in your terminal
 - **Instant sharing** — `quill share app.quill` creates a shareable playground link
+- **Drawing & charts** — `drawCircle()`, `drawLine()`, `chart()` with auto-opening canvas
 - **Interactive REPL** — `quill repl`
 - **Dev server** — `quill serve` with hot reload and file-based routing
 - **Profiler** — `quill profile app.quill` for function timing reports

@@ -177,4 +177,27 @@ const ordinal = (n) => { const s = ['th','st','nd','rd']; const v = n % 100; ret
 const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
 const lerp = (a, b, t) => a + (b - a) * t;
 const mapRange = (n, inMin, inMax, outMin, outMax) => (n - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+
+// Drawing & Charts (Node.js: buffers commands, opens HTML in browser)
+const __drawCmds = [];
+const __canvasW = 600, __canvasH = 400;
+const drawCircle = (x, y, size, color) => { __drawCmds.push({t:'circle',x,y,r:size,c:color||'black'}); };
+const drawRect = (x, y, w, h, color) => { __drawCmds.push({t:'rect',x,y,w,h,c:color||'black'}); };
+const drawLine = (x1, y1, x2, y2, color, width) => { __drawCmds.push({t:'line',x1,y1,x2,y2,c:color||'black',w:width||2}); };
+const drawText = (text, x, y, color, size) => { __drawCmds.push({t:'text',text,x,y,c:color||'black',s:size||16}); };
+const fillBackground = (color) => { __drawCmds.push({t:'bg',c:color}); };
+const chart = (data, type, title) => { __drawCmds.push({t:'chart',data,chartType:type||'bar',title:title||''}); };
+const showCanvas = (title) => {
+  if (__drawCmds.length === 0) return;
+  const fs = require('fs');
+  const path = require('path');
+  const os = require('os');
+  const cmds = JSON.stringify(__drawCmds);
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + (title||'Quill Canvas') + '</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1a1a2e;font-family:sans-serif}canvas{border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.3)}</style></head><body><canvas id="c" width="'+__canvasW+'" height="'+__canvasH+'"></canvas><script>const cmds='+cmds+';const c=document.getElementById("c");const ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);const colors=["#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#b07aa1","#ff9da7","#9c755f","#bab0ac"];cmds.forEach(d=>{if(d.t==="bg"){ctx.fillStyle=d.c;ctx.fillRect(0,0,c.width,c.height)}else if(d.t==="circle"){ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=d.c;ctx.fill()}else if(d.t==="rect"){ctx.fillStyle=d.c;ctx.fillRect(d.x,d.y,d.w,d.h)}else if(d.t==="line"){ctx.beginPath();ctx.moveTo(d.x1,d.y1);ctx.lineTo(d.x2,d.y2);ctx.strokeStyle=d.c;ctx.lineWidth=d.w;ctx.stroke()}else if(d.t==="text"){ctx.fillStyle=d.c;ctx.font=d.s+"px sans-serif";ctx.fillText(d.text,d.x,d.y)}else if(d.t==="chart"){const data=d.data;const max=Math.max(...data);const pad=50;const w=(c.width-pad*2)/data.length;if(d.title){ctx.fillStyle="#333";ctx.font="bold 18px sans-serif";ctx.textAlign="center";ctx.fillText(d.title,c.width/2,30);ctx.textAlign="start"}if(d.chartType==="bar"){data.forEach((v,i)=>{const h=(v/max)*(c.height-pad*2);const x=pad+i*w+w*0.1;const y=c.height-pad-h;ctx.fillStyle=colors[i%colors.length];ctx.fillRect(x,y,w*0.8,h);ctx.fillStyle="#333";ctx.font="12px sans-serif";ctx.textAlign="center";ctx.fillText(v,x+w*0.4,y-5);ctx.textAlign="start"})}else if(d.chartType==="line"){ctx.beginPath();data.forEach((v,i)=>{const x=pad+i*w+w/2;const y=c.height-pad-(v/max)*(c.height-pad*2);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.strokeStyle=colors[0];ctx.lineWidth=3;ctx.stroke();data.forEach((v,i)=>{const x=pad+i*w+w/2;const y=c.height-pad-(v/max)*(c.height-pad*2);ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle=colors[0];ctx.fill()})}else if(d.chartType==="pie"){let total=data.reduce((a,b)=>a+b,0);let angle=0;const cx=c.width/2,cy=c.height/2+10,r=Math.min(c.width,c.height)/2-pad;data.forEach((v,i)=>{const slice=v/total*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+slice);ctx.fillStyle=colors[i%colors.length];ctx.fill();angle+=slice})}}});</script></body></html>';
+  const tmpFile = path.join(os.tmpdir(), 'quill-canvas-' + Date.now() + '.html');
+  fs.writeFileSync(tmpFile, html);
+  const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
+  require('child_process').exec(opener + ' ' + tmpFile);
+};
+process.on('exit', () => { if (__drawCmds.length > 0) showCanvas(); });
 `

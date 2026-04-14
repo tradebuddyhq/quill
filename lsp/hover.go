@@ -368,6 +368,15 @@ var stdlibDocs = map[string]StdlibInfo{
 	"serveStatic":   {Signature: "serveStatic(dir) -> function", Doc: "Creates middleware to serve static files.", RetType: "function"},
 	"template":      {Signature: "template(text, data) -> text", Doc: "Renders a template string with data.", RetType: "text"},
 
+	// Drawing & Charts
+	"drawCircle":     {Signature: "drawCircle(x, y, size, color?)", Doc: "Draws a filled circle on the canvas.", RetType: ""},
+	"drawRect":       {Signature: "drawRect(x, y, width, height, color?)", Doc: "Draws a filled rectangle on the canvas.", RetType: ""},
+	"drawLine":       {Signature: "drawLine(x1, y1, x2, y2, color?, width?)", Doc: "Draws a line between two points.", RetType: ""},
+	"drawText":       {Signature: "drawText(text, x, y, color?, size?)", Doc: "Draws text on the canvas.", RetType: ""},
+	"fillBackground": {Signature: "fillBackground(color)", Doc: "Fills the entire canvas background with a color.", RetType: ""},
+	"chart":          {Signature: "chart(data, type?, title?)", Doc: "Draws a chart. Types: 'bar' (default), 'line', 'pie'.", RetType: ""},
+	"showCanvas":     {Signature: "showCanvas(title?)", Doc: "Opens the canvas in a browser window. Auto-called on exit.", RetType: ""},
+
 	// Database functions
 	"openDB":   {Signature: "openDB(path) -> object", Doc: "Opens a SQLite database connection.", RetType: "object"},
 	"query":    {Signature: "query(db, sql, params) -> list", Doc: "Executes a SQL query and returns results.", RetType: "list"},
