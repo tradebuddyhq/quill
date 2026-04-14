@@ -225,7 +225,15 @@ var stdlibDocs = map[string]StdlibInfo{
 	"ceil":      {Signature: "ceil(number) -> number", Doc: "Rounds up to the nearest integer.", RetType: "number"},
 	"abs":       {Signature: "abs(number) -> number", Doc: "Returns the absolute value.", RetType: "number"},
 	"random":    {Signature: "random() -> number", Doc: "Returns a random number between 0 and 1.", RetType: "number"},
-	"randomInt": {Signature: "randomInt(min, max) -> number", Doc: "Returns a random integer between min and max.", RetType: "number"},
+	"randomInt":    {Signature: "randomInt(min, max) -> number", Doc: "Returns a random integer between min and max.", RetType: "number"},
+	"formatNumber": {Signature: "formatNumber(n, decimals?) -> text", Doc: "Formats a number with locale separators or fixed decimal places.", RetType: "text"},
+	"toFixed":      {Signature: "toFixed(n, digits) -> number", Doc: "Rounds a number to a fixed number of decimal places.", RetType: "number"},
+	"percent":      {Signature: "percent(n, decimals?) -> text", Doc: "Formats a decimal as a percentage string (e.g. 0.85 -> '85.0%').", RetType: "text"},
+	"currency":     {Signature: "currency(n, symbol?) -> text", Doc: "Formats a number as currency with commas (default '$').", RetType: "text"},
+	"ordinal":      {Signature: "ordinal(n) -> text", Doc: "Returns a number with its ordinal suffix (1st, 2nd, 3rd, etc.).", RetType: "text"},
+	"clamp":        {Signature: "clamp(n, min, max) -> number", Doc: "Clamps a number between min and max.", RetType: "number"},
+	"lerp":         {Signature: "lerp(a, b, t) -> number", Doc: "Linear interpolation between a and b by factor t (0-1).", RetType: "number"},
+	"mapRange":     {Signature: "mapRange(n, inMin, inMax, outMin, outMax) -> number", Doc: "Maps a number from one range to another.", RetType: "number"},
 
 	// List functions
 	"push":     {Signature: "push(list, item) -> list", Doc: "Adds an item to the end of a list.", RetType: "list"},
@@ -342,7 +350,7 @@ var stdlibDocs = map[string]StdlibInfo{
 	"parentDir":     {Signature: "parentDir(path) -> text", Doc: "Returns the parent directory of a path.", RetType: "text"},
 
 	// System functions
-	"env":        {Signature: "env(name) -> text", Doc: "Returns an environment variable value.", RetType: "text"},
+	"env":        {Signature: "env(name, fallback?) -> text", Doc: "Returns an environment variable value. Falls back to the second argument or empty string.", RetType: "text"},
 	"setEnv":     {Signature: "setEnv(name, value)", Doc: "Sets an environment variable.", RetType: ""},
 	"args":       {Signature: "args() -> list", Doc: "Returns command-line arguments.", RetType: "list"},
 	"memory":     {Signature: "memory() -> object", Doc: "Returns memory usage information.", RetType: "object"},

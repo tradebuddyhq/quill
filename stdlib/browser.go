@@ -154,6 +154,16 @@ const words = (s) => s.trim().split(/\s+/);
 const lines = (s) => s.split('\n');
 const truncate = (s, len) => s.length > len ? s.slice(0, len) + '...' : s;
 
+// Number formatting
+const formatNumber = (n, decimals) => decimals !== undefined ? n.toFixed(decimals) : n.toLocaleString();
+const toFixed = (n, digits) => Number(n.toFixed(digits));
+const percent = (n, decimals) => (n * 100).toFixed(decimals !== undefined ? decimals : 1) + '%';
+const currency = (n, symbol) => (symbol || '$') + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const ordinal = (n) => { const s = ['th','st','nd','rd']; const v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+const lerp = (a, b, t) => a + (b - a) * t;
+const mapRange = (n, inMin, inMax, outMin, outMax) => (n - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+
 // Date/Time enhanced
 const timestamp = () => Date.now();
 const formatDate = (date, fmt) => { const d = new Date(date); const pad = (n) => String(n).padStart(2, '0'); return (fmt || 'YYYY-MM-DD').replace('YYYY', d.getFullYear()).replace('MM', pad(d.getMonth() + 1)).replace('DD', pad(d.getDate())).replace('HH', pad(d.getHours())).replace('mm', pad(d.getMinutes())).replace('ss', pad(d.getSeconds())); };

@@ -342,6 +342,11 @@ func (l *Lexer) skipComment() {
 }
 
 func (l *Lexer) readString() error {
+	// Check for triple-quote multiline string """..."""
+	if l.pos+2 < len(l.source) && l.source[l.pos+1] == '"' && l.source[l.pos+2] == '"' {
+		return l.readMultilineString()
+	}
+
 	l.pos++ // skip opening quote
 	l.col++
 	start := l.pos
@@ -369,6 +374,49 @@ func (l *Lexer) readString() error {
 	l.pos++ // skip closing quote
 	l.col++
 	return nil
+}
+
+func (l *Lexer) readMultilineString() error {
+	l.pos += 3 // skip opening """
+	l.col += 3
+	start := l.pos
+	startLine := l.line
+
+	// Skip leading newline after opening """
+	if l.pos < len(l.source) && l.source[l.pos] == '\n' {
+		l.pos++
+		l.line++
+		l.col = 0
+		start = l.pos
+	}
+
+	for l.pos < len(l.source) {
+		if l.source[l.pos] == '"' && l.pos+2 < len(l.source) && l.source[l.pos+1] == '"' && l.source[l.pos+2] == '"' {
+			value := l.source[start:l.pos]
+			// Trim trailing newline before closing """
+			if len(value) > 0 && value[len(value)-1] == '\n' {
+				value = value[:len(value)-1]
+			}
+			l.addToken(TOKEN_STRING, value)
+			l.pos += 3 // skip closing """
+			l.col += 3
+			return nil
+		}
+		if l.source[l.pos] == '\\' && l.pos+1 < len(l.source) {
+			l.pos += 2
+			l.col += 2
+			continue
+		}
+		if l.source[l.pos] == '\n' {
+			l.line++
+			l.col = 0
+		} else {
+			l.col++
+		}
+		l.pos++
+	}
+
+	return fmt.Errorf("line %d: unterminated multiline string (started on line %d)", l.line, startLine)
 }
 
 func (l *Lexer) readNumber() {

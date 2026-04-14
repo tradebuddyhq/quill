@@ -179,6 +179,14 @@ func main() {
 	case "init":
 		initProject()
 
+	case "new":
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: please provide a project name")
+			fmt.Fprintln(os.Stderr, "Usage: quill new <name>")
+			os.Exit(1)
+		}
+		newProject(os.Args[2])
+
 	case "add":
 		if len(os.Args) < 3 {
 			fmt.Fprintln(os.Stderr, "Error: please provide a package name")
@@ -950,6 +958,57 @@ func initProject() {
 	fmt.Println("  Run: quill run main.quill")
 }
 
+func newProject(name string) {
+	// Validate name
+	if name == "" {
+		fmt.Fprintln(os.Stderr, "Error: please provide a project name")
+		os.Exit(1)
+	}
+
+	// Check if directory already exists
+	if _, err := os.Stat(name); err == nil {
+		fmt.Fprintf(os.Stderr, "Error: directory %q already exists\n", name)
+		os.Exit(1)
+	}
+
+	// Create directory
+	if err := os.MkdirAll(name, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: could not create directory: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Create quill.toml
+	cfg := config.DefaultConfig()
+	cfg.Project.Name = name
+	cfg.Project.Version = "0.1.0"
+	cfg.Build.Target = "js"
+	tomlContent := config.GenerateTOML(cfg)
+	os.WriteFile(filepath.Join(name, "quill.toml"), []byte(tomlContent), 0644)
+
+	// Create quill.json
+	jsonConfig := map[string]interface{}{
+		"name":         name,
+		"version":      "0.1.0",
+		"description":  "",
+		"author":       "",
+		"license":      "MIT",
+		"main":         "main.quill",
+		"keywords":     []string{},
+		"repository":   "",
+		"dependencies": map[string]string{},
+	}
+	data, _ := json.MarshalIndent(jsonConfig, "", "  ")
+	os.WriteFile(filepath.Join(name, "quill.json"), data, 0644)
+
+	// Create main.quill
+	starter := fmt.Sprintf("-- %s\n-- Created with Quill\n\nsay \"Hello from %s!\"\n", name, name)
+	os.WriteFile(filepath.Join(name, "main.quill"), []byte(starter), 0644)
+
+	fmt.Printf("Created project %q\n", name)
+	fmt.Println("  cd " + name)
+	fmt.Println("  quill run main.quill")
+}
+
 func addPackage(pkg string) {
 	// Read or create quill.json
 	var config map[string]interface{}
@@ -1397,6 +1456,7 @@ func runTestsCommand(args []string) {
 	var coverageMode bool
 	var coverageHTML bool
 	var coverageMin float64
+	var watchMode bool
 	var testFiles []string
 
 	for i := 0; i < len(args); i++ {
@@ -1415,15 +1475,111 @@ func runTestsCommand(args []string) {
 					coverageMin = val
 				}
 			}
+		case "--watch", "-w":
+			watchMode = true
 		default:
 			testFiles = append(testFiles, args[i])
 		}
 	}
 
-	if coverageMode {
+	if watchMode {
+		watchTests(testFiles)
+	} else if coverageMode {
 		runTestsWithCoverage(testFiles, coverageHTML, coverageMin)
 	} else {
 		runTests(testFiles)
+	}
+}
+
+func watchTests(files []string) {
+	// Resolve test files
+	dir := "."
+	if len(files) == 0 {
+		entries, _ := os.ReadDir(dir)
+		for _, e := range entries {
+			if filepath.Ext(e.Name()) == ".quill" {
+				files = append(files, e.Name())
+			}
+		}
+	}
+	if len(files) == 0 {
+		fmt.Println("No .quill files found to test")
+		return
+	}
+
+	// Get absolute paths
+	var watchPaths []string
+	for _, f := range files {
+		abs, err := filepath.Abs(f)
+		if err == nil {
+			watchPaths = append(watchPaths, abs)
+		}
+	}
+	if len(watchPaths) > 0 {
+		dir = filepath.Dir(watchPaths[0])
+	}
+
+	// Track modification times
+	modTimes := make(map[string]time.Time)
+	for _, p := range watchPaths {
+		if info, err := os.Stat(p); err == nil {
+			modTimes[p] = info.ModTime()
+		}
+	}
+
+	// Handle Ctrl+C
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+	fmt.Printf("Watching %d test file(s) for changes...\n", len(files))
+	fmt.Println("Press Ctrl+C to stop")
+	fmt.Println()
+
+	// Initial run
+	fmt.Printf("[%s] Running tests...\n", time.Now().Format("15:04:05"))
+	runTests(files)
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-sigCh:
+			fmt.Println("\nStopping test watcher...")
+			os.Exit(0)
+		case <-ticker.C:
+			changed := false
+			// Check watched files
+			for _, p := range watchPaths {
+				info, err := os.Stat(p)
+				if err != nil {
+					continue
+				}
+				if prev, ok := modTimes[p]; ok && info.ModTime().After(prev) {
+					changed = true
+					modTimes[p] = info.ModTime()
+				}
+			}
+			// Check for new .quill files
+			if entries, err := os.ReadDir(dir); err == nil {
+				for _, e := range entries {
+					if !e.IsDir() && filepath.Ext(e.Name()) == ".quill" {
+						full := filepath.Join(dir, e.Name())
+						if _, ok := modTimes[full]; !ok {
+							watchPaths = append(watchPaths, full)
+							if info, err := os.Stat(full); err == nil {
+								modTimes[full] = info.ModTime()
+							}
+							changed = true
+						}
+					}
+				}
+			}
+			if changed {
+				fmt.Printf("\n[%s] File changed, re-running tests...\n", time.Now().Format("15:04:05"))
+				runTests(files)
+			}
+		}
 	}
 }
 
@@ -1573,13 +1729,15 @@ func printUsage() {
 	fmt.Println("  quill test --coverage        Run tests with coverage report")
 	fmt.Println("  quill test --coverage-html   Run tests and generate HTML coverage report")
 	fmt.Println("  quill test --coverage-min N  Fail if coverage is below N%")
+	fmt.Println("  quill test --watch           Watch files and re-run tests on changes")
 	fmt.Println("  quill profile <file.quill>   Profile a Quill program")
 	fmt.Println("  quill fix --from v --to v    Migrate code between versions")
 	fmt.Println("  quill fix --dry-run          Preview migration changes")
 	fmt.Println("  quill fmt <file.quill>       Format a Quill file")
 	fmt.Println("  quill check <file.quill>     Check for common issues")
 	fmt.Println("  quill docs <file.quill>      Generate documentation")
-	fmt.Println("  quill init                   Initialize a new Quill project")
+	fmt.Println("  quill new <name>             Create a new project in a new directory")
+	fmt.Println("  quill init                   Initialize a new Quill project in current directory")
 	fmt.Println("  quill add <package>          Install a package (Quill registry or npm)")
 	fmt.Println("  quill remove <package>       Remove a package")
 	fmt.Println("  quill install                Install all dependencies from quill.json")

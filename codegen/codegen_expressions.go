@@ -18,6 +18,12 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 			converted = convertInterpolation(converted)
 			return "`" + converted + "`"
 		}
+		// Multiline strings (from """) — use JS template literals to preserve newlines
+		if strings.Contains(e.Value, "\n") {
+			escaped := strings.ReplaceAll(e.Value, "`", "\\`")
+			escaped = strings.ReplaceAll(escaped, "${", "\\${")
+			return "`" + escaped + "`"
+		}
 		// The lexer preserves escape sequences as-is (e.g. \n stays as backslash + n),
 		// which are already valid JS escape sequences. Only escape unescaped double quotes.
 		escaped := strings.ReplaceAll(e.Value, "\n", "\\n")  // actual newline bytes (shouldn't occur, but safety)

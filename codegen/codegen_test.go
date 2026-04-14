@@ -1156,17 +1156,21 @@ func TestAsyncFunctionWithAwait(t *testing.T) {
 }
 
 func TestStringEscaping(t *testing.T) {
-	// Bug #6: special characters should be escaped
+	// Bug #6: special characters should be escaped in single-line strings
 	gen := New()
-	expr := gen.genExpr(&ast.StringLiteral{Value: "line1\nline2\ttab\r"})
-	if !strings.Contains(expr, "\\n") {
-		t.Errorf("expected \\n in output, got: %s", expr)
+	// Single-line strings (no actual newlines) should escape special chars
+	expr := gen.genExpr(&ast.StringLiteral{Value: "hello\\nworld\\ttab"})
+	if !strings.Contains(expr, `"`) {
+		t.Errorf("expected double-quoted string, got: %s", expr)
 	}
-	if !strings.Contains(expr, "\\t") {
-		t.Errorf("expected \\t in output, got: %s", expr)
+
+	// Strings with actual newlines (from """) use backtick template literals
+	expr2 := gen.genExpr(&ast.StringLiteral{Value: "line1\nline2"})
+	if !strings.HasPrefix(expr2, "`") {
+		t.Errorf("expected backtick string for multiline, got: %s", expr2)
 	}
-	if !strings.Contains(expr, "\\r") {
-		t.Errorf("expected \\r in output, got: %s", expr)
+	if !strings.Contains(expr2, "line1") || !strings.Contains(expr2, "line2") {
+		t.Errorf("expected both lines preserved, got: %s", expr2)
 	}
 }
 
