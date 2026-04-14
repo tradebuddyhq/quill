@@ -333,6 +333,7 @@ say reply2   -- "Your name is Alice"
 - **Built-in testing** — `test` and `expect` keywords, `quill test --coverage` for coverage reports
 - **Docs generator** — `quill docs` generates styled HTML documentation
 - **Package manager** — `quill add express`, `quill remove express`
+- **Interactive tutorial** — `quill learn` — 10 hands-on lessons right in your terminal
 - **Interactive REPL** — `quill repl`
 - **Dev server** — `quill serve` with hot reload and file-based routing
 - **Profiler** — `quill profile app.quill` for function timing reports
@@ -388,7 +389,9 @@ say reply2   -- "Your name is Alice"
 | `quill init` | Initialize a new project |
 | `quill add package` | Install an npm package |
 | `quill remove package` | Remove a package |
+| `quill learn` | Interactive tutorial (10 lessons) |
 | `quill repl` | Start interactive mode |
+| `quill new my-app` | Create a new project in a directory |
 | `quill build file.quill --llvm` | Compile to LLVM IR / native binary |
 | `quill serve` | Start dev server with hot reload |
 | `quill profile file.quill` | Run profiler with function timing report |
