@@ -212,8 +212,11 @@ var stdlibDocs = map[string]StdlibInfo{
 	"truncate":      {Signature: "truncate(text, maxLength) -> text", Doc: "Truncates text to maxLength characters.", RetType: "text"},
 	"words":         {Signature: "words(text) -> list", Doc: "Splits text into a list of words.", RetType: "list"},
 	"lines":         {Signature: "lines(text) -> list", Doc: "Splits text into a list of lines.", RetType: "list"},
-	"matches":       {Signature: "matches(text, pattern) -> list", Doc: "Returns regex matches in text.", RetType: "list"},
-	"matchesPattern": {Signature: "matchesPattern(text, pattern) -> boolean", Doc: "Tests if text matches a regex pattern.", RetType: "boolean"},
+	"regex":          {Signature: "regex(pattern, flags?) -> RegExp", Doc: "Creates a RegExp object. Flags: 'g' (global), 'i' (case-insensitive), 'm' (multiline).", RetType: "object"},
+	"matches":        {Signature: "matches(text, pattern, flags?) -> list", Doc: "Returns all regex matches in text. Default flag is 'g'.", RetType: "list"},
+	"matchGroups":    {Signature: "matchGroups(text, pattern, flags?) -> list", Doc: "Returns a list of capture group arrays for each match.", RetType: "list"},
+	"matchFirst":     {Signature: "matchFirst(text, pattern, flags?) -> object|nothing", Doc: "Returns first match with {match, groups, index} or nothing.", RetType: "object"},
+	"matchesPattern": {Signature: "matchesPattern(text, pattern, flags?) -> boolean", Doc: "Tests if text matches a regex pattern.", RetType: "boolean"},
 	"encodeBase64":  {Signature: "encodeBase64(text) -> text", Doc: "Encodes text as Base64.", RetType: "text"},
 	"decodeBase64":  {Signature: "decodeBase64(text) -> text", Doc: "Decodes Base64 text.", RetType: "text"},
 	"encodeURL":     {Signature: "encodeURL(text) -> text", Doc: "URL-encodes text.", RetType: "text"},
@@ -292,7 +295,7 @@ var stdlibDocs = map[string]StdlibInfo{
 	"padEnd":         {Signature: "padEnd(text, length, char) -> text", Doc: "Pads text at the end to reach the given length.", RetType: "text"},
 	"repeat":         {Signature: "repeat(text, count) -> text", Doc: "Repeats text a given number of times.", RetType: "text"},
 	"contains":       {Signature: "contains(collection, item) -> boolean", Doc: "Checks if a string or list contains the given item.", RetType: "boolean"},
-	"replacePattern": {Signature: "replacePattern(text, pattern, replacement) -> text", Doc: "Replaces regex matches in text.", RetType: "text"},
+	"replacePattern": {Signature: "replacePattern(text, pattern, replacement, flags?) -> text", Doc: "Replaces regex matches in text. Default flag is 'g'.", RetType: "text"},
 	"toJSON":         {Signature: "toJSON(value) -> text", Doc: "Converts a value to a JSON string.", RetType: "text"},
 
 	// List functions (additional)

@@ -123,9 +123,12 @@ const addDays = (date, days) => { const d = new Date(date); d.setDate(d.getDate(
 const diffDays = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
 
 // RegExp
-const matches = (str, pattern) => { const re = new RegExp(pattern, 'g'); const m = str.match(re); return m || []; };
-const matchesPattern = (str, pattern) => new RegExp(pattern).test(str);
-const replacePattern = (str, pattern, replacement) => str.replace(new RegExp(pattern, 'g'), replacement);
+const regex = (pattern, flags) => new RegExp(pattern, flags || '');
+const matches = (str, pattern, flags) => { const re = new RegExp(pattern, flags || 'g'); const m = str.match(re); return m || []; };
+const matchGroups = (str, pattern, flags) => { const re = new RegExp(pattern, flags || 'g'); const results = []; let m; while ((m = re.exec(str)) !== null) { results.push(m.slice(1)); if (!re.global) break; } return results; };
+const matchFirst = (str, pattern, flags) => { const re = new RegExp(pattern, flags || ''); const m = re.exec(str); return m ? { match: m[0], groups: m.slice(1), index: m.index } : null; };
+const matchesPattern = (str, pattern, flags) => new RegExp(pattern, flags || '').test(str);
+const replacePattern = (str, pattern, replacement, flags) => str.replace(new RegExp(pattern, flags || 'g'), replacement);
 
 // Encoding
 const encodeBase64 = (str) => Buffer.from(str).toString('base64');
