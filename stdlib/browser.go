@@ -15,6 +15,7 @@ const setText = (el, text) => { el.textContent = text; };
 const getText = (el) => el.textContent;
 const setHTML = (el, html) => { el.innerHTML = html; };
 const getHTML = (el) => el.innerHTML;
+const sanitizeHTML = (text) => { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; };
 const setValue = (el, val) => { el.value = val; };
 const getValue = (el) => el.value;
 const setAttribute = (el, attr, val) => { el.setAttribute(attr, val); };
@@ -67,9 +68,9 @@ const after = (ms, fn) => setTimeout(fn, ms);
 const stopTimer = (id) => { clearInterval(id); clearTimeout(id); };
 
 // Fetch (browser-native)
-const fetchURL = async (url, options) => { const resp = await fetch(url, options); const text = await resp.text(); try { return JSON.parse(text); } catch { return text; } };
-const fetchJSON = async (url) => { const resp = await fetch(url); return resp.json(); };
-const postJSON = async (url, body) => { const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return resp.json(); };
+const fetchURL = async (url, options) => { const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 30000); try { const resp = await fetch(url, { ...options, signal: ctrl.signal }); clearTimeout(t); const text = await resp.text(); try { return JSON.parse(text); } catch { return text; } } catch(e) { clearTimeout(t); if (e.name === 'AbortError') throw new Error('fetchURL timed out after 30 seconds'); throw e; } };
+const fetchJSON = async (url) => { const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 30000); try { const resp = await fetch(url, { signal: ctrl.signal }); clearTimeout(t); if (!resp.ok) throw new Error('fetchJSON failed with status ' + resp.status); return resp.json(); } catch(e) { clearTimeout(t); if (e.name === 'AbortError') throw new Error('fetchJSON timed out after 30 seconds'); throw e; } };
+const postJSON = async (url, body) => { const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 30000); try { const resp = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctrl.signal }); clearTimeout(t); if (!resp.ok) throw new Error('postJSON failed with status ' + resp.status); return resp.json(); } catch(e) { clearTimeout(t); if (e.name === 'AbortError') throw new Error('postJSON timed out after 30 seconds'); throw e; } };
 
 // Console
 const say = (msg) => console.log(msg);
@@ -152,6 +153,7 @@ const truncate = (s, len) => s.length > len ? s.slice(0, len) + '...' : s;
 // Date/Time enhanced
 const timestamp = () => Date.now();
 const formatDate = (date, fmt) => { const d = new Date(date); const pad = (n) => String(n).padStart(2, '0'); return (fmt || 'YYYY-MM-DD').replace('YYYY', d.getFullYear()).replace('MM', pad(d.getMonth() + 1)).replace('DD', pad(d.getDate())).replace('HH', pad(d.getHours())).replace('mm', pad(d.getMinutes())).replace('ss', pad(d.getSeconds())); };
+const formatDateUTC = (date, fmt) => { const d = new Date(date); const pad = (n) => String(n).padStart(2, '0'); return (fmt || 'YYYY-MM-DD').replace('YYYY', d.getUTCFullYear()).replace('MM', pad(d.getUTCMonth() + 1)).replace('DD', pad(d.getUTCDate())).replace('HH', pad(d.getUTCHours())).replace('mm', pad(d.getUTCMinutes())).replace('ss', pad(d.getUTCSeconds())); };
 const addDays = (date, days) => { const d = new Date(date); d.setDate(d.getDate() + days); return d.toISOString(); };
 const diffDays = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
 

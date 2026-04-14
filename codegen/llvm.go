@@ -22,6 +22,8 @@ type LLVMGenerator struct {
 	// break/continue label stacks for loops
 	breakLabels    []string
 	continueLabels []string
+	// warnings about unsupported features
+	Warnings []string
 }
 
 type llvmVar struct {
@@ -38,6 +40,10 @@ type llvmFunc struct {
 	llName     string // e.g. @add
 	retType    string
 	paramTypes []string
+}
+
+func (g *LLVMGenerator) warn(msg string) {
+	g.Warnings = append(g.Warnings, msg)
 }
 
 // NewLLVM creates a new LLVM IR generator.
@@ -401,19 +407,25 @@ func (g *LLVMGenerator) genStmt(stmt ast.Statement) {
 	case *ast.FuncDefinition:
 		// handled at top level, skip here
 
-	// Concurrency stubs
+	// Concurrency stubs — warn the user
 	case *ast.SpawnStatement:
-		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (spawn)")
+		g.warn("'spawn' is not supported in native builds and will be skipped")
+		g.emitIndented("; WARNING: spawn not supported in native build")
 	case *ast.ParallelBlock:
-		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (parallel)")
+		g.warn("'parallel' blocks are not supported in native builds and will be skipped")
+		g.emitIndented("; WARNING: parallel not supported in native build")
 	case *ast.RaceBlock:
-		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (race)")
+		g.warn("'race' blocks are not supported in native builds and will be skipped")
+		g.emitIndented("; WARNING: race not supported in native build")
 	case *ast.ChannelStatement:
-		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (channel)")
+		g.warn("'channel' is not supported in native builds and will be skipped")
+		g.emitIndented("; WARNING: channel not supported in native build")
 	case *ast.SendStatement:
-		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (send)")
+		g.warn("'send' is not supported in native builds and will be skipped")
+		g.emitIndented("; WARNING: send not supported in native build")
 	case *ast.SelectStatement:
-		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (select)")
+		g.warn("'select' is not supported in native builds and will be skipped")
+		g.emitIndented("; WARNING: select not supported in native build")
 	}
 }
 
@@ -582,7 +594,8 @@ func (g *LLVMGenerator) genForEach(s *ast.ForEachStatement) {
 	g.emitIndented(fmt.Sprintf("store i64 0, i64* %s", idxReg))
 
 	// For now, iterate 0 times (placeholder for list support)
-	g.emitIndented(fmt.Sprintf("; foreach %s (simplified - list runtime not fully implemented)", s.Variable))
+	g.warn(fmt.Sprintf("'for each %s in ...' loop is not fully supported in native builds — the loop body will not execute", s.Variable))
+	g.emitIndented(fmt.Sprintf("; WARNING: foreach %s — list runtime not implemented in native build", s.Variable))
 	g.emitIndented(fmt.Sprintf("br label %%%s", condLabel))
 
 	g.emitLine(condLabel + ":")
@@ -704,10 +717,12 @@ func (g *LLVMGenerator) genExpr(expr ast.Expression) llvmValue {
 		// Simplified: return null pointer
 		return llvmValue{reg: "null", typ: "i8*"}
 	case *ast.AwaitExpression:
-		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (await expression)")
+		g.warn("'await' is not supported in native builds — async code will be skipped")
+		g.emitIndented("; WARNING: await not supported in native build")
 		return llvmValue{reg: "0", typ: "i64"}
 	case *ast.ReceiveExpression:
-		g.emitIndented("; TODO: concurrency not yet supported in LLVM backend (receive)")
+		g.warn("channel 'receive' is not supported in native builds — will return 0")
+		g.emitIndented("; WARNING: receive not supported in native build")
 		return llvmValue{reg: "0", typ: "i64"}
 	default:
 		// Unsupported expression, emit a comment and return zero

@@ -585,6 +585,11 @@ func buildLLVM(filename string, base string) {
 	gen := codegen.NewLLVM()
 	ir := gen.Generate(program)
 
+	// Print warnings about unsupported features
+	for _, w := range gen.Warnings {
+		fmt.Fprintf(os.Stderr, "Warning: %s\n", w)
+	}
+
 	outFile := base + ".ll"
 	if err := os.WriteFile(outFile, []byte(ir), 0644); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: could not write output file: %s\n", err)

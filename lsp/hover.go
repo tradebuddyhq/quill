@@ -268,7 +268,8 @@ var stdlibDocs = map[string]StdlibInfo{
 	"now":        {Signature: "now() -> text", Doc: "Returns the current date and time as text.", RetType: "text"},
 	"today":      {Signature: "today() -> text", Doc: "Returns today's date as text.", RetType: "text"},
 	"timestamp":  {Signature: "timestamp() -> number", Doc: "Returns the current Unix timestamp in milliseconds.", RetType: "number"},
-	"formatDate": {Signature: "formatDate(date, format) -> text", Doc: "Formats a date string.", RetType: "text"},
+	"formatDate":    {Signature: "formatDate(date, format) -> text", Doc: "Formats a date string using local time. Use formatDateUTC() for server-safe UTC output.", RetType: "text"},
+	"formatDateUTC": {Signature: "formatDateUTC(date, format) -> text", Doc: "Formats a date string using UTC. Use this on servers to avoid timezone issues.", RetType: "text"},
 	"diffDays":   {Signature: "diffDays(date1, date2) -> number", Doc: "Returns the difference in days between two dates.", RetType: "number"},
 
 	// Utility functions
@@ -363,7 +364,8 @@ var stdlibDocs = map[string]StdlibInfo{
 	"selectAll":     {Signature: "selectAll(selector) -> list", Doc: "Selects all matching DOM elements.", RetType: "list"},
 	"setText":       {Signature: "setText(element, text)", Doc: "Sets the text content of an element.", RetType: ""},
 	"getText":       {Signature: "getText(element) -> text", Doc: "Gets the text content of an element.", RetType: "text"},
-	"setHTML":       {Signature: "setHTML(element, html)", Doc: "Sets the inner HTML of an element.", RetType: ""},
+	"setHTML":       {Signature: "setHTML(element, html)", Doc: "Sets the inner HTML of an element. **Warning:** Never pass user input directly — use sanitizeHTML() first to prevent XSS.", RetType: ""},
+	"sanitizeHTML":  {Signature: "sanitizeHTML(text) -> text", Doc: "Escapes HTML special characters to prevent XSS. Use this before passing user input to setHTML().", RetType: "text"},
 	"getHTML":       {Signature: "getHTML(element) -> text", Doc: "Gets the inner HTML of an element.", RetType: "text"},
 	"setValue":      {Signature: "setValue(element, value)", Doc: "Sets the value of a form element.", RetType: ""},
 	"getValue":      {Signature: "getValue(element) -> text", Doc: "Gets the value of a form element.", RetType: "text"},

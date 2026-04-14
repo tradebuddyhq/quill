@@ -1,7 +1,7 @@
 package repl
 
 import (
-	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,39 +13,62 @@ import (
 )
 
 func Start() {
-	fmt.Println("Quill REPL v0.1.0")
+	fmt.Println("Quill REPL v0.2.0")
 	fmt.Println("Type your code. Use 'exit' or Ctrl+C to quit.")
+	fmt.Println("Commands: :help, :reset, :vars")
 	fmt.Println()
 
-	scanner := bufio.NewScanner(os.Stdin)
+	rl := newReadline()
+	defer rl.close()
+
 	var lines []string
+	var prevOutputLines int
 
 	for {
+		prompt := "quill> "
 		if isInBlock(lines) {
-			fmt.Print("...   ")
-		} else {
-			fmt.Print("quill> ")
+			prompt = "...   "
 		}
 
-		if !scanner.Scan() {
+		line, ok := rl.readLine(prompt)
+		if !ok {
 			break
 		}
 
-		line := scanner.Text()
-
-		if line == "exit" || line == "quit" {
+		// Handle commands
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "exit" || trimmed == "quit" {
 			fmt.Println("Goodbye!")
 			break
 		}
 
-		if line == "" && !isInBlock(lines) {
+		if trimmed == ":help" {
+			fmt.Println("  :reset  — Clear all variables and start fresh")
+			fmt.Println("  :vars   — Show defined variables and functions")
+			fmt.Println("  :help   — Show this help")
+			fmt.Println("  exit    — Quit the REPL")
+			continue
+		}
+
+		if trimmed == ":reset" {
+			lines = nil
+			prevOutputLines = 0
+			fmt.Println("  (reset)")
+			continue
+		}
+
+		if trimmed == ":vars" {
+			printVars(lines)
+			continue
+		}
+
+		if trimmed == "" && !isInBlock(lines) {
 			continue
 		}
 
 		lines = append(lines, line)
 
 		// If line ends with : we're starting a block, continue
-		trimmed := strings.TrimSpace(line)
 		if strings.HasSuffix(trimmed, ":") {
 			continue
 		}
@@ -55,14 +78,59 @@ func Start() {
 			continue
 		}
 
-		// Try to compile and run
+		// Try to compile and run, only showing new output
 		source := strings.Join(lines, "\n")
-		err := evalSource(source)
+		output, err := evalSource(source)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "  %s\n", err)
-			// Remove the last batch of lines
+			// Remove the last line(s) that caused the error
 			lines = lines[:len(lines)-1]
+		} else {
+			outputLines := strings.Split(output, "\n")
+			// Remove trailing empty line from split
+			if len(outputLines) > 0 && outputLines[len(outputLines)-1] == "" {
+				outputLines = outputLines[:len(outputLines)-1]
+			}
+			// Only print lines we haven't seen before
+			for i := prevOutputLines; i < len(outputLines); i++ {
+				fmt.Println(outputLines[i])
+			}
+			prevOutputLines = len(outputLines)
 		}
+	}
+}
+
+func printVars(lines []string) {
+	if len(lines) == 0 {
+		fmt.Println("  (no definitions)")
+		return
+	}
+	found := false
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		// Variable assignments: "name is value" or "things are value"
+		if strings.Contains(trimmed, " is ") && !strings.HasPrefix(trimmed, "if ") && !strings.HasPrefix(trimmed, "otherwise ") {
+			parts := strings.SplitN(trimmed, " is ", 2)
+			if len(parts) == 2 && !strings.ContainsAny(parts[0], " \t") {
+				fmt.Printf("  %s = %s\n", parts[0], parts[1])
+				found = true
+			}
+		} else if strings.Contains(trimmed, " are ") {
+			parts := strings.SplitN(trimmed, " are ", 2)
+			if len(parts) == 2 && !strings.ContainsAny(parts[0], " \t") {
+				fmt.Printf("  %s = %s\n", parts[0], parts[1])
+				found = true
+			}
+		}
+		// Function definitions: "to funcName ..."
+		if strings.HasPrefix(trimmed, "to ") {
+			name := strings.Fields(trimmed)[1]
+			fmt.Printf("  fn %s\n", name)
+			found = true
+		}
+	}
+	if !found {
+		fmt.Println("  (no definitions)")
 	}
 }
 
@@ -74,25 +142,36 @@ func isInBlock(lines []string) bool {
 	return strings.HasSuffix(last, ":") || strings.HasPrefix(lines[len(lines)-1], "  ") || strings.HasPrefix(lines[len(lines)-1], "\t")
 }
 
-func evalSource(source string) error {
+func evalSource(source string) (string, error) {
 	l := lexer.New(source)
 	tokens, err := l.Tokenize()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	p := parser.New(tokens)
 	program, err := p.Parse()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	g := codegen.New()
 	js := g.Generate(program)
 
-	// Run with node
+	// Run with node, capturing output
 	cmd := exec.Command("node", "-e", js)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err = cmd.Run()
+	if err != nil {
+		errMsg := strings.TrimSpace(stderr.String())
+		if errMsg != "" {
+			return "", fmt.Errorf("%s", errMsg)
+		}
+		return "", err
+	}
+
+	return stdout.String(), nil
 }
