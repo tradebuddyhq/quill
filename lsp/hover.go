@@ -229,7 +229,8 @@ var stdlibDocs = map[string]StdlibInfo{
 
 	// List functions
 	"push":     {Signature: "push(list, item) -> list", Doc: "Adds an item to the end of a list.", RetType: "list"},
-	"sort":     {Signature: "sort(list) -> list", Doc: "Sorts a list.", RetType: "list"},
+	"sort":     {Signature: "sort(list) -> list", Doc: "Sorts a list in ascending order.", RetType: "list"},
+	"sortBy":   {Signature: "sortBy(list, field) -> list", Doc: "Sorts a list of objects by a field name in ascending order.", RetType: "list"},
 	"reverse":  {Signature: "reverse(list) -> list", Doc: "Reverses a list.", RetType: "list"},
 	"unique":   {Signature: "unique(list) -> list", Doc: "Returns unique elements of a list.", RetType: "list"},
 	"filter":   {Signature: "filter(list, fn) -> list", Doc: "Filters a list by a predicate function.", RetType: "list"},
@@ -309,7 +310,10 @@ var stdlibDocs = map[string]StdlibInfo{
 	// Network functions
 	"fetchURL":  {Signature: "fetchURL(url) -> text", Doc: "Fetches a URL and returns the response as text.", RetType: "text"},
 	"fetchJSON": {Signature: "fetchJSON(url) -> object", Doc: "Fetches a URL and returns the response as parsed JSON.", RetType: "object"},
-	"postJSON":  {Signature: "postJSON(url, data) -> object", Doc: "Sends a POST request with JSON data and returns the response.", RetType: "object"},
+	"postJSON":    {Signature: "postJSON(url, data) -> object", Doc: "Sends a POST request with JSON data and returns the response.", RetType: "object"},
+	"putJSON":     {Signature: "putJSON(url, data) -> object", Doc: "Sends a PUT request with JSON data and returns the response.", RetType: "object"},
+	"patchJSON":   {Signature: "patchJSON(url, data) -> object", Doc: "Sends a PATCH request with JSON data and returns the response.", RetType: "object"},
+	"deleteJSON":  {Signature: "deleteJSON(url, body?) -> object|text", Doc: "Sends a DELETE request. Optional JSON body. Returns parsed response.", RetType: "object"},
 
 	// File/IO functions
 	"read":       {Signature: "read(prompt) -> text", Doc: "Reads input from the user.", RetType: "text"},

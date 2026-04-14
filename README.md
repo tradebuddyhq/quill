@@ -353,7 +353,7 @@ say reply2   -- "Your name is Alice"
 - **VS Code extension** — syntax highlighting, snippets, comment toggling
 - **LSP server** — `quill lsp` for editor integration (diagnostics, hover, autocomplete)
 - **Source maps** — `.map` files generated alongside JS for debugging
-- **Package registry** — `quill publish`, `quill search`, `quill install` with version resolution
+- **Package registry** — `quill publish`, `quill search`, `quill install` with version resolution (currently local-only at `~/.quill/registry/` — remote registry coming soon)
 
 **Web Framework (SvelteKit-level)**
 - **File-based routing** — `pages/about.quill` maps to `/about`, `pages/blog/[id].quill` maps to `/blog/:id`
