@@ -11,6 +11,7 @@ import (
 	"quill/lexer"
 	"quill/parser"
 	"quill/typechecker"
+	"sync"
 )
 
 // Server is the Quill LSP server.
@@ -21,9 +22,12 @@ type Server struct {
 	hover      *HoverProvider
 	completion *CompletionProvider
 	definition *DefinitionProvider
+	signature  *SignatureHelpProvider
+	rename     *RenameProvider
 	shutdown   bool
 
 	// Cache parsed programs per URI
+	mu       sync.RWMutex
 	programs map[string]*ast.Program
 }
 
@@ -36,6 +40,8 @@ func Start() {
 		hover:      NewHoverProvider(),
 		completion: NewCompletionProvider(),
 		definition: NewDefinitionProvider(),
+		signature:  NewSignatureHelpProvider(),
+		rename:     NewRenameProvider(),
 		programs:   make(map[string]*ast.Program),
 	}
 	s.run()
@@ -76,6 +82,10 @@ func (s *Server) handleMessage(msg *JSONRPCMessage) {
 		s.handleDefinition(msg)
 	case "textDocument/completion":
 		s.handleCompletion(msg)
+	case "textDocument/signatureHelp":
+		s.handleSignatureHelp(msg)
+	case "textDocument/rename":
+		s.handleRename(msg)
 	default:
 		// Unknown method — if it has an ID, respond with method not found
 		if msg.ID != nil {
@@ -91,9 +101,13 @@ func (s *Server) handleInitialize(msg *JSONRPCMessage) {
 			TextDocumentSync:   1, // Full sync
 			HoverProvider:      true,
 			DefinitionProvider: true,
+			RenameProvider:     true,
 			CompletionProvider: &CompletionOpt{
 				TriggerCharacters: []string{".", " "},
 				ResolveProvider:   false,
+			},
+			SignatureHelpProvider: &SignatureHelpOpt{
+				TriggerCharacters: []string{"(", ","},
 			},
 		},
 	}
@@ -152,7 +166,9 @@ func (s *Server) handleDidClose(msg *JSONRPCMessage) {
 		return
 	}
 	s.docs.Close(params.TextDocument.URI)
+	s.mu.Lock()
 	delete(s.programs, params.TextDocument.URI)
+	s.mu.Unlock()
 
 	// Clear diagnostics
 	s.publishDiagnostics(params.TextDocument.URI, []Diagnostic{})
@@ -173,7 +189,7 @@ func (s *Server) handleHover(msg *JSONRPCMessage) {
 		return
 	}
 
-	program := s.programs[params.TextDocument.URI]
+	program := s.getProgram(params.TextDocument.URI)
 	hover := s.hover.GetHover(doc, params.Position, program)
 	if hover == nil {
 		resp := MakeResponse(msg.ID, nil)
@@ -200,7 +216,7 @@ func (s *Server) handleDefinition(msg *JSONRPCMessage) {
 		return
 	}
 
-	program := s.programs[params.TextDocument.URI]
+	program := s.getProgram(params.TextDocument.URI)
 	loc := s.definition.GetDefinition(doc, params.Position, program, params.TextDocument.URI)
 	if loc == nil {
 		resp := MakeResponse(msg.ID, nil)
@@ -227,10 +243,76 @@ func (s *Server) handleCompletion(msg *JSONRPCMessage) {
 		return
 	}
 
-	program := s.programs[params.TextDocument.URI]
+	program := s.getProgram(params.TextDocument.URI)
 	completions := s.completion.GetCompletions(doc, params.Position, program)
 
 	resp := MakeResponse(msg.ID, completions)
+	WriteMessage(s.writer, resp)
+}
+
+func (s *Server) getProgram(uri string) *ast.Program {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.programs[uri]
+}
+
+func (s *Server) setProgram(uri string, program *ast.Program) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.programs[uri] = program
+}
+
+func (s *Server) handleSignatureHelp(msg *JSONRPCMessage) {
+	var params TextDocumentPositionParams
+	if err := json.Unmarshal(msg.Params, &params); err != nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	doc := s.docs.Get(params.TextDocument.URI)
+	if doc == nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	program := s.getProgram(params.TextDocument.URI)
+	sigHelp := s.signature.GetSignatureHelp(doc, params.Position, program)
+	if sigHelp == nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	resp := MakeResponse(msg.ID, sigHelp)
+	WriteMessage(s.writer, resp)
+}
+
+func (s *Server) handleRename(msg *JSONRPCMessage) {
+	var params RenameParams
+	if err := json.Unmarshal(msg.Params, &params); err != nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	doc := s.docs.Get(params.TextDocument.URI)
+	if doc == nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	program := s.getProgram(params.TextDocument.URI)
+	edit := s.rename.GetRename(doc, params.Position, params.NewName, program, params.TextDocument.URI)
+	if edit == nil {
+		resp := MakeResponse(msg.ID, nil)
+		WriteMessage(s.writer, resp)
+		return
+	}
+
+	resp := MakeResponse(msg.ID, edit)
 	WriteMessage(s.writer, resp)
 }
 
@@ -274,7 +356,7 @@ func (s *Server) validateAndPublish(uri string) {
 	}
 
 	// Cache the program for hover/completion
-	s.programs[uri] = program
+	s.setProgram(uri, program)
 
 	// Analyze
 	a := analyzer.New()

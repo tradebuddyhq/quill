@@ -2,6 +2,8 @@ package lsp
 
 import (
 	"quill/ast"
+	"quill/lexer"
+	"quill/parser"
 	"strings"
 	"testing"
 )
@@ -890,6 +892,92 @@ func TestGetLineContent(t *testing.T) {
 }
 
 // ============================================================
+// Signature Help Tests
+// ============================================================
+
+func TestSignatureHelpStdlib(t *testing.T) {
+	sh := NewSignatureHelpProvider()
+	doc := makeDoc("x is length(myList)")
+	result := sh.GetSignatureHelp(doc, Position{Line: 0, Character: 14}, nil)
+	if result == nil {
+		t.Fatal("expected signature help for length()")
+	}
+	if len(result.Signatures) == 0 {
+		t.Fatal("expected at least one signature")
+	}
+	if !strings.Contains(result.Signatures[0].Label, "length") {
+		t.Errorf("expected length signature, got %q", result.Signatures[0].Label)
+	}
+}
+
+func TestSignatureHelpUserFunction(t *testing.T) {
+	sh := NewSignatureHelpProvider()
+	doc := makeDoc("to add a, b:\n  give back a + b\nresult is add(1, 2)")
+	program := parseForTest("to add a, b:\n  give back a + b\nresult is add(1, 2)")
+	result := sh.GetSignatureHelp(doc, Position{Line: 2, Character: 17}, program)
+	if result == nil {
+		t.Fatal("expected signature help for user function add()")
+	}
+	if len(result.Signatures) == 0 {
+		t.Fatal("expected at least one signature")
+	}
+	if result.ActiveParameter != 1 {
+		t.Errorf("expected active parameter 1 (second arg), got %d", result.ActiveParameter)
+	}
+}
+
+func TestSignatureHelpOutsideCall(t *testing.T) {
+	sh := NewSignatureHelpProvider()
+	doc := makeDoc("x is 5")
+	result := sh.GetSignatureHelp(doc, Position{Line: 0, Character: 4}, nil)
+	if result != nil {
+		t.Error("expected nil signature help outside function call")
+	}
+}
+
+// ============================================================
+// Rename Tests
+// ============================================================
+
+func TestRenameVariable(t *testing.T) {
+	rp := NewRenameProvider()
+	code := "name is \"Alice\"\nsay name"
+	doc := makeDoc(code)
+	program := parseForTest(code)
+	edit := rp.GetRename(doc, Position{Line: 0, Character: 1}, "username", program, "file:///test.quill")
+	if edit == nil {
+		t.Fatal("expected workspace edit for rename")
+	}
+	edits := edit.Changes["file:///test.quill"]
+	if len(edits) != 2 {
+		t.Fatalf("expected 2 edits (definition + usage), got %d", len(edits))
+	}
+	for _, e := range edits {
+		if e.NewText != "username" {
+			t.Errorf("expected new text 'username', got %q", e.NewText)
+		}
+	}
+}
+
+func TestRenameKeywordBlocked(t *testing.T) {
+	rp := NewRenameProvider()
+	doc := makeDoc("if x is 5:\n  say x")
+	edit := rp.GetRename(doc, Position{Line: 0, Character: 0}, "unless", nil, "file:///test.quill")
+	if edit != nil {
+		t.Error("should not allow renaming keywords")
+	}
+}
+
+func TestRenameStdlibBlocked(t *testing.T) {
+	rp := NewRenameProvider()
+	doc := makeDoc("x is length(list)")
+	edit := rp.GetRename(doc, Position{Line: 0, Character: 5}, "len", nil, "file:///test.quill")
+	if edit != nil {
+		t.Error("should not allow renaming stdlib functions")
+	}
+}
+
+// ============================================================
 // Helpers
 // ============================================================
 
@@ -900,4 +988,12 @@ func makeDoc(content string) *Document {
 		Content: content,
 		Lines:   strings.Split(content, "\n"),
 	}
+}
+
+func parseForTest(source string) *ast.Program {
+	l := lexer.New(source)
+	tokens, _ := l.Tokenize()
+	p := parser.New(tokens)
+	program, _ := p.Parse()
+	return program
 }

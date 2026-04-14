@@ -40,10 +40,16 @@ type InitializeResult struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync   int            `json:"textDocumentSync"`
-	HoverProvider      bool           `json:"hoverProvider"`
-	DefinitionProvider bool           `json:"definitionProvider"`
-	CompletionProvider *CompletionOpt `json:"completionProvider,omitempty"`
+	TextDocumentSync      int              `json:"textDocumentSync"`
+	HoverProvider         bool             `json:"hoverProvider"`
+	DefinitionProvider    bool             `json:"definitionProvider"`
+	CompletionProvider    *CompletionOpt   `json:"completionProvider,omitempty"`
+	SignatureHelpProvider *SignatureHelpOpt `json:"signatureHelpProvider,omitempty"`
+	RenameProvider        bool             `json:"renameProvider"`
+}
+
+type SignatureHelpOpt struct {
+	TriggerCharacters []string `json:"triggerCharacters,omitempty"`
 }
 
 type CompletionOpt struct {
@@ -167,6 +173,41 @@ const (
 	InsertTextFormatPlainText = 1
 	InsertTextFormatSnippet   = 2
 )
+
+// --- Signature Help ---
+
+type SignatureHelp struct {
+	Signatures      []SignatureInformation `json:"signatures"`
+	ActiveSignature int                    `json:"activeSignature"`
+	ActiveParameter int                    `json:"activeParameter"`
+}
+
+type SignatureInformation struct {
+	Label         string                 `json:"label"`
+	Documentation string                 `json:"documentation,omitempty"`
+	Parameters    []ParameterInformation `json:"parameters,omitempty"`
+}
+
+type ParameterInformation struct {
+	Label string `json:"label"`
+}
+
+// --- Rename ---
+
+type RenameParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Position     Position               `json:"position"`
+	NewName      string                 `json:"newName"`
+}
+
+type WorkspaceEdit struct {
+	Changes map[string][]TextEdit `json:"changes"`
+}
+
+type TextEdit struct {
+	Range   Range  `json:"range"`
+	NewText string `json:"newText"`
+}
 
 // --- Message I/O ---
 

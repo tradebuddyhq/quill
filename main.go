@@ -586,8 +586,13 @@ func buildLLVM(filename string, base string) {
 	ir := gen.Generate(program)
 
 	// Print warnings about unsupported features
-	for _, w := range gen.Warnings {
-		fmt.Fprintf(os.Stderr, "Warning: %s\n", w)
+	if len(gen.Warnings) > 0 {
+		fmt.Fprintf(os.Stderr, "\n⚠ Native build: %d unsupported feature(s) detected:\n", len(gen.Warnings))
+		for _, w := range gen.Warnings {
+			fmt.Fprintf(os.Stderr, "  • %s\n", w)
+		}
+		fmt.Fprintf(os.Stderr, "\nThe native binary will compile but these features will not work.\n")
+		fmt.Fprintf(os.Stderr, "Use 'quill build %s' (without --native) for full feature support.\n\n", filename)
 	}
 
 	outFile := base + ".ll"
@@ -1558,6 +1563,9 @@ func printUsage() {
 	fmt.Println("  quill build <file> --wasm          Compile as WASM-ready module")
 	fmt.Println("  quill build <file> --standalone     Compile as standalone executable")
 	fmt.Println("  quill build <file> --llvm           Compile to LLVM IR (.ll file)")
+	fmt.Println("                                       (requires llc + cc installed)")
+	fmt.Println("                                       Note: async, channels, spawn, parallel,")
+	fmt.Println("                                       and for-each are not yet supported")
 	fmt.Println("  quill repl                   Start interactive REPL")
 	fmt.Println("  quill watch <file.quill>     Watch a file and re-run on changes")
 	fmt.Println("  quill lsp                    Start the LSP server (for editor integration)")
