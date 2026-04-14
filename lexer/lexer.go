@@ -264,6 +264,24 @@ func (l *Lexer) Tokenize() ([]Token, error) {
 		case ch == '}':
 			l.addToken(TOKEN_RBRACE, "}")
 			l.advance()
+		case ch == '>':
+			if l.pos+1 < len(l.source) && l.source[l.pos+1] == '=' {
+				l.addToken(TOKEN_GTE, ">=")
+				l.advance()
+				l.advance()
+			} else {
+				l.addToken(TOKEN_GT, ">")
+				l.advance()
+			}
+		case ch == '<':
+			if l.pos+1 < len(l.source) && l.source[l.pos+1] == '=' {
+				l.addToken(TOKEN_LTE, "<=")
+				l.advance()
+				l.advance()
+			} else {
+				l.addToken(TOKEN_LT, "<")
+				l.advance()
+			}
 		case ch == '=':
 			l.addToken(TOKEN_ASSIGN, "=")
 			l.advance()

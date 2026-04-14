@@ -244,6 +244,16 @@ type TernaryExpression struct {
 func (e *TernaryExpression) nodeType() string { return "Ternary" }
 func (e *TernaryExpression) exprNode()        {}
 
+// TernaryExpr represents: condition ? then : else (JS-style ternary)
+type TernaryExpr struct {
+	Condition Expression
+	Then      Expression
+	Else      Expression
+}
+
+func (e *TernaryExpr) exprNode()        {}
+func (e *TernaryExpr) nodeType() string { return "TernaryJS" }
+
 type CallExpr struct {
 	Function Expression
 	Args     []Expression
@@ -375,6 +385,7 @@ type ObjectLiteral struct {
 	Keys               []string
 	Values             []Expression
 	ComputedProperties []ComputedProperty
+	Spreads            []Expression // spread entries: ...expr
 }
 
 func (e *ObjectLiteral) nodeType() string { return "Object" }
@@ -440,9 +451,10 @@ func (s *FuncDefTyped) stmtNode()        {}
 // --- From import ---
 
 type FromUseStatement struct {
-	Names []string
-	Path  string
-	Line  int
+	Names   []string
+	Aliases []string // parallel to Names; empty string = no alias
+	Path    string
+	Line    int
 }
 
 func (s *FromUseStatement) nodeType() string { return "FromUse" }

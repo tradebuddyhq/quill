@@ -105,6 +105,9 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.ReturnStatement:
 		g.addStmtMapping(s.Line)
+		if s.Value == nil {
+			return fmt.Sprintf("%sreturn;", prefix)
+		}
 		return fmt.Sprintf("%sreturn %s;", prefix, g.genExpr(s.Value))
 
 	case *ast.ExprStatement:
@@ -321,7 +324,16 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		return fmt.Sprintf("%slet %s = %s;", prefix, s.Name, value)
 
 	case *ast.FromUseStatement:
-		names := strings.Join(s.Names, ", ")
+		// Build import names with optional aliases
+		namesParts := make([]string, len(s.Names))
+		for i, n := range s.Names {
+			if i < len(s.Aliases) && s.Aliases[i] != "" {
+				namesParts[i] = n + ": " + s.Aliases[i]
+			} else {
+				namesParts[i] = n
+			}
+		}
+		names := strings.Join(namesParts, ", ")
 		if strings.HasSuffix(s.Path, ".quill") {
 			// Circular import protection
 			if g.importedFiles[s.Path] {

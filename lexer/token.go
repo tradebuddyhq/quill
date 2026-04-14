@@ -177,6 +177,12 @@ const (
 	// Delete keyword
 	TOKEN_DELETE
 
+	// Comparison operator symbols
+	TOKEN_GT  // >
+	TOKEN_LT  // <
+	TOKEN_GTE // >=
+	TOKEN_LTE // <=
+
 	// Assignment
 	TOKEN_ASSIGN // =
 
@@ -321,6 +327,10 @@ var tokenNames = map[TokenType]string{
 	TOKEN_EFFECT:      "effect",
 	TOKEN_EVERY:       "every",
 	TOKEN_DELETE:      "delete",
+	TOKEN_GT:          ">",
+	TOKEN_LT:          "<",
+	TOKEN_GTE:         ">=",
+	TOKEN_LTE:         "<=",
 	TOKEN_ASSIGN:      "=",
 }
 

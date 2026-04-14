@@ -69,6 +69,9 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 	case *ast.TernaryExpression:
 		return fmt.Sprintf("(%s ? %s : %s)", g.genExpr(e.Condition), g.genExpr(e.Then), g.genExpr(e.Else))
 
+	case *ast.TernaryExpr:
+		return fmt.Sprintf("(%s ? %s : %s)", g.genExpr(e.Condition), g.genExpr(e.Then), g.genExpr(e.Else))
+
 	case *ast.ComparisonExpr:
 		if e.Operator == "contains" {
 			return fmt.Sprintf("__contains(%s, %s)", g.genExpr(e.Left), g.genExpr(e.Right))
@@ -152,7 +155,7 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		return "null"
 
 	case *ast.ObjectLiteral:
-		if len(e.Keys) == 0 && len(e.ComputedProperties) == 0 {
+		if len(e.Keys) == 0 && len(e.ComputedProperties) == 0 && len(e.Spreads) == 0 {
 			return "{}"
 		}
 		var pairs []string
@@ -161,6 +164,9 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		}
 		for _, cp := range e.ComputedProperties {
 			pairs = append(pairs, fmt.Sprintf("[%s]: %s", g.genExpr(cp.KeyExpr), g.genExpr(cp.Value)))
+		}
+		for _, sp := range e.Spreads {
+			pairs = append(pairs, fmt.Sprintf("...%s", g.genExpr(sp)))
 		}
 		return "{ " + strings.Join(pairs, ", ") + " }"
 

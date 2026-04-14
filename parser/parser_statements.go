@@ -171,7 +171,7 @@ func (p *Parser) parseWhile() *ast.WhileStatement {
 func (p *Parser) parseFuncDef() *ast.FuncDefinition {
 	line := p.current().Line
 	p.advance() // consume "to"
-	nameTok := p.expect(lexer.TOKEN_IDENT)
+	nameTok := p.expectIdentOrKeyword() // accept keyword tokens as function names (e.g., "load")
 
 	params := []string{}
 	paramTypes := []string{}
@@ -239,6 +239,11 @@ func (p *Parser) parseReturn() *ast.ReturnStatement {
 	line := p.current().Line
 	p.advance() // consume "give"
 	p.expect(lexer.TOKEN_BACK)
+	// Allow bare "give back" without a value
+	if p.check(lexer.TOKEN_NEWLINE) || p.check(lexer.TOKEN_EOF) || p.check(lexer.TOKEN_DEDENT) {
+		p.consumeNewline()
+		return &ast.ReturnStatement{Value: nil, Line: line}
+	}
 	value := p.parseExpression()
 	p.consumeNewline()
 	return &ast.ReturnStatement{Value: value, Line: line}
@@ -637,14 +642,31 @@ func (p *Parser) parseFromUse() *ast.FromUseStatement {
 	p.expect(lexer.TOKEN_USE) // "use"
 
 	names := []string{}
-	names = append(names, p.expectIdentOrKeyword().Value)
+	aliases := []string{}
+
+	name := p.expectIdentOrKeyword().Value
+	names = append(names, name)
+	alias := ""
+	if p.check(lexer.TOKEN_AS) {
+		p.advance() // consume "as"
+		alias = p.expectIdentOrKeyword().Value
+	}
+	aliases = append(aliases, alias)
+
 	for p.check(lexer.TOKEN_COMMA) {
 		p.advance()
-		names = append(names, p.expectIdentOrKeyword().Value)
+		name = p.expectIdentOrKeyword().Value
+		names = append(names, name)
+		alias = ""
+		if p.check(lexer.TOKEN_AS) {
+			p.advance() // consume "as"
+			alias = p.expectIdentOrKeyword().Value
+		}
+		aliases = append(aliases, alias)
 	}
 
 	p.consumeNewline()
-	return &ast.FromUseStatement{Names: names, Path: path.Value, Line: line}
+	return &ast.FromUseStatement{Names: names, Aliases: aliases, Path: path.Value, Line: line}
 }
 
 func (p *Parser) parseDotAssignment() ast.Statement {

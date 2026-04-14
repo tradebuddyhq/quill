@@ -10,7 +10,20 @@ import (
 // --- Expression parsing (precedence climbing) ---
 
 func (p *Parser) parseExpression() ast.Expression {
-	return p.parsePipe()
+	expr := p.parsePipe()
+
+	// Check for JS-style ternary: expr ? thenExpr : elseExpr
+	if p.check(lexer.TOKEN_QUESTION) {
+		// Disambiguate from error propagation (handled in parsePostfix).
+		// At this level TOKEN_QUESTION means ternary because parsePostfix already consumed ? for propagation.
+		p.advance() // consume "?"
+		thenExpr := p.parseExpression()
+		p.expect(lexer.TOKEN_COLON)
+		elseExpr := p.parseExpression()
+		expr = &ast.TernaryExpr{Condition: expr, Then: thenExpr, Else: elseExpr}
+	}
+
+	return expr
 }
 
 func (p *Parser) parsePipe() ast.Expression {
@@ -125,6 +138,28 @@ func (p *Parser) parseComparison() ast.Expression {
 		return &ast.ComparisonExpr{Left: left, Operator: "contains", Right: right}
 	}
 
+	// Symbol-based comparison operators: >, <, >=, <=
+	if p.check(lexer.TOKEN_GT) {
+		p.advance()
+		right := p.parseAddition()
+		return &ast.ComparisonExpr{Left: left, Operator: ">", Right: right}
+	}
+	if p.check(lexer.TOKEN_LT) {
+		p.advance()
+		right := p.parseAddition()
+		return &ast.ComparisonExpr{Left: left, Operator: "<", Right: right}
+	}
+	if p.check(lexer.TOKEN_GTE) {
+		p.advance()
+		right := p.parseAddition()
+		return &ast.ComparisonExpr{Left: left, Operator: ">=", Right: right}
+	}
+	if p.check(lexer.TOKEN_LTE) {
+		p.advance()
+		right := p.parseAddition()
+		return &ast.ComparisonExpr{Left: left, Operator: "<=", Right: right}
+	}
+
 	return left
 }
 
@@ -209,8 +244,20 @@ func (p *Parser) parsePostfix() ast.Expression {
 			p.expect(lexer.TOKEN_RPAREN)
 			expr = &ast.CallExpr{Function: expr, Args: args}
 		} else if p.check(lexer.TOKEN_QUESTION) {
-			p.advance() // consume "?"
-			expr = &ast.PropagateExpr{Expr: expr}
+			// Disambiguate: ? followed by an expression-start token = ternary (handled at expression level)
+			// ? followed by dot/paren/newline/EOF/dedent/bracket = error propagation
+			nextType := lexer.TOKEN_EOF
+			if p.pos+1 < len(p.tokens) {
+				nextType = p.tokens[p.pos+1].Type
+			}
+			if nextType == lexer.TOKEN_DOT || nextType == lexer.TOKEN_LPAREN || nextType == lexer.TOKEN_NEWLINE ||
+				nextType == lexer.TOKEN_EOF || nextType == lexer.TOKEN_DEDENT || nextType == lexer.TOKEN_RPAREN ||
+				nextType == lexer.TOKEN_COMMA || nextType == lexer.TOKEN_RBRACKET || nextType == lexer.TOKEN_RBRACE {
+				p.advance() // consume "?"
+				expr = &ast.PropagateExpr{Expr: expr}
+			} else {
+				break // let parseExpression handle it as ternary
+			}
 		} else {
 			break
 		}
@@ -398,9 +445,15 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 	values := []ast.Expression{}
 	var computed []ast.ComputedProperty
 
+	var spreads []ast.Expression
+
 	if !p.check(lexer.TOKEN_RBRACE) {
-		// Parse first property (regular, computed, or string-keyed)
-		if p.check(lexer.TOKEN_LBRACKET) {
+		// Parse first property (regular, computed, string-keyed, or spread)
+		if p.check(lexer.TOKEN_SPREAD) {
+			p.advance() // consume "..."
+			spreadExpr := p.parseUnary()
+			spreads = append(spreads, spreadExpr)
+		} else if p.check(lexer.TOKEN_LBRACKET) {
 			// Computed property: {[expr]: value}
 			p.advance() // consume "["
 			keyExpr := p.parseExpression()
@@ -432,7 +485,11 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 			if p.check(lexer.TOKEN_RBRACE) {
 				break // trailing comma
 			}
-			if p.check(lexer.TOKEN_LBRACKET) {
+			if p.check(lexer.TOKEN_SPREAD) {
+				p.advance() // consume "..."
+				spreadExpr := p.parseUnary()
+				spreads = append(spreads, spreadExpr)
+			} else if p.check(lexer.TOKEN_LBRACKET) {
 				// Computed property
 				p.advance() // consume "["
 				keyExpr := p.parseExpression()
@@ -472,7 +529,7 @@ func (p *Parser) parseObjectLiteral() ast.Expression {
 			p.advance()
 		}
 	}
-	return &ast.ObjectLiteral{Keys: keys, Values: values, ComputedProperties: computed}
+	return &ast.ObjectLiteral{Keys: keys, Values: values, ComputedProperties: computed, Spreads: spreads}
 }
 
 func (p *Parser) parseTaggedTemplate(tag string, line int) ast.Expression {

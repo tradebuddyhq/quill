@@ -72,7 +72,10 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 		} else if p.check(lexer.TOKEN_TO) {
 			if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Value == "render" {
 				renderBody = p.parseRenderMethod()
-			} else if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LOAD {
+			} else if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LOAD &&
+				p.pos+2 < len(p.tokens) && p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT {
+				// Only treat as a LoadFunction if "load" is followed by a parameter name
+				// e.g., "to load request:" is a LoadFunction, "to load:" is a regular method
 				loader = p.parseLoadFunction()
 			} else {
 				method := p.parseFuncDef()
@@ -790,6 +793,22 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 		}
 	}
 
+	// Handle variable assignments in render blocks (e.g., pct is score / total * 100)
+	if p.check(lexer.TOKEN_IDENT) && p.pos+1 < len(p.tokens) && (p.tokens[p.pos+1].Type == lexer.TOKEN_IS || p.tokens[p.pos+1].Type == lexer.TOKEN_ARE) {
+		name := p.advance() // consume identifier
+		p.advance()          // consume "is" or "are"
+		value := p.parseExpression()
+		p.consumeNewline()
+		return &ast.RenderElement{
+			Tag: "__assignment",
+			Props: map[string]ast.Expression{
+				"__name":  &ast.StringLiteral{Value: name.Value},
+				"__value": value,
+			},
+			Line: line,
+		}
+	}
+
 	// Handle children placeholder
 	if p.check(lexer.TOKEN_IDENT) && p.current().Value == "children" {
 		p.advance() // consume "children"
@@ -869,6 +888,13 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			} else {
 				break
 			}
+			continue
+		}
+		// Inline style object: style { flexDirection: "row", gap: 10 }
+		if propName == "style" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LBRACE {
+			p.advance() // consume "style"
+			expr := p.parseExpression() // parses the object literal { ... }
+			props["__inlineStyle"] = expr
 			continue
 		}
 		// Special: style [a, b] for multiple styles

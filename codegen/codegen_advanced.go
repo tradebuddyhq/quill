@@ -128,7 +128,15 @@ func (g *Generator) generateWorker(program *ast.Program) string {
 			out.WriteString(fmt.Sprintf("import %s from \"%s\";\n", varName, u.Path))
 		}
 		if f, ok := stmt.(*ast.FromUseStatement); ok {
-			names := strings.Join(f.Names, ", ")
+			namesParts := make([]string, len(f.Names))
+			for i, n := range f.Names {
+				if i < len(f.Aliases) && f.Aliases[i] != "" {
+					namesParts[i] = n + " as " + f.Aliases[i]
+				} else {
+					namesParts[i] = n
+				}
+			}
+			names := strings.Join(namesParts, ", ")
 			out.WriteString(fmt.Sprintf("import { %s } from \"%s\";\n", names, f.Path))
 		}
 	}

@@ -178,7 +178,15 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 		}
 		// Handle FromUseStatement with ESM destructured imports
 		if fromStmt, ok := stmt.(*ast.FromUseStatement); ok {
-			names := strings.Join(fromStmt.Names, ", ")
+			namesParts := make([]string, len(fromStmt.Names))
+			for i, n := range fromStmt.Names {
+				if i < len(fromStmt.Aliases) && fromStmt.Aliases[i] != "" {
+					namesParts[i] = n + " as " + fromStmt.Aliases[i]
+				} else {
+					namesParts[i] = n
+				}
+			}
+			names := strings.Join(namesParts, ", ")
 			out.WriteString(fmt.Sprintf("import { %s } from '%s';\n", names, fromStmt.Path))
 			continue
 		}
@@ -387,6 +395,25 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 	indent := strings.Repeat("  ", depth)
 	tag := mapRNTag(el.Tag)
 	var out strings.Builder
+
+	// Special handling for __assignment
+	if el.Tag == "__assignment" {
+		var name, valStr string
+		if nameProp, ok := el.Props["__name"]; ok {
+			if str, ok := nameProp.(*ast.StringLiteral); ok {
+				name = str.Value
+			}
+		}
+		if valProp, ok := el.Props["__value"]; ok {
+			valStr = g.genExpr(valProp)
+		}
+		// Check if it's a state variable
+		if stateVars[name] {
+			setter := "set" + strings.ToUpper(name[:1]) + name[1:]
+			return fmt.Sprintf("%s%s(%s);\n", indent, setter, valStr)
+		}
+		return fmt.Sprintf("%sconst %s = %s;\n", indent, name, valStr)
+	}
 
 	// Special handling for __children
 	if tag == "__children" || el.Tag == "__children" {
