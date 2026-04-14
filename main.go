@@ -25,7 +25,6 @@ import (
 	"quill/typechecker"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -374,7 +373,7 @@ func watchFile(filename string) {
 
 	// Handle Ctrl+C gracefully
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigCh, os.Interrupt)
 
 	// Track modification times
 	modTimes := make(map[string]time.Time)
@@ -414,7 +413,7 @@ func watchFile(filename string) {
 		cmd.Stdin = os.Stdin
 		cmd.Dir = sourceDir
 		// Use a process group so we can kill child processes too
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		setProcGroup(cmd)
 
 		if err := cmd.Start(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error starting process: %s\n", err)
@@ -432,11 +431,7 @@ func watchFile(filename string) {
 	}
 
 	killProcess := func(cmd *exec.Cmd) {
-		if cmd == nil || cmd.Process == nil {
-			return
-		}
-		// Kill the process group
-		syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		killProcGroup(cmd)
 	}
 
 	// Initial run
@@ -1530,7 +1525,7 @@ func watchTests(files []string) {
 
 	// Handle Ctrl+C
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigCh, os.Interrupt)
 
 	fmt.Printf("Watching %d test file(s) for changes...\n", len(files))
 	fmt.Println("Press Ctrl+C to stop")
