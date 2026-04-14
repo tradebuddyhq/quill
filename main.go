@@ -19,6 +19,7 @@ import (
 	"quill/lsp"
 	"quill/parser"
 	"quill/registry"
+	"quill/learn"
 	"quill/repl"
 	"quill/server"
 	"quill/tools"
@@ -142,6 +143,9 @@ func main() {
 	case "repl":
 		repl.Version = version
 		repl.Start()
+
+	case "learn", "tutorial":
+		learn.Run()
 
 	case "lsp":
 		lsp.Start()
@@ -1718,6 +1722,7 @@ func printUsage() {
 	fmt.Println("                                       (requires llc + cc installed)")
 	fmt.Println("                                       Note: async, channels, spawn, parallel,")
 	fmt.Println("                                       and for-each are not yet supported")
+	fmt.Println("  quill learn                  Interactive tutorial (10 lessons)")
 	fmt.Println("  quill repl                   Start interactive REPL")
 	fmt.Println("  quill watch <file.quill>     Watch a file and re-run on changes")
 	fmt.Println("  quill lsp                    Start the LSP server (for editor integration)")
