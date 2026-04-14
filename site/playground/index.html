@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="wasm_exec.js"></script>
   <style>
     /* ---- Reset & Base ---- */
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -588,355 +589,57 @@ handle_request("/about")
 handle_request("/unknown")`
 };
 
-// ---- Quill Compiler ----
+// ---- Quill Compiler (Go/WASM) ----
+let __wasmReady = false;
+
+async function initQuillWasm() {
+  try {
+    const go = new Go();
+    const result = await WebAssembly.instantiateStreaming(
+      fetch('quill.wasm'),
+      go.importObject
+    );
+    go.run(result.instance);
+    // Wait for Go to register __quill_compile
+    let attempts = 0;
+    while (!window.__quill_ready && attempts < 200) {
+      await new Promise(r => setTimeout(r, 10));
+      attempts++;
+    }
+    if (window.__quill_ready) {
+      __wasmReady = true;
+      // Update run button to show ready state
+      const btn = document.getElementById('run-btn');
+      if (btn && btn.textContent.includes('Loading')) {
+        btn.textContent = 'Run';
+        btn.disabled = false;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load Quill WASM compiler:', e);
+  }
+}
+
 class QuillCompiler {
   compile(source) {
     const errors = [];
+    if (!__wasmReady) {
+      errors.push('Compiler is still loading. Please wait a moment and try again.');
+      return { js: '', errors };
+    }
     try {
-      const js = this.transpile(source, errors);
-      return { js, errors };
+      const result = window.__quill_compile(source);
+      if (result.error) {
+        errors.push(result.error);
+        return { js: '', errors };
+      }
+      return { js: result.js, errors };
     } catch (e) {
       errors.push(e.message);
       return { js: '', errors };
     }
   }
 
-  transpile(source, errors) {
-    // Normalize line endings
-    let lines = source.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-
-    // Process into a structured form with indent levels
-    const processed = [];
-    for (let i = 0; i < lines.length; i++) {
-      const raw = lines[i];
-      const stripped = raw.replace(/\t/g, '  ');
-      const trimmed = stripped.trimStart();
-      const indent = stripped.length - trimmed.length;
-      const level = Math.floor(indent / 2);
-      processed.push({ raw, trimmed, level, lineNum: i + 1 });
-    }
-
-    // Generate JS with indentation-based blocks
-    const jsLines = [];
-    const indentStack = [0]; // stack of indent levels for closing braces
-
-    for (let i = 0; i < processed.length; i++) {
-      const { trimmed, level, lineNum } = processed[i];
-
-      // Skip empty lines
-      if (trimmed === '') {
-        jsLines.push('');
-        continue;
-      }
-
-      // Close blocks: if current level <= previous block levels, close them
-      while (indentStack.length > 1 && level <= indentStack[indentStack.length - 1]) {
-        indentStack.pop();
-        const closeIndent = '  '.repeat(indentStack.length - 1);
-        jsLines.push(closeIndent + '}');
-      }
-
-      const jsIndent = '  '.repeat(indentStack.length - 1);
-
-      // Check if next non-empty line has greater indentation (block opener)
-      const opensBlock = this.nextNonEmptyLevel(processed, i) > level;
-
-      const js = this.compileLine(trimmed, opensBlock, errors, lineNum);
-      if (js !== null) {
-        jsLines.push(jsIndent + js);
-        if (opensBlock && (js.endsWith('{') || js.endsWith('{ // match'))) {
-          indentStack.push(level + 1);
-        } else if (opensBlock) {
-          // Line should open a block but our compilation didn't add {
-          // Try to detect and fix
-        }
-      }
-    }
-
-    // Close remaining open blocks
-    while (indentStack.length > 1) {
-      indentStack.pop();
-      const closeIndent = '  '.repeat(indentStack.length - 1);
-      jsLines.push(closeIndent + '}');
-    }
-
-    return jsLines.join('\n');
-  }
-
-  nextNonEmptyLevel(processed, currentIdx) {
-    for (let j = currentIdx + 1; j < processed.length; j++) {
-      if (processed[j].trimmed !== '') return processed[j].level;
-    }
-    return 0;
-  }
-
-  compileLine(line, opensBlock, errors, lineNum) {
-    // Comments
-    if (line.startsWith('--')) {
-      return '//' + line.slice(2);
-    }
-
-    // Remove trailing colon for block openers
-    let stmt = line;
-    if (opensBlock && stmt.endsWith(':')) {
-      stmt = stmt.slice(0, -1).trimEnd();
-    }
-
-    // Replace Quill keywords in expressions
-    const compileExpr = (expr) => this.compileExpression(expr);
-
-    // ---- describe ClassName (class) ----
-    const describeMatch = stmt.match(/^describe\s+(\w+)$/);
-    if (describeMatch) {
-      return `class ${describeMatch[1]} {`;
-    }
-
-    // ---- to create (constructor) ----
-    const createMatch = stmt.match(/^to\s+create(?:\s+(.*))?$/);
-    if (createMatch) {
-      const params = createMatch[1] ? createMatch[1].split(/\s*,\s*/).join(', ') : '';
-      return `constructor(${params}) {`;
-    }
-
-    // ---- to functionName params (method/function) ----
-    const fnMatch = stmt.match(/^to\s+(\w+)(?:\s+(.*))?$/);
-    if (fnMatch) {
-      const name = fnMatch[1];
-      const params = fnMatch[2] ? fnMatch[2].split(/\s*,\s*/).join(', ') : '';
-      // If inside a class, no "function" keyword
-      return `function ${name}(${params}) {`;
-    }
-
-    // ---- give back (return) ----
-    const returnMatch = stmt.match(/^give\s+back\s+(.+)$/);
-    if (returnMatch) {
-      return `return ${compileExpr(returnMatch[1])};`;
-    }
-
-    // ---- say (print) ----
-    const sayMatch = stmt.match(/^say\s+(.+)$/);
-    if (sayMatch) {
-      return `console.log(${compileExpr(sayMatch[1])});`;
-    }
-
-    // ---- for each x in y ----
-    const forMatch = stmt.match(/^for\s+each\s+(\w+)\s+in\s+(.+)$/);
-    if (forMatch) {
-      return `for (const ${forMatch[1]} of ${compileExpr(forMatch[2])}) {`;
-    }
-
-    // ---- repeat while condition ----
-    const whileMatch = stmt.match(/^repeat\s+while\s+(.+)$/);
-    if (whileMatch) {
-      return `while (${compileExpr(whileMatch[1])}) {`;
-    }
-
-    // ---- match value ----
-    const matchMatch = stmt.match(/^match\s+(.+)$/);
-    if (matchMatch) {
-      return `switch (${compileExpr(matchMatch[1])}) { // match`;
-    }
-
-    // ---- when value ----
-    const whenMatch = stmt.match(/^when\s+(.+)$/);
-    if (whenMatch) {
-      const val = whenMatch[1].trim();
-      // Handle range: "when 0 to 12" -- not directly translatable to switch, use if-chain approach
-      // For simple values, use case
-      return `case ${compileExpr(val)}: {`;
-    }
-
-    // ---- otherwise (in match = default, in if = else) ----
-    if (stmt === 'otherwise') {
-      // Could be default in switch or else
-      if (opensBlock) {
-        return `default: {`;
-      }
-      return `} else {`;
-    }
-
-    // ---- otherwise if ----
-    const elseIfMatch = stmt.match(/^otherwise\s+if\s+(.+)$/);
-    if (elseIfMatch) {
-      return `} else if (${compileExpr(elseIfMatch[1])}) {`;
-    }
-
-    // ---- if condition ----
-    const ifMatch = stmt.match(/^if\s+(.+)$/);
-    if (ifMatch) {
-      return `if (${compileExpr(ifMatch[1])}) {`;
-    }
-
-    // ---- set x is value / x is value (variable assignment) ----
-    const setMatch = stmt.match(/^set\s+(\w+)\s+is\s+(.+)$/);
-    if (setMatch) {
-      return `let ${setMatch[1]} = ${compileExpr(setMatch[2])};`;
-    }
-
-    // ---- my x is value (this.x = value) ----
-    const myMatch = stmt.match(/^my\s+(\w+)\s+is\s+(.+)$/);
-    if (myMatch) {
-      return `this.${myMatch[1]} = ${compileExpr(myMatch[2])};`;
-    }
-
-    // ---- x is value (variable) ----
-    // Must not match things like "x is greater than" as standalone
-    const varMatch = stmt.match(/^(\w+)\s+is\s+(.+)$/);
-    if (varMatch && !varMatch[2].match(/^(greater|less|not)\b/) && varMatch[1] !== 'if' && varMatch[1] !== 'otherwise') {
-      return `let ${varMatch[1]} = ${compileExpr(varMatch[2])};`;
-    }
-
-    // ---- x are value (alias for is, often for lists) ----
-    const areMatch = stmt.match(/^(\w+)\s+are\s+(.+)$/);
-    if (areMatch) {
-      return `let ${areMatch[1]} = ${compileExpr(areMatch[2])};`;
-    }
-
-    // ---- fallback: treat as expression ----
-    return compileExpr(stmt) + ';';
-  }
-
-  compileExpression(expr) {
-    if (!expr) return expr;
-
-    let result = expr;
-
-    // String interpolation: "Hello {name}" -> `Hello ${name}`
-    result = result.replace(/"([^"]*)"/g, (match, inner) => {
-      if (inner.includes('{')) {
-        const tmpl = inner.replace(/\{([^}]+)\}/g, (_, e) => '${' + this.compileExpression(e) + '}');
-        return '`' + tmpl + '`';
-      }
-      return match;
-    });
-
-    // Pipe operator: val | fn -> fn(val)
-    if (result.includes(' | ')) {
-      const parts = result.split(/\s*\|\s*/);
-      let compiled = this.compileExpression(parts[0]);
-      for (let i = 1; i < parts.length; i++) {
-        compiled = this.compileExpression(parts[i]) + '(' + compiled + ')';
-      }
-      return compiled;
-    }
-
-    // Boolean literals
-    result = result.replace(/\byes\b/g, 'true');
-    result = result.replace(/\bno\b/g, 'false');
-    result = result.replace(/\bnothing\b/g, 'null');
-
-    // Logical operators
-    result = result.replace(/\band\b/g, '&&');
-    result = result.replace(/\bor\b/g, '||');
-    result = result.replace(/\bnot\s+/g, '!');
-
-    // Comparison operators (multi-word, must come before single-word "is")
-    result = result.replace(/\bis greater than or equal to\b/g, '>=');
-    result = result.replace(/\bis less than or equal to\b/g, '<=');
-    result = result.replace(/\bis greater than\b/g, '>');
-    result = result.replace(/\bis less than\b/g, '<');
-    result = result.replace(/\bis not\b/g, '!==');
-    // "is" as equality (but not assignment -- only in expression context)
-    result = result.replace(/\bis\b/g, '===');
-
-    // "my " -> "this."
-    result = result.replace(/\bmy\s+/g, 'this.');
-
-    return result;
-  }
-}
-
-// ---- Runtime Helpers (injected into compiled code) ----
-const RUNTIME = `
-function length(x) {
-  if (x == null) return 0;
-  return x.length;
-}
-function push(arr, item) {
-  arr.push(item);
-  return arr;
-}
-function toText(x) {
-  return String(x);
-}
-function toNumber(x) {
-  return Number(x);
-}
-`;
-
-// ---- Fix generated JS: convert "function" inside class bodies to methods ----
-function fixClassMethods(js) {
-  const lines = js.split('\n');
-  let inClass = false;
-  let classDepth = 0;
-  let braceCount = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-
-    if (trimmed.match(/^class\s+\w+\s*\{/)) {
-      inClass = true;
-      classDepth = braceCount;
-    }
-
-    if (inClass) {
-      // Convert "function name(...) {" to "name(...) {" inside class
-      lines[i] = lines[i].replace(/^(\s*)function\s+(\w+)\s*\(/, '$1$2(');
-    }
-
-    // Track braces
-    for (const ch of lines[i]) {
-      if (ch === '{') braceCount++;
-      if (ch === '}') {
-        braceCount--;
-        if (inClass && braceCount === classDepth) {
-          inClass = false;
-        }
-      }
-    }
-  }
-
-  return lines.join('\n');
-}
-
-// ---- Fix duplicate let declarations ----
-function fixDuplicateLets(js) {
-  const declared = new Set();
-  return js.split('\n').map(line => {
-    const m = line.match(/^(\s*)let\s+(\w+)\s*=\s*(.+)$/);
-    if (m) {
-      const [, indent, name, value] = m;
-      if (declared.has(name)) {
-        return `${indent}${name} = ${value}`;
-      }
-      declared.add(name);
-    }
-    return line;
-  }).join('\n');
-}
-
-// ---- Fix switch/case: add break, close nested braces ----
-function fixSwitchCase(js) {
-  const lines = js.split('\n');
-  const result = [];
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-    const nextTrimmed = (i + 1 < lines.length) ? lines[i + 1].trim() : '';
-
-    // Before a case/default/closing-of-switch, inject break + closing brace for previous case
-    if ((trimmed.startsWith('case ') || trimmed.startsWith('default:')) && result.length > 0) {
-      // Check if previous case block needs closing
-      const prev = result[result.length - 1].trim();
-      if (prev !== '{' && !prev.startsWith('case ') && !prev.startsWith('default:') && prev !== '// match' && !prev.endsWith('{ // match')) {
-        const indent = lines[i].match(/^(\s*)/)[1];
-        result.push(indent + '  break;');
-        result.push(indent + '}');
-      }
-    }
-
-    result.push(lines[i]);
-  }
-  return result.join('\n');
 }
 
 // ---- Sandbox Execution ----
@@ -948,21 +651,11 @@ function executeQuill(source) {
     return { output: [], errors, compiledJs: js };
   }
 
-  // Post-process
-  let finalJs = fixClassMethods(js);
-  finalJs = fixDuplicateLets(finalJs);
-  finalJs = fixSwitchCase(finalJs);
-
-  const output = [];
   const captured = [];
-
-  // Capture console.log
   const origLog = console.log;
 
   try {
-    const fn = new Function('console', 'length', 'push', 'toText', 'toNumber',
-      '"use strict";\n' + finalJs
-    );
+    const fn = new Function('console', '"use strict";\n' + js);
 
     const fakeConsole = {
       log: function() {
@@ -985,22 +678,17 @@ function executeQuill(source) {
     let timedOut = false;
     const timer = setTimeout(() => { timedOut = true; }, timeoutMs);
 
-    fn(fakeConsole, length, push, toText, toNumber);
+    fn(fakeConsole);
 
     clearTimeout(timer);
     if (timedOut) {
       errors.push('Execution timed out after 5 seconds (possible infinite loop)');
     }
 
-    return { output: captured, errors, compiledJs: finalJs };
+    return { output: captured, errors, compiledJs: js };
   } catch (e) {
-    return { output: captured, errors: [e.message], compiledJs: finalJs };
+    return { output: captured, errors: [e.message], compiledJs: js };
   }
-
-  function length(x) { return (x == null) ? 0 : x.length; }
-  function push(arr, item) { arr.push(item); return arr; }
-  function toText(x) { return String(x); }
-  function toNumber(x) { return Number(x); }
 }
 
 // ---- UI ----
@@ -1364,6 +1052,7 @@ document.getElementById('nav-toggle').addEventListener('click', function() {
 // Init
 loadFromHash();
 updateLineNumbers();
+initQuillWasm();
 </script>
 </body>
 </html>
