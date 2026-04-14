@@ -157,6 +157,12 @@ quill test tests/</code></pre>
 
 3 passed, 0 failed</code></pre>
 
+      <h3>Watch Mode</h3>
+      <p>Use <code>--watch</code> (or <code>-w</code>) to automatically re-run your tests every time you save a file:</p>
+      <pre><code>quill test --watch
+quill test math.quill -w</code></pre>
+      <p>This is perfect for test-driven development &mdash; write a test, save, and instantly see if it passes.</p>
+
       <h2 id="async-tests">Async tests</h2>
       <p>If your code uses <code>await</code> (for example, fetching data from an API or reading a file), your tests can use <code>await</code> too. Just write <code>await</code> inside the test block as you normally would:</p>
       <pre><code><span class="kw">to</span> <span class="fn">fetchUser</span> id:

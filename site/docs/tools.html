@@ -54,8 +54,11 @@
       <ul>
         <li><a href="#run">Running programs</a></li>
         <li><a href="#debugger">Debugger</a></li>
+        <li><a href="#testing">Testing</a></li>
         <li><a href="#project-config">Project config</a></li>
         <li><a href="#init">quill init</a></li>
+        <li><a href="#new">Project Scaffolding</a></li>
+        <li><a href="#share">Instant Sharing</a></li>
         <li><a href="#cicd">CI/CD</a></li>
         <li><a href="#all-commands">All commands</a></li>
         <li><a href="#deployment">Deployment</a></li>
@@ -922,6 +925,8 @@ Created project <span class="str">"my-app"</span>
 
 cd my-app && quill run main.quill</code></pre>
 
+      <p><strong>Next steps:</strong> Now enter your new project directory and run it: <code>cd my-app && quill run main.quill</code>. You should see "Hello, Quill!" printed to the console.</p>
+
       <p>The generated <code>main.quill</code> contains a simple hello world program:</p>
       <pre><code><span class="kw">say</span> <span class="str">"Hello, Quill!"</span></code></pre>
 
@@ -932,7 +937,7 @@ version = <span class="str">"0.1.0"</span></code></pre>
 
       <h3>Tips</h3>
       <ul>
-        <li><strong>Use <code>quill new</code> for quick starts:</strong> It creates a new directory with everything set up. Use <code>quill init</code> instead if you want to initialize an existing directory.</li>
+        <li><strong>Use <code>quill new</code> for quick starts:</strong> It creates a <em>new</em> directory with everything set up. If you already have a directory you want to turn into a Quill project, use <code>quill init</code> instead &mdash; it initializes the <em>current</em> directory in place without creating a new one.</li>
         <li><strong>Customize the starter file:</strong> The generated <code>main.quill</code> is a simple hello world &mdash; replace it with your own code to start building.</li>
       </ul>
 
