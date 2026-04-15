@@ -5,6 +5,7 @@ import (
 	"quill/ast"
 	"quill/lexer"
 	"strconv"
+	"strings"
 )
 
 // --- Expression parsing (precedence climbing) ---
@@ -233,14 +234,19 @@ func (p *Parser) parsePostfix() ast.Expression {
 			expr = &ast.IndexExpr{Object: expr, Index: index}
 		} else if p.check(lexer.TOKEN_LPAREN) {
 			p.advance() // consume "("
+			p.skipNewlinesAndIndent()
 			args := []ast.Expression{}
 			if !p.check(lexer.TOKEN_RPAREN) {
 				args = append(args, p.parseExpression())
+				p.skipNewlinesAndIndent()
 				for p.check(lexer.TOKEN_COMMA) {
 					p.advance()
+					p.skipNewlinesAndIndent()
 					args = append(args, p.parseExpression())
+					p.skipNewlinesAndIndent()
 				}
 			}
+			p.skipNewlinesAndIndent()
 			p.expect(lexer.TOKEN_RPAREN)
 			expr = &ast.CallExpr{Function: expr, Args: args}
 		} else if p.check(lexer.TOKEN_QUESTION) {
@@ -276,11 +282,23 @@ func (p *Parser) parsePrimary() ast.Expression {
 
 	case lexer.TOKEN_NUMBER:
 		p.advance()
-		val, err := strconv.ParseFloat(tok.Value, 64)
-		if err != nil {
-			p.error(fmt.Sprintf("invalid number: %s", tok.Value))
+		var val float64
+		var raw string
+		if strings.HasPrefix(tok.Value, "0x") || strings.HasPrefix(tok.Value, "0X") {
+			n, err := strconv.ParseInt(tok.Value, 0, 64)
+			if err != nil {
+				p.error(fmt.Sprintf("invalid number: %s", tok.Value))
+			}
+			val = float64(n)
+			raw = tok.Value
+		} else {
+			n, err := strconv.ParseFloat(tok.Value, 64)
+			if err != nil {
+				p.error(fmt.Sprintf("invalid number: %s", tok.Value))
+			}
+			val = n
 		}
-		return &ast.NumberLiteral{Value: val}
+		return &ast.NumberLiteral{Value: val, Raw: raw}
 
 	case lexer.TOKEN_YES:
 		p.advance()
@@ -387,6 +405,12 @@ func (p *Parser) parsePrimary() ast.Expression {
 		return expr
 
 	default:
+		// Allow keyword tokens to be used as identifiers in expressions
+		// (e.g., "command" as a variable name after assignment)
+		if isKeywordToken(tok.Type) {
+			p.advance()
+			return &ast.Identifier{Name: tok.Value}
+		}
 		p.error(fmt.Sprintf("I didn't expect %q here", tok.Value))
 		return nil
 	}

@@ -446,6 +446,17 @@ func (l *Lexer) readMultilineString() error {
 
 func (l *Lexer) readNumber() {
 	start := l.pos
+	// Check for hex literal: 0x...
+	if l.source[l.pos] == '0' && l.pos+1 < len(l.source) && (l.source[l.pos+1] == 'x' || l.source[l.pos+1] == 'X') {
+		l.pos += 2
+		l.col += 2
+		for l.pos < len(l.source) && isHexDigit(l.source[l.pos]) {
+			l.pos++
+			l.col++
+		}
+		l.addToken(TOKEN_NUMBER, l.source[start:l.pos])
+		return
+	}
 	for l.pos < len(l.source) && isDigit(l.source[l.pos]) {
 		l.pos++
 		l.col++
@@ -507,6 +518,10 @@ func (l *Lexer) readBacktickString() error {
 
 func isDigit(ch byte) bool {
 	return ch >= '0' && ch <= '9'
+}
+
+func isHexDigit(ch byte) bool {
+	return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')
 }
 
 func isAlpha(ch byte) bool {

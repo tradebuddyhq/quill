@@ -167,6 +167,7 @@ func (e *StringLiteral) exprNode()        {}
 
 type NumberLiteral struct {
 	Value float64
+	Raw   string // Original source text (e.g., "0x1EB969") - empty for decimal
 }
 
 func (e *NumberLiteral) nodeType() string { return "Number" }

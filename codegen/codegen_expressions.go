@@ -39,6 +39,9 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		return `"` + escaped + `"`
 
 	case *ast.NumberLiteral:
+		if e.Raw != "" {
+			return e.Raw
+		}
 		if e.Value == float64(int64(e.Value)) {
 			return fmt.Sprintf("%d", int64(e.Value))
 		}

@@ -51,8 +51,65 @@ func (p *Parser) Parse() (program *ast.Program, err error) {
 
 // --- Statement parsing ---
 
+// isAssignment returns true if the current token can be used as a variable name
+// and is followed by TOKEN_IS or TOKEN_ARE. This allows keywords like "command",
+// "embed", "topic", etc. to be used as variable names in assignment context.
+func (p *Parser) isAssignment() bool {
+	if p.isAtEnd() || p.pos+1 >= len(p.tokens) {
+		return false
+	}
+	next := p.tokens[p.pos+1].Type
+	if next != lexer.TOKEN_IS && next != lexer.TOKEN_ARE {
+		return false
+	}
+	cur := p.current().Type
+	if cur == lexer.TOKEN_IDENT {
+		return true
+	}
+	// Allow keyword tokens as variable names, except control flow keywords
+	// that have their own statement syntax
+	switch cur {
+	case lexer.TOKEN_IF, lexer.TOKEN_FOR, lexer.TOKEN_WHILE, lexer.TOKEN_TO,
+		lexer.TOKEN_GIVE, lexer.TOKEN_SAY, lexer.TOKEN_FROM,
+		lexer.TOKEN_TRY, lexer.TOKEN_RAISE,
+		lexer.TOKEN_BREAK, lexer.TOKEN_CONTINUE,
+		lexer.TOKEN_AT, lexer.TOKEN_OTHERWISE,
+		lexer.TOKEN_NEWLINE, lexer.TOKEN_INDENT, lexer.TOKEN_DEDENT, lexer.TOKEN_EOF:
+		return false
+	}
+	// Any other keyword token followed by is/are is an assignment
+	return isKeywordToken(cur)
+}
+
+// isDotAssignment returns true if the current token starts a dot assignment
+// like "obj.field is value", allowing keyword tokens on the left side.
+func (p *Parser) isDotAssignment() bool {
+	if p.pos+3 >= len(p.tokens) {
+		return false
+	}
+	cur := p.current().Type
+	if cur != lexer.TOKEN_IDENT && !isKeywordToken(cur) {
+		return false
+	}
+	if p.tokens[p.pos+1].Type != lexer.TOKEN_DOT {
+		return false
+	}
+	t2 := p.tokens[p.pos+2].Type
+	if t2 != lexer.TOKEN_IDENT && !isKeywordToken(t2) {
+		return false
+	}
+	t3 := p.tokens[p.pos+3].Type
+	return t3 == lexer.TOKEN_IS || t3 == lexer.TOKEN_ARE
+}
+
 func (p *Parser) parseStatement() ast.Statement {
 	switch {
+	// Assignment must be checked BEFORE keyword-specific handlers so that
+	// "command is x" parses as an assignment, not as the "command" keyword stmt.
+	case p.isDotAssignment():
+		return p.parseDotAssignment()
+	case p.isAssignment():
+		return p.parseAssignment()
 	case p.check(lexer.TOKEN_SAY):
 		return p.parseSay()
 	case p.check(lexer.TOKEN_IF):
@@ -157,10 +214,6 @@ func (p *Parser) parseStatement() ast.Statement {
 			return p.parseArrayDestructure()
 		}
 		return p.parseExprStatement()
-	case p.check(lexer.TOKEN_IDENT) && p.pos+3 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_DOT && (p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT || isKeywordToken(p.tokens[p.pos+2].Type)) && (p.tokens[p.pos+3].Type == lexer.TOKEN_IS || p.tokens[p.pos+3].Type == lexer.TOKEN_ARE):
-		return p.parseDotAssignment()
-	case p.check(lexer.TOKEN_IDENT) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE):
-		return p.parseAssignment()
 	case p.isBracketAssignment():
 		return p.parseBracketAssignment()
 	case p.isOnStatement():
