@@ -169,15 +169,17 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 		}
 		// Handle UseStatement with ESM import syntax
 		if useStmt, ok := stmt.(*ast.UseStatement); ok {
+			importPath := strings.TrimSuffix(useStmt.Path, ".quill")
 			if useStmt.Alias != "" {
-				out.WriteString(fmt.Sprintf("import * as %s from '%s';\n", useStmt.Alias, useStmt.Path))
+				out.WriteString(fmt.Sprintf("import * as %s from '%s';\n", useStmt.Alias, importPath))
 			} else {
-				out.WriteString(fmt.Sprintf("import '%s';\n", useStmt.Path))
+				out.WriteString(fmt.Sprintf("import '%s';\n", importPath))
 			}
 			continue
 		}
 		// Handle FromUseStatement with ESM destructured imports
 		if fromStmt, ok := stmt.(*ast.FromUseStatement); ok {
+			importPath := strings.TrimSuffix(fromStmt.Path, ".quill")
 			namesParts := make([]string, len(fromStmt.Names))
 			for i, n := range fromStmt.Names {
 				if i < len(fromStmt.Aliases) && fromStmt.Aliases[i] != "" {
@@ -187,19 +189,37 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 				}
 			}
 			names := strings.Join(namesParts, ", ")
-			out.WriteString(fmt.Sprintf("import { %s } from '%s';\n", names, fromStmt.Path))
+			out.WriteString(fmt.Sprintf("import { %s } from '%s';\n", names, importPath))
 			continue
 		}
 		code := g.genStmt(stmt)
 		if strings.TrimSpace(code) != "" {
-			out.WriteString(code)
+			// Add export to top-level functions and constants
+			trimmed := strings.TrimSpace(code)
+			if strings.HasPrefix(trimmed, "function ") || strings.HasPrefix(trimmed, "async function ") {
+				out.WriteString("export " + code)
+			} else if strings.HasPrefix(trimmed, "const ") || strings.HasPrefix(trimmed, "let ") {
+				out.WriteString("export " + code)
+			} else {
+				out.WriteString(code)
+			}
 			out.WriteString("\n")
 		}
 	}
 
 	// --- Generate each component ---
-	for _, comp := range components {
-		out.WriteString(g.genExpoComponent(comp))
+	// Only the last component (or first if no navigation) gets export default
+	// If there's a navigation block, none of the components get export default (nav does)
+	for i, comp := range components {
+		isDefault := false
+		if len(navBlocks) == 0 {
+			if len(components) == 1 {
+				isDefault = true
+			} else {
+				isDefault = (i == len(components)-1) // last component is default
+			}
+		}
+		out.WriteString(g.genExpoComponentWithExport(comp, isDefault))
 		out.WriteString("\n")
 	}
 
@@ -212,8 +232,13 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 	return out.String()
 }
 
-// genExpoComponent generates a React functional component with hooks.
+// genExpoComponent generates a React functional component with hooks (default export).
 func (g *Generator) genExpoComponent(s *ast.ComponentStatement) string {
+	return g.genExpoComponentWithExport(s, true)
+}
+
+// genExpoComponentWithExport generates a React functional component with configurable export.
+func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefault bool) string {
 	var out strings.Builder
 
 	// Track state variable names for setter rewriting
@@ -230,7 +255,11 @@ func (g *Generator) genExpoComponent(s *ast.ComponentStatement) string {
 		propsStr = "props"
 	}
 
-	out.WriteString(fmt.Sprintf("export default function %s(%s) {\n", s.Name, propsStr))
+	if isDefault {
+		out.WriteString(fmt.Sprintf("export default function %s(%s) {\n", s.Name, propsStr))
+	} else {
+		out.WriteString(fmt.Sprintf("export function %s(%s) {\n", s.Name, propsStr))
+	}
 
 	// --- State declarations as useState hooks ---
 	for _, st := range s.States {
@@ -301,6 +330,15 @@ func (g *Generator) genExpoComponent(s *ast.ComponentStatement) string {
 		}
 		g.indent = 0
 		out.WriteString("  };\n\n")
+	}
+
+	// --- Pre-render statements (variables computed before return) ---
+	if len(s.PreRenderStatements) > 0 {
+		for _, stmt := range s.PreRenderStatements {
+			out.WriteString(g.genExpoStmt(stmt, stateVars))
+			out.WriteString("\n")
+		}
+		out.WriteString("\n")
 	}
 
 	// --- Render ---
@@ -470,14 +508,16 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 		} else if key == "__inlineStyle" {
 			propParts = append(propParts, fmt.Sprintf("style={%s}", g.genExpr(val)))
 		} else if key == "style" {
-			if ident, ok := val.(*ast.Identifier); ok {
-				propParts = append(propParts, fmt.Sprintf("style={styles.%s}", ident.Name))
-			} else {
-				propParts = append(propParts, fmt.Sprintf("style={%s}", g.genExpr(val)))
-			}
+			// Plain style prop — pass expression through without wrapping in styles.*
+			propParts = append(propParts, fmt.Sprintf("style={%s}", g.genExpr(val)))
 		} else if strings.HasPrefix(key, "on") {
 			// Event handler: onPress, onChangeText, etc.
-			propParts = append(propParts, fmt.Sprintf("%s={() => %s()}", key, g.genExpr(val)))
+			// Handlers that receive arguments (onChangeText, onValueChange, etc.) pass through directly
+			if key == "onChangeText" || key == "onValueChange" || key == "onEndEditing" || key == "onSubmitEditing" || key == "onScroll" || key == "onLayout" {
+				propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
+			} else {
+				propParts = append(propParts, fmt.Sprintf("%s={() => %s()}", key, g.genExpr(val)))
+			}
 		} else {
 			// Check for boolean true props
 			if ident, ok := val.(*ast.Identifier); ok && ident.Name == "true" {
@@ -513,7 +553,27 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 		indent = strings.Repeat("  ", depth)
 	}
 
-	if len(el.Children) == 0 {
+	// For __fragment tags (conditionals, iterators), render children without wrapper
+	if tag == "__fragment" || el.Tag == "__fragment" {
+		if len(el.Children) == 0 {
+			out.WriteString(fmt.Sprintf("%s<></>\n", indent))
+		} else if len(el.Children) == 1 && el.Children[0].Element != nil {
+			// Single child — render directly without fragment wrapper
+			out.WriteString(g.genExpoElement(el.Children[0].Element, depth, stateVars))
+		} else {
+			out.WriteString(fmt.Sprintf("%s<>\n", indent))
+			for _, child := range el.Children {
+				if child.Element != nil {
+					out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
+				} else if child.Text != nil {
+					childIndent := strings.Repeat("  ", depth+1)
+					textContent := g.genExpoTextContent(child.Text)
+					out.WriteString(fmt.Sprintf("%s<Text>%s</Text>\n", childIndent, textContent))
+				}
+			}
+			out.WriteString(fmt.Sprintf("%s</>\n", indent))
+		}
+	} else if len(el.Children) == 0 {
 		out.WriteString(fmt.Sprintf("%s<%s%s />\n", indent, tag, propsStr))
 	} else {
 		// Check if it's a single text child
@@ -603,10 +663,15 @@ func (g *Generator) genExpoTextContent(expr ast.Expression) string {
 	}
 }
 
-// genExpoStyles generates a StyleSheet.create() block.
+// genExpoStyles generates a StyleSheet.create() block with an optional name suffix.
 func (g *Generator) genExpoStyles(s *ast.NativeStyleBlock) string {
+	return g.genExpoStylesNamed(s, "styles")
+}
+
+// genExpoStylesNamed generates a StyleSheet.create() block with a specific variable name.
+func (g *Generator) genExpoStylesNamed(s *ast.NativeStyleBlock, varName string) string {
 	var out strings.Builder
-	out.WriteString("const styles = StyleSheet.create({\n")
+	out.WriteString(fmt.Sprintf("const %s = StyleSheet.create({\n", varName))
 	for name, props := range s.Styles {
 		out.WriteString(fmt.Sprintf("  %s: {\n", name))
 		for _, prop := range props {

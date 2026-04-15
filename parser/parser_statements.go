@@ -7,7 +7,7 @@ import (
 )
 
 func (p *Parser) isBracketAssignment() bool {
-	if !p.check(lexer.TOKEN_IDENT) {
+	if !p.check(lexer.TOKEN_IDENT) && !p.check(lexer.TOKEN_MY) {
 		return false
 	}
 	// Scan ahead to find LBRACKET, then matching RBRACKET, then IS/ARE
@@ -68,6 +68,17 @@ func (p *Parser) parseSay() *ast.SayStatement {
 func (p *Parser) parseAssignment() *ast.AssignStatement {
 	line := p.current().Line
 	name := p.advance().Value // consume identifier
+	p.advance()               // consume "is" or "are"
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.AssignStatement{Name: name, Value: value, Line: line}
+}
+
+// parseKeywordAssignment parses assignment where the variable name is a keyword token
+// (e.g., style is "dark", screen is "home")
+func (p *Parser) parseKeywordAssignment() *ast.AssignStatement {
+	line := p.current().Line
+	name := p.advance().Value // consume keyword token as variable name
 	p.advance()               // consume "is" or "are"
 	value := p.parseExpression()
 	p.consumeNewline()
@@ -671,7 +682,11 @@ func (p *Parser) parseFromUse() *ast.FromUseStatement {
 
 func (p *Parser) parseDotAssignment() ast.Statement {
 	line := p.current().Line
-	obj := p.advance().Value  // consume identifier
+	tok := p.advance() // consume identifier or "my"
+	obj := tok.Value
+	if tok.Type == lexer.TOKEN_MY {
+		obj = "this"
+	}
 	p.advance()                // consume "."
 	field := p.advance().Value // consume field name
 	p.advance()                // consume "is"/"are"

@@ -34,6 +34,7 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 	var callbacks []ast.CallbackDeclaration
 	var methods []ast.FuncDefinition
 	var renderBody []ast.RenderElement
+	var preRenderStmts []ast.Statement
 	var styles *ast.StyleBlock
 	var nativeStyles *ast.NativeStyleBlock
 	var loader *ast.LoadFunction
@@ -71,11 +72,9 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 			head = p.parseHeadBlock()
 		} else if p.check(lexer.TOKEN_TO) {
 			if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Value == "render" {
-				renderBody = p.parseRenderMethod()
+				renderBody, preRenderStmts = p.parseRenderMethod()
 			} else if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LOAD &&
 				p.pos+2 < len(p.tokens) && p.tokens[p.pos+2].Type == lexer.TOKEN_IDENT {
-				// Only treat as a LoadFunction if "load" is followed by a parameter name
-				// e.g., "to load request:" is a LoadFunction, "to load:" is a regular method
 				loader = p.parseLoadFunction()
 			} else {
 				method := p.parseFuncDef()
@@ -93,22 +92,23 @@ func (p *Parser) parseComponent() *ast.ComponentStatement {
 	}
 
 	return &ast.ComponentStatement{
-		Name:         name.Value,
-		HasProps:     hasProps,
-		Props:        propNames,
-		States:       states,
-		Effects:      effects,
-		Contexts:     contexts,
-		Memos:        memos,
-		Callbacks:    callbacks,
-		Methods:      methods,
-		RenderBody:   renderBody,
-		Styles:       styles,
-		NativeStyles: nativeStyles,
-		Loader:       loader,
-		Actions:      actions,
-		Head:         head,
-		Line:         line,
+		Name:                name.Value,
+		HasProps:            hasProps,
+		Props:               propNames,
+		States:              states,
+		Effects:             effects,
+		Contexts:            contexts,
+		Memos:               memos,
+		Callbacks:           callbacks,
+		Methods:             methods,
+		RenderBody:          renderBody,
+		PreRenderStatements: preRenderStmts,
+		Styles:              styles,
+		NativeStyles:        nativeStyles,
+		Loader:              loader,
+		Actions:             actions,
+		Head:                head,
+		Line:                line,
 	}
 }
 
@@ -655,7 +655,7 @@ func (p *Parser) parseStateDecl() *ast.StateDeclaration {
 	return &ast.StateDeclaration{Name: name.Value, Value: value, Line: line}
 }
 
-func (p *Parser) parseRenderMethod() []ast.RenderElement {
+func (p *Parser) parseRenderMethod() ([]ast.RenderElement, []ast.Statement) {
 	p.advance() // consume "to"
 	p.advance() // consume "render"
 	p.expect(lexer.TOKEN_COLON)
@@ -663,17 +663,24 @@ func (p *Parser) parseRenderMethod() []ast.RenderElement {
 	p.expect(lexer.TOKEN_INDENT)
 
 	var elements []ast.RenderElement
+	var preStatements []ast.Statement
 	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {
 		p.skipNewlines()
 		if p.check(lexer.TOKEN_DEDENT) || p.isAtEnd() {
 			break
 		}
-		elements = append(elements, *p.parseRenderElement())
+		// Check if this is an assignment (variable is/are expr) before render elements
+		if (p.check(lexer.TOKEN_IDENT) || isKeywordToken(p.current().Type)) && p.checkNext(lexer.TOKEN_IS, lexer.TOKEN_ARE) {
+			stmt := p.parseAssignment()
+			preStatements = append(preStatements, stmt)
+		} else {
+			elements = append(elements, *p.parseRenderElement())
+		}
 	}
 	if p.check(lexer.TOKEN_DEDENT) {
 		p.advance()
 	}
-	return elements
+	return elements, preStatements
 }
 
 func (p *Parser) parseRenderElement() *ast.RenderElement {
@@ -903,11 +910,12 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			p.advance() // consume "["
 			var parts []string
 			for !p.check(lexer.TOKEN_RBRACKET) && !p.isAtEnd() {
-				if p.check(lexer.TOKEN_IDENT) {
+				if p.check(lexer.TOKEN_IDENT) || isKeywordToken(p.current().Type) {
 					parts = append(parts, p.advance().Value)
-				}
-				if p.check(lexer.TOKEN_COMMA) {
+				} else if p.check(lexer.TOKEN_COMMA) {
 					p.advance()
+				} else {
+					break // avoid infinite loop on unexpected tokens
 				}
 			}
 			if p.check(lexer.TOKEN_RBRACKET) {
@@ -916,11 +924,24 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			props["__multiStyle"] = &ast.StringLiteral{Value: strings.Join(parts, ",")}
 			continue
 		}
+		// Check for inline style object: style { key: val }
+		if propName == "style" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LBRACE {
+			p.advance() // consume "style"
+			expr := p.parseExpression()
+			props["__inlineStyle"] = expr
+			continue
+		}
 		// Check if next token is an identifier (event handler or attr with value)
 		if p.checkNext(lexer.TOKEN_IDENT) {
 			p.advance() // consume prop name
-			valTok := p.advance() // consume prop value (identifier)
-			props[propName] = &ast.Identifier{Name: valTok.Value}
+			// Check if the identifier is followed by ( — if so, parse as full expression
+			if p.check(lexer.TOKEN_IDENT) && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LPAREN {
+				expr := p.parseExpression()
+				props[propName] = expr
+			} else {
+				valTok := p.advance() // consume prop value (identifier)
+				props[propName] = &ast.Identifier{Name: valTok.Value}
+			}
 		} else if p.checkNext(lexer.TOKEN_STRING) {
 			p.advance() // consume prop name
 			valTok := p.advance() // consume string value

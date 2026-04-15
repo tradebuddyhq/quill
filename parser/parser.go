@@ -188,7 +188,7 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseEveryStatement()
 	case p.check(lexer.TOKEN_DELETE):
 		return p.parseDelete()
-	case p.check(lexer.TOKEN_IDENT) && p.current().Value == "app" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT && p.tokens[p.pos+1].Value == "navigation":
+	case p.check(lexer.TOKEN_IDENT) && p.current().Value == "app" && p.pos+1 < len(p.tokens) && (p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT && p.tokens[p.pos+1].Value == "navigation" || p.tokens[p.pos+1].Type == lexer.TOKEN_NAVIGATE):
 		return p.parseNavigationBlock()
 	case p.check(lexer.TOKEN_IDENT) && p.current().Value == "context" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_IDENT:
 		return p.parseContextDecl()

@@ -620,9 +620,10 @@ type ComponentStatement struct {
 	Memos      []MemoDeclaration
 	Callbacks  []CallbackDeclaration
 	Methods    []FuncDefinition
-	RenderBody []RenderElement
-	Styles     *StyleBlock
-	NativeStyles *NativeStyleBlock // React Native StyleSheet styles
+	RenderBody          []RenderElement
+	PreRenderStatements []Statement // Assignments/statements before the return in render
+	Styles              *StyleBlock
+	NativeStyles        *NativeStyleBlock // React Native StyleSheet styles
 	Loader     *LoadFunction
 	Actions    []FormAction
 	Head       *HeadBlock

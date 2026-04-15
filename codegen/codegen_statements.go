@@ -171,10 +171,20 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 				vis = s.MethodVisibilities[i]
 			}
 			params := strings.Join(method.Params, ", ")
+			asyncPrefix := ""
+			if g.bodyContainsAwait(method.Body) {
+				asyncPrefix = "async "
+			}
 			if vis == "private" {
-				dout.WriteString(fmt.Sprintf("%s#%s(%s) {\n", innerPrefix, method.Name, params))
+				dout.WriteString(fmt.Sprintf("%s%s#%s(%s) {\n", innerPrefix, asyncPrefix, method.Name, params))
 			} else {
-				dout.WriteString(fmt.Sprintf("%s%s(%s) {\n", innerPrefix, method.Name, params))
+				dout.WriteString(fmt.Sprintf("%s%s%s(%s) {\n", innerPrefix, asyncPrefix, method.Name, params))
+			}
+			// Save and reset declared scope for each method
+			savedDeclared := g.declared
+			g.declared = make(map[string]bool)
+			for _, p := range method.Params {
+				g.declared[p] = true
 			}
 			g.indent++
 			for _, stmt := range method.Body {
@@ -182,6 +192,7 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 				dout.WriteString("\n")
 			}
 			g.indent--
+			g.declared = savedDeclared
 			dout.WriteString(fmt.Sprintf("%s}\n", innerPrefix))
 		}
 		g.indent--

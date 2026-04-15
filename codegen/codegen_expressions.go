@@ -176,11 +176,25 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 	case *ast.LambdaExpr:
 		params := strings.Join(e.Params, ", ")
 		if len(e.BodyStatements) > 0 {
+			// Save and reset declared scope for lambda body
+			savedDeclared := g.declared
+			g.declared = make(map[string]bool)
+			for k, v := range savedDeclared {
+				g.declared[k] = v
+			}
+			for _, p := range e.Params {
+				g.declared[p] = true
+			}
 			g.indent++
 			body := g.genBlock(e.BodyStatements)
 			g.indent--
+			g.declared = savedDeclared
 			prefix := strings.Repeat("  ", g.indent)
-			return fmt.Sprintf("(%s) => {\n%s%s}", params, body, prefix)
+			asyncKw := ""
+			if g.bodyContainsAwait(e.BodyStatements) {
+				asyncKw = "async "
+			}
+			return fmt.Sprintf("%s(%s) => {\n%s%s}", asyncKw, params, body, prefix)
 		}
 		body := g.genExpr(e.Body)
 		// Wrap object literals in parens so JS doesn't treat { as a block
