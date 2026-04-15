@@ -120,6 +120,33 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		if ident, ok := e.Function.(*ast.Identifier); ok && ident.Name == "env" && len(e.Args) == 1 {
 			return fmt.Sprintf("process.env[%s]", g.genExpr(e.Args[0]))
 		}
+		// Transform array helper functions: push(arr, val) → arr.push(val), etc.
+		if ident, ok := e.Function.(*ast.Identifier); ok && len(e.Args) >= 1 {
+			switch ident.Name {
+			case "push":
+				// push(arr, val1, val2, ...) → arr.push(val1, val2, ...)
+				arrExpr := g.genExpr(e.Args[0])
+				rest := make([]string, len(e.Args)-1)
+				for i, a := range e.Args[1:] {
+					rest[i] = g.genExpr(a)
+				}
+				return fmt.Sprintf("%s.push(%s)", arrExpr, strings.Join(rest, ", "))
+			case "pop":
+				// pop(arr) → arr.pop()
+				return fmt.Sprintf("%s.pop()", g.genExpr(e.Args[0]))
+			case "shift":
+				// shift(arr) → arr.shift()
+				return fmt.Sprintf("%s.shift()", g.genExpr(e.Args[0]))
+			case "unshift":
+				// unshift(arr, val) → arr.unshift(val)
+				arrExpr := g.genExpr(e.Args[0])
+				rest := make([]string, len(e.Args)-1)
+				for i, a := range e.Args[1:] {
+					rest[i] = g.genExpr(a)
+				}
+				return fmt.Sprintf("%s.unshift(%s)", arrExpr, strings.Join(rest, ", "))
+			}
+		}
 		args := make([]string, len(e.Args))
 		for i, a := range e.Args {
 			args[i] = g.genExpr(a)

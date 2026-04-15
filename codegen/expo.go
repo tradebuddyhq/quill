@@ -301,19 +301,19 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 		out.WriteString(fmt.Sprintf("export function %s(%s) {\n", s.Name, propsStr))
 	}
 
+	// --- Context hooks (must come before useState so state initializers can reference context) ---
+	for _, ctx := range s.Contexts {
+		out.WriteString(fmt.Sprintf("  const %s = useContext(%s);\n", ctx.Alias, ctx.ContextName))
+	}
+
 	// --- State declarations as useState hooks ---
 	for _, st := range s.States {
 		setter := "set" + strings.ToUpper(st.Name[:1]) + st.Name[1:]
 		out.WriteString(fmt.Sprintf("  const [%s, %s] = useState(%s);\n", st.Name, setter, g.genExpr(st.Value)))
 	}
 
-	if len(s.States) > 0 {
+	if len(s.States) > 0 || len(s.Contexts) > 0 {
 		out.WriteString("\n")
-	}
-
-	// --- Context hooks ---
-	for _, ctx := range s.Contexts {
-		out.WriteString(fmt.Sprintf("  const %s = useContext(%s);\n", ctx.Alias, ctx.ContextName))
 	}
 
 	// --- Memo hooks ---
@@ -339,9 +339,17 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 		}
 		params := strings.Join(cb.Params, ", ")
 		g.indent = 2
-		body := g.genBlock(cb.Body)
+		var cbLines []string
+		for _, stmt := range cb.Body {
+			cbLines = append(cbLines, g.genExpoStmt(stmt, stateVars))
+		}
+		body := strings.Join(cbLines, "\n") + "\n"
 		g.indent = 0
-		out.WriteString(fmt.Sprintf("  const %s = useCallback((%s) => {\n%s  }, %s);\n", cb.Name, params, body, deps))
+		asyncKw := ""
+		if g.bodyContainsAwait(cb.Body) {
+			asyncKw = "async "
+		}
+		out.WriteString(fmt.Sprintf("  const %s = useCallback(%s(%s) => {\n%s  }, %s);\n", cb.Name, asyncKw, params, body, deps))
 	}
 
 	if len(s.Contexts) > 0 || len(s.Memos) > 0 || len(s.Callbacks) > 0 {
@@ -534,6 +542,42 @@ func (g *Generator) genExpoStmt(stmt ast.Statement, stateVars map[string]bool) s
 			return fmt.Sprintf("%sasync function %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
 		}
 		return fmt.Sprintf("%sfunction %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
+	case *ast.ForEachStatement:
+		// Handle for-each with state-setter rewriting in body
+		g.indent++
+		var bodyLines []string
+		for _, stmt := range s.Body {
+			bodyLines = append(bodyLines, g.genExpoStmt(stmt, stateVars))
+		}
+		body := strings.Join(bodyLines, "\n") + "\n"
+		g.indent--
+		varPart := s.Variable
+		if s.DestructurePattern != nil {
+			varPart = g.genPattern(s.DestructurePattern)
+		}
+		awaitPart := ""
+		if s.IsAsync {
+			awaitPart = "await "
+		}
+		return fmt.Sprintf("%sfor %s(const %s of %s) {\n%s%s}", prefix, awaitPart, varPart, g.genExpr(s.Iterable), body, prefix)
+	case *ast.WhileStatement:
+		g.indent++
+		var bodyLines []string
+		for _, stmt := range s.Body {
+			bodyLines = append(bodyLines, g.genExpoStmt(stmt, stateVars))
+		}
+		body := strings.Join(bodyLines, "\n") + "\n"
+		g.indent--
+		return fmt.Sprintf("%swhile (%s) {\n%s%s}", prefix, g.genExpr(s.Condition), body, prefix)
+	case *ast.LoopStatement:
+		g.indent++
+		var bodyLines []string
+		for _, stmt := range s.Body {
+			bodyLines = append(bodyLines, g.genExpoStmt(stmt, stateVars))
+		}
+		body := strings.Join(bodyLines, "\n") + "\n"
+		g.indent--
+		return fmt.Sprintf("%swhile (true) {\n%s%s}", prefix, body, prefix)
 	case *ast.NavigateStatement:
 		if s.Params != nil {
 			return fmt.Sprintf("%snavigation.navigate(\"%s\", %s);", prefix, s.Screen, g.genExpr(s.Params))
@@ -625,13 +669,13 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			}
 		} else if key == "__inlineStyle" {
 			propParts = append(propParts, fmt.Sprintf("style={%s}", g.genExpr(val)))
-		} else if key == "style" {
+		} else if key == "style" || strings.HasSuffix(key, "Style") {
 			// Simple identifier → styles.xxx (StyleSheet reference)
 			// Complex expression → pass through directly
 			if ident, ok := val.(*ast.Identifier); ok {
-				propParts = append(propParts, fmt.Sprintf("style={styles.%s}", ident.Name))
+				propParts = append(propParts, fmt.Sprintf("%s={styles.%s}", key, ident.Name))
 			} else {
-				propParts = append(propParts, fmt.Sprintf("style={%s}", g.genExpr(val)))
+				propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
 			}
 		} else if strings.HasPrefix(key, "on") {
 			// Event handler: onPress, onChangeText, etc.

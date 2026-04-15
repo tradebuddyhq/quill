@@ -1,6 +1,6 @@
 {
   "name": "@tradebuddyhq/quill",
-  "version": "0.10.8",
+  "version": "0.10.9",
   "description": "Quill — a programming language that reads like English",
   "bin": {
     "quill": "bin/quill.js"
