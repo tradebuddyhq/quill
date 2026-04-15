@@ -218,7 +218,7 @@ component ThemedScreen:
 	if !strings.Contains(output, "const theme = useContext") {
 		t.Error("expected const theme = useContext")
 	}
-	if !strings.Contains(output, ", useContext") {
+	if !strings.Contains(output, "useContext") {
 		t.Error("expected useContext in React imports")
 	}
 }

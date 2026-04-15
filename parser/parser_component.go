@@ -866,13 +866,19 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 	}
 
 	// Regular element: tag [props...] [: "text" | NEWLINE INDENT children DEDENT]
+	// Supports dot-notation for component namespaces (e.g., Nav.NavigationContainer, Stack.Screen)
 	tag := p.expectIdentOrKeyword()
+	for p.check(lexer.TOKEN_DOT) {
+		p.advance() // consume "."
+		next := p.expectIdentOrKeyword()
+		tag.Value = tag.Value + "." + next.Value
+	}
 	props := make(map[string]ast.Expression)
 
 	// Parse props: onClick handler, bind:value ident, key value, etc.
 	// Supports both space-separated (onClick increment) and = syntax (onClick=increment)
 	// Also handles keyword tokens like "style" as prop names
-	for (p.check(lexer.TOKEN_IDENT) || p.check(lexer.TOKEN_STYLE)) && !p.isAtEnd() {
+	for (p.check(lexer.TOKEN_IDENT) || p.check(lexer.TOKEN_STYLE) || (isKeywordToken(p.current().Type) && !p.check(lexer.TOKEN_COLON) && !p.check(lexer.TOKEN_NEWLINE) && !p.check(lexer.TOKEN_IF) && !p.check(lexer.TOKEN_FOR) && !p.check(lexer.TOKEN_OTHERWISE))) && !p.isAtEnd() {
 		propName := p.current().Value
 		// Check for bind:value pattern
 		if propName == "bind" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_COLON {
@@ -931,6 +937,13 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			props["__inlineStyle"] = expr
 			continue
 		}
+		// Check for object literal as prop value: propName { key: val }
+		if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LBRACE {
+			p.advance() // consume prop name
+			expr := p.parseExpression()
+			props[propName] = expr
+			continue
+		}
 		// Check if next token is an identifier (event handler or attr with value)
 		if p.checkNext(lexer.TOKEN_IDENT) {
 			p.advance() // consume prop name
@@ -952,6 +965,18 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			var numVal float64
 			fmt.Sscanf(valTok.Value, "%f", &numVal)
 			props[propName] = &ast.NumberLiteral{Value: numVal}
+		} else if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_YES {
+			p.advance() // consume prop name
+			p.advance() // consume "yes"/"true"
+			props[propName] = &ast.BoolLiteral{Value: true}
+		} else if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_NO {
+			p.advance() // consume prop name
+			p.advance() // consume "no"/"false"
+			props[propName] = &ast.BoolLiteral{Value: false}
+		} else if p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_NOTHING {
+			p.advance() // consume prop name
+			p.advance() // consume "nothing"
+			props[propName] = &ast.Identifier{Name: "null"}
 		} else {
 			// Check if this is a boolean prop (no value, e.g., showsVerticalScrollIndicator)
 			nextType := lexer.TOKEN_EOF
