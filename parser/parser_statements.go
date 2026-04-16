@@ -6,6 +6,81 @@ import (
 	"strconv"
 )
 
+// isIndexDotAssignment detects patterns like: ident[expr].field is value
+func (p *Parser) isIndexDotAssignment() bool {
+	if !p.check(lexer.TOKEN_IDENT) && !p.check(lexer.TOKEN_MY) {
+		return false
+	}
+	i := p.pos + 1
+	// Skip dot accesses before the bracket: ident.field.field[
+	for i+1 < len(p.tokens) && p.tokens[i].Type == lexer.TOKEN_DOT {
+		i += 2
+	}
+	if i >= len(p.tokens) || p.tokens[i].Type != lexer.TOKEN_LBRACKET {
+		return false
+	}
+	// Find matching RBRACKET
+	depth := 1
+	i++
+	for i < len(p.tokens) && depth > 0 {
+		if p.tokens[i].Type == lexer.TOKEN_LBRACKET {
+			depth++
+		} else if p.tokens[i].Type == lexer.TOKEN_RBRACKET {
+			depth--
+		}
+		i++
+	}
+	if depth != 0 || i >= len(p.tokens) {
+		return false
+	}
+	// After ], expect .field IS/ARE
+	if p.tokens[i].Type != lexer.TOKEN_DOT {
+		return false
+	}
+	i++ // skip dot
+	if i >= len(p.tokens) {
+		return false
+	}
+	if p.tokens[i].Type != lexer.TOKEN_IDENT && !isKeywordToken(p.tokens[i].Type) {
+		return false
+	}
+	i++ // skip field
+	if i >= len(p.tokens) {
+		return false
+	}
+	return p.tokens[i].Type == lexer.TOKEN_IS || p.tokens[i].Type == lexer.TOKEN_ARE
+}
+
+// parseIndexDotAssignment parses: ident[expr].field is value
+func (p *Parser) parseIndexDotAssignment() ast.Statement {
+	line := p.current().Line
+	// Parse the object up to the bracket
+	expr := p.parsePrimary()
+	for p.check(lexer.TOKEN_DOT) && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type != lexer.TOKEN_LBRACKET {
+		// DOT accesses before the bracket
+		p.advance() // consume "."
+		field := p.expectIdentOrKeyword()
+		expr = &ast.DotExpr{Object: expr, Field: field.Value}
+		if p.check(lexer.TOKEN_LBRACKET) {
+			break
+		}
+	}
+	// Parse bracket access
+	p.expect(lexer.TOKEN_LBRACKET)
+	index := p.parseExpression()
+	p.expect(lexer.TOKEN_RBRACKET)
+	// Build the indexed expression
+	indexExpr := &ast.IndexExpr{Object: expr, Index: index}
+	// Parse .field
+	p.expect(lexer.TOKEN_DOT)
+	field := p.expectIdentOrKeyword()
+	// Consume "is" or "are"
+	p.advance()
+	value := p.parseExpression()
+	p.consumeNewline()
+	return &ast.DotAssignStatement{ObjectExpr: indexExpr, Field: field.Value, Value: value, Line: line}
+}
+
 func (p *Parser) isBracketAssignment() bool {
 	if !p.check(lexer.TOKEN_IDENT) && !p.check(lexer.TOKEN_MY) {
 		return false

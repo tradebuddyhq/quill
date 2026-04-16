@@ -154,9 +154,17 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		return fmt.Sprintf("%s(%s)", g.genExpr(e.Function), strings.Join(args, ", "))
 
 	case *ast.DotExpr:
+		// Optional chaining: if object is PropagateExpr, use ?. instead of .
+		if prop, ok := e.Object.(*ast.PropagateExpr); ok {
+			return fmt.Sprintf("%s?.%s", g.genExpr(prop.Expr), e.Field)
+		}
 		return fmt.Sprintf("%s.%s", g.genExpr(e.Object), e.Field)
 
 	case *ast.IndexExpr:
+		// Optional chaining: if object is PropagateExpr, use ?.[] instead of []
+		if prop, ok := e.Object.(*ast.PropagateExpr); ok {
+			return fmt.Sprintf("%s?.[%s]", g.genExpr(prop.Expr), g.genExpr(e.Index))
+		}
 		return fmt.Sprintf("%s[%s]", g.genExpr(e.Object), g.genExpr(e.Index))
 
 	case *ast.NewExpr:

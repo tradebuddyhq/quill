@@ -108,6 +108,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	// "command is x" parses as an assignment, not as the "command" keyword stmt.
 	case p.isDotAssignment():
 		return p.parseDotAssignment()
+	case p.isIndexDotAssignment():
+		return p.parseIndexDotAssignment()
 	case p.isAssignment():
 		return p.parseAssignment()
 	case p.check(lexer.TOKEN_SAY):

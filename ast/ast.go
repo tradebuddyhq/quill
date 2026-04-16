@@ -295,10 +295,11 @@ func (s *DescribeStatement) nodeType() string { return "Describe" }
 func (s *DescribeStatement) stmtNode()        {}
 
 type DotAssignStatement struct {
-	Object string
-	Field  string
-	Value  Expression
-	Line   int
+	Object   string
+	ObjectExpr Expression // optional: if set, used instead of Object string
+	Field    string
+	Value    Expression
+	Line     int
 }
 
 func (s *DotAssignStatement) nodeType() string { return "DotAssign" }

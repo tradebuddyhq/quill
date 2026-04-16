@@ -329,7 +329,7 @@ component LocationScreen:
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(output, "import * as Location from 'expo-location'") {
+	if !strings.Contains(output, "import Location from 'expo-location'") {
 		t.Error("expected ESM import for expo-location")
 	}
 }

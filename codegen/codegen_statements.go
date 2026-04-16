@@ -115,7 +115,11 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		return fmt.Sprintf("%s%s;", prefix, g.genExpr(s.Expr))
 
 	case *ast.DotAssignStatement:
-		return fmt.Sprintf("%s%s.%s = %s;", prefix, s.Object, s.Field, g.genExpr(s.Value))
+		objStr := s.Object
+		if s.ObjectExpr != nil {
+			objStr = g.genExpr(s.ObjectExpr)
+		}
+		return fmt.Sprintf("%s%s.%s = %s;", prefix, objStr, s.Field, g.genExpr(s.Value))
 
 	case *ast.IndexAssignStatement:
 		return fmt.Sprintf("%s%s[%s] = %s;", prefix, g.genExpr(s.Object), g.genExpr(s.Index), g.genExpr(s.Value))

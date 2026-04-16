@@ -66,7 +66,7 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 		if len(comp.Callbacks) > 0 {
 			hasCallbacks = true
 		}
-		// Scan methods, effects, and callbacks for alert/store/load calls
+		// Scan methods, effects, and callbacks for alert/store/load calls (recursively)
 		allBodies := [][]ast.Statement{}
 		for _, m := range comp.Methods {
 			allBodies = append(allBodies, m.Body)
@@ -78,34 +78,12 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 			allBodies = append(allBodies, cb.Body)
 		}
 		for _, body := range allBodies {
-			for _, stmt := range body {
-				if exprStmt, ok := stmt.(*ast.ExprStatement); ok {
-					if call, ok := exprStmt.Expr.(*ast.CallExpr); ok {
-						if ident, ok := call.Function.(*ast.Identifier); ok {
-							switch ident.Name {
-							case "alert":
-								usesAlert = true
-							case "store", "removeStore", "load":
-								usesAsyncStorage = true
-							}
-						}
-					}
-				}
-				// Check assign statements for load() calls
-				if assign, ok := stmt.(*ast.AssignStatement); ok {
-					if call, ok := assign.Value.(*ast.CallExpr); ok {
-						if ident, ok := call.Function.(*ast.Identifier); ok && ident.Name == "load" {
-							usesAsyncStorage = true
-						}
-					}
-					if awaitExpr, ok := assign.Value.(*ast.AwaitExpr); ok {
-						if call, ok := awaitExpr.Expr.(*ast.CallExpr); ok {
-							if ident, ok := call.Function.(*ast.Identifier); ok && ident.Name == "load" {
-								usesAsyncStorage = true
-							}
-						}
-					}
-				}
+			calls := scanStatementsForCalls(body)
+			if calls["alert"] {
+				usesAlert = true
+			}
+			if calls["store"] || calls["removeStore"] || calls["load"] {
+				usesAsyncStorage = true
 			}
 		}
 	}
@@ -113,6 +91,21 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 	// Add Alert to RN components if alert() is used
 	if usesAlert {
 		rnComponents["Alert"] = true
+	}
+
+	// Scan top-level function bodies for RN component names used in React.createElement
+	for _, stmt := range topLevel {
+		if fn, ok := stmt.(*ast.FuncDefinition); ok {
+			fnCode := g.genBlock(fn.Body)
+			knownRN := []string{"View", "Text", "Pressable", "ScrollView", "TextInput", "Image",
+				"TouchableOpacity", "FlatList", "SectionList", "Modal", "ActivityIndicator",
+				"Switch", "SafeAreaView", "KeyboardAvoidingView", "StatusBar", "Animated"}
+			for _, name := range knownRN {
+				if strings.Contains(fnCode, name) {
+					rnComponents[name] = true
+				}
+			}
+		}
 	}
 
 	// Check if any component uses state
@@ -180,19 +173,15 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 	for _, stmt := range topLevel {
 		// Handle ContextDeclaration inline
 		if ctx, ok := stmt.(*ast.ContextDeclaration); ok {
-			out.WriteString(fmt.Sprintf("const %s = React.createContext(%s);\n", ctx.Name, g.genExpr(ctx.DefaultValue)))
+			out.WriteString(fmt.Sprintf("export const %s = React.createContext(%s);\n", ctx.Name, g.genExpr(ctx.DefaultValue)))
 			continue
 		}
 		// Handle UseStatement with ESM import syntax
 		if useStmt, ok := stmt.(*ast.UseStatement); ok {
 			importPath := strings.TrimSuffix(useStmt.Path, ".quill")
 			if useStmt.Alias != "" {
-				// Local file imports use default import; npm packages use namespace import
-				if strings.HasPrefix(importPath, "./") || strings.HasPrefix(importPath, "../") {
-					out.WriteString(fmt.Sprintf("import %s from '%s';\n", useStmt.Alias, importPath))
-				} else {
-					out.WriteString(fmt.Sprintf("import * as %s from '%s';\n", useStmt.Alias, importPath))
-				}
+				// In Expo mode, always use default import (most RN packages export default)
+				out.WriteString(fmt.Sprintf("import %s from '%s';\n", useStmt.Alias, importPath))
 			} else {
 				out.WriteString(fmt.Sprintf("import '%s';\n", importPath))
 			}
@@ -247,13 +236,12 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 	// --- Generate each component ---
 	// If there's a navigation block, none of the components get export default (nav does)
 	// If there's only one component, it gets export default
-	// If there are multiple components, none get export default (multi-component utility file)
+	// If there are multiple components, the last one gets export default (main screen component)
 	for i, comp := range components {
 		isDefault := false
-		if len(navBlocks) == 0 && len(components) == 1 {
+		if len(navBlocks) == 0 && (len(components) == 1 || i == len(components)-1) {
 			isDefault = true
 		}
-		_ = i
 		// Pass nil for NativeStyles — we emit one merged block at the end
 		savedStyles := comp.NativeStyles
 		comp.NativeStyles = nil
@@ -327,6 +315,26 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 		out.WriteString("\n")
 	}
 
+	// --- Methods (must come before memos/callbacks to avoid TDZ errors) ---
+	for _, method := range s.Methods {
+		params := strings.Join(method.Params, ", ")
+		asyncKw := ""
+		if g.bodyContainsAwait(method.Body) {
+			asyncKw = "async "
+		}
+		out.WriteString(fmt.Sprintf("  const %s = %s(%s) => {\n", method.Name, asyncKw, params))
+		savedMethDeclared := g.declared
+		g.declared = make(map[string]bool)
+		g.indent = 2
+		for _, stmt := range method.Body {
+			out.WriteString(g.genExpoStmt(stmt, stateVars))
+			out.WriteString("\n")
+		}
+		g.indent = 0
+		g.declared = savedMethDeclared
+		out.WriteString("  };\n\n")
+	}
+
 	// --- Memo hooks ---
 	for _, m := range s.Memos {
 		deps := "[]"
@@ -366,7 +374,7 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 		out.WriteString(fmt.Sprintf("  const %s = useCallback(%s(%s) => {\n%s  }, %s);\n", cb.Name, asyncKw, params, body, deps))
 	}
 
-	if len(s.Contexts) > 0 || len(s.Memos) > 0 || len(s.Callbacks) > 0 {
+	if len(s.Contexts) > 0 || len(s.Methods) > 0 || len(s.Memos) > 0 || len(s.Callbacks) > 0 {
 		out.WriteString("\n")
 	}
 
@@ -388,26 +396,6 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 			out.WriteString("  }, []);\n")
 		}
 		out.WriteString("\n")
-	}
-
-	// --- Methods ---
-	for _, method := range s.Methods {
-		params := strings.Join(method.Params, ", ")
-		asyncKw := ""
-		if g.bodyContainsAwait(method.Body) {
-			asyncKw = "async "
-		}
-		out.WriteString(fmt.Sprintf("  const %s = %s(%s) => {\n", method.Name, asyncKw, params))
-		savedMethDeclared := g.declared
-		g.declared = make(map[string]bool)
-		g.indent = 2
-		for _, stmt := range method.Body {
-			out.WriteString(g.genExpoStmt(stmt, stateVars))
-			out.WriteString("\n")
-		}
-		g.indent = 0
-		g.declared = savedMethDeclared
-		out.WriteString("  };\n\n")
 	}
 
 	// --- Pre-render statements (variables computed before return) ---
@@ -473,7 +461,13 @@ func (g *Generator) genExpoStmt(stmt ast.Statement, stateVars map[string]bool) s
 				}
 			}
 		}
-		return g.genStmt(stmt)
+		// Use genExpoExpr for the value to handle style key replacements
+		value := g.genExpoExpr(s.Value)
+		if g.declared[s.Name] {
+			return fmt.Sprintf("%s%s = %s;", prefix, s.Name, value)
+		}
+		g.declared[s.Name] = true
+		return fmt.Sprintf("%slet %s = %s;", prefix, s.Name, value)
 	case *ast.ExprStatement:
 		if call, ok := s.Expr.(*ast.CallExpr); ok {
 			if ident, ok := call.Function.(*ast.Identifier); ok {
@@ -605,9 +599,112 @@ func (g *Generator) genExpoStmt(stmt ast.Statement, stateVars map[string]bool) s
 		return fmt.Sprintf("%snavigation.navigate(\"%s\");", prefix, s.Screen)
 	case *ast.SayStatement:
 		return fmt.Sprintf("%sconsole.log(%s);", prefix, g.genExpr(s.Value))
+	case *ast.ReturnStatement:
+		if s.Value != nil {
+			return fmt.Sprintf("%sreturn %s;", prefix, g.genExpoExpr(s.Value))
+		}
+		return fmt.Sprintf("%sreturn;", prefix)
 	default:
 		return g.genStmt(stmt)
 	}
+}
+
+// genExpoExpr generates an expression, replacing bare identifiers matching stylesheet keys with styles.name.
+func (g *Generator) genExpoExpr(expr ast.Expression) string {
+	switch e := expr.(type) {
+	case *ast.Identifier:
+		if g.expoStyleKeys[e.Name] {
+			return "styles." + e.Name
+		}
+		return g.genExpr(expr)
+	case *ast.ListLiteral:
+		elems := make([]string, len(e.Elements))
+		for i, el := range e.Elements {
+			elems[i] = g.genExpoExpr(el)
+		}
+		return "[" + strings.Join(elems, ", ") + "]"
+	default:
+		return g.genExpr(expr)
+	}
+}
+
+// scanStatementsForCalls recursively scans statements for function calls and returns the set of called function names.
+func scanStatementsForCalls(stmts []ast.Statement) map[string]bool {
+	calls := map[string]bool{}
+	for _, stmt := range stmts {
+		scanStmtForCalls(stmt, calls)
+	}
+	return calls
+}
+
+func scanStmtForCalls(stmt ast.Statement, calls map[string]bool) {
+	switch s := stmt.(type) {
+	case *ast.ExprStatement:
+		scanExprForCalls(s.Expr, calls)
+	case *ast.AssignStatement:
+		scanExprForCalls(s.Value, calls)
+	case *ast.IfStatement:
+		scanStatementsForCalls2(s.Body, calls)
+		scanStatementsForCalls2(s.Else, calls)
+		for _, elif := range s.ElseIfs {
+			scanStatementsForCalls2(elif.Body, calls)
+		}
+	case *ast.ForEachStatement:
+		scanStatementsForCalls2(s.Body, calls)
+	case *ast.WhileStatement:
+		scanStatementsForCalls2(s.Body, calls)
+	case *ast.TryCatchStatement:
+		scanStatementsForCalls2(s.TryBody, calls)
+		scanStatementsForCalls2(s.CatchBody, calls)
+	case *ast.FuncDefinition:
+		scanStatementsForCalls2(s.Body, calls)
+	case *ast.ReturnStatement:
+		if s.Value != nil {
+			scanExprForCalls(s.Value, calls)
+		}
+	}
+}
+
+func scanStatementsForCalls2(stmts []ast.Statement, calls map[string]bool) {
+	for _, stmt := range stmts {
+		scanStmtForCalls(stmt, calls)
+	}
+}
+
+func scanExprForCalls(expr ast.Expression, calls map[string]bool) {
+	if expr == nil {
+		return
+	}
+	switch e := expr.(type) {
+	case *ast.CallExpr:
+		if ident, ok := e.Function.(*ast.Identifier); ok {
+			calls[ident.Name] = true
+		}
+		for _, arg := range e.Args {
+			scanExprForCalls(arg, calls)
+		}
+	case *ast.AwaitExpr:
+		scanExprForCalls(e.Expr, calls)
+	case *ast.BinaryExpr:
+		scanExprForCalls(e.Left, calls)
+		scanExprForCalls(e.Right, calls)
+	case *ast.LogicalExpr:
+		scanExprForCalls(e.Left, calls)
+		scanExprForCalls(e.Right, calls)
+	case *ast.ComparisonExpr:
+		scanExprForCalls(e.Left, calls)
+		scanExprForCalls(e.Right, calls)
+	}
+}
+
+// hasAssignmentChildren checks if any direct children are __assignment elements.
+func hasAssignmentChildren(el *ast.RenderElement) bool {
+	for _, child := range el.Children {
+		if child.Element != nil && child.Element.Tag == "__assignment" {
+			return true
+		}
+	}
+	return false
 }
 
 // genExpoElement generates JSX for a render element.
@@ -625,7 +722,7 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			}
 		}
 		if valProp, ok := el.Props["__value"]; ok {
-			valStr = g.genExpr(valProp)
+			valStr = g.genExpoExpr(valProp)
 		}
 		// Check if it's a state variable
 		if stateVars[name] {
@@ -729,44 +826,112 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 	}
 
 	// Handle conditional rendering
+	hasAssignments := hasAssignmentChildren(el)
+	condUsesIIFE := el.Condition != nil && hasAssignments
 	if el.Condition != nil {
-		if len(el.ElseChildren) > 0 {
+		if condUsesIIFE {
+			// Wrap in IIFE to allow const statements: {(() => { stmts; return condition ? (...) : null; })()}
+			out.WriteString(fmt.Sprintf("%s{(() => {\n", indent))
+			depth++
+			indent = strings.Repeat("  ", depth)
+			// Emit assignment children as statements
+			for _, child := range el.Children {
+				if child.Element != nil && child.Element.Tag == "__assignment" {
+					out.WriteString(g.genExpoElement(child.Element, depth, stateVars))
+				}
+			}
+			if len(el.ElseChildren) > 0 {
+				out.WriteString(fmt.Sprintf("%sreturn %s ? (\n", indent, g.genExpr(el.Condition)))
+			} else {
+				out.WriteString(fmt.Sprintf("%sif (!(%s)) return null;\n", indent, g.genExpr(el.Condition)))
+				out.WriteString(fmt.Sprintf("%sreturn (\n", indent))
+			}
+			depth++
+			indent = strings.Repeat("  ", depth)
+		} else if len(el.ElseChildren) > 0 {
 			// Ternary: {condition ? (...) : (...)}
 			out.WriteString(fmt.Sprintf("%s{%s ? (\n", indent, g.genExpr(el.Condition)))
+			depth++
+			indent = strings.Repeat("  ", depth)
 		} else {
 			// Short-circuit: {condition && (...)}
 			out.WriteString(fmt.Sprintf("%s{%s && (\n", indent, g.genExpr(el.Condition)))
+			depth++
+			indent = strings.Repeat("  ", depth)
 		}
-		depth++
-		indent = strings.Repeat("  ", depth)
 	}
-
-	// Handle iterator
 	if el.Iterator != nil {
-		out.WriteString(fmt.Sprintf("%s{%s.map((%s, __idx) => (\n", indent, g.genExpr(el.Iterator.Iterable), el.Iterator.Variable))
-		depth++
-		indent = strings.Repeat("  ", depth)
+		if hasAssignments {
+			// Use block body: .map((item, __idx) => { stmts; return (...); })
+			out.WriteString(fmt.Sprintf("%s{%s.map((%s, __idx) => {\n", indent, g.genExpr(el.Iterator.Iterable), el.Iterator.Variable))
+			depth++
+			indent = strings.Repeat("  ", depth)
+			// Emit assignment children as statements first
+			for _, child := range el.Children {
+				if child.Element != nil && child.Element.Tag == "__assignment" {
+					out.WriteString(g.genExpoElement(child.Element, depth, stateVars))
+				}
+			}
+			out.WriteString(fmt.Sprintf("%sreturn (\n", indent))
+			depth++
+			indent = strings.Repeat("  ", depth)
+		} else {
+			out.WriteString(fmt.Sprintf("%s{%s.map((%s, __idx) => (\n", indent, g.genExpr(el.Iterator.Iterable), el.Iterator.Variable))
+			depth++
+			indent = strings.Repeat("  ", depth)
+		}
 	}
 
 	// For __fragment tags (conditionals, iterators), render children without wrapper
 	if tag == "__fragment" || el.Tag == "__fragment" {
 		if len(el.Children) == 0 {
 			out.WriteString(fmt.Sprintf("%s<></>\n", indent))
-		} else if len(el.Children) == 1 && el.Children[0].Element != nil {
-			// Single child — render directly without fragment wrapper
-			out.WriteString(g.genExpoElement(el.Children[0].Element, depth, stateVars))
 		} else {
-			out.WriteString(fmt.Sprintf("%s<>\n", indent))
+			// Collect non-assignment children for rendering
+			var jsxChildren []ast.RenderNode
 			for _, child := range el.Children {
-				if child.Element != nil {
-					out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
-				} else if child.Text != nil {
-					childIndent := strings.Repeat("  ", depth+1)
-					textContent := g.genExpoTextContent(child.Text)
-					out.WriteString(fmt.Sprintf("%s<Text>%s</Text>\n", childIndent, textContent))
+				if child.Element != nil && child.Element.Tag == "__assignment" {
+					// Skip assignments if inside an iterator or IIFE conditional (already emitted above)
+					if el.Iterator != nil || condUsesIIFE {
+						continue
+					}
+				}
+				jsxChildren = append(jsxChildren, child)
+			}
+			if len(jsxChildren) == 0 {
+				out.WriteString(fmt.Sprintf("%s<></>\n", indent))
+			} else if len(jsxChildren) == 1 && jsxChildren[0].Element != nil {
+				// Single child — render directly without fragment wrapper
+				// Add key prop if inside an iterator
+				child := jsxChildren[0].Element
+				if el.Iterator != nil && child.Props != nil {
+					child.Props["key"] = &ast.Identifier{Name: "__idx"}
+				} else if el.Iterator != nil {
+					child.Props = map[string]ast.Expression{"key": &ast.Identifier{Name: "__idx"}}
+				}
+				out.WriteString(g.genExpoElement(child, depth, stateVars))
+			} else {
+				// Use React.Fragment with key when inside an iterator
+				if el.Iterator != nil {
+					out.WriteString(fmt.Sprintf("%s<React.Fragment key={__idx}>\n", indent))
+				} else {
+					out.WriteString(fmt.Sprintf("%s<>\n", indent))
+				}
+				for _, child := range jsxChildren {
+					if child.Element != nil {
+						out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
+					} else if child.Text != nil {
+						childIndent := strings.Repeat("  ", depth+1)
+						textContent := g.genExpoTextContent(child.Text)
+						out.WriteString(fmt.Sprintf("%s<Text>%s</Text>\n", childIndent, textContent))
+					}
+				}
+				if el.Iterator != nil {
+					out.WriteString(fmt.Sprintf("%s</React.Fragment>\n", indent))
+				} else {
+					out.WriteString(fmt.Sprintf("%s</>\n", indent))
 				}
 			}
-			out.WriteString(fmt.Sprintf("%s</>\n", indent))
 		}
 	} else if len(el.Children) == 0 {
 		out.WriteString(fmt.Sprintf("%s<%s%s />\n", indent, tag, propsStr))
@@ -797,27 +962,57 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 
 	// Close iterator
 	if el.Iterator != nil {
-		depth--
-		indent = strings.Repeat("  ", depth)
-		out.WriteString(fmt.Sprintf("%s))}\n", indent))
+		if hasAssignments {
+			depth--
+			indent = strings.Repeat("  ", depth)
+			out.WriteString(fmt.Sprintf("%s);\n", indent)) // close return (
+			depth--
+			indent = strings.Repeat("  ", depth)
+			out.WriteString(fmt.Sprintf("%s})}\n", indent)) // close => { and .map(
+		} else {
+			depth--
+			indent = strings.Repeat("  ", depth)
+			out.WriteString(fmt.Sprintf("%s))}\n", indent))
+		}
 	}
 
 	// Close conditional
 	if el.Condition != nil {
-		depth--
-		indent = strings.Repeat("  ", depth)
-		if len(el.ElseChildren) > 0 {
-			out.WriteString(fmt.Sprintf("%s) : (\n", indent))
-			for _, child := range el.ElseChildren {
-				if child.Element != nil {
-					out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
-				} else if child.Text != nil {
-					out.WriteString(fmt.Sprintf("%s  %s\n", indent, g.genExpoTextContent(child.Text)))
+		if condUsesIIFE {
+			depth--
+			indent = strings.Repeat("  ", depth)
+			if len(el.ElseChildren) > 0 {
+				out.WriteString(fmt.Sprintf("%s) : (\n", indent))
+				for _, child := range el.ElseChildren {
+					if child.Element != nil {
+						out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
+					} else if child.Text != nil {
+						out.WriteString(fmt.Sprintf("%s  %s\n", indent, g.genExpoTextContent(child.Text)))
+					}
 				}
+				out.WriteString(fmt.Sprintf("%s);\n", indent))
+			} else {
+				out.WriteString(fmt.Sprintf("%s);\n", indent)) // close return (
 			}
-			out.WriteString(fmt.Sprintf("%s)}\n", indent))
+			depth--
+			indent = strings.Repeat("  ", depth)
+			out.WriteString(fmt.Sprintf("%s})()}\n", indent)) // close IIFE
 		} else {
-			out.WriteString(fmt.Sprintf("%s)}\n", indent))
+			depth--
+			indent = strings.Repeat("  ", depth)
+			if len(el.ElseChildren) > 0 {
+				out.WriteString(fmt.Sprintf("%s) : (\n", indent))
+				for _, child := range el.ElseChildren {
+					if child.Element != nil {
+						out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
+					} else if child.Text != nil {
+						out.WriteString(fmt.Sprintf("%s  %s\n", indent, g.genExpoTextContent(child.Text)))
+					}
+				}
+				out.WriteString(fmt.Sprintf("%s)}\n", indent))
+			} else {
+				out.WriteString(fmt.Sprintf("%s)}\n", indent))
+			}
 		}
 	}
 
