@@ -311,10 +311,10 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 	// --- Generate each component ---
 	// If there's a navigation block, none of the components get export default (nav does)
 	// If there's only one component, it gets export default
-	// If there are multiple components, the last one gets export default (main screen component)
-	for i, comp := range components {
+	// If there are multiple components, all get named exports (consumers use named imports)
+	for _, comp := range components {
 		isDefault := false
-		if len(navBlocks) == 0 && (len(components) == 1 || i == len(components)-1) {
+		if len(navBlocks) == 0 && len(components) == 1 {
 			isDefault = true
 		}
 		// Pass nil for NativeStyles — we emit one merged block at the end
@@ -1113,6 +1113,31 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			}
 		} else if key == "__inlineStyle" {
 			propParts = append(propParts, fmt.Sprintf("style={%s}", g.genExpr(val)))
+		} else if key == "__pressStyle" {
+			// pressStyle [base, pressed] → style={({ pressed }) => [styles.base, pressed && styles.pressed]}
+			if str, ok := val.(*ast.StringLiteral); ok {
+				parts := strings.Split(str.Value, ",")
+				if len(parts) >= 2 {
+					baseName := strings.TrimSpace(parts[0])
+					pressedName := strings.TrimSpace(parts[1])
+					baseRef := baseName
+					pressedRef := pressedName
+					if g.expoStyleKeys[baseName] {
+						baseRef = "styles." + baseName
+					}
+					if g.expoStyleKeys[pressedName] {
+						pressedRef = "styles." + pressedName
+					}
+					propParts = append(propParts, fmt.Sprintf("style={({ pressed }) => [%s, pressed && %s]}", baseRef, pressedRef))
+				} else if len(parts) == 1 {
+					name := strings.TrimSpace(parts[0])
+					ref := name
+					if g.expoStyleKeys[name] {
+						ref = "styles." + name
+					}
+					propParts = append(propParts, fmt.Sprintf("style={%s}", ref))
+				}
+			}
 		} else if key == "style" || strings.HasSuffix(key, "Style") {
 			// Only add styles. prefix for known stylesheet keys
 			if ident, ok := val.(*ast.Identifier); ok {

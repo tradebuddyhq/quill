@@ -508,3 +508,56 @@ func TestExpoTernaryStyle(t *testing.T) {
 		t.Error("expected > comparison operator in style value")
 	}
 }
+
+func TestExpoPressStyle(t *testing.T) {
+	src := `component TestScreen:
+  to render:
+    pressable onPress doThing pressStyle [btn, btnPressed]:
+      text: "Tap"
+
+  style native:
+    btn:
+      padding is 12
+    btnPressed:
+      opacity is 0.7
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(output, "({ pressed })") {
+		t.Error("expected pressed destructure in style function")
+	}
+	if !strings.Contains(output, "pressed && styles.btnPressed") {
+		t.Error("expected pressed && styles.btnPressed")
+	}
+	if !strings.Contains(output, "styles.btn") {
+		t.Error("expected styles.btn in style function")
+	}
+}
+
+func TestExpoMultiComponentNamedExports(t *testing.T) {
+	src := `component ScreenA:
+  to render:
+    view:
+      text: "A"
+
+component ScreenB:
+  to render:
+    view:
+      text: "B"
+`
+	output, err := compileExpo(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(output, "export default") {
+		t.Error("multi-component file should not have export default")
+	}
+	if !strings.Contains(output, "export function ScreenA") {
+		t.Error("expected export function ScreenA")
+	}
+	if !strings.Contains(output, "export function ScreenB") {
+		t.Error("expected export function ScreenB")
+	}
+}

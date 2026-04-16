@@ -903,6 +903,26 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 			}
 			continue
 		}
+		// pressStyle [base, pressed] for Pressable render-prop style
+		if propName == "pressStyle" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LBRACKET {
+			p.advance() // consume "pressStyle"
+			p.advance() // consume "["
+			var parts []string
+			for !p.check(lexer.TOKEN_RBRACKET) && !p.isAtEnd() {
+				if p.check(lexer.TOKEN_IDENT) || isKeywordToken(p.current().Type) {
+					parts = append(parts, p.advance().Value)
+				} else if p.check(lexer.TOKEN_COMMA) {
+					p.advance()
+				} else {
+					break
+				}
+			}
+			if p.check(lexer.TOKEN_RBRACKET) {
+				p.advance()
+			}
+			props["__pressStyle"] = &ast.StringLiteral{Value: strings.Join(parts, ",")}
+			continue
+		}
 		// Inline style object: style { flexDirection: "row", gap: 10 }
 		if propName == "style" && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LBRACE {
 			p.advance() // consume "style"
