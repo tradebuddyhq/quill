@@ -26,6 +26,7 @@ type Generator struct {
 	taggedTemplatesUsed  []string // track which tagged template tags are used
 	discordClientVar     string   // tracks the variable name for the Discord client
 	importedFiles        map[string]bool // tracks imported .quill files to prevent circular imports
+	expoStyleKeys        map[string]bool // tracks known StyleSheet keys for styles. prefix logic
 }
 
 func New() *Generator {

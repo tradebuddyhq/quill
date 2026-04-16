@@ -445,6 +445,11 @@ func TestExpoChildrenRendering(t *testing.T) {
 
 func TestExpoMultipleStyles(t *testing.T) {
 	src := `component TestScreen:
+  style native:
+    container:
+      flex is 1
+    highlighted:
+      background color is "#ff0"
   to render:
     view style [container, highlighted]:
       text: "Multi"

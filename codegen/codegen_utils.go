@@ -61,15 +61,23 @@ func convertInterpolation(s string) string {
 			// (starts with a letter/underscore, contains only valid identifier chars, dots, parens, etc.)
 			j := i + 1
 			if j < len(s) && isInterpolationStart(s[j]) {
-				// Find the closing brace
-				for j < len(s) && s[j] != '}' {
-					j++
+				// Find the closing brace (handling nested braces)
+				depth := 1
+				for j < len(s) && depth > 0 {
+					if s[j] == '{' {
+						depth++
+					} else if s[j] == '}' {
+						depth--
+					}
+					if depth > 0 {
+						j++
+					}
 				}
 				if j < len(s) {
 					content := s[i+1 : j]
 					if isInterpolationExpr(content) {
 						out.WriteString("${")
-						out.WriteString(content)
+						out.WriteString(quillToJSExpr(content))
 						out.WriteByte('}')
 						i = j + 1
 						continue
@@ -85,6 +93,26 @@ func convertInterpolation(s string) string {
 		}
 	}
 	return out.String()
+}
+
+// quillToJSExpr converts Quill keyword syntax to JS equivalents inside interpolation expressions.
+func quillToJSExpr(s string) string {
+	// Replace Quill keywords with JS equivalents (word-boundary aware)
+	replacements := []struct{ from, to string }{
+		{" or ", " || "},
+		{" and ", " && "},
+		{" is ", " === "},
+		{" isnt ", " !== "},
+		{"not ", "!"},
+		{"nothing", "null"},
+		{"yes", "true"},
+		{"no", "false"},
+	}
+	result := s
+	for _, r := range replacements {
+		result = strings.ReplaceAll(result, r.from, r.to)
+	}
+	return result
 }
 
 // hasInterpolation returns true if the string contains at least one {identifier} interpolation.
@@ -112,7 +140,7 @@ func hasInterpolation(s string) bool {
 
 // isInterpolationStart returns true if the character can start a Quill interpolation.
 func isInterpolationStart(c byte) bool {
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == '(' || c == '!'
 }
 
 // isInterpolationExpr returns true if the string looks like a valid interpolation expression
@@ -125,10 +153,14 @@ func isInterpolationExpr(s string) bool {
 	if !isInterpolationStart(s[0]) {
 		return false
 	}
-	// Should only contain valid identifier characters, dots, parens, commas, spaces
+	// Should only contain valid JS expression characters
 	for _, c := range s {
 		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-			c == '_' || c == '.' || c == '(' || c == ')' || c == ',' || c == ' ') {
+			c == '_' || c == '.' || c == '(' || c == ')' || c == ',' || c == ' ' ||
+			c == '+' || c == '-' || c == '*' || c == '/' || c == '%' ||
+			c == '?' || c == ':' || c == '!' || c == '=' || c == '<' || c == '>' ||
+			c == '[' || c == ']' || c == '\'' || c == '"' || c == '&' || c == '|' ||
+				c == '{' || c == '}') {
 			return false
 		}
 	}

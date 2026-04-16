@@ -238,18 +238,22 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 		}
 	}
 
+	// Populate expoStyleKeys for styles. prefix logic
+	g.expoStyleKeys = make(map[string]bool)
+	for name := range allStyles {
+		g.expoStyleKeys[name] = true
+	}
+
 	// --- Generate each component ---
-	// Only the last component (or first if no navigation) gets export default
 	// If there's a navigation block, none of the components get export default (nav does)
+	// If there's only one component, it gets export default
+	// If there are multiple components, none get export default (multi-component utility file)
 	for i, comp := range components {
 		isDefault := false
-		if len(navBlocks) == 0 {
-			if len(components) == 1 {
-				isDefault = true
-			} else {
-				isDefault = (i == len(components)-1) // last component is default
-			}
+		if len(navBlocks) == 0 && len(components) == 1 {
+			isDefault = true
 		}
+		_ = i
 		// Pass nil for NativeStyles — we emit one merged block at the end
 		savedStyles := comp.NativeStyles
 		comp.NativeStyles = nil
@@ -280,6 +284,13 @@ func (g *Generator) genExpoComponent(s *ast.ComponentStatement) string {
 // genExpoComponentWithExport generates a React functional component with configurable export.
 func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefault bool) string {
 	var out strings.Builder
+
+	// Reset declared map for each component (each is a separate JS function scope)
+	savedDeclared := g.declared
+	g.declared = make(map[string]bool)
+
+	// Restore at the end
+	defer func() { g.declared = savedDeclared }()
 
 	// Track state variable names for setter rewriting
 	stateVars := map[string]bool{}
@@ -338,6 +349,8 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 			deps = "[" + strings.Join(cb.Dependencies, ", ") + "]"
 		}
 		params := strings.Join(cb.Params, ", ")
+		savedCbDeclared := g.declared
+		g.declared = make(map[string]bool)
 		g.indent = 2
 		var cbLines []string
 		for _, stmt := range cb.Body {
@@ -345,6 +358,7 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 		}
 		body := strings.Join(cbLines, "\n") + "\n"
 		g.indent = 0
+		g.declared = savedCbDeclared
 		asyncKw := ""
 		if g.bodyContainsAwait(cb.Body) {
 			asyncKw = "async "
@@ -359,12 +373,15 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 	// --- Effects ---
 	for _, effect := range s.Effects {
 		out.WriteString("  useEffect(() => {\n")
+		savedEffDeclared := g.declared
+		g.declared = make(map[string]bool)
 		g.indent = 2
 		for _, stmt := range effect.Body {
 			out.WriteString(g.genExpoStmt(stmt, stateVars))
 			out.WriteString("\n")
 		}
 		g.indent = 0
+		g.declared = savedEffDeclared
 		if len(effect.Dependencies) > 0 {
 			out.WriteString(fmt.Sprintf("  }, [%s]);\n", strings.Join(effect.Dependencies, ", ")))
 		} else {
@@ -381,12 +398,15 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 			asyncKw = "async "
 		}
 		out.WriteString(fmt.Sprintf("  const %s = %s(%s) => {\n", method.Name, asyncKw, params))
+		savedMethDeclared := g.declared
+		g.declared = make(map[string]bool)
 		g.indent = 2
 		for _, stmt := range method.Body {
 			out.WriteString(g.genExpoStmt(stmt, stateVars))
 			out.WriteString("\n")
 		}
 		g.indent = 0
+		g.declared = savedMethDeclared
 		out.WriteString("  };\n\n")
 	}
 
@@ -663,17 +683,25 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 				parts := strings.Split(str.Value, ",")
 				var styleParts []string
 				for _, p := range parts {
-					styleParts = append(styleParts, "styles."+strings.TrimSpace(p))
+					name := strings.TrimSpace(p)
+					if g.expoStyleKeys[name] {
+						styleParts = append(styleParts, "styles."+name)
+					} else {
+						styleParts = append(styleParts, name)
+					}
 				}
 				propParts = append(propParts, fmt.Sprintf("style={[%s]}", strings.Join(styleParts, ", ")))
 			}
 		} else if key == "__inlineStyle" {
 			propParts = append(propParts, fmt.Sprintf("style={%s}", g.genExpr(val)))
 		} else if key == "style" || strings.HasSuffix(key, "Style") {
-			// Simple identifier → styles.xxx (StyleSheet reference)
-			// Complex expression → pass through directly
+			// Only add styles. prefix for known stylesheet keys
 			if ident, ok := val.(*ast.Identifier); ok {
-				propParts = append(propParts, fmt.Sprintf("%s={styles.%s}", key, ident.Name))
+				if g.expoStyleKeys[ident.Name] {
+					propParts = append(propParts, fmt.Sprintf("%s={styles.%s}", key, ident.Name))
+				} else {
+					propParts = append(propParts, fmt.Sprintf("%s={%s}", key, ident.Name))
+				}
 			} else {
 				propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
 			}
@@ -803,7 +831,7 @@ func (g *Generator) genExpoTextContent(expr ast.Expression) string {
 		// Check for interpolation {var}
 		val := e.Value
 		if strings.Contains(val, "{") {
-			// Convert {var} to {var} JSX expression
+			// Convert {var} to {var} JSX expression, translating Quill keywords
 			result := ""
 			i := 0
 			for i < len(val) {
@@ -811,7 +839,7 @@ func (g *Generator) genExpoTextContent(expr ast.Expression) string {
 					end := strings.Index(val[i:], "}")
 					if end != -1 {
 						exprStr := val[i+1 : i+end]
-						result += "{" + exprStr + "}"
+						result += "{" + quillToJSExpr(exprStr) + "}"
 						i = i + end + 1
 					} else {
 						result += string(val[i])
