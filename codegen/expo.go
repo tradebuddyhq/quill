@@ -6,6 +6,29 @@ import (
 	"strings"
 )
 
+// isNamespaceImportPackage returns true for packages that use named/namespace exports
+// and need `import * as X from` rather than `import X from`.
+func isNamespaceImportPackage(pkg string) bool {
+	// Expo SDK packages use namespace exports
+	if strings.HasPrefix(pkg, "expo-") {
+		return true
+	}
+	// React Navigation packages use named exports
+	if strings.HasPrefix(pkg, "@react-navigation/") {
+		return true
+	}
+	// Other known namespace-export packages
+	switch pkg {
+	case "react-native-maps", "react-native-reanimated", "react-native-gesture-handler":
+		return true
+	}
+	// Local file imports always use default
+	if strings.HasPrefix(pkg, "./") || strings.HasPrefix(pkg, "../") {
+		return false
+	}
+	return false
+}
+
 // NewExpo creates a Generator configured for React Native / Expo output.
 func NewExpo() *Generator {
 	return &Generator{
@@ -152,6 +175,31 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 		out.WriteString("import AsyncStorage from '@react-native-async-storage/async-storage';\n")
 	}
 
+	// Check if uuid() is used anywhere and add polyfill
+	usesUUID := false
+	fullCode := out.String()
+	for _, comp := range components {
+		for _, m := range comp.Methods {
+			for _, stmt := range m.Body {
+				if stmtStr := g.genExpoStmt(stmt, nil); strings.Contains(stmtStr, "uuid()") {
+					usesUUID = true
+				}
+			}
+		}
+	}
+	if !usesUUID {
+		// Also check top-level functions
+		for _, stmt := range topLevel {
+			if fn, ok := stmt.(*ast.FuncDefinition); ok {
+				fnCode := g.genBlock(fn.Body)
+				if strings.Contains(fnCode, "uuid()") {
+					usesUUID = true
+				}
+			}
+		}
+	}
+	_ = fullCode
+
 	// Import navigation if needed
 	if len(navBlocks) > 0 {
 		out.WriteString("import { NavigationContainer } from '@react-navigation/native';\n")
@@ -169,6 +217,11 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 
 	out.WriteString("\n")
 
+	// Add uuid polyfill if uuid() is used
+	if usesUUID {
+		out.WriteString("function uuid() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {\n    const r = Math.random() * 16 | 0;\n    const v = c === 'x' ? r : (r & 0x3 | 0x8);\n    return v.toString(16);\n  });\n}\n\n")
+	}
+
 	// Generate top-level non-component code
 	for _, stmt := range topLevel {
 		// Handle ContextDeclaration inline
@@ -180,8 +233,12 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 		if useStmt, ok := stmt.(*ast.UseStatement); ok {
 			importPath := strings.TrimSuffix(useStmt.Path, ".quill")
 			if useStmt.Alias != "" {
-				// In Expo mode, always use default import (most RN packages export default)
-				out.WriteString(fmt.Sprintf("import %s from '%s';\n", useStmt.Alias, importPath))
+				// Determine import style based on package
+				if isNamespaceImportPackage(importPath) {
+					out.WriteString(fmt.Sprintf("import * as %s from '%s';\n", useStmt.Alias, importPath))
+				} else {
+					out.WriteString(fmt.Sprintf("import %s from '%s';\n", useStmt.Alias, importPath))
+				}
 			} else {
 				out.WriteString(fmt.Sprintf("import '%s';\n", importPath))
 			}
@@ -200,6 +257,24 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 			}
 			names := strings.Join(namesParts, ", ")
 			out.WriteString(fmt.Sprintf("import { %s } from '%s';\n", names, importPath))
+			continue
+		}
+		// Reset declared map for each top-level function (each is its own JS scope)
+		if _, isFuncDef := stmt.(*ast.FuncDefinition); isFuncDef {
+			savedDeclared := g.declared
+			g.declared = make(map[string]bool)
+			defer func() {}() // no-op, just ensuring we can use savedDeclared
+			code := g.genStmt(stmt)
+			g.declared = savedDeclared
+			if strings.TrimSpace(code) != "" {
+				trimmed := strings.TrimSpace(code)
+				if strings.HasPrefix(trimmed, "function ") || strings.HasPrefix(trimmed, "async function ") {
+					out.WriteString("export " + code)
+				} else {
+					out.WriteString(code)
+				}
+				out.WriteString("\n")
+			}
 			continue
 		}
 		code := g.genStmt(stmt)
@@ -407,6 +482,49 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 		out.WriteString("\n")
 	}
 
+	// --- Hoist assignments and statement-only conditionals from render tree ---
+	renderNodes := make([]ast.RenderNode, len(s.RenderBody))
+	for i := range s.RenderBody {
+		renderNodes[i] = ast.RenderNode{Element: &s.RenderBody[i]}
+	}
+	hoisted := collectAssignmentsToHoist(renderNodes)
+	if len(hoisted) > 0 {
+		for _, assign := range hoisted {
+			out.WriteString(g.genExpoElement(assign, 0, stateVars))
+		}
+		// Remove hoisted assignments from the render tree
+		// Don't process children of conditional/iterator elements — their assignments weren't hoisted
+		for i := range s.RenderBody {
+			if s.RenderBody[i].Condition != nil || s.RenderBody[i].Iterator != nil {
+				continue
+			}
+			s.RenderBody[i].Children = removeHoistedAssignments(s.RenderBody[i].Children)
+		}
+	}
+
+	// Hoist statement-only conditionals (conditionals with only assignments, no render elements)
+	// These should be emitted as regular JS if-statements, not JSX conditionals
+	var remainingBody []ast.RenderElement
+	for i := range s.RenderBody {
+		el := &s.RenderBody[i]
+		if isStatementOnlyConditional(el) {
+			out.WriteString(g.emitStatementOnlyConditional(el, stateVars))
+		} else {
+			// Check top-level children for statement-only conditionals too
+			var remainingChildren []ast.RenderNode
+			for _, child := range el.Children {
+				if child.Element != nil && isStatementOnlyConditional(child.Element) {
+					out.WriteString(g.emitStatementOnlyConditional(child.Element, stateVars))
+				} else {
+					remainingChildren = append(remainingChildren, child)
+				}
+			}
+			el.Children = remainingChildren
+			remainingBody = append(remainingBody, *el)
+		}
+	}
+	s.RenderBody = remainingBody
+
 	// --- Render ---
 	out.WriteString("  return (\n")
 	needsFragment := len(s.RenderBody) > 1 ||
@@ -558,6 +676,11 @@ func (g *Generator) genExpoStmt(stmt ast.Statement, stateVars map[string]bool) s
 		return fmt.Sprintf("%sfunction %s(%s) {\n%s%s}", prefix, s.Name, params, body, prefix)
 	case *ast.ForEachStatement:
 		// Handle for-each with state-setter rewriting in body
+		// Save declared state to avoid leaking block-scoped vars across iterations
+		savedDeclared := make(map[string]bool)
+		for k, v := range g.declared {
+			savedDeclared[k] = v
+		}
 		g.indent++
 		var bodyLines []string
 		for _, stmt := range s.Body {
@@ -565,6 +688,8 @@ func (g *Generator) genExpoStmt(stmt ast.Statement, stateVars map[string]bool) s
 		}
 		body := strings.Join(bodyLines, "\n") + "\n"
 		g.indent--
+		// Restore declared state
+		g.declared = savedDeclared
 		varPart := s.Variable
 		if s.DestructurePattern != nil {
 			varPart = g.genPattern(s.DestructurePattern)
@@ -575,6 +700,11 @@ func (g *Generator) genExpoStmt(stmt ast.Statement, stateVars map[string]bool) s
 		}
 		return fmt.Sprintf("%sfor %s(const %s of %s) {\n%s%s}", prefix, awaitPart, varPart, g.genExpr(s.Iterable), body, prefix)
 	case *ast.WhileStatement:
+		// Save declared state to avoid leaking block-scoped vars
+		savedDeclared := make(map[string]bool)
+		for k, v := range g.declared {
+			savedDeclared[k] = v
+		}
 		g.indent++
 		var bodyLines []string
 		for _, stmt := range s.Body {
@@ -582,6 +712,8 @@ func (g *Generator) genExpoStmt(stmt ast.Statement, stateVars map[string]bool) s
 		}
 		body := strings.Join(bodyLines, "\n") + "\n"
 		g.indent--
+		// Restore declared state
+		g.declared = savedDeclared
 		return fmt.Sprintf("%swhile (%s) {\n%s%s}", prefix, g.genExpr(s.Condition), body, prefix)
 	case *ast.LoopStatement:
 		g.indent++
@@ -697,6 +829,56 @@ func scanExprForCalls(expr ast.Expression, calls map[string]bool) {
 	}
 }
 
+// collectAssignmentsToHoist extracts __assignment elements from the render tree
+// that are direct children of regular elements (not inside conditionals/iterators).
+// Only hoists assignments from non-conditional, non-iterator contexts.
+func collectAssignmentsToHoist(els []ast.RenderNode) []*ast.RenderElement {
+	var result []*ast.RenderElement
+	for _, child := range els {
+		if child.Element == nil {
+			continue
+		}
+		el := child.Element
+		// Don't descend into iterators or conditionals — those handle their own assignments
+		if el.Iterator != nil || el.Condition != nil {
+			continue
+		}
+		if el.Tag == "__assignment" {
+			result = append(result, el)
+		} else if el.Tag != "__fragment" {
+			// Only recurse into regular elements (not fragments which might be conditional wrappers)
+			result = append(result, collectAssignmentsToHoist(el.Children)...)
+		}
+	}
+	return result
+}
+
+// removeHoistedAssignments removes __assignment elements that were hoisted,
+// using the same logic as collectAssignmentsToHoist to ensure consistency.
+func removeHoistedAssignments(children []ast.RenderNode) []ast.RenderNode {
+	var result []ast.RenderNode
+	for _, child := range children {
+		if child.Element != nil {
+			el := child.Element
+			// Don't touch conditional or iterator subtrees — their assignments weren't hoisted
+			if el.Iterator != nil || el.Condition != nil {
+				result = append(result, child)
+				continue
+			}
+			if el.Tag == "__assignment" {
+				// This assignment was hoisted — skip it
+				continue
+			}
+			if el.Tag != "__fragment" {
+				// Recurse into regular elements (not fragments)
+				el.Children = removeHoistedAssignments(el.Children)
+			}
+		}
+		result = append(result, child)
+	}
+	return result
+}
+
 // hasAssignmentChildren checks if any direct children are __assignment elements.
 func hasAssignmentChildren(el *ast.RenderElement) bool {
 	for _, child := range el.Children {
@@ -707,11 +889,146 @@ func hasAssignmentChildren(el *ast.RenderElement) bool {
 	return false
 }
 
+// hasDeepAssignmentChildren checks if any direct children are __assignment elements,
+// only for regular elements (not __fragment, not conditional/iterator roots).
+func hasDeepAssignmentChildren(el *ast.RenderElement) bool {
+	if el.Tag == "__fragment" || el.Condition != nil || el.Iterator != nil {
+		return false
+	}
+	for _, child := range el.Children {
+		if child.Element != nil && child.Element.Tag == "__assignment" {
+			return true
+		}
+	}
+	return false
+}
+
+// hasAnyNestedAssignments recursively checks if any element in the tree has __assignment children.
+// Used to determine if an iterator needs block body for nested assignments.
+func hasAnyNestedAssignments(els []ast.RenderNode) bool {
+	for _, child := range els {
+		if child.Element == nil {
+			continue
+		}
+		el := child.Element
+		if el.Tag == "__assignment" {
+			return true
+		}
+		if hasAnyNestedAssignments(el.Children) {
+			return true
+		}
+		if hasAnyNestedAssignments(el.ElseChildren) {
+			return true
+		}
+	}
+	return false
+}
+
+// collectAllAssignments recursively collects __assignment elements from the tree,
+// skipping conditional/iterator subtrees (their assignments are handled by IIFE/block body).
+func collectAllAssignments(els []ast.RenderNode) []*ast.RenderElement {
+	var result []*ast.RenderElement
+	for _, child := range els {
+		if child.Element == nil {
+			continue
+		}
+		el := child.Element
+		if el.Condition != nil || el.Iterator != nil {
+			// Don't extract from conditional/iterator subtrees
+			continue
+		}
+		if el.Tag == "__assignment" {
+			result = append(result, el)
+		} else {
+			result = append(result, collectAllAssignments(el.Children)...)
+		}
+	}
+	return result
+}
+
+// removeAllAssignments recursively removes __assignment elements from the tree,
+// skipping conditional/iterator subtrees.
+func removeAllAssignments(els []ast.RenderNode) []ast.RenderNode {
+	var result []ast.RenderNode
+	for _, child := range els {
+		if child.Element == nil {
+			result = append(result, child)
+			continue
+		}
+		el := child.Element
+		if el.Condition != nil || el.Iterator != nil {
+			result = append(result, child)
+			continue
+		}
+		if el.Tag == "__assignment" {
+			continue // remove it
+		}
+		el.Children = removeAllAssignments(el.Children)
+		result = append(result, child)
+	}
+	return result
+}
+
+// isStatementOnlyConditional checks if a conditional element contains ONLY __assignment children
+// (no render elements). Such conditionals should be emitted as regular JS if-statements,
+// not as JSX conditionals.
+func isStatementOnlyConditional(el *ast.RenderElement) bool {
+	if el.Condition == nil {
+		return false
+	}
+	if len(el.Children) == 0 {
+		return false
+	}
+	for _, child := range el.Children {
+		if child.Element == nil || child.Element.Tag != "__assignment" {
+			return false
+		}
+	}
+	// Also check else children — if they have non-assignment elements, this is not statement-only
+	for _, child := range el.ElseChildren {
+		if child.Element == nil || child.Element.Tag != "__assignment" {
+			return false
+		}
+	}
+	return true
+}
+
+// emitStatementOnlyConditional generates a regular JS if/else statement for a conditional
+// that only contains assignments (no render elements).
+func (g *Generator) emitStatementOnlyConditional(el *ast.RenderElement, stateVars map[string]bool) string {
+	var out strings.Builder
+	out.WriteString(fmt.Sprintf("if (%s) {\n", g.genExpr(el.Condition)))
+	for _, child := range el.Children {
+		if child.Element != nil && child.Element.Tag == "__assignment" {
+			out.WriteString(g.genExpoElement(child.Element, 1, stateVars))
+		}
+	}
+	if len(el.ElseChildren) > 0 {
+		out.WriteString("} else {\n")
+		for _, child := range el.ElseChildren {
+			if child.Element != nil && child.Element.Tag == "__assignment" {
+				out.WriteString(g.genExpoElement(child.Element, 1, stateVars))
+			}
+		}
+	}
+	out.WriteString("}\n")
+	return out.String()
+}
+
 // genExpoElement generates JSX for a render element.
 func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars map[string]bool) string {
 	indent := strings.Repeat("  ", depth)
 	tag := mapRNTag(el.Tag)
 	var out strings.Builder
+
+	// Save/restore g.declared scope for iterators to prevent variable leaking across .map() callbacks
+	if el.Iterator != nil {
+		savedDeclared := make(map[string]bool)
+		for k, v := range g.declared {
+			savedDeclared[k] = v
+		}
+		defer func() { g.declared = savedDeclared }()
+	}
 
 	// Special handling for __assignment
 	if el.Tag == "__assignment" {
@@ -729,6 +1046,11 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			setter := "set" + strings.ToUpper(name[:1]) + name[1:]
 			return fmt.Sprintf("%s%s(%s);\n", indent, setter, valStr)
 		}
+		// If already declared (e.g., in pre-render or outer scope), use reassignment
+		if g.declared[name] {
+			return fmt.Sprintf("%s%s = %s;\n", indent, name, valStr)
+		}
+		g.declared[name] = true
 		return fmt.Sprintf("%sconst %s = %s;\n", indent, name, valStr)
 	}
 
@@ -805,7 +1127,10 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 		} else if strings.HasPrefix(key, "on") {
 			// Event handler: onPress, onChangeText, etc.
 			// Handlers that receive arguments (onChangeText, onValueChange, etc.) pass through directly
-			if key == "onChangeText" || key == "onValueChange" || key == "onEndEditing" || key == "onSubmitEditing" || key == "onScroll" || key == "onLayout" {
+			if key == "onChangeText" || key == "onValueChange" || key == "onEndEditing" || key == "onSubmitEditing" || key == "onScroll" || key == "onLayout" || key == "onSelect" {
+				propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
+			} else if _, isIdent := val.(*ast.Identifier); isIdent {
+				// Plain function reference — pass directly so it receives arguments from the component
 				propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
 			} else {
 				propParts = append(propParts, fmt.Sprintf("%s={() => %s()}", key, g.genExpr(val)))
@@ -827,6 +1152,8 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 
 	// Handle conditional rendering
 	hasAssignments := hasAssignmentChildren(el)
+	// Also check for deeply nested assignments (inside iterator children)
+	hasNestedAssignments := el.Iterator != nil && hasAnyNestedAssignments(el.Children)
 	condUsesIIFE := el.Condition != nil && hasAssignments
 	if el.Condition != nil {
 		if condUsesIIFE {
@@ -860,18 +1187,20 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			indent = strings.Repeat("  ", depth)
 		}
 	}
+	useIteratorBlockBody := hasAssignments || hasNestedAssignments
 	if el.Iterator != nil {
-		if hasAssignments {
+		if useIteratorBlockBody {
 			// Use block body: .map((item, __idx) => { stmts; return (...); })
 			out.WriteString(fmt.Sprintf("%s{%s.map((%s, __idx) => {\n", indent, g.genExpr(el.Iterator.Iterable), el.Iterator.Variable))
 			depth++
 			indent = strings.Repeat("  ", depth)
-			// Emit assignment children as statements first
-			for _, child := range el.Children {
-				if child.Element != nil && child.Element.Tag == "__assignment" {
-					out.WriteString(g.genExpoElement(child.Element, depth, stateVars))
-				}
+			// Emit ALL assignment children (recursively) as statements first
+			allAssignments := collectAllAssignments(el.Children)
+			for _, assign := range allAssignments {
+				out.WriteString(g.genExpoElement(assign, depth, stateVars))
 			}
+			// Remove all hoisted assignments from children
+			el.Children = removeAllAssignments(el.Children)
 			out.WriteString(fmt.Sprintf("%sreturn (\n", indent))
 			depth++
 			indent = strings.Repeat("  ", depth)
@@ -900,8 +1229,8 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			}
 			if len(jsxChildren) == 0 {
 				out.WriteString(fmt.Sprintf("%s<></>\n", indent))
-			} else if len(jsxChildren) == 1 && jsxChildren[0].Element != nil {
-				// Single child — render directly without fragment wrapper
+			} else if len(jsxChildren) == 1 && jsxChildren[0].Element != nil && jsxChildren[0].Element.Condition == nil && jsxChildren[0].Element.Iterator == nil {
+				// Single non-conditional, non-iterator child — render directly without fragment wrapper
 				// Add key prop if inside an iterator
 				child := jsxChildren[0].Element
 				if el.Iterator != nil && child.Props != nil {
@@ -962,7 +1291,7 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 
 	// Close iterator
 	if el.Iterator != nil {
-		if hasAssignments {
+		if useIteratorBlockBody {
 			depth--
 			indent = strings.Repeat("  ", depth)
 			out.WriteString(fmt.Sprintf("%s);\n", indent)) // close return (
@@ -1002,12 +1331,32 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			indent = strings.Repeat("  ", depth)
 			if len(el.ElseChildren) > 0 {
 				out.WriteString(fmt.Sprintf("%s) : (\n", indent))
-				for _, child := range el.ElseChildren {
-					if child.Element != nil {
-						out.WriteString(g.genExpoElement(child.Element, depth+1, stateVars))
-					} else if child.Text != nil {
-						out.WriteString(fmt.Sprintf("%s  %s\n", indent, g.genExpoTextContent(child.Text)))
+				// Need fragment if multiple children, OR if single child is an iterator/conditional
+				// (iterators/conditionals use {expr} wrapping which needs JSX context)
+				needsElseFragment := len(el.ElseChildren) > 1
+				if !needsElseFragment && len(el.ElseChildren) == 1 && el.ElseChildren[0].Element != nil {
+					singleChild := el.ElseChildren[0].Element
+					if singleChild.Iterator != nil || singleChild.Condition != nil {
+						needsElseFragment = true
 					}
+				}
+				if needsElseFragment {
+					out.WriteString(fmt.Sprintf("%s  <>\n", indent))
+				}
+				for _, child := range el.ElseChildren {
+					extraDepth := depth + 1
+					if needsElseFragment {
+						extraDepth = depth + 2
+					}
+					if child.Element != nil {
+						out.WriteString(g.genExpoElement(child.Element, extraDepth, stateVars))
+					} else if child.Text != nil {
+						childIndent := strings.Repeat("  ", extraDepth)
+						out.WriteString(fmt.Sprintf("%s%s\n", childIndent, g.genExpoTextContent(child.Text)))
+					}
+				}
+				if needsElseFragment {
+					out.WriteString(fmt.Sprintf("%s  </>\n", indent))
 				}
 				out.WriteString(fmt.Sprintf("%s)}\n", indent))
 			} else {

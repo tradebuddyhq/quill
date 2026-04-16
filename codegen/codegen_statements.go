@@ -45,9 +45,15 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.ForEachStatement:
 		g.addStmtMapping(s.Line)
+		// Save declared state to avoid leaking block-scoped vars across loops
+		savedDeclared := make(map[string]bool)
+		for k, v := range g.declared {
+			savedDeclared[k] = v
+		}
 		g.indent++
 		body := g.genBlock(s.Body)
 		g.indent--
+		g.declared = savedDeclared
 		varPart := s.Variable
 		if s.DestructurePattern != nil {
 			varPart = g.genPattern(s.DestructurePattern)
@@ -60,9 +66,15 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 
 	case *ast.WhileStatement:
 		g.addStmtMapping(s.Line)
+		// Save declared state to avoid leaking block-scoped vars across loops
+		savedDeclared := make(map[string]bool)
+		for k, v := range g.declared {
+			savedDeclared[k] = v
+		}
 		g.indent++
 		body := g.genBlock(s.Body)
 		g.indent--
+		g.declared = savedDeclared
 		return fmt.Sprintf("%swhile (%s) {\n%s%s}", prefix, g.genExpr(s.Condition), body, prefix)
 
 	case *ast.FuncDefinition:
