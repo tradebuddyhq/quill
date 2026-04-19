@@ -1,6 +1,6 @@
 # Quill for VS Code
 
-Syntax highlighting, snippets, and language support for [Quill](https://quill.tradebuddy.dev) — code that reads like English.
+Syntax highlighting, snippets, and language support for [Quill](https://quill.tradebuddy.dev), code that reads like English.
 
 ## Features
 

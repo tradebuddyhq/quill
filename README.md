@@ -285,98 +285,98 @@ say reply2   -- "Your name is Alice"
 ## Features
 
 **Language**
-- **English-like syntax** — `is`, `if/otherwise`, `for each`, `give back`
-- **Type annotations with enforcement** — `to add a as number -> number:` checked by `quill check`
-- **Pattern matching** — `match`/`when`/`otherwise` for clean branching, type-based matching, guard clauses, exhaustive checking
-- **Algebraic data types** — `define Color: Red, Green, Blue` with variant constructors
-- **Enums with methods** — `define HttpStatus:` with `to isSuccess:` methods on enum variants
-- **Traits** — `describe trait Printable:` with method signatures for interface contracts
-- **Generics with constraints** — `to sort items as list of T where T is Comparable`
-- **Destructuring** — `{name, age} is person`, `[first, ...rest] are items`, nested patterns, in loops (`for each {name, age} in users:`), in match (`when {status: 200, body}:`)
-- **Type narrowing** — `if x is text:` and the compiler knows `x` is text inside the block
-- **Pipe operator** — `value | transform | format` for function chaining
-- **Lambdas** — `with x: x * 2` arrow-style anonymous functions
-- **Classes with inheritance** — `describe Dog extends Animal:` with `my` keyword, `private`/`public` visibility, JS `#` private fields
-- **Try/catch** — `try:` / `if it fails err:` or `catch err:` error handling
-- **Error propagation** — Result type with `Success()`/`Error()`, `?` operator for auto-propagation, `try` expression
-- **Iterators & generators** — `yield`, `loop:` infinite loops, lazy evaluation chains
-- **Lazy evaluation** — `range(1, 1000000) | filter | map_list | take 10 | collect`
-- **Object literals** — `{name: "Alice", age: 30}`, computed properties `{[key]: "value"}`
-- **Spread operator** — `...items` for expanding lists
-- **Multiline strings** — `"""..."""` triple-quoted strings for multi-line text, compiled to JS template literals
-- **String interpolation** — `"Hello {name}!"`, tagged templates `` query`SELECT * FROM users WHERE age > {min}` ``
-- **Brace escaping** — `\{` and `\}` for literal braces in strings (essential for inline JS/CSS in HTML templates)
-- **Raise errors** — `raise "message"` compiles to `throw new Error()` for explicit error throwing
-- **Break/continue** — loop control flow
-- **130+ built-in functions** — `sort()`, `filter()`, `map_list()`, `hash()`, `uuid()`, `regex()`, `chart()`, `drawCircle()`, and more
-- **Async/await** — `data is await fetchJSON("url")`, cancellation (`cancel task`), async iteration (`for await each chunk in stream:`), `parallel settled:` (allSettled)
-- **Import system** — `use "express" as app` or `from "express" use Router, json`
-- **Type utilities** — `type X is Partial of Y`, `Omit`, `Pick`, `Record`, `Readonly`, `Required`
-- **Decorators** — `@authenticated`, `@rateLimit(100)`, `@log` for annotating functions and classes
-- **Union types** — `number | text` for values that can be multiple types
-- **Nullable types** — `?number` shorthand for `number | nothing`
-- **Cron jobs** — `every 5 seconds:` / `every 1 minute:` / `every 2 hours:` scheduled tasks
-- **Reactive web framework** — Svelte-like `component`/`state`/`mount` with virtual DOM
-- **Server blocks** — `server:` block syntax for quick web servers without imports
-- **Built-in template engine** — `tag()`, `page()`, `layout()` with automatic XSS protection
-- **Utility CSS framework** — Tailwind-style classes auto-injected for components (flex, grid, responsive, pre-built components)
-- **Full-stack in one file** — `server:`, `database:`, `component:` blocks in a single `.quill` file
-- **Built-in crypto** — hash, HMAC, AES-256, X25519 DH, HKDF, Argon2, RSA, secure random — zero dependencies
-- **Binary serialization** — `defineSchema`/`encode`/`decode` for compact binary encoding
-- **Buffer & encoding** — `toBuffer`, `toBase64`, `toHex`, `fromBase64`, `fromHex`
-- **HTTPS server** — `createSecureServer()` with TLS support
-- **Secure storage** — AES-GCM encrypted localStorage for browsers
-- **WebRTC** — `createPeer()` for P2P messaging
-- **Expo / React Native** — build mobile apps with `quill expo` and `--expo` build target
+- **English-like syntax**, `is`, `if/otherwise`, `for each`, `give back`
+- **Type annotations with enforcement**, `to add a as number -> number:` checked by `quill check`
+- **Pattern matching**, `match`/`when`/`otherwise` for clean branching, type-based matching, guard clauses, exhaustive checking
+- **Algebraic data types**, `define Color: Red, Green, Blue` with variant constructors
+- **Enums with methods**, `define HttpStatus:` with `to isSuccess:` methods on enum variants
+- **Traits**, `describe trait Printable:` with method signatures for interface contracts
+- **Generics with constraints**, `to sort items as list of T where T is Comparable`
+- **Destructuring**, `{name, age} is person`, `[first, ...rest] are items`, nested patterns, in loops (`for each {name, age} in users:`), in match (`when {status: 200, body}:`)
+- **Type narrowing**, `if x is text:` and the compiler knows `x` is text inside the block
+- **Pipe operator**, `value | transform | format` for function chaining
+- **Lambdas**, `with x: x * 2` arrow-style anonymous functions
+- **Classes with inheritance**, `describe Dog extends Animal:` with `my` keyword, `private`/`public` visibility, JS `#` private fields
+- **Try/catch**, `try:` / `if it fails err:` or `catch err:` error handling
+- **Error propagation**, Result type with `Success()`/`Error()`, `?` operator for auto-propagation, `try` expression
+- **Iterators & generators**, `yield`, `loop:` infinite loops, lazy evaluation chains
+- **Lazy evaluation**, `range(1, 1000000) | filter | map_list | take 10 | collect`
+- **Object literals**, `{name: "Alice", age: 30}`, computed properties `{[key]: "value"}`
+- **Spread operator**, `...items` for expanding lists
+- **Multiline strings**, `"""..."""` triple-quoted strings for multi-line text, compiled to JS template literals
+- **String interpolation**, `"Hello {name}!"`, tagged templates `` query`SELECT * FROM users WHERE age > {min}` ``
+- **Brace escaping**, `\{` and `\}` for literal braces in strings (essential for inline JS/CSS in HTML templates)
+- **Raise errors**, `raise "message"` compiles to `throw new Error()` for explicit error throwing
+- **Break/continue**, loop control flow
+- **130+ built-in functions**, `sort()`, `filter()`, `map_list()`, `hash()`, `uuid()`, `regex()`, `chart()`, `drawCircle()`, and more
+- **Async/await**, `data is await fetchJSON("url")`, cancellation (`cancel task`), async iteration (`for await each chunk in stream:`), `parallel settled:` (allSettled)
+- **Import system**, `use "express" as app` or `from "express" use Router, json`
+- **Type utilities**, `type X is Partial of Y`, `Omit`, `Pick`, `Record`, `Readonly`, `Required`
+- **Decorators**, `@authenticated`, `@rateLimit(100)`, `@log` for annotating functions and classes
+- **Union types**, `number | text` for values that can be multiple types
+- **Nullable types**, `?number` shorthand for `number | nothing`
+- **Cron jobs**, `every 5 seconds:` / `every 1 minute:` / `every 2 hours:` scheduled tasks
+- **Reactive web framework**, Svelte-like `component`/`state`/`mount` with virtual DOM
+- **Server blocks**, `server:` block syntax for quick web servers without imports
+- **Built-in template engine**, `tag()`, `page()`, `layout()` with automatic XSS protection
+- **Utility CSS framework**, Tailwind-style classes auto-injected for components (flex, grid, responsive, pre-built components)
+- **Full-stack in one file**, `server:`, `database:`, `component:` blocks in a single `.quill` file
+- **Built-in crypto**, hash, HMAC, AES-256, X25519 DH, HKDF, Argon2, RSA, secure random, zero dependencies
+- **Binary serialization**, `defineSchema`/`encode`/`decode` for compact binary encoding
+- **Buffer & encoding**, `toBuffer`, `toBase64`, `toHex`, `fromBase64`, `fromHex`
+- **HTTPS server**, `createSecureServer()` with TLS support
+- **Secure storage**, AES-GCM encrypted localStorage for browsers
+- **WebRTC**, `createPeer()` for P2P messaging
+- **Expo / React Native**, build mobile apps with `quill expo` and `--expo` build target
 
 **Tooling**
-- **Type checker** — `quill check` catches type errors before you run
-- **Static analyzer** — detects unused variables, infinite loops, bad patterns
-- **Code formatter** — `quill fmt` for consistent style
-- **Built-in testing** — `test` and `expect` keywords, `quill test --coverage` for coverage reports, `quill test --watch` for auto-rerun on save
-- **Docs generator** — `quill docs` generates styled HTML documentation
-- **Package manager** — `quill add express`, `quill remove express`
-- **Interactive tutorial** — `quill learn` — 10 hands-on lessons right in your terminal
-- **Instant sharing** — `quill share app.quill` creates a shareable playground link
-- **Drawing & charts** — `drawCircle()`, `drawLine()`, `chart()` with auto-opening canvas
-- **Interactive REPL** — `quill repl`
-- **Dev server** — `quill serve` with hot reload and file-based routing
-- **Profiler** — `quill profile app.quill` for function timing reports
-- **Workspaces** — monorepo support via `[workspace]` in quill.toml
-- **Migration tool** — `quill fix --from v0.1 --to v0.3` for automated code migration
-- **Deployment** — `quill deploy` generates Dockerfile and production bundle
-- **Database migrations** — `quill db migrate`, `rollback`, `seed`, `status`, `create` for schema management
-- **Environment management** — auto-loads `.env` files, `env.require("KEY")`, `--env production`
-- **Testing mocks** — `mock fetchJSON with url:`, `expect func was called N times`
-- **Built-in AI syntax** — `ask claude "prompt"`, `stream claude "prompt":`, conversation history, options (model, max_tokens, system, temperature)
-- **Multi-provider AI** — `ask openai`, `ask gemini`, `ask ollama` + Claude, streaming, structured output
-- **AI agents** — `agent` blocks with tool registration and autonomous execution loops
-- **Embeddings & RAG** — `embed()`, `createVectorStore()`, cosine similarity search
-- **Document processing** — `extract()` from PDF/HTML/text, `chunk()` for RAG pipelines
-- **AI project scaffolding** — `quill ai my-app` creates a ready-to-run AI project
-- **AI-powered generation** — `quill generate "build me a todo API"` uses Claude CLI or Gemini CLI for real AI code generation (falls back to templates if no AI CLI installed)
-- **Friendly error messages** — with source context and hints
-- **VS Code extension** — syntax highlighting, snippets, comment toggling
-- **LSP server** — `quill lsp` for editor integration (diagnostics, hover, autocomplete)
-- **Source maps** — `.map` files generated alongside JS for debugging
-- **Package registry** — `quill publish`, `quill search`, `quill install` with version resolution (currently local-only at `~/.quill/registry/` — remote registry coming soon)
+- **Type checker**, `quill check` catches type errors before you run
+- **Static analyzer**, detects unused variables, infinite loops, bad patterns
+- **Code formatter**, `quill fmt` for consistent style
+- **Built-in testing**, `test` and `expect` keywords, `quill test --coverage` for coverage reports, `quill test --watch` for auto-rerun on save
+- **Docs generator**, `quill docs` generates styled HTML documentation
+- **Package manager**, `quill add express`, `quill remove express`
+- **Interactive tutorial**, `quill learn`, 10 hands-on lessons right in your terminal
+- **Instant sharing**, `quill share app.quill` creates a shareable playground link
+- **Drawing & charts**, `drawCircle()`, `drawLine()`, `chart()` with auto-opening canvas
+- **Interactive REPL**, `quill repl`
+- **Dev server**, `quill serve` with hot reload and file-based routing
+- **Profiler**, `quill profile app.quill` for function timing reports
+- **Workspaces**, monorepo support via `[workspace]` in quill.toml
+- **Migration tool**, `quill fix --from v0.1 --to v0.3` for automated code migration
+- **Deployment**, `quill deploy` generates Dockerfile and production bundle
+- **Database migrations**, `quill db migrate`, `rollback`, `seed`, `status`, `create` for schema management
+- **Environment management**, auto-loads `.env` files, `env.require("KEY")`, `--env production`
+- **Testing mocks**, `mock fetchJSON with url:`, `expect func was called N times`
+- **Built-in AI syntax**, `ask claude "prompt"`, `stream claude "prompt":`, conversation history, options (model, max_tokens, system, temperature)
+- **Multi-provider AI**, `ask openai`, `ask gemini`, `ask ollama` + Claude, streaming, structured output
+- **AI agents**, `agent` blocks with tool registration and autonomous execution loops
+- **Embeddings & RAG**, `embed()`, `createVectorStore()`, cosine similarity search
+- **Document processing**, `extract()` from PDF/HTML/text, `chunk()` for RAG pipelines
+- **AI project scaffolding**, `quill ai my-app` creates a ready-to-run AI project
+- **AI-powered generation**, `quill generate "build me a todo API"` uses Claude CLI or Gemini CLI for real AI code generation (falls back to templates if no AI CLI installed)
+- **Friendly error messages**, with source context and hints
+- **VS Code extension**, syntax highlighting, snippets, comment toggling
+- **LSP server**, `quill lsp` for editor integration (diagnostics, hover, autocomplete)
+- **Source maps**, `.map` files generated alongside JS for debugging
+- **Package registry**, `quill publish`, `quill search`, `quill install` with version resolution (currently local-only at `~/.quill/registry/`, remote registry coming soon)
 
 **Web Framework (SvelteKit-level)**
-- **File-based routing** — `pages/about.quill` maps to `/about`, `pages/blog/[id].quill` maps to `/blog/:id`
-- **SSR with hydration** — `to load request:` runs on server, `to render data:` hydrates on client
-- **Scoped styles** — `style:` block in components with auto-hashed CSS scoping
-- **Client-side routing** — `link to="/about" "About Us"` with pushState navigation
-- **Head management** — `head:` block for title/meta tags
-- **Form actions** — `form action=handler:` for server-side form handling
-- **WebSockets** — `websocket "/chat":` with `on connect`, `on message`, `on disconnect`, and `broadcast`
+- **File-based routing**, `pages/about.quill` maps to `/about`, `pages/blog/[id].quill` maps to `/blog/:id`
+- **SSR with hydration**, `to load request:` runs on server, `to render data:` hydrates on client
+- **Scoped styles**, `style:` block in components with auto-hashed CSS scoping
+- **Client-side routing**, `link to="/about" "About Us"` with pushState navigation
+- **Head management**, `head:` block for title/meta tags
+- **Form actions**, `form action=handler:` for server-side form handling
+- **WebSockets**, `websocket "/chat":` with `on connect`, `on message`, `on disconnect`, and `broadcast`
 
 **Build Targets**
-- **Node.js** — `quill build file.quill` (default)
-- **Browser** — `quill build file.quill --browser` with DOM APIs
-- **WASM** — `quill build file.quill --wasm` WASM-ready module
-- **Standalone** — `quill build file.quill --standalone` self-executing binary
-- **LLVM/Native** — `quill build file.quill --llvm` generates LLVM IR, compiles to native binary
-- **Single binary compiler** — no dependencies, runs on Node.js, Bun, or Deno
+- **Node.js**, `quill build file.quill` (default)
+- **Browser**, `quill build file.quill --browser` with DOM APIs
+- **WASM**, `quill build file.quill --wasm` WASM-ready module
+- **Standalone**, `quill build file.quill --standalone` self-executing binary
+- **LLVM/Native**, `quill build file.quill --llvm` generates LLVM IR, compiles to native binary
+- **Single binary compiler**, no dependencies, runs on Node.js, Bun, or Deno
 
 ## Commands
 
@@ -1196,7 +1196,7 @@ server:
     respond json {ok: yes} status 201
 ```
 
-Run with `quill run app.quill` — no build step needed, server blocks are detected automatically.
+Run with `quill run app.quill`, no build step needed, server blocks are detected automatically.
 
 ## Built-in Template Engine
 
@@ -1310,7 +1310,7 @@ See the [Expo documentation](https://quill.tradebuddy.dev/docs/expo)
 
 ## Reactive Components
 
-Build interactive UIs with Svelte-like components. Define state, methods, and a render function — Quill handles the virtual DOM and re-rendering automatically:
+Build interactive UIs with Svelte-like components. Define state, methods, and a render function, Quill handles the virtual DOM and re-rendering automatically:
 
 ```
 component Counter:
@@ -1331,7 +1331,7 @@ Components support props, scoped styles, lifecycle hooks, and nested children. B
 
 ### Utility CSS Framework
 
-Components get automatic access to a Tailwind-style utility CSS framework. No imports or config needed — classes are auto-injected when you use components:
+Components get automatic access to a Tailwind-style utility CSS framework. No imports or config needed, classes are auto-injected when you use components:
 
 ```
 component App:
@@ -1563,11 +1563,11 @@ quill debug examples/hello.quill
 ```
 
 Features:
-- **Breakpoints** — set on any Quill source line
-- **Step controls** — step over, step into, step out
-- **Variable inspection** — view locals and globals at any point
-- **Call stacks** — see the full call chain
-- **Source maps** — you debug Quill source, not compiled JS
+- **Breakpoints**, set on any Quill source line
+- **Step controls**, step over, step into, step out
+- **Variable inspection**, view locals and globals at any point
+- **Call stacks**, see the full call chain
+- **Source maps**, you debug Quill source, not compiled JS
 
 REPL commands inside the debugger:
 
