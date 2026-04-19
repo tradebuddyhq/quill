@@ -20,7 +20,7 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 			converted = strings.ReplaceAll(converted, "\x00RBRACE\x00", "}")
 			return "`" + converted + "`"
 		}
-		// Multiline strings (from """) — use JS template literals to preserve newlines
+		// Multiline strings (from """) , use JS template literals to preserve newlines
 		if strings.Contains(e.Value, "\n") {
 			escaped := strings.ReplaceAll(e.Value, "`", "\\`")
 			escaped = strings.ReplaceAll(escaped, "${", "\\${")
@@ -178,7 +178,7 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		return fmt.Sprintf("await %s", g.genExpr(e.Expr))
 
 	case *ast.AwaitExpression:
-		// "await all" or "await first" — handled contextually by parallel/race
+		// "await all" or "await first" , handled contextually by parallel/race
 		if ident, ok := e.Target.(*ast.Identifier); ok {
 			if ident.Name == "all" || ident.Name == "first" {
 				return fmt.Sprintf("await %s", ident.Name)

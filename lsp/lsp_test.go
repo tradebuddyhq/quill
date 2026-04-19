@@ -503,7 +503,7 @@ func TestHover_EmptyWord(t *testing.T) {
 	doc := makeDoc("= + -")
 	hover := NewHoverProvider()
 
-	// Position on non-word characters — should return nil
+	// Position on non-word characters , should return nil
 	result := hover.GetHover(doc, Position{Line: 0, Character: 0}, nil)
 	if result != nil {
 		t.Errorf("expected nil hover on non-word char, got %+v", result)

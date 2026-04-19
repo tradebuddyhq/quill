@@ -149,7 +149,7 @@ func (c *RegistryClient) Publish(meta *PackageMeta, bundle []byte, token string)
 		return fmt.Errorf("package name is required")
 	}
 	if !ValidateVersion(meta.Version) {
-		return fmt.Errorf("invalid version %q — must be semver (e.g. 1.0.0)", meta.Version)
+		return fmt.Errorf("invalid version %q - must be semver (e.g. 1.0.0)", meta.Version)
 	}
 
 	vDir := c.versionDir(meta.Name, meta.Version)

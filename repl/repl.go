@@ -55,10 +55,10 @@ func Start() {
 		}
 
 		if trimmed == ":help" {
-			fmt.Println("  :reset  — Clear all variables and start fresh")
-			fmt.Println("  :vars   — Show defined variables and functions")
-			fmt.Println("  :help   — Show this help")
-			fmt.Println("  exit    — Quit the REPL")
+			fmt.Println("  :reset  - Clear all variables and start fresh")
+			fmt.Println("  :vars   - Show defined variables and functions")
+			fmt.Println("  :help   - Show this help")
+			fmt.Println("  exit    - Quit the REPL")
 			continue
 		}
 

@@ -389,7 +389,7 @@ var stdlibDocs = map[string]StdlibInfo{
 	"selectAll":     {Signature: "selectAll(selector) -> list", Doc: "Selects all matching DOM elements.", RetType: "list"},
 	"setText":       {Signature: "setText(element, text)", Doc: "Sets the text content of an element.", RetType: ""},
 	"getText":       {Signature: "getText(element) -> text", Doc: "Gets the text content of an element.", RetType: "text"},
-	"setHTML":       {Signature: "setHTML(element, html)", Doc: "Sets the inner HTML of an element. **Warning:** Never pass user input directly — use sanitizeHTML() first to prevent XSS.", RetType: ""},
+	"setHTML":       {Signature: "setHTML(element, html)", Doc: "Sets the inner HTML of an element. **Warning:** Never pass user input directly - use sanitizeHTML() first to prevent XSS.", RetType: ""},
 	"sanitizeHTML":  {Signature: "sanitizeHTML(text) -> text", Doc: "Escapes HTML special characters to prevent XSS. Use this before passing user input to setHTML().", RetType: "text"},
 	"getHTML":       {Signature: "getHTML(element) -> text", Doc: "Gets the inner HTML of an element.", RetType: "text"},
 	"setValue":      {Signature: "setValue(element, value)", Doc: "Sets the value of a form element.", RetType: ""},

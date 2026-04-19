@@ -967,7 +967,7 @@ func (p *Parser) parseRenderElement() *ast.RenderElement {
 		// Check if next token is an identifier (event handler or attr with value)
 		if p.checkNext(lexer.TOKEN_IDENT) {
 			p.advance() // consume prop name
-			// Check if the identifier is followed by ( — if so, parse as full expression
+			// Check if the identifier is followed by ( , if so, parse as full expression
 			if p.check(lexer.TOKEN_IDENT) && p.pos+1 < len(p.tokens) && p.tokens[p.pos+1].Type == lexer.TOKEN_LPAREN {
 				expr := p.parseExpression()
 				props[propName] = expr

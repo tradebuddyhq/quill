@@ -51,7 +51,7 @@ func (s *Server) run() {
 	for {
 		msg, err := ReadMessage(s.reader)
 		if err != nil {
-			// EOF or broken pipe — exit cleanly
+			// EOF or broken pipe , exit cleanly
 			return
 		}
 		s.handleMessage(msg)
@@ -87,7 +87,7 @@ func (s *Server) handleMessage(msg *JSONRPCMessage) {
 	case "textDocument/rename":
 		s.handleRename(msg)
 	default:
-		// Unknown method — if it has an ID, respond with method not found
+		// Unknown method , if it has an ID, respond with method not found
 		if msg.ID != nil {
 			resp := MakeErrorResponse(msg.ID, -32601, "method not found: "+msg.Method)
 			WriteMessage(s.writer, resp)

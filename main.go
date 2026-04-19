@@ -869,7 +869,7 @@ func checkFile(filename string) {
 	totalIssues := len(parseErrors) + len(diagnostics) + len(typeDiags)
 
 	if totalIssues == 0 {
-		fmt.Printf("✓ %s — no issues found\n", filename)
+		fmt.Printf("✓ %s , no issues found\n", filename)
 		return
 	}
 
@@ -1269,7 +1269,7 @@ func publishPackage() {
 	}
 
 	if !registry.ValidateVersion(meta.Version) {
-		fmt.Fprintf(os.Stderr, "Error: invalid version %q in quill.json — must be semver (e.g. 1.0.0)\n", meta.Version)
+		fmt.Fprintf(os.Stderr, "Error: invalid version %q in quill.json , must be semver (e.g. 1.0.0)\n", meta.Version)
 		os.Exit(1)
 	}
 
@@ -1344,7 +1344,7 @@ func installDependencies() {
 
 func bumpVersion(bump string) {
 	if bump != "major" && bump != "minor" && bump != "patch" {
-		fmt.Fprintf(os.Stderr, "Error: invalid bump type %q — must be major, minor, or patch\n", bump)
+		fmt.Fprintf(os.Stderr, "Error: invalid bump type %q , must be major, minor, or patch\n", bump)
 		os.Exit(1)
 	}
 
@@ -1718,7 +1718,7 @@ func runMigration(args []string) {
 }
 
 func printUsage() {
-	fmt.Println("Quill — code that reads like English")
+	fmt.Println("Quill , code that reads like English")
 	fmt.Println()
 	fmt.Println("Usage:")
 	fmt.Println("  quill run <file.quill>       Run a Quill program")
@@ -2089,7 +2089,7 @@ Request: %s`, prompt)
 }
 
 func writeAIOutput(code string, prompt string) bool {
-	// Clean up the output — strip markdown fences if present
+	// Clean up the output , strip markdown fences if present
 	code = strings.TrimSpace(code)
 	if strings.HasPrefix(code, "```") {
 		lines := strings.Split(code, "\n")

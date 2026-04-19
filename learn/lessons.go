@@ -20,7 +20,7 @@ func Lessons() []Lesson {
 			Validate: func(input string) bool {
 				return matchPattern(input, `^\w+ is ".+"$`)
 			},
-			Hint:    `Use the format:  name is "Alice"  — a word, then "is", then a value in quotes.`,
+			Hint:    `Use the format:  name is "Alice"  , a word, then "is", then a value in quotes.`,
 			Success: "You just created a variable! Quill remembers it for you.",
 		},
 		{
@@ -30,7 +30,7 @@ func Lessons() []Lesson {
 			Validate: func(input string) bool {
 				return matchPattern(input, `^say ".+"$`)
 			},
-			Hint:    `Type: say "Hello, World!"  — the word say, then your message in quotes.`,
+			Hint:    `Type: say "Hello, World!"  , the word say, then your message in quotes.`,
 			Success: "That's how you print in Quill. No parentheses needed!",
 		},
 		{
@@ -40,7 +40,7 @@ func Lessons() []Lesson {
 			Validate: func(input string) bool {
 				return matchPattern(input, `^\w+ is \d+\s*[+\-*/]\s*\d+$`)
 			},
-			Hint:    "Use the format:  total is 10 + 5  — a name, 'is', then a math expression.",
+			Hint:    "Use the format:  total is 10 + 5  , a name, 'is', then a math expression.",
 			Success: "Nice! You can use +, -, *, / just like a calculator.",
 		},
 		{
@@ -50,7 +50,7 @@ func Lessons() []Lesson {
 			Validate: func(input string) bool {
 				return matchPattern(input, `^\w+ (is|are) \[.+\]$`)
 			},
-			Hint:    `Use the format:  colors are ["red", "blue", "green"]  — square brackets with items inside.`,
+			Hint:    `Use the format:  colors are ["red", "blue", "green"]  , square brackets with items inside.`,
 			Success: "Lists are one of the most useful things in programming. You'll use them everywhere.",
 		},
 		{
@@ -70,7 +70,7 @@ func Lessons() []Lesson {
 			Validate: func(input string) bool {
 				return matchPattern(input, `^to \w+.*:$`)
 			},
-			Hint:    "Use the format:  to greet name:  — the word 'to', a function name, optional parameters, and a colon.",
+			Hint:    "Use the format:  to greet name:  , the word 'to', a function name, optional parameters, and a colon.",
 			Success: "Functions let you write code once and reuse it. The colon means 'here's what it does'.",
 		},
 		{
@@ -80,7 +80,7 @@ func Lessons() []Lesson {
 			Validate: func(input string) bool {
 				return matchPattern(input, `^for each \w+ in .+:$`)
 			},
-			Hint:    `Type:  for each item in ["a", "b", "c"]:  — 'for each', a variable name, 'in', a list, and a colon.`,
+			Hint:    `Type:  for each item in ["a", "b", "c"]:  , 'for each', a variable name, 'in', a list, and a colon.`,
 			Success: "Loops save you from writing the same code over and over.",
 		},
 		{
@@ -100,8 +100,8 @@ func Lessons() []Lesson {
 			Validate: func(input string) bool {
 				return matchPattern(input, `^\w+ is await fetchJSON\(.+\)$`)
 			},
-			Hint:    `Use:  data is await fetchJSON("https://api.example.com")  — 'await' because it talks to the internet.`,
-			Success: "That's it — one line to fetch data from the web. No imports, no setup.",
+			Hint:    `Use:  data is await fetchJSON("https://api.example.com")  , 'await' because it talks to the internet.`,
+			Success: "That's it , one line to fetch data from the web. No imports, no setup.",
 		},
 		{
 			Title:       "Putting It Together",

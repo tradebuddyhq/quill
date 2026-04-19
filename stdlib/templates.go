@@ -102,7 +102,7 @@ function each(items, fn) {
   return items.map(fn).join('');
 }
 
-// Raw HTML (bypass escaping — use with caution)
+// Raw HTML (bypass escaping , use with caution)
 function raw(str) { return str; }
 
 // Common shorthand tag builders

@@ -3,7 +3,7 @@ package stdlib
 // GetUIRuntime returns a Tailwind-inspired utility CSS framework for Quill.
 // Injected when components use className props or when explicitly imported.
 func GetUIRuntime() string {
-	return "// Quill UI — Utility CSS Framework\n" +
+	return "// Quill UI , Utility CSS Framework\n" +
 		"(function() {\n" +
 		"  var css = " + quillUICSS + ";\n" +
 		"  var style = document.createElement('style');\n" +
@@ -16,7 +16,7 @@ func GetUIRuntime() string {
 
 // quillUICSS is the utility CSS as a JSON-encoded string constant for embedding in JS.
 var quillUICSS = `"` +
-	`/* Quill UI — Utility CSS Framework */` +
+	`/* Quill UI , Utility CSS Framework */` +
 	`*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }` +
 	`body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.5; color: #1a1a2e; }` +
 

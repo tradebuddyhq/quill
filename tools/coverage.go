@@ -238,7 +238,7 @@ func (c *CoverageInstrumenter) GenerateHTML() string {
 	out.WriteString(".bar-fill { height: 100%; border-radius: 4px; }\n")
 	out.WriteString("footer { margin-top: 40px; color: #6E7681; font-size: 13px; }\n")
 	out.WriteString("</style>\n</head><body>\n")
-	out.WriteString(fmt.Sprintf("<h1>Coverage Report — %.1f%%</h1>\n", totalPct))
+	out.WriteString(fmt.Sprintf("<h1>Coverage Report - %.1f%%</h1>\n", totalPct))
 	out.WriteString("<table>\n")
 	out.WriteString("<tr><th>File</th><th>Statements</th><th>Coverage</th><th></th></tr>\n")
 

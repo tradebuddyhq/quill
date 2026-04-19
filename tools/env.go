@@ -21,10 +21,10 @@ func NewEnvManager() *EnvManager {
 
 // LoadEnv loads environment variables from .env files based on the environment name.
 // Loading order (later files override earlier):
-//  1. .env — always loaded
-//  2. .env.local — local overrides (gitignored)
-//  3. .env.{envName} — environment-specific
-//  4. .env.{envName}.local — environment + local overrides
+//  1. .env , always loaded
+//  2. .env.local , local overrides (gitignored)
+//  3. .env.{envName} , environment-specific
+//  4. .env.{envName}.local , environment + local overrides
 func LoadEnv(envName string) (map[string]string, error) {
 	vars := make(map[string]string)
 

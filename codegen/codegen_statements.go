@@ -510,20 +510,20 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 		return fmt.Sprintf("%snavigation.navigate(\"%s\");", prefix, s.Screen)
 
 	case *ast.NavigationBlock:
-		return prefix + "/* navigation block — use 'quill build --expo' for Expo mode */"
+		return prefix + "/* navigation block - use 'quill build --expo' for Expo mode */"
 
 	case *ast.WorkerHandler:
 		g.addStmtMapping(s.Line)
 		return g.genWorkerHandler(s, prefix)
 
 	case *ast.ServerBlockStatement:
-		return prefix + "/* server block — use 'quill run' for full-stack mode */"
+		return prefix + "/* server block - use 'quill run' for full-stack mode */"
 
 	case *ast.DatabaseBlockStatement:
-		return prefix + "/* database block — use 'quill run' for full-stack mode */"
+		return prefix + "/* database block - use 'quill run' for full-stack mode */"
 
 	case *ast.AuthBlockStatement:
-		return prefix + "/* auth block — use 'quill run' for full-stack mode */"
+		return prefix + "/* auth block - use 'quill run' for full-stack mode */"
 
 	case *ast.TypeAliasStatement:
 		return g.genTypeAlias(s, prefix)
@@ -543,7 +543,7 @@ func (g *Generator) genStmt(stmt ast.Statement) string {
 	case *ast.CommandStatement:
 		// Command statements are collected and handled in Generate()
 		// This should not normally be reached directly
-		return prefix + "/* command statement — handled at top level */"
+		return prefix + "/* command statement - handled at top level */"
 
 	case *ast.ReplyStatement:
 		g.addStmtMapping(s.Line)

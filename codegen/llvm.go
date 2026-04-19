@@ -407,7 +407,7 @@ func (g *LLVMGenerator) genStmt(stmt ast.Statement) {
 	case *ast.FuncDefinition:
 		// handled at top level, skip here
 
-	// Concurrency stubs — warn the user
+	// Concurrency stubs , warn the user
 	case *ast.SpawnStatement:
 		g.warn("'spawn' is not supported in native builds and will be skipped")
 		g.emitIndented("; WARNING: spawn not supported in native build")
@@ -594,8 +594,8 @@ func (g *LLVMGenerator) genForEach(s *ast.ForEachStatement) {
 	g.emitIndented(fmt.Sprintf("store i64 0, i64* %s", idxReg))
 
 	// For now, iterate 0 times (placeholder for list support)
-	g.warn(fmt.Sprintf("'for each %s in ...' loop is not fully supported in native builds — the loop body will not execute", s.Variable))
-	g.emitIndented(fmt.Sprintf("; WARNING: foreach %s — list runtime not implemented in native build", s.Variable))
+	g.warn(fmt.Sprintf("'for each %s in ...' loop is not fully supported in native builds , the loop body will not execute", s.Variable))
+	g.emitIndented(fmt.Sprintf("; WARNING: foreach %s , list runtime not implemented in native build", s.Variable))
 	g.emitIndented(fmt.Sprintf("br label %%%s", condLabel))
 
 	g.emitLine(condLabel + ":")
@@ -717,11 +717,11 @@ func (g *LLVMGenerator) genExpr(expr ast.Expression) llvmValue {
 		// Simplified: return null pointer
 		return llvmValue{reg: "null", typ: "i8*"}
 	case *ast.AwaitExpression:
-		g.warn("'await' is not supported in native builds — async code will be skipped")
+		g.warn("'await' is not supported in native builds , async code will be skipped")
 		g.emitIndented("; WARNING: await not supported in native build")
 		return llvmValue{reg: "0", typ: "i64"}
 	case *ast.ReceiveExpression:
-		g.warn("channel 'receive' is not supported in native builds — will return 0")
+		g.warn("channel 'receive' is not supported in native builds , will return 0")
 		g.emitIndented("; WARNING: receive not supported in native build")
 		return llvmValue{reg: "0", typ: "i64"}
 	default:

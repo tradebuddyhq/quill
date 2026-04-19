@@ -27,7 +27,7 @@ const (
 func StartREPL(quillFile string) {
 	dbg := New(quillFile)
 
-	fmt.Printf("%sQuill Debugger%s — %s\n", colorBold, colorReset, quillFile)
+	fmt.Printf("%sQuill Debugger%s - %s\n", colorBold, colorReset, quillFile)
 	fmt.Printf("Type %shelp%s for available commands.\n\n", colorCyan, colorReset)
 
 	fmt.Print("Starting debugger...")

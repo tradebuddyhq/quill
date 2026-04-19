@@ -364,7 +364,7 @@ func (p *Parser) parseAskExpression() *ast.AskExpression {
 	if p.check(lexer.TOKEN_STRING) {
 		prompt = &ast.StringLiteral{Value: p.advance().Value}
 	} else if p.check(lexer.TOKEN_IDENT) {
-		// Variable reference — treat as messages array
+		// Variable reference , treat as messages array
 		prompt = &ast.Identifier{Name: p.advance().Value}
 		isMessages = true
 	} else {
@@ -402,7 +402,7 @@ func (p *Parser) parseAskExpression() *ast.AskExpression {
 				}
 				options["temperature"] = &ast.NumberLiteral{Value: val}
 			default:
-				// Unknown option — stop parsing options
+				// Unknown option , stop parsing options
 				p.pos-- // back up
 				goto doneOptions
 			}

@@ -405,7 +405,7 @@ func (a *Analyzer) checkAlwaysTrueCondition(expr ast.Expression, line int) {
 		if e.Value {
 			a.addDiagnostic(line, Warning, "condition is always true", "")
 		} else {
-			a.addDiagnostic(line, Warning, "condition is always false — this code will never run", "")
+			a.addDiagnostic(line, Warning, "condition is always false - this code will never run", "")
 		}
 	}
 }
@@ -431,7 +431,7 @@ func (a *Analyzer) checkInfiniteLoop(s *ast.WhileStatement) {
 			}
 		}
 		if !hasBreak {
-			a.addDiagnostic(s.Line, Warning, "infinite loop — condition is always true", "make sure you have a way to exit")
+			a.addDiagnostic(s.Line, Warning, "infinite loop - condition is always true", "make sure you have a way to exit")
 		}
 	}
 }

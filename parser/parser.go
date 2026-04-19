@@ -332,7 +332,7 @@ func (p *Parser) consumeNewline() {
 	if p.check(lexer.TOKEN_NEWLINE) {
 		p.advance()
 	}
-	// Also OK if we hit EOF or DEDENT — end of statement
+	// Also OK if we hit EOF or DEDENT , end of statement
 }
 
 func (p *Parser) skipNewlines() {

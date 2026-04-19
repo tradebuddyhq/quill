@@ -119,13 +119,13 @@ func matchVersion(versions []string, constraint string) string {
 		return versions[len(versions)-1]
 	}
 
-	// Caret: ^major.minor.patch — compatible with major version
+	// Caret: ^major.minor.patch , compatible with major version
 	if strings.HasPrefix(constraint, "^") {
 		base := strings.TrimPrefix(constraint, "^")
 		return matchCaret(versions, base)
 	}
 
-	// Tilde: ~major.minor.patch — compatible with minor version
+	// Tilde: ~major.minor.patch , compatible with minor version
 	if strings.HasPrefix(constraint, "~") {
 		base := strings.TrimPrefix(constraint, "~")
 		return matchTilde(versions, base)

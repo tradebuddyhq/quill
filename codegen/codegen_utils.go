@@ -84,7 +84,7 @@ func convertInterpolation(s string) string {
 					}
 				}
 			}
-			// Not an interpolation — keep the brace as-is but escape for template literal
+			// Not an interpolation , keep the brace as-is but escape for template literal
 			out.WriteString("\\{")
 			i++
 		} else {

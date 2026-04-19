@@ -317,7 +317,7 @@ func (g *Generator) generateExpo(program *ast.Program) string {
 		if len(navBlocks) == 0 && len(components) == 1 {
 			isDefault = true
 		}
-		// Pass nil for NativeStyles — we emit one merged block at the end
+		// Pass nil for NativeStyles , we emit one merged block at the end
 		savedStyles := comp.NativeStyles
 		comp.NativeStyles = nil
 		out.WriteString(g.genExpoComponentWithExport(comp, isDefault))
@@ -493,7 +493,7 @@ func (g *Generator) genExpoComponentWithExport(s *ast.ComponentStatement, isDefa
 			out.WriteString(g.genExpoElement(assign, 0, stateVars))
 		}
 		// Remove hoisted assignments from the render tree
-		// Don't process children of conditional/iterator elements — their assignments weren't hoisted
+		// Don't process children of conditional/iterator elements , their assignments weren't hoisted
 		for i := range s.RenderBody {
 			if s.RenderBody[i].Condition != nil || s.RenderBody[i].Iterator != nil {
 				continue
@@ -839,7 +839,7 @@ func collectAssignmentsToHoist(els []ast.RenderNode) []*ast.RenderElement {
 			continue
 		}
 		el := child.Element
-		// Don't descend into iterators or conditionals — those handle their own assignments
+		// Don't descend into iterators or conditionals , those handle their own assignments
 		if el.Iterator != nil || el.Condition != nil {
 			continue
 		}
@@ -860,13 +860,13 @@ func removeHoistedAssignments(children []ast.RenderNode) []ast.RenderNode {
 	for _, child := range children {
 		if child.Element != nil {
 			el := child.Element
-			// Don't touch conditional or iterator subtrees — their assignments weren't hoisted
+			// Don't touch conditional or iterator subtrees , their assignments weren't hoisted
 			if el.Iterator != nil || el.Condition != nil {
 				result = append(result, child)
 				continue
 			}
 			if el.Tag == "__assignment" {
-				// This assignment was hoisted — skip it
+				// This assignment was hoisted , skip it
 				continue
 			}
 			if el.Tag != "__fragment" {
@@ -984,7 +984,7 @@ func isStatementOnlyConditional(el *ast.RenderElement) bool {
 			return false
 		}
 	}
-	// Also check else children — if they have non-assignment elements, this is not statement-only
+	// Also check else children , if they have non-assignment elements, this is not statement-only
 	for _, child := range el.ElseChildren {
 		if child.Element == nil || child.Element.Tag != "__assignment" {
 			return false
@@ -1155,7 +1155,7 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			if key == "onChangeText" || key == "onValueChange" || key == "onEndEditing" || key == "onSubmitEditing" || key == "onScroll" || key == "onLayout" || key == "onSelect" {
 				propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
 			} else if _, isIdent := val.(*ast.Identifier); isIdent {
-				// Plain function reference — pass directly so it receives arguments from the component
+				// Plain function reference , pass directly so it receives arguments from the component
 				propParts = append(propParts, fmt.Sprintf("%s={%s}", key, g.genExpr(val)))
 			} else {
 				propParts = append(propParts, fmt.Sprintf("%s={() => %s()}", key, g.genExpr(val)))
@@ -1255,7 +1255,7 @@ func (g *Generator) genExpoElement(el *ast.RenderElement, depth int, stateVars m
 			if len(jsxChildren) == 0 {
 				out.WriteString(fmt.Sprintf("%s<></>\n", indent))
 			} else if len(jsxChildren) == 1 && jsxChildren[0].Element != nil && jsxChildren[0].Element.Condition == nil && jsxChildren[0].Element.Iterator == nil {
-				// Single non-conditional, non-iterator child — render directly without fragment wrapper
+				// Single non-conditional, non-iterator child , render directly without fragment wrapper
 				// Add key prop if inside an iterator
 				child := jsxChildren[0].Element
 				if el.Iterator != nil && child.Props != nil {

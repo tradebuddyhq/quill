@@ -78,7 +78,7 @@ var keywords = map[string]TokenType{
 	"yield":     TOKEN_YIELD,
 	"loop":      TOKEN_LOOP,
 	"mock":      TOKEN_MOCK,
-	// "server" is no longer a global keyword — it is handled contextually
+	// "server" is no longer a global keyword , it is handled contextually
 	"route":     TOKEN_ROUTE,
 	"database":  TOKEN_DATABASE,
 	"respond":   TOKEN_RESPOND,
@@ -332,7 +332,7 @@ func (l *Lexer) handleIndentation() {
 			l.addToken(TOKEN_DEDENT, "")
 		}
 		if l.indentStack[len(l.indentStack)-1] != indent {
-			// We'll handle this as a best-effort — don't crash
+			// We'll handle this as a best-effort , don't crash
 			l.addToken(TOKEN_DEDENT, "")
 		}
 	}
