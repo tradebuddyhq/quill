@@ -1459,14 +1459,14 @@ name <span class="kw">is</span> <span class="kw">try</span> loadUser(<span class
       <!-- ============================================ -->
 
       <h2 id="auth">Auth (Authentication and Security)</h2>
-      <p>The Auth package gives you everything you need to handle user authentication — password hashing, tokens (like login tickets), and sessions. Think of it like the security system for your application: it checks IDs at the door and makes sure only the right people get in.</p>
+      <p>The Auth package gives you everything you need to handle user authentication, password hashing, tokens (like login tickets), and sessions. Think of it like the security system for your application: it checks IDs at the door and makes sure only the right people get in.</p>
 
       <div class="callout callout-info">
         <strong>New to authentication?</strong> When someone logs in to a website, the server needs to (1) check their password safely, (2) give them a "ticket" (token) that proves they are logged in, and (3) remember them for a while (session). The Auth package handles all three.
       </div>
 
       <h3><code>Auth.hash(password)</code> &mdash; Hash a password</h3>
-      <p>Turns a plain text password into a scrambled version that is safe to store in a database. Even if someone steals your database, they cannot reverse the hash to get the original password. Think of it like putting a letter through a shredder — you can verify it was the right letter, but you cannot unshred it.</p>
+      <p>Turns a plain text password into a scrambled version that is safe to store in a database. Even if someone steals your database, they cannot reverse the hash to get the original password. Think of it like putting a letter through a shredder, you can verify it was the right letter, but you cannot unshred it.</p>
       <pre><code><span class="cmt">-- When a user signs up, hash their password before saving</span>
 password <span class="kw">is</span> <span class="str">"mySecretPassword123"</span>
 hashed <span class="kw">is</span> Auth.hash(password)
@@ -1487,7 +1487,7 @@ isCorrect <span class="kw">is</span> Auth.verify(<span class="str">"mySecretPass
   <span class="kw">say</span> <span class="str">"Wrong password. Try again."</span></code></pre>
 
       <h3><code>Auth.createToken(payload, secret, expiresIn)</code> &mdash; Create a JWT</h3>
-      <p>Creates a JSON Web Token (JWT) — a small encrypted "ticket" that proves a user is logged in. The <code>payload</code> is the data you want to include (like the user ID), the <code>secret</code> is a private key only your server knows, and <code>expiresIn</code> is how long the token is valid.</p>
+      <p>Creates a JSON Web Token (JWT), a small encrypted "ticket" that proves a user is logged in. The <code>payload</code> is the data you want to include (like the user ID), the <code>secret</code> is a private key only your server knows, and <code>expiresIn</code> is how long the token is valid.</p>
       <pre><code><span class="cmt">-- After successful login, give the user a token</span>
 token <span class="kw">is</span> Auth.createToken(
   {userId: user.id, role: <span class="str">"admin"</span>},
@@ -1510,7 +1510,7 @@ token <span class="kw">is</span> Auth.createToken(
   <span class="kw">say</span> <span class="str">"Invalid or expired token. Please log in again."</span></code></pre>
 
       <h3><code>Auth.session(options)</code> &mdash; Manage sessions</h3>
-      <p>Creates a session manager that remembers users across requests. Think of it like a wristband at an event — once you get one, you don't need to show your ID again until the wristband expires.</p>
+      <p>Creates a session manager that remembers users across requests. Think of it like a wristband at an event, once you get one, you don't need to show your ID again until the wristband expires.</p>
       <pre><code><span class="cmt">-- Set up session management for your server</span>
 sessions <span class="kw">is</span> Auth.session({
   secret: <span class="str">"my-session-secret"</span>,
@@ -1542,7 +1542,7 @@ server.get(<span class="str">"/profile"</span>, <span class="kw">with</span> req
       <!-- ============================================ -->
 
       <h2 id="orm">ORM (Object-Relational Mapping)</h2>
-      <p>The ORM package lets you work with databases using Quill code instead of writing raw SQL queries. Think of it like a translator between your Quill objects and the database tables — you describe your data as Quill objects, and the ORM figures out how to store and retrieve them from the database.</p>
+      <p>The ORM package lets you work with databases using Quill code instead of writing raw SQL queries. Think of it like a translator between your Quill objects and the database tables, you describe your data as Quill objects, and the ORM figures out how to store and retrieve them from the database.</p>
 
       <div class="callout callout-info">
         <strong>New to databases?</strong> A database is like a giant spreadsheet where your application stores data permanently (users, posts, orders, etc.). An ORM lets you interact with that spreadsheet using Quill code instead of a separate database language called SQL.
@@ -1567,7 +1567,7 @@ db <span class="kw">is</span> DB.connect({
 })</code></pre>
 
       <h3><code>DB.model(name, schema)</code> &mdash; Define a model</h3>
-      <p>A model describes what your data looks like — the fields, their types, and any rules. Think of it like a form template: it defines what information you need to collect.</p>
+      <p>A model describes what your data looks like, the fields, their types, and any rules. Think of it like a form template: it defines what information you need to collect.</p>
       <pre><code><span class="cmt">-- Define a User model</span>
 User <span class="kw">is</span> DB.model(<span class="str">"User"</span>, {
   name: {type: <span class="str">"text"</span>, required: <span class="kw">true</span>},
@@ -1634,7 +1634,7 @@ popularPosts <span class="kw">is</span> Post
       <pre><code>results <span class="kw">is</span> DB.raw(<span class="str">"SELECT * FROM users WHERE age > $1"</span>, [<span class="num">21</span>])</code></pre>
 
       <h3><code>DB.transaction()</code> &mdash; Transactions</h3>
-      <p>A transaction groups multiple database operations so they either all succeed or all fail. Think of it like transferring money — you want the debit and credit to happen together, not one without the other.</p>
+      <p>A transaction groups multiple database operations so they either all succeed or all fail. Think of it like transferring money, you want the debit and credit to happen together, not one without the other.</p>
       <pre><code><span class="cmt">-- Transfer money between accounts</span>
 DB.transaction(<span class="kw">with</span> tx:
   tx.update(<span class="str">"accounts"</span>, {id: <span class="num">1</span>}, {balance: balance - <span class="num">100</span>})
@@ -1647,7 +1647,7 @@ DB.transaction(<span class="kw">with</span> tx:
       <!-- ============================================ -->
 
       <h2 id="validation">Validation</h2>
-      <p>The Validation package helps you check that data is correct before you use it. Think of it like a bouncer at a club — it checks that everyone meets the requirements before letting them in. Is the email address actually an email? Is the age a positive number? Is the name at least 2 characters long? Validation answers these questions.</p>
+      <p>The Validation package helps you check that data is correct before you use it. Think of it like a bouncer at a club, it checks that everyone meets the requirements before letting them in. Is the email address actually an email? Is the age a positive number? Is the name at least 2 characters long? Validation answers these questions.</p>
 
       <h3><code>Validate.schema(rules)</code> &mdash; Define validation rules</h3>
       <p>Creates a set of rules that data must follow. Each field gets one or more rules.</p>
@@ -1728,7 +1728,7 @@ result <span class="kw">is</span> userSchema.check({
       <!-- ============================================ -->
 
       <h2 id="logging">Logging</h2>
-      <p>The Logging package helps you record what your application is doing. Think of it like a ship's log — it keeps a record of important events so you can look back and understand what happened. Good logging is essential for finding and fixing bugs in production.</p>
+      <p>The Logging package helps you record what your application is doing. Think of it like a ship's log, it keeps a record of important events so you can look back and understand what happened. Good logging is essential for finding and fixing bugs in production.</p>
 
       <div class="callout callout-info">
         <strong>Why not just use <code>say</code>?</strong> The <code>say</code> keyword prints text to the screen, which is fine for simple programs. But for real applications, you need different levels of importance (is this an error or just info?), timestamps, structured data, and the ability to send logs to files or monitoring services. That is what the Logging package provides.
@@ -1751,7 +1751,7 @@ logger.warn(<span class="str">"Disk space is getting low"</span>)   <span class=
 logger.error(<span class="str">"Failed to connect to DB"</span>)    <span class="cmt">-- Something went wrong</span>
 logger.fatal(<span class="str">"Out of memory, shutting down"</span>) <span class="cmt">-- Critical failure</span></code></pre>
 
-      <p>When you set the level to <code>"info"</code>, you will see info, warn, error, and fatal messages — but not debug messages. Set it to <code>"debug"</code> during development to see everything.</p>
+      <p>When you set the level to <code>"info"</code>, you will see info, warn, error, and fatal messages, but not debug messages. Set it to <code>"debug"</code> during development to see everything.</p>
 
       <h3>Structured logging</h3>
       <p>You can attach data to your log messages. This is especially useful in production where you want to search and filter logs.</p>
