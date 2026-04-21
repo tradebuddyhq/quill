@@ -196,10 +196,29 @@ func (p *Parser) parseExponentiation() ast.Expression {
 
 func (p *Parser) parseUnary() ast.Expression {
 	if p.check(lexer.TOKEN_AWAIT) {
+		awaitLine := p.current().Line
 		p.advance()
 		// Check for "await all" or "await first"
 		if p.check(lexer.TOKEN_IDENT) && (p.current().Value == "all" || p.current().Value == "first") {
 			keyword := p.advance().Value
+			// "await all for each X in Y: BODY" sugars to
+			// await Promise.all(Y.map(async (X) => { BODY }))
+			if keyword == "all" && p.check(lexer.TOKEN_FOR) {
+				p.advance() // consume "for"
+				p.expect(lexer.TOKEN_EACH)
+				varTok := p.expect(lexer.TOKEN_IDENT)
+				p.expect(lexer.TOKEN_IN)
+				iterable := p.parseExpression()
+				p.expect(lexer.TOKEN_COLON)
+				p.expect(lexer.TOKEN_NEWLINE)
+				body := p.parseBlock()
+				return &ast.AwaitAllForEachExpr{
+					Variable: varTok.Value,
+					Iterable: iterable,
+					Body:     body,
+					Line:     awaitLine,
+				}
+			}
 			return &ast.AwaitExpression{Target: &ast.Identifier{Name: keyword}}
 		}
 		expr := p.parseUnary()

@@ -699,6 +699,20 @@ type AwaitExpression struct {
 func (e *AwaitExpression) nodeType() string { return "AwaitExpr" }
 func (e *AwaitExpression) exprNode()        {}
 
+// AwaitAllForEachExpr represents "await all for each X in Y: BODY",
+// which compiles to await Promise.all(Y.map(async (X) => { BODY })).
+// The body is a block of statements; if it is a single expression
+// statement the code generator emits the arrow-function shorthand.
+type AwaitAllForEachExpr struct {
+	Variable string
+	Iterable Expression
+	Body     []Statement
+	Line     int
+}
+
+func (e *AwaitAllForEachExpr) nodeType() string { return "AwaitAllForEach" }
+func (e *AwaitAllForEachExpr) exprNode()        {}
+
 // CancelStatement represents cancelling a spawned task.
 type CancelStatement struct {
 	Target string

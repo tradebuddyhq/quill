@@ -226,6 +226,11 @@ func (p *Parser) parseStatement() ast.Statement {
 }
 
 func (p *Parser) parseBlock() []ast.Statement {
+	// Skip any newlines from comment-only lines that appear before the
+	// actual indent. The lexer strips comments but still emits NEWLINE
+	// tokens for their trailing newline, which can push the INDENT token
+	// past one or more NEWLINEs.
+	p.skipNewlines()
 	p.expect(lexer.TOKEN_INDENT)
 	stmts := []ast.Statement{}
 	for !p.check(lexer.TOKEN_DEDENT) && !p.isAtEnd() {

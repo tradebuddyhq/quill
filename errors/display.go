@@ -24,6 +24,16 @@ const (
 	colorBold   = "\033[1m"
 )
 
+// max0 returns n if n >= 0, else 0. Used to guard strings.Repeat counts
+// against negative values when line numbers exceed the padding width or
+// columns end up out of bounds.
+func max0(n int) int {
+	if n < 0 {
+		return 0
+	}
+	return n
+}
+
 // FormatError formats a single error with source context.
 func FormatError(err DisplayError, sourceLines []string, filename string, useColor bool) string {
 	var out strings.Builder
@@ -63,19 +73,23 @@ func FormatError(err DisplayError, sourceLines []string, filename string, useCol
 
 		for i := startLine; i < err.Line; i++ {
 			lineNum := fmt.Sprintf("%d", i)
-			padding := strings.Repeat(" ", 3-len(lineNum))
+			padding := strings.Repeat(" ", max0(3-len(lineNum)))
 			out.WriteString(fmt.Sprintf("%s%s%s |%s %s\n", gray, padding, lineNum, reset, sourceLines[i-1]))
 		}
 
 		// Show the error line with highlight
 		lineNum := fmt.Sprintf("%d", err.Line)
-		padding := strings.Repeat(" ", 3-len(lineNum))
+		padding := strings.Repeat(" ", max0(3-len(lineNum)))
 		out.WriteString(fmt.Sprintf("%s%s%s |%s %s\n", red, padding, lineNum, reset, sourceLines[err.Line-1]))
 
-		// Show caret
+		// Show caret (clamp to line length so pathological column values
+		// don't blow up strings.Repeat or produce absurd padding).
 		caretPos := col - 1
 		if caretPos < 0 {
 			caretPos = 0
+		}
+		if caretPos > len(sourceLines[err.Line-1]) {
+			caretPos = len(sourceLines[err.Line-1])
 		}
 		caretPadding := strings.Repeat(" ", caretPos)
 		out.WriteString(fmt.Sprintf("   %s|%s %s%s%s^^^%s\n", cyan, reset, caretPadding, red, bold, reset))
@@ -83,7 +97,7 @@ func FormatError(err DisplayError, sourceLines []string, filename string, useCol
 		// Show up to 1 line after
 		if err.Line < len(sourceLines) {
 			nextLineNum := fmt.Sprintf("%d", err.Line+1)
-			nextPadding := strings.Repeat(" ", 3-len(nextLineNum))
+			nextPadding := strings.Repeat(" ", max0(3-len(nextLineNum)))
 			out.WriteString(fmt.Sprintf("%s%s%s |%s %s\n", gray, nextPadding, nextLineNum, reset, sourceLines[err.Line]))
 		}
 

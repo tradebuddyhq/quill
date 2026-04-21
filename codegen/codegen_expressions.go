@@ -186,6 +186,51 @@ func (g *Generator) genExpr(expr ast.Expression) string {
 		}
 		return fmt.Sprintf("await __task_%s", g.genExpr(e.Target))
 
+	case *ast.AwaitAllForEachExpr:
+		iter := g.genExpr(e.Iterable)
+		// Shorthand form: single expression-statement body becomes an
+		// expression-bodied async arrow.
+		if len(e.Body) == 1 {
+			if es, ok := e.Body[0].(*ast.ExprStatement); ok {
+				// Save/restore declared scope for the synthetic lambda
+				savedDeclared := g.declared
+				g.declared = make(map[string]bool)
+				for k, v := range savedDeclared {
+					g.declared[k] = v
+				}
+				g.declared[e.Variable] = true
+				body := g.genExpr(es.Expr)
+				g.declared = savedDeclared
+				return fmt.Sprintf("await Promise.all(%s.map(async (%s) => %s))", iter, e.Variable, body)
+			}
+		}
+		// Block form: generate an async arrow with a block body, auto-
+		// returning the final expression statement when appropriate.
+		savedDeclared := g.declared
+		g.declared = make(map[string]bool)
+		for k, v := range savedDeclared {
+			g.declared[k] = v
+		}
+		g.declared[e.Variable] = true
+		stmts := e.Body
+		var tail ast.Expression
+		if n := len(stmts); n > 0 {
+			if es, ok := stmts[n-1].(*ast.ExprStatement); ok {
+				tail = es.Expr
+				stmts = stmts[:n-1]
+			}
+		}
+		g.indent++
+		body := g.genBlock(stmts)
+		prefix := strings.Repeat("  ", g.indent)
+		if tail != nil {
+			body += prefix + "return " + g.genExpr(tail) + ";\n"
+		}
+		g.indent--
+		closingPrefix := strings.Repeat("  ", g.indent)
+		g.declared = savedDeclared
+		return fmt.Sprintf("await Promise.all(%s.map(async (%s) => {\n%s%s}))", iter, e.Variable, body, closingPrefix)
+
 	case *ast.ReceiveExpression:
 		return fmt.Sprintf("await %s.receive()", e.Channel)
 

@@ -301,6 +301,8 @@ func (g *Generator) exprContainsAwait(expr ast.Expression) bool {
 		return true
 	case *ast.AwaitExpression:
 		return true
+	case *ast.AwaitAllForEachExpr:
+		return true
 	case *ast.CallExpr:
 		if g.exprContainsAwait(e.Function) {
 			return true

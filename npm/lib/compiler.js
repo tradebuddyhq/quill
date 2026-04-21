@@ -42,7 +42,7 @@ class QuillCompiler {
       }
 
       // Check if this is a continuation keyword (otherwise, otherwise if, when)
-      // These should not close the parent block — they continue it
+      // These should not close the parent block, they continue it
       const isContinuation = /^(otherwise|when\s)/.test(trimmed.replace(/:$/, '').trim());
 
       // Close blocks: if current level < previous block levels, close them
