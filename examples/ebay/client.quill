@@ -1,0 +1,443 @@
+-- eBay API Client
+-- A complete wrapper for the eBay REST APIs, written in Quill
+-- Supports: OAuth, Browse, Finding, Taxonomy, and Selling
+-- Run: quill run examples/ebay/client.quill
+--
+-- Required environment variables:
+--   EBAY_CLIENT_ID      - Your eBay app client ID
+--   EBAY_CLIENT_SECRET  - Your eBay app client secret
+--   EBAY_ENVIRONMENT    - "sandbox" or "production" (default: sandbox)
+
+-- ─── Configuration ───
+
+client_id is env("EBAY_CLIENT_ID", "")
+client_secret is env("EBAY_CLIENT_SECRET", "")
+environment is env("EBAY_ENVIRONMENT", "sandbox")
+
+sandbox_url is "https://api.sandbox.ebay.com"
+production_url is "https://api.ebay.com"
+
+sandbox_auth_url is "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
+production_auth_url is "https://api.ebay.com/identity/v1/oauth2/token"
+
+base_url is sandbox_url
+auth_url is sandbox_auth_url
+
+if environment is "production":
+  base_url is production_url
+  auth_url is production_auth_url
+
+-- Token storage
+access_token is ""
+token_expires_at is 0
+
+-- ─── OAuth Authentication ───
+
+to get_credentials_base64:
+  credentials is "{client_id}:{client_secret}"
+  give back encodeBase64(credentials)
+
+to authenticate:
+  if client_id is "" or client_secret is "":
+    say "Error: Set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET environment variables"
+    give back nothing
+
+  encoded is get_credentials_base64()
+
+  try:
+    result is await fetchURL(auth_url, {
+      method: "POST",
+      headers: {
+        "Authorization": "Basic {encoded}",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope"
+    })
+
+    access_token is result.access_token
+    token_expires_at is now() + (result.expires_in * 1000)
+    say "Authenticated successfully (token expires in {result.expires_in}s)"
+    give back access_token
+  catch err:
+    say "Authentication failed: {err.message}"
+    give back nothing
+
+to ensure_token:
+  if access_token is "" or now() is greater than token_expires_at - 60000:
+    await authenticate()
+  give back access_token
+
+-- ─── HTTP Helpers ───
+
+to ebay_get path:
+  token is await ensure_token()
+  if token is nothing:
+    give back nothing
+
+  url is "{base_url}{path}"
+  try:
+    result is await fetchURL(url, {
+      method: "GET",
+      headers: {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json",
+        "X-EBAY-C-MARKETPLACE-ID": "EBAY_US"
+      }
+    })
+    give back result
+  catch err:
+    say "GET {path} failed: {err.message}"
+    give back nothing
+
+to ebay_post path data:
+  token is await ensure_token()
+  if token is nothing:
+    give back nothing
+
+  url is "{base_url}{path}"
+  body is toJSON(data)
+  try:
+    result is await fetchURL(url, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json",
+        "X-EBAY-C-MARKETPLACE-ID": "EBAY_US"
+      },
+      body: body
+    })
+    give back result
+  catch err:
+    say "POST {path} failed: {err.message}"
+    give back nothing
+
+to ebay_put path data:
+  token is await ensure_token()
+  if token is nothing:
+    give back nothing
+
+  url is "{base_url}{path}"
+  body is toJSON(data)
+  try:
+    result is await fetchURL(url, {
+      method: "PUT",
+      headers: {
+        "Authorization": "Bearer {token}",
+        "Content-Type": "application/json",
+        "X-EBAY-C-MARKETPLACE-ID": "EBAY_US"
+      },
+      body: body
+    })
+    give back result
+  catch err:
+    say "PUT {path} failed: {err.message}"
+    give back nothing
+
+to ebay_delete path:
+  token is await ensure_token()
+  if token is nothing:
+    give back nothing
+
+  url is "{base_url}{path}"
+  try:
+    result is await fetchURL(url, {
+      method: "DELETE",
+      headers: {
+        "Authorization": "Bearer {token}",
+        "X-EBAY-C-MARKETPLACE-ID": "EBAY_US"
+      }
+    })
+    give back result
+  catch err:
+    say "DELETE {path} failed: {err.message}"
+    give back nothing
+
+-- ─── URL Helpers ───
+
+to build_query params:
+  parts are []
+  for each entry in entries(params):
+    key is entry[0]
+    val is entry[1]
+    if val is not nothing and val is not "":
+      push(parts, "{encodeURL(key)}={encodeURL(val)}")
+  if length(parts) is 0:
+    give back ""
+  give back "?" + join(parts, "&")
+
+-- ═══════════════════════════════════════
+-- Browse API (Buy)
+-- ═══════════════════════════════════════
+
+to search_items query options:
+  params is {q: query}
+  if options is not nothing:
+    if hasKey(options, "limit"):
+      params.limit is "{options.limit}"
+    if hasKey(options, "offset"):
+      params.offset is "{options.offset}"
+    if hasKey(options, "category_ids"):
+      params.category_ids is options.category_ids
+    if hasKey(options, "filter"):
+      params.filter is options.filter
+    if hasKey(options, "sort"):
+      params.sort is options.sort
+  qs is build_query(params)
+  give back await ebay_get("/buy/browse/v1/item_summary/search{qs}")
+
+to get_item item_id:
+  give back await ebay_get("/buy/browse/v1/item/{encodeURL(item_id)}")
+
+to get_item_by_legacy_id legacy_id:
+  give back await ebay_get("/buy/browse/v1/item/get_item_by_legacy_id?legacy_item_id={legacy_id}")
+
+to get_items_by_group group_id:
+  give back await ebay_get("/buy/browse/v1/item/get_items_by_item_group?item_group_id={group_id}")
+
+to search_by_image image_url:
+  give back await ebay_post("/buy/browse/v1/item_summary/search_by_image", {
+    image: image_url
+  })
+
+-- ═══════════════════════════════════════
+-- Taxonomy API
+-- ═══════════════════════════════════════
+
+to get_default_category_tree:
+  give back await ebay_get("/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=EBAY_US")
+
+to get_category_tree tree_id:
+  give back await ebay_get("/commerce/taxonomy/v1/category_tree/{tree_id}")
+
+to get_category_subtree tree_id category_id:
+  give back await ebay_get("/commerce/taxonomy/v1/category_tree/{tree_id}/get_category_subtree?category_id={category_id}")
+
+to get_category_suggestions tree_id query:
+  q is encodeURL(query)
+  give back await ebay_get("/commerce/taxonomy/v1/category_tree/{tree_id}/get_category_suggestions?q={q}")
+
+to get_item_aspects tree_id category_id:
+  give back await ebay_get("/commerce/taxonomy/v1/category_tree/{tree_id}/get_item_aspects_for_category?category_id={category_id}")
+
+-- ═══════════════════════════════════════
+-- Finding API (Legacy)
+-- ═══════════════════════════════════════
+
+finding_url is "https://svcs.ebay.com/services/search/FindingService/v1"
+if environment is "sandbox":
+  finding_url is "https://svcs.sandbox.ebay.com/services/search/FindingService/v1"
+
+to find_items_by_keywords keywords options:
+  params is {
+    "OPERATION-NAME": "findItemsByKeywords",
+    "SERVICE-VERSION": "1.0.0",
+    "SECURITY-APPNAME": client_id,
+    "RESPONSE-DATA-FORMAT": "JSON",
+    "keywords": keywords
+  }
+  if options is not nothing:
+    if hasKey(options, "limit"):
+      params["paginationInput.entriesPerPage"] is "{options.limit}"
+    if hasKey(options, "page"):
+      params["paginationInput.pageNumber"] is "{options.page}"
+    if hasKey(options, "sort"):
+      params.sortOrder is options.sort
+    if hasKey(options, "min_price"):
+      params["itemFilter(0).name"] is "MinPrice"
+      params["itemFilter(0).value"] is "{options.min_price}"
+    if hasKey(options, "max_price"):
+      idx is 0
+      if hasKey(options, "min_price"):
+        idx is 1
+      params["itemFilter({idx}).name"] is "MaxPrice"
+      params["itemFilter({idx}).value"] is "{options.max_price}"
+
+  qs is build_query(params)
+  try:
+    result is await fetchURL("{finding_url}{qs}", {
+      method: "GET",
+      headers: {"Content-Type": "application/json"}
+    })
+    give back result
+  catch err:
+    say "Finding API error: {err.message}"
+    give back nothing
+
+to find_items_by_category category_id options:
+  params is {
+    "OPERATION-NAME": "findItemsByCategory",
+    "SERVICE-VERSION": "1.0.0",
+    "SECURITY-APPNAME": client_id,
+    "RESPONSE-DATA-FORMAT": "JSON",
+    "categoryId": "{category_id}"
+  }
+  if options is not nothing:
+    if hasKey(options, "limit"):
+      params["paginationInput.entriesPerPage"] is "{options.limit}"
+    if hasKey(options, "page"):
+      params["paginationInput.pageNumber"] is "{options.page}"
+  qs is build_query(params)
+  try:
+    result is await fetchURL("{finding_url}{qs}", {
+      method: "GET",
+      headers: {"Content-Type": "application/json"}
+    })
+    give back result
+  catch err:
+    say "Finding API error: {err.message}"
+    give back nothing
+
+-- ═══════════════════════════════════════
+-- Inventory API (Sell)
+-- ═══════════════════════════════════════
+
+to create_inventory_item sku data:
+  give back await ebay_put("/sell/inventory/v1/inventory_item/{encodeURL(sku)}", data)
+
+to get_inventory_item sku:
+  give back await ebay_get("/sell/inventory/v1/inventory_item/{encodeURL(sku)}")
+
+to get_inventory_items options:
+  params is {}
+  if options is not nothing:
+    if hasKey(options, "limit"):
+      params.limit is "{options.limit}"
+    if hasKey(options, "offset"):
+      params.offset is "{options.offset}"
+  qs is build_query(params)
+  give back await ebay_get("/sell/inventory/v1/inventory_item{qs}")
+
+to delete_inventory_item sku:
+  give back await ebay_delete("/sell/inventory/v1/inventory_item/{encodeURL(sku)}")
+
+to create_offer data:
+  give back await ebay_post("/sell/inventory/v1/offer", data)
+
+to get_offers sku:
+  give back await ebay_get("/sell/inventory/v1/offer?sku={encodeURL(sku)}")
+
+to publish_offer offer_id:
+  give back await ebay_post("/sell/inventory/v1/offer/{offer_id}/publish", {})
+
+-- ═══════════════════════════════════════
+-- Order API
+-- ═══════════════════════════════════════
+
+to get_orders options:
+  params is {}
+  if options is not nothing:
+    if hasKey(options, "limit"):
+      params.limit is "{options.limit}"
+    if hasKey(options, "offset"):
+      params.offset is "{options.offset}"
+    if hasKey(options, "filter"):
+      params.filter is options.filter
+  qs is build_query(params)
+  give back await ebay_get("/sell/fulfillment/v1/order{qs}")
+
+to get_order order_id:
+  give back await ebay_get("/sell/fulfillment/v1/order/{order_id}")
+
+to create_shipping_fulfillment order_id data:
+  give back await ebay_post("/sell/fulfillment/v1/order/{order_id}/shipping_fulfillment", data)
+
+-- ═══════════════════════════════════════
+-- Display Helpers
+-- ═══════════════════════════════════════
+
+to format_price price_obj:
+  if price_obj is nothing:
+    give back "N/A"
+  give back "{price_obj.currency} {price_obj.value}"
+
+to show_search_result item:
+  title is item.title
+  if length(title) is greater than 60:
+    title is truncate(title, 60)
+  price is "N/A"
+  if hasKey(item, "price"):
+    price is format_price(item.price)
+  condition is "Unknown"
+  if hasKey(item, "condition"):
+    condition is item.condition
+  say "  {title}"
+  say "    Price: {price} | Condition: {condition}"
+  if hasKey(item, "itemWebUrl"):
+    say "    URL: {item.itemWebUrl}"
+  say ""
+
+to show_search_results response:
+  if response is nothing:
+    say "No results."
+    give back nothing
+
+  if hasKey(response, "total"):
+    say "Found {response.total} results"
+    say ""
+
+  if hasKey(response, "itemSummaries"):
+    items is response.itemSummaries
+    for each item in items:
+      show_search_result(item)
+  otherwise:
+    say "No items found."
+
+to show_inventory_item item:
+  say "  SKU: {item.sku}"
+  if hasKey(item, "product"):
+    if hasKey(item.product, "title"):
+      say "  Title: {item.product.title}"
+  if hasKey(item, "availability"):
+    if hasKey(item.availability, "shipToLocationAvailability"):
+      qty is item.availability.shipToLocationAvailability.quantity
+      say "  Quantity: {qty}"
+  say ""
+
+-- ═══════════════════════════════════════
+-- Demo
+-- ═══════════════════════════════════════
+
+say "eBay API Client (Quill)"
+say "======================="
+say ""
+
+if client_id is "":
+  say "To use this client, set your eBay credentials:"
+  say ""
+  say "  export EBAY_CLIENT_ID=your_client_id"
+  say "  export EBAY_CLIENT_SECRET=your_client_secret"
+  say "  export EBAY_ENVIRONMENT=sandbox"
+  say ""
+  say "Then run: quill run examples/ebay/client.quill"
+  say ""
+  say "Get your credentials at: https://developer.ebay.com"
+otherwise:
+  -- Authenticate
+  say "Authenticating with eBay ({environment})..."
+  token is await authenticate()
+
+  if token is not nothing:
+    say ""
+
+    -- Search for items
+    say "Searching for 'laptop'..."
+    say ""
+    results is await search_items("laptop", {limit: 5})
+    show_search_results(results)
+
+    -- Get category tree
+    say "Fetching category tree info..."
+    tree_info is await get_default_category_tree()
+    if tree_info is not nothing:
+      say "Default category tree ID: {tree_info.categoryTreeId}"
+      say ""
+
+    -- Category suggestions
+    say "Getting category suggestions for 'running shoes'..."
+    suggestions is await get_category_suggestions("0", "running shoes")
+    if suggestions is not nothing and hasKey(suggestions, "categorySuggestions"):
+      for each sug in slice(suggestions.categorySuggestions, 0, 3):
+        say "  {sug.category.categoryName} (ID: {sug.category.categoryId})"
+      say ""
+
+    say "Done!"

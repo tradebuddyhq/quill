@@ -1,0 +1,219 @@
+-- eBay Dashboard
+-- A web dashboard that displays eBay search results with a clean UI
+-- Run: quill run examples/ebay/dashboard.quill
+--
+-- Set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET to see live data
+-- Without credentials, shows demo data
+
+-- ─── Config ───
+
+client_id is env("EBAY_CLIENT_ID", "")
+client_secret is env("EBAY_CLIENT_SECRET", "")
+
+sandbox_auth is "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
+sandbox_api is "https://api.sandbox.ebay.com"
+
+access_token is ""
+
+-- ─── Auth ───
+
+to get_token:
+  if client_id is "":
+    give back nothing
+  encoded is encodeBase64("{client_id}:{client_secret}")
+  try:
+    result is await fetchURL(sandbox_auth, {
+      method: "POST",
+      headers: {
+        "Authorization": "Basic {encoded}",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope"
+    })
+    give back result.access_token
+  catch err:
+    say "Auth error: {err.message}"
+    give back nothing
+
+to ebay_search query limit:
+  if access_token is "":
+    give back nothing
+  q is encodeURL(query)
+  try:
+    result is await fetchURL("{sandbox_api}/buy/browse/v1/item_summary/search?q={q}&limit={limit}", {
+      method: "GET",
+      headers: {
+        "Authorization": "Bearer {access_token}",
+        "X-EBAY-C-MARKETPLACE-ID": "EBAY_US"
+      }
+    })
+    give back result
+  catch err:
+    give back nothing
+
+-- ─── Demo Data ───
+
+to get_demo_items:
+  give back [
+    {title: "MacBook Pro 14-inch M3 Pro", price: {currency: "USD", value: "1799.00"}, condition: "New", category: "Laptops", image: "https://placehold.co/300x300/1a1a2e/eee?text=MacBook"},
+    {title: "Sony WH-1000XM5 Headphones", price: {currency: "USD", value: "278.00"}, condition: "New", category: "Audio", image: "https://placehold.co/300x300/1a1a2e/eee?text=Sony+XM5"},
+    {title: "iPhone 15 Pro 256GB", price: {currency: "USD", value: "999.00"}, condition: "New", category: "Phones", image: "https://placehold.co/300x300/1a1a2e/eee?text=iPhone+15"},
+    {title: "Nintendo Switch OLED", price: {currency: "USD", value: "315.00"}, condition: "Used", category: "Gaming", image: "https://placehold.co/300x300/1a1a2e/eee?text=Switch"},
+    {title: "Dyson V15 Detect Vacuum", price: {currency: "USD", value: "599.99"}, condition: "New", category: "Home", image: "https://placehold.co/300x300/1a1a2e/eee?text=Dyson+V15"},
+    {title: "Samsung Galaxy Tab S9", price: {currency: "USD", value: "649.99"}, condition: "New", category: "Tablets", image: "https://placehold.co/300x300/1a1a2e/eee?text=Tab+S9"},
+    {title: "Vintage Polaroid Camera", price: {currency: "USD", value: "89.00"}, condition: "Used", category: "Cameras", image: "https://placehold.co/300x300/1a1a2e/eee?text=Polaroid"},
+    {title: "Mechanical Keyboard 75%", price: {currency: "USD", value: "149.99"}, condition: "New", category: "Peripherals", image: "https://placehold.co/300x300/1a1a2e/eee?text=Keyboard"}
+  ]
+
+-- ─── HTML Builders ───
+
+to render_item_card item:
+  img is "https://placehold.co/300x300/1a1a2e/eee?text=eBay"
+  if hasKey(item, "image"):
+    img is item.image
+  otherwise if hasKey(item, "thumbnailImages"):
+    if length(item.thumbnailImages) is greater than 0:
+      img is item.thumbnailImages[0].imageUrl
+
+  title is item.title
+  if length(title) is greater than 50:
+    title is truncate(title, 50)
+
+  price is "N/A"
+  if hasKey(item, "price"):
+    price is "${item.price.value}"
+
+  condition is ""
+  if hasKey(item, "condition"):
+    condition is item.condition
+
+  badge_color is "#00b894"
+  if condition is "Used":
+    badge_color is "#fdcb6e"
+
+  give back "
+    <div class='card'>
+      <div class='card-img' style='background-image:url({img})'></div>
+      <div class='card-body'>
+        <div class='card-badge' style='background:{badge_color}20;color:{badge_color}'>{condition}</div>
+        <h3 class='card-title'>{title}</h3>
+        <div class='card-price'>{price}</div>
+      </div>
+    </div>"
+
+to render_stat label value icon:
+  give back "
+    <div class='stat'>
+      <div class='stat-icon'>{icon}</div>
+      <div class='stat-value'>{value}</div>
+      <div class='stat-label'>{label}</div>
+    </div>"
+
+-- ─── Server ───
+
+server is createServer()
+
+server.get("/", to handle req res:
+  -- Try live data, fall back to demo
+  items are []
+  is_live is no
+
+  if client_id is not "":
+    access_token is await get_token()
+    if access_token is not nothing:
+      search_data is await ebay_search("electronics", 8)
+      if search_data is not nothing and hasKey(search_data, "itemSummaries"):
+        items is search_data.itemSummaries
+        is_live is yes
+
+  if length(items) is 0:
+    items is get_demo_items()
+
+  -- Build item cards
+  cards is ""
+  for each item in items:
+    cards is cards + render_item_card(item)
+
+  -- Calculate stats
+  total is length(items)
+  prices is map_list(items, with i: toNumber(i.price.value))
+  avg_price is round(sum(prices) / total)
+  max_price is round(max(prices))
+  new_count is countWhere(items, with i: i.condition is "New")
+
+  source_text is "Demo Data"
+  if is_live:
+    source_text is "eBay Live API"
+
+  stats_html is render_stat("Total Items", "{total}", "📦")
+  stats_html is stats_html + render_stat("Avg Price", "${avg_price}", "💰")
+  stats_html is stats_html + render_stat("Highest", "${max_price}", "📈")
+  stats_html is stats_html + render_stat("New Items", "{new_count}", "✨")
+
+  html is "<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <title>eBay Dashboard - Quill</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#0a0a1a; color:#e0e0e0; font-family:-apple-system,BlinkMacSystemFont,sans-serif; }
+
+    .header { padding:32px 24px 24px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .header h1 { font-size:28px; font-weight:800; background:linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .header p { color:#888; font-size:14px; margin-top:6px; }
+    .source-badge { display:inline-block; margin-top:10px; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(102,126,234,0.15); color:#667eea; }
+
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; padding:24px; max-width:900px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px; text-align:center; }
+    .stat-icon { font-size:24px; margin-bottom:8px; }
+    .stat-value { font-size:24px; font-weight:800; color:#fff; }
+    .stat-label { font-size:12px; color:#888; margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }
+
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; padding:24px; max-width:1200px; margin:0 auto; }
+    .card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:14px; overflow:hidden; transition:transform 0.2s,border-color 0.2s; }
+    .card:hover { transform:translateY(-4px); border-color:rgba(102,126,234,0.3); }
+    .card-img { height:180px; background-size:cover; background-position:center; background-color:#111; }
+    .card-body { padding:16px; }
+    .card-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; margin-bottom:8px; }
+    .card-title { font-size:14px; font-weight:600; color:#fff; line-height:1.4; margin-bottom:8px; min-height:40px; }
+    .card-price { font-size:20px; font-weight:800; color:#667eea; }
+
+    .footer { text-align:center; padding:32px; color:#555; font-size:13px; border-top:1px solid rgba(255,255,255,0.04); margin-top:16px; }
+    .footer a { color:#667eea; text-decoration:none; }
+
+    @media(max-width:600px) {
+      .stats-grid { grid-template-columns:repeat(2,1fr); }
+      .grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class='header'>
+    <h1>eBay Dashboard</h1>
+    <p>Built with Quill -- browse eBay listings in style</p>
+    <div class='source-badge'>{source_text}</div>
+  </div>
+  <div class='stats-grid'>{stats_html}</div>
+  <div class='grid'>{cards}</div>
+  <div class='footer'>
+    Powered by <a href='https://quill.tradebuddy.dev'>Quill</a> and the
+    <a href='https://developer.ebay.com'>eBay API</a>
+  </div>
+</body>
+</html>"
+
+  res.send(html)
+)
+
+server.listen(4002)
+say ""
+say "eBay Dashboard running at http://localhost:4002"
+say "Built with Quill -- https://quill.tradebuddy.dev"
+say ""
+if client_id is "":
+  say "No eBay credentials found -- showing demo data"
+  say "Set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET for live results"
+otherwise:
+  say "Using live eBay API ({client_id})"
